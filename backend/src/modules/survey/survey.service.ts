@@ -28,6 +28,12 @@ import type {
   UpdateSurveySettingsDto,
 } from './dto/survey.dtos';
 import type { AuthenticatedUser } from '../../common/types/authenticated-user';
+import {
+  ExperienceInternalClient,
+  type SurveyBookingSnapshot,
+} from '../experience-client/experience-internal.client';
+import { BookingStatus } from '../../database/enums';
+import { materializeFlownBookings } from '../flights/flight-lifecycle.util';
 
 const FALLBACK_SUMMARY = 'خلاصه‌ای از نظرات این پرواز در دسترس نیست.';
 
@@ -54,9 +60,63 @@ export class SurveyService {
     private readonly audit: AuditService,
     @Inject(SURVEY_SUMMARY_PROVIDER)
     private readonly summaryProvider: SurveySummaryProvider,
+    private readonly experience: ExperienceInternalClient,
   ) {}
 
   private async materialize(): Promise<void> {
+    if (this.experience.enabled()) {
+      await materializeFlownBookings(this.dataSource);
+      const bookings = await this.bookingRepo
+        .createQueryBuilder('booking')
+        .leftJoinAndSelect('booking.flightInstance', 'instance')
+        .leftJoinAndSelect('instance.flight', 'flight')
+        .leftJoinAndSelect('flight.route', 'route')
+        .where('booking.status = :status', { status: BookingStatus.FLOWN })
+        .getMany();
+      if (bookings.length === 0) return;
+      const codes = [
+        ...new Set(
+          bookings.flatMap((booking) => [
+            booking.flightInstance.flight.route.originCode,
+            booking.flightInstance.flight.route.destCode,
+          ]),
+        ),
+      ];
+      const airports = await this.airportRepo
+        .createQueryBuilder('airport')
+        .where('airport.code IN (:...codes)', { codes })
+        .getMany();
+      const cityByCode = new Map(
+        airports.map((airport) => [airport.code, airport.cityFa]),
+      );
+      const snapshots: SurveyBookingSnapshot[] = bookings.map((booking) => {
+        const instance = booking.flightInstance;
+        const route = instance.flight.route;
+        return {
+          bookingId: booking.id,
+          flightInstanceId: instance.id,
+          contactPhone: booking.contactPhone,
+          flightNo: instance.flight.flightNo,
+          originCityFa: cityByCode.get(route.originCode) ?? route.originCode,
+          destCityFa: cityByCode.get(route.destCode) ?? route.destCode,
+          departureAt: instance.departureAt.toISOString(),
+        };
+      });
+      const { pendingNotifications } =
+        await this.experience.materializeSurveyInvites(snapshots);
+      for (const pending of pendingNotifications) {
+        const result = await this.sms.send(
+          pending.phone,
+          `سفر خوبی داشتید؟ لطفاً نظر خود را با ما در میان بگذارید: ${process.env.FRONTEND_URL ?? 'http://localhost:5173'}/survey/${pending.token}`,
+          'SURVEY_INVITE',
+          `survey-invite:${pending.inviteId}`,
+        );
+        if (result.success) {
+          await this.experience.acknowledgeSurveyInvite(pending.inviteId);
+        }
+      }
+      return;
+    }
     await materializeSurveyInvites(
       this.dataSource,
       this.bookingRepo,
@@ -79,7 +139,10 @@ export class SurveyService {
     );
   }
 
-  async getSettings() {
+  async getSettings(actor?: AuthenticatedUser) {
+    if (this.experience.enabled() && actor) {
+      return this.experience.getSurveySettings(actor);
+    }
     const s = await this.getOrCreateSettings();
     return {
       enabled: s.enabled,
@@ -90,6 +153,18 @@ export class SurveyService {
   }
 
   async updateSettings(actor: AuthenticatedUser, dto: UpdateSurveySettingsDto) {
+    if (this.experience.enabled()) {
+      const updated = await this.experience.updateSurveySettings(actor, dto);
+      await this.audit.record({
+        actorId: actor.id,
+        actorRole: actor.role,
+        category: 'SURVEY',
+        action: 'تغییر تنظیمات نظرسنجی مسافران',
+        detail: `${actor.fullName} تنظیمات نظرسنجی را به‌روزرسانی کرد.`,
+        entityType: 'SurveySettings',
+      });
+      return updated;
+    }
     const current = await this.getOrCreateSettings();
     if (dto.enabled !== undefined) current.enabled = dto.enabled;
     if (dto.title !== undefined) current.title = dto.title;
@@ -117,12 +192,28 @@ export class SurveyService {
     };
   }
 
-  async listQuestions() {
+  async listQuestions(actor?: AuthenticatedUser) {
+    if (this.experience.enabled() && actor) {
+      return this.experience.listSurveyQuestions(actor);
+    }
     const rows = await this.questionRepo.find({ order: { order: 'ASC' } });
     return rows.map((q) => ({ id: q.id, label: q.label, order: q.order }));
   }
 
   async addQuestion(actor: AuthenticatedUser, dto: CreateSurveyQuestionDto) {
+    if (this.experience.enabled()) {
+      const question = await this.experience.addSurveyQuestion(actor, dto);
+      await this.audit.record({
+        actorId: actor.id,
+        actorRole: actor.role,
+        category: 'SURVEY',
+        action: 'افزودن سؤال نظرسنجی',
+        detail: `${actor.fullName} سؤال «${dto.label}» را افزود.`,
+        entityType: 'SurveyQuestion',
+        entityId: question.id,
+      });
+      return question;
+    }
     const last = await this.questionRepo.findOne({
       where: {},
       order: { order: 'DESC' },
@@ -146,6 +237,19 @@ export class SurveyService {
   }
 
   async removeQuestion(actor: AuthenticatedUser, id: string) {
+    if (this.experience.enabled()) {
+      const removed = await this.experience.removeSurveyQuestion(actor, id);
+      await this.audit.record({
+        actorId: actor.id,
+        actorRole: actor.role,
+        category: 'SURVEY',
+        action: 'حذف سؤال نظرسنجی',
+        detail: `${actor.fullName} سؤال «${id}» را حذف کرد.`,
+        entityType: 'SurveyQuestion',
+        entityId: id,
+      });
+      return removed;
+    }
     const question = await this.questionRepo.findOneBy({ id });
     if (!question) {
       throw new NotFoundException({
@@ -166,8 +270,11 @@ export class SurveyService {
     return { id };
   }
 
-  async getStats() {
+  async getStats(actor?: AuthenticatedUser) {
     await this.materialize();
+    if (this.experience.enabled() && actor) {
+      return this.experience.getSurveyStats(actor);
+    }
 
     const [flightsWithSurveyCount, totalResponses, avgRow, recent] =
       await Promise.all([
@@ -258,6 +365,9 @@ export class SurveyService {
   }
 
   async getPublicInvite(token: string) {
+    if (this.experience.enabled()) {
+      return this.experience.getPublicSurveyInvite(token);
+    }
     const invite = await this.findInviteByToken(token);
     const settings = await this.getOrCreateSettings();
     if (!settings.enabled) {
@@ -294,6 +404,9 @@ export class SurveyService {
   }
 
   async submitResponse(token: string, dto: SubmitSurveyResponseDto) {
+    if (this.experience.enabled()) {
+      return this.experience.submitSurveyResponse(token, dto);
+    }
     const invite = await this.findInviteByToken(token);
     const settings = await this.getOrCreateSettings();
     if (!settings.enabled) {
@@ -322,8 +435,11 @@ export class SurveyService {
   }
 
   // ── Exec read-only results + AI summary ─────────────────────────────
-  async getResults() {
+  async getResults(actor?: AuthenticatedUser) {
     await this.materialize();
+    if (this.experience.enabled() && actor) {
+      return this.experience.getSurveyResults(actor);
+    }
     const settings = await this.getOrCreateSettings();
     if (!settings.enabled) {
       return { disabled: true as const, flights: [] };
@@ -394,6 +510,24 @@ export class SurveyService {
   }
 
   async analyzeFlight(flightInstanceId: string, actor: AuthenticatedUser) {
+    if (this.experience.enabled()) {
+      const { comments } = await this.experience.getSurveyComments(
+        actor,
+        flightInstanceId,
+      );
+      const result = await this.summaryProvider.summarize(comments);
+      if (!result) return { summary: FALLBACK_SUMMARY };
+      await this.aiUsageLogRepo.save(
+        this.aiUsageLogRepo.create({
+          provider: 'survey-summary',
+          userId: actor.id,
+          contextId: flightInstanceId,
+          inputTokens: result.inputTokens,
+          outputTokens: result.outputTokens,
+        }),
+      );
+      return { summary: result.summary };
+    }
     const responses = await this.responseRepo
       .createQueryBuilder('r')
       .innerJoin('r.invite', 'invite')

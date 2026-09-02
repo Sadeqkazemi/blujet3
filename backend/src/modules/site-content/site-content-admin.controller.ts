@@ -38,8 +38,8 @@ export class SiteContentAdminController {
 
   @Get('library')
   @ApiOperation({ summary: 'کتابخانهٔ تصاویر سایت' })
-  async library() {
-    return { success: true, data: await this.content.listLibrary() };
+  async library(@CurrentUser() actor: AuthenticatedUser) {
+    return { success: true, data: await this.content.listLibrary(actor) };
   }
 
   @Post('library')
@@ -68,8 +68,8 @@ export class SiteContentAdminController {
 
   @Get('blocks')
   @ApiOperation({ summary: 'بلوک‌های بنر صفحهٔ اصلی' })
-  async blocks() {
-    return { success: true, data: await this.content.listBlocks() };
+  async blocks(@CurrentUser() actor: AuthenticatedUser) {
+    return { success: true, data: await this.content.listBlocks(actor) };
   }
 
   @Patch('blocks/:key')
@@ -93,8 +93,8 @@ export class SiteContentAdminController {
 
   @Get('destinations')
   @ApiOperation({ summary: 'مقاصد محبوب' })
-  async destinations() {
-    return { success: true, data: await this.content.listDestinations() };
+  async destinations(@CurrentUser() actor: AuthenticatedUser) {
+    return { success: true, data: await this.content.listDestinations(actor) };
   }
 
   @Post('destinations')
@@ -136,8 +136,8 @@ export class SiteContentAdminController {
 
   @Get('routes')
   @ApiOperation({ summary: 'مسیرهای پرتردد' })
-  async routes() {
-    return { success: true, data: await this.content.listRoutes() };
+  async routes(@CurrentUser() actor: AuthenticatedUser) {
+    return { success: true, data: await this.content.listRoutes(actor) };
   }
 
   @Post('routes')

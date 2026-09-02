@@ -21,6 +21,7 @@ import { AuditService } from '../audit/audit.service';
 import { ErrorCode } from '../../common/errors';
 import type { AuthenticatedUser } from '../../common/types/authenticated-user';
 import { STAFF_ROLES } from '../../common/exec-roles';
+import { ExperienceInternalClient } from '../experience-client/experience-internal.client';
 
 export const ALLOWED_MIME_TYPES = [
   'application/pdf',
@@ -50,9 +51,13 @@ export class FilesService {
     @InjectRepository(AgencyMessage)
     private readonly agencyMessageRepo: Repository<AgencyMessage>,
     private readonly audit: AuditService,
+    private readonly experience: ExperienceInternalClient,
   ) {}
 
   async store(actor: AuthenticatedUser, file: Express.Multer.File) {
+    if (this.experience.enabled()) {
+      return this.experience.storeFile(actor, file);
+    }
     if (!file) {
       throw new BadRequestException({
         code: ErrorCode.VALIDATION_FAILED,
@@ -237,6 +242,19 @@ export class FilesService {
    * Any FK referencing this file with `ON DELETE SET NULL` (e.g.
    * JobPosting.imageFileId) is cleared by Postgres itself. */
   async delete(actor: AuthenticatedUser, id: string) {
+    if (this.experience.enabled()) {
+      const deleted = await this.experience.deleteFile(actor, id);
+      await this.audit.record({
+        actorId: actor.id,
+        actorRole: actor.role,
+        category: 'CONTENT',
+        action: 'حذف پیوست',
+        detail: `${actor.fullName} پیوست «${id}» را حذف کرد.`,
+        entityType: 'StoredFile',
+        entityId: id,
+      });
+      return deleted;
+    }
     const stored = await this.storedFileRepo.findOne({ where: { id } });
     if (!stored) {
       throw new NotFoundException({

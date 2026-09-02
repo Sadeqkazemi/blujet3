@@ -16,6 +16,7 @@ function makeService(userFind: jest.Mock) {
     {} as Repository<StoredFile>,
     userRepo,
     {} as AuditService,
+    { enabled: jest.fn().mockReturnValue(false) } as never,
   );
 }
 

@@ -14,6 +14,7 @@ import { SurveyResponse } from '../../database/entities/survey-response.entity';
 import { AiUsageLog } from '../../database/entities/ai-usage-log.entity';
 import { Booking } from '../../database/entities/booking.entity';
 import { Airport } from '../../database/entities/airport.entity';
+import { ExperienceClientModule } from '../experience-client/experience-client.module';
 
 @Module({
   // SurveyController's static routes (settings/questions/stats/results)
@@ -33,6 +34,7 @@ import { Airport } from '../../database/entities/airport.entity';
     AuditModule,
     AiModule,
     PanelsModule,
+    ExperienceClientModule,
   ],
   controllers: [SurveyController, SurveyPublicController],
   providers: [SurveyService],

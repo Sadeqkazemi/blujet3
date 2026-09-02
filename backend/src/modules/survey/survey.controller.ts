@@ -36,8 +36,8 @@ export class SurveyController {
   @Get('settings')
   @Roles('IT_MANAGER')
   @ApiOperation({ summary: 'وضعیت و عنوان نظرسنجی' })
-  async getSettings() {
-    return { success: true, data: await this.survey.getSettings() };
+  async getSettings(@CurrentUser() actor: AuthenticatedUser) {
+    return { success: true, data: await this.survey.getSettings(actor) };
   }
 
   @Patch('settings')
@@ -56,8 +56,8 @@ export class SurveyController {
   @Get('questions')
   @Roles('IT_MANAGER')
   @ApiOperation({ summary: 'فهرست سؤالات نظرسنجی' })
-  async listQuestions() {
-    return { success: true, data: await this.survey.listQuestions() };
+  async listQuestions(@CurrentUser() actor: AuthenticatedUser) {
+    return { success: true, data: await this.survey.listQuestions(actor) };
   }
 
   @Post('questions')
@@ -83,15 +83,15 @@ export class SurveyController {
   @Get('stats')
   @Roles('IT_MANAGER')
   @ApiOperation({ summary: 'آمار کلی نظرسنجی و آخرین پاسخ‌ها' })
-  async getStats() {
-    return { success: true, data: await this.survey.getStats() };
+  async getStats(@CurrentUser() actor: AuthenticatedUser) {
+    return { success: true, data: await this.survey.getStats(actor) };
   }
 
   @Get('results')
   @Roles(...RESULTS_ROLES)
   @ApiOperation({ summary: 'نتایج نظرسنجی به تفکیک پرواز (فقط خواندنی)' })
-  async getResults() {
-    return { success: true, data: await this.survey.getResults() };
+  async getResults(@CurrentUser() actor: AuthenticatedUser) {
+    return { success: true, data: await this.survey.getResults(actor) };
   }
 
   @Post('results/:flightInstanceId/analyze')

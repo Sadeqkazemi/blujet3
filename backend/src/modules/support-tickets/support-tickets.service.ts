@@ -24,6 +24,7 @@ import type {
   AdminCreateSupportTicketDto,
   ReplySupportTicketDto,
 } from './dto/support-ticket.dtos';
+import { ExperienceInternalClient } from '../experience-client/experience-internal.client';
 
 /** Staff-created tickets without a phone use this sentinel (schema requires a string). */
 const STAFF_TICKET_PHONE_SENTINEL = '09000000000';
@@ -63,9 +64,11 @@ export class SupportTicketsService
     private readonly storedFileRepo: Repository<StoredFile>,
     private readonly audit: AuditService,
     private readonly staffDirectory: StaffDirectoryService,
+    private readonly experience: ExperienceInternalClient,
   ) {}
 
   onApplicationBootstrap() {
+    if (this.experience.enabled()) return;
     void this.autoCloseAnsweredTickets().catch((error: unknown) => {
       this.logger.error('Support ticket lifecycle sweep failed', error);
     });
@@ -111,6 +114,9 @@ export class SupportTicketsService
   }
 
   async submit(dto: SubmitSupportTicketDto) {
+    if (this.experience.enabled()) {
+      return this.experience.submitPublicSupport(dto);
+    }
     const ticket = await this.ticketRepo.save(
       this.ticketRepo.create({
         trackingCode: generateTrackingCode(),
@@ -136,6 +142,19 @@ export class SupportTicketsService
     actor: AuthenticatedUser,
     dto: AdminCreateSupportTicketDto,
   ) {
+    if (this.experience.enabled()) {
+      const ticket = await this.experience.createAdminSupport(actor, dto);
+      await this.audit.record({
+        actorId: actor.id,
+        actorRole: actor.role,
+        category: 'SYSTEM',
+        action: 'ثبت تیکت پشتیبانی توسط ادمین',
+        detail: `تیکت «${ticket.subject ?? ticket.id}» توسط ${actor.fullName} ثبت شد.`,
+        entityType: 'SupportTicket',
+        entityId: ticket.id,
+      });
+      return ticket;
+    }
     await this.assertOwnedAttachments(actor, dto.attachmentIds);
     const phoneRaw = dto.requesterPhone?.trim();
     const phone = phoneRaw
@@ -176,6 +195,9 @@ export class SupportTicketsService
   }
 
   async submitForUser(actor: AuthenticatedUser, dto: SubmitSupportTicketDto) {
+    if (this.experience.enabled()) {
+      return this.experience.submitSupportForUser(actor, dto);
+    }
     await this.assertOwnedAttachments(actor, dto.attachmentIds);
     const isAgency = actor.role === 'AGENCY';
     const ticket = await this.ticketRepo.save(
@@ -344,6 +366,12 @@ export class SupportTicketsService
   }
 
   async listMine(actor: AuthenticatedUser) {
+    if (this.experience.enabled()) {
+      return this.experience.listMySupport(
+        actor,
+        (await this.callerPhone(actor.id)) ?? undefined,
+      );
+    }
     const phone = await this.callerPhone(actor.id);
     const tickets = await this.customerTicketQuery(actor.id, phone)
       .orderBy('t.createdAt', 'DESC')
@@ -354,6 +382,13 @@ export class SupportTicketsService
   }
 
   async getMine(actor: AuthenticatedUser, id: string) {
+    if (this.experience.enabled()) {
+      return this.experience.getMySupport(
+        actor,
+        id,
+        (await this.callerPhone(actor.id)) ?? undefined,
+      );
+    }
     return this.withResolvedAttachments(await this.findOwnedTicket(actor, id));
   }
 
@@ -376,6 +411,24 @@ export class SupportTicketsService
     id: string,
     dto: ReplySupportTicketDto,
   ) {
+    if (this.experience.enabled()) {
+      const updated = await this.experience.replyMySupport(
+        actor,
+        id,
+        dto,
+        (await this.callerPhone(actor.id)) ?? undefined,
+      );
+      await this.audit.record({
+        actorId: actor.id,
+        actorRole: actor.role,
+        category: 'SYSTEM',
+        action: 'پاسخ به تیکت پشتیبانی',
+        detail: `پاسخ جدید در تیکت ${id} توسط ${actor.fullName} ثبت شد.`,
+        entityType: 'SupportTicket',
+        entityId: id,
+      });
+      return updated;
+    }
     const ticket = await this.findOwnedTicket(actor, id);
     if (ticket.status === SupportTicketStatus.CLOSED) {
       throw new BadRequestException({
@@ -406,6 +459,26 @@ export class SupportTicketsService
   }
 
   async feedbackMine(actor: AuthenticatedUser, id: string, satisfied: boolean) {
+    if (this.experience.enabled()) {
+      const updated = await this.experience.feedbackMySupport(
+        actor,
+        id,
+        satisfied,
+        (await this.callerPhone(actor.id)) ?? undefined,
+      );
+      await this.audit.record({
+        actorId: actor.id,
+        actorRole: actor.role,
+        category: 'SYSTEM',
+        action: satisfied
+          ? 'ثبت رضایت از پاسخ پشتیبانی'
+          : 'ثبت نارضایتی از پاسخ پشتیبانی',
+        detail: `بازخورد تیکت ${id} توسط ${actor.fullName} ثبت شد.`,
+        entityType: 'SupportTicket',
+        entityId: id,
+      });
+      return updated;
+    }
     const ticket = await this.findOwnedTicket(actor, id);
     if (ticket.status !== SupportTicketStatus.ANSWERED) {
       throw new BadRequestException({
@@ -451,6 +524,19 @@ export class SupportTicketsService
     id: string,
     dto: ReplySupportTicketDto,
   ) {
+    if (this.experience.enabled()) {
+      const updated = await this.experience.replyAdminSupport(actor, id, dto);
+      await this.audit.record({
+        actorId: actor.id,
+        actorRole: actor.role,
+        category: 'SYSTEM',
+        action: 'پاسخ پشتیبانی به تیکت',
+        detail: `پاسخ پشتیبانی در تیکت ${id} توسط ${actor.fullName} ثبت شد.`,
+        entityType: 'SupportTicket',
+        entityId: id,
+      });
+      return updated;
+    }
     const ticket = await this.getAccessibleTicket(actor, id);
     if (ticket.status === SupportTicketStatus.CLOSED) {
       throw new BadRequestException({
@@ -509,6 +595,9 @@ export class SupportTicketsService
       dept?: 'SITE' | 'AGENCY';
     },
   ) {
+    if (this.experience.enabled()) {
+      return this.experience.listAdminSupport(actor, filters);
+    }
     const tickets = await this.ticketRepo.find({
       where: {
         ...(filters.status ? { status: filters.status } : {}),
@@ -556,6 +645,9 @@ export class SupportTicketsService
   }
 
   async detail(actor: AuthenticatedUser, id: string) {
+    if (this.experience.enabled()) {
+      return this.experience.getAdminSupport(actor, id);
+    }
     return this.withResolvedAttachments(
       await this.getAccessibleTicket(actor, id),
     );
@@ -569,6 +661,31 @@ export class SupportTicketsService
   }
 
   async forward(actor: AuthenticatedUser, id: string, targetUserId: string) {
+    if (this.experience.enabled()) {
+      const targets = await this.staffDirectory.list(actor.id);
+      const target = targets.find((candidate) => candidate.id === targetUserId);
+      if (!target) {
+        throw new BadRequestException({
+          code: ErrorCode.VALIDATION_FAILED,
+          message: 'کارمند مقصد ارجاع معتبر نیست.',
+        });
+      }
+      const updated = await this.experience.forwardAdminSupport(actor, id, {
+        id: target.id,
+        fullName: target.fullName,
+        roleLabelFa: target.roleLabelFa,
+      });
+      await this.audit.record({
+        actorId: actor.id,
+        actorRole: actor.role,
+        category: 'SYSTEM',
+        action: 'ارجاع تیکت پشتیبانی',
+        detail: `تیکت ${id} توسط ${actor.fullName} به ${target.fullName} ارجاع شد.`,
+        entityType: 'SupportTicket',
+        entityId: id,
+      });
+      return updated;
+    }
     const ticket = await this.getAccessibleTicket(actor, id);
     const targets = await this.staffDirectory.list(actor.id);
     const target = targets.find((t) => t.id === targetUserId);
@@ -616,6 +733,23 @@ export class SupportTicketsService
     id: string,
     status: SupportTicketStatus,
   ) {
+    if (this.experience.enabled()) {
+      const updated = await this.experience.updateAdminSupportStatus(
+        actor,
+        id,
+        status,
+      );
+      await this.audit.record({
+        actorId: actor.id,
+        actorRole: actor.role,
+        category: 'SYSTEM',
+        action: 'تغییر وضعیت تیکت پشتیبانی',
+        detail: `وضعیت تیکت ${id} توسط ${actor.fullName} به «${status}» تغییر کرد.`,
+        entityType: 'SupportTicket',
+        entityId: id,
+      });
+      return updated;
+    }
     const ticket = await this.getAccessibleTicket(actor, id);
 
     const history = Array.isArray(ticket.history)

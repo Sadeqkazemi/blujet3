@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as crypto from 'node:crypto';
+import { Readable } from 'node:stream';
 import { In, Repository } from 'typeorm';
 import { CareersSettings } from '../../database/entities/careers-settings.entity';
 import { JobPosting } from '../../database/entities/job-posting.entity';
@@ -35,6 +36,7 @@ import type {
   UpdateJobPostingDto,
 } from './dto/careers.dtos';
 import type { AuthenticatedUser } from '../../common/types/authenticated-user';
+import { ExperienceInternalClient } from '../experience-client/experience-internal.client';
 
 export const RESUME_ALLOWED_MIME = 'application/pdf';
 export const RESUME_MAX_BYTES = 3 * 1024 * 1024;
@@ -72,6 +74,7 @@ export class CareersService {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly audit: AuditService,
+    private readonly experience: ExperienceInternalClient,
   ) {}
 
   // ── CareersSettings (footer-visibility toggle) ──────────────────────
@@ -87,6 +90,9 @@ export class CareersService {
   }
 
   async getSettings() {
+    if (this.experience.enabled()) {
+      return this.experience.getCareersSettings();
+    }
     const s = await this.getOrCreateSettings();
     return { enabled: s.enabled };
   }
@@ -95,6 +101,20 @@ export class CareersService {
     actor: AuthenticatedUser,
     dto: UpdateCareersSettingsDto,
   ) {
+    if (this.experience.enabled()) {
+      const updated = await this.experience.updateCareersSettings(actor, dto);
+      await this.audit.record({
+        actorId: actor.id,
+        actorRole: actor.role,
+        category: 'CONTENT',
+        action: 'تغییر وضعیت انتشار فرصت‌های شغلی',
+        detail: `${actor.fullName} انتشار لینک «فرصت‌های شغلی» در فوتر را ${
+          dto.enabled ? 'فعال' : 'غیرفعال'
+        } کرد.`,
+        entityType: 'CareersSettings',
+      });
+      return updated;
+    }
     const current = await this.getOrCreateSettings();
     current.enabled = dto.enabled;
     current.updatedAt = new Date();
@@ -165,6 +185,9 @@ export class CareersService {
   }
 
   async listActiveJobs() {
+    if (this.experience.enabled()) {
+      return this.experience.listActiveCareerJobs();
+    }
     const jobs = await this.jobPostingRepo.find({
       where: { active: true },
       order: { createdAt: 'DESC' },
@@ -182,6 +205,9 @@ export class CareersService {
   }
 
   async getPublicJob(id: string) {
+    if (this.experience.enabled()) {
+      return this.experience.getPublicCareerJob(id);
+    }
     const job = await this.jobPostingRepo.findOneBy({ id });
     if (!job || !job.active) {
       throw new NotFoundException({
@@ -226,7 +252,10 @@ export class CareersService {
   }
 
   // ── SITE_ADMIN: job-posting CRUD ─────────────────────────────────────
-  async listAllPostings() {
+  async listAllPostings(actor?: AuthenticatedUser) {
+    if (this.experience.enabled() && actor) {
+      return this.experience.listCareerPostings(actor);
+    }
     const rows = await this.jobPostingRepo.find({
       order: { createdAt: 'DESC' },
     });
@@ -234,6 +263,19 @@ export class CareersService {
   }
 
   async createPosting(actor: AuthenticatedUser, dto: CreateJobPostingDto) {
+    if (this.experience.enabled()) {
+      const posting = await this.experience.createCareerPosting(actor, dto);
+      await this.audit.record({
+        actorId: actor.id,
+        actorRole: actor.role,
+        category: 'CONTENT',
+        action: 'ایجاد فرصت شغلی',
+        detail: `${actor.fullName} فرصت شغلی «${posting.title}» را ایجاد کرد.`,
+        entityType: 'JobPosting',
+        entityId: posting.id,
+      });
+      return posting;
+    }
     if (dto.imageFileId) {
       await this.assertImageFile(actor.id, dto.imageFileId);
     }
@@ -267,6 +309,19 @@ export class CareersService {
     id: string,
     dto: UpdateJobPostingDto,
   ) {
+    if (this.experience.enabled()) {
+      const updated = await this.experience.updateCareerPosting(actor, id, dto);
+      await this.audit.record({
+        actorId: actor.id,
+        actorRole: actor.role,
+        category: 'CONTENT',
+        action: 'ویرایش فرصت شغلی',
+        detail: `${actor.fullName} فرصت شغلی «${updated.title}» را ویرایش کرد.`,
+        entityType: 'JobPosting',
+        entityId: updated.id,
+      });
+      return updated;
+    }
     const existing = await this.jobPostingRepo.findOneBy({ id });
     if (!existing) {
       throw new NotFoundException({
@@ -316,6 +371,9 @@ export class CareersService {
     dto: ApplyJobDto,
     file: Express.Multer.File | undefined,
   ) {
+    if (this.experience.enabled()) {
+      return this.experience.applyForCareerJob(jobId, dto, file);
+    }
     const job = await this.jobPostingRepo.findOneBy({ id: jobId });
     if (!job || !job.active) {
       throw new NotFoundException({
@@ -412,7 +470,13 @@ export class CareersService {
       .leftJoinAndSelect('a.assignee', 'assignee');
   }
 
-  async listApplications(query: ListApplicationsQueryDto) {
+  async listApplications(
+    query: ListApplicationsQueryDto,
+    actor?: AuthenticatedUser,
+  ) {
+    if (this.experience.enabled() && actor) {
+      return this.experience.listCareerApplications(actor, query);
+    }
     const qb = this.applicationQuery().orderBy('a.createdAt', 'DESC');
     if (query.jobTitle) {
       qb.andWhere('a.jobTitleSnapshot = :jobTitle', {
@@ -447,7 +511,14 @@ export class CareersService {
     }));
   }
 
-  async getApplicationDetail(id: string) {
+  async getApplicationDetail(id: string, actor?: AuthenticatedUser) {
+    if (this.experience.enabled() && actor) {
+      const [application, referralTargets] = await Promise.all([
+        this.experience.getCareerApplication(actor, id),
+        this.referralTargets(),
+      ]);
+      return { ...application, referralTargets };
+    }
     const a = await this.applicationQuery()
       .where('a.id = :id', { id })
       .getOne();
@@ -483,7 +554,15 @@ export class CareersService {
     };
   }
 
-  async getResume(id: string) {
+  async getResume(id: string, actor?: AuthenticatedUser) {
+    if (this.experience.enabled() && actor) {
+      const resume = await this.experience.getCareerResume(actor, id);
+      return {
+        fileName: resume.fileName,
+        mimeType: resume.mimeType,
+        stream: Readable.from(Buffer.from(resume.contentBase64, 'base64')),
+      };
+    }
     const a = await this.jobApplicationRepo
       .createQueryBuilder('a')
       .where('a.id = :id', { id })
@@ -541,6 +620,29 @@ export class CareersService {
     id: string,
     dto: ReferApplicationDto,
   ) {
+    if (this.experience.enabled()) {
+      const assignee = await this.userRepo.findOneBy({ id: dto.assigneeId });
+      if (!assignee) {
+        throw new BadRequestException({
+          code: ErrorCode.VALIDATION_FAILED,
+          message: 'گیرندهٔ ارجاع نامعتبر است.',
+        });
+      }
+      const updated = await this.experience.referCareerApplication(actor, id, {
+        id: assignee.id,
+        fullName: assignee.fullName,
+      });
+      await this.audit.record({
+        actorId: actor.id,
+        actorRole: actor.role,
+        category: 'CONTENT',
+        action: 'ارجاع درخواست استخدام',
+        detail: `${actor.fullName} درخواست «${id}» را به ${assignee.fullName} ارجاع داد.`,
+        entityType: 'JobApplication',
+        entityId: id,
+      });
+      return updated;
+    }
     const existing = await this.requireActionable(id);
     const assignee = await this.userRepo.findOneBy({ id: dto.assigneeId });
     if (!assignee) {
@@ -570,6 +672,23 @@ export class CareersService {
   }
 
   async hireApplication(actor: AuthenticatedUser, id: string) {
+    if (this.experience.enabled()) {
+      const updated = await this.experience.decideCareerApplication(
+        actor,
+        id,
+        'hire',
+      );
+      await this.audit.record({
+        actorId: actor.id,
+        actorRole: actor.role,
+        category: 'CONTENT',
+        action: 'استخدام متقاضی',
+        detail: `${actor.fullName} درخواست «${id}» را استخدام کرد.`,
+        entityType: 'JobApplication',
+        entityId: id,
+      });
+      return updated;
+    }
     const existing = await this.requireActionable(id);
     existing.status = JobApplicationStatus.HIRED;
     existing.history = this.appendHistory(
@@ -591,6 +710,23 @@ export class CareersService {
   }
 
   async rejectApplication(actor: AuthenticatedUser, id: string) {
+    if (this.experience.enabled()) {
+      const updated = await this.experience.decideCareerApplication(
+        actor,
+        id,
+        'reject',
+      );
+      await this.audit.record({
+        actorId: actor.id,
+        actorRole: actor.role,
+        category: 'CONTENT',
+        action: 'رد درخواست استخدام',
+        detail: `${actor.fullName} درخواست «${id}» را رد کرد.`,
+        entityType: 'JobApplication',
+        entityId: id,
+      });
+      return updated;
+    }
     const existing = await this.requireActionable(id);
     existing.status = JobApplicationStatus.REJECTED;
     existing.history = this.appendHistory(

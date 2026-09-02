@@ -148,6 +148,9 @@ export class JobApplication {
   @Column({ type: 'text', nullable: true })
   assigneeId!: string | null;
 
+  @Column({ type: 'text', nullable: true })
+  assigneeName!: string | null;
+
   @ManyToOne(() => User, { onDelete: 'SET NULL', onUpdate: 'CASCADE' })
   @JoinColumn({
     name: 'assigneeId',

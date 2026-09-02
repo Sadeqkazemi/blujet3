@@ -10,6 +10,7 @@ import { JobPosting } from '../../database/entities/job-posting.entity';
 import { JobApplication } from '../../database/entities/job-application.entity';
 import { StoredFile } from '../../database/entities/stored-file.entity';
 import { User } from '../../database/entities/user.entity';
+import { ExperienceClientModule } from '../experience-client/experience-client.module';
 
 @Module({
   // CareersController's static /careers/postings, /careers/settings and
@@ -26,6 +27,7 @@ import { User } from '../../database/entities/user.entity';
     ]),
     AuditModule,
     PanelsModule,
+    ExperienceClientModule,
   ],
   controllers: [CareersController, CareersPublicController],
   providers: [CareersService],
