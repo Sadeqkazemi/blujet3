@@ -31,7 +31,7 @@ describe('IdentityJwtVerifierService', () => {
     const cache = {
       enabled: () => true,
       get: () => publicKey,
-      getWithRefresh: async () => publicKey,
+      getWithRefresh: () => Promise.resolve(publicKey),
     };
     const verifier = new IdentityJwtVerifierService(
       new ConfigService({
