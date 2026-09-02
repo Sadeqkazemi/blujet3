@@ -443,7 +443,7 @@ describe('Charter / agency seat commitments (e2e)', () => {
     // otherwise serve a stale list missing this test's fresh instance.
     await app
       .get(RedisService)
-      .del(`search:flights:THR:KER:${date}:BUSINESS`);
+      .del(`search:v1:flights:THR:KER:${date}:BUSINESS`);
     const res = await request(app.getHttpServer())
       .get('/search/flights')
       .query({ origin: 'THR', dest: 'KER', date, cabin: 'BUSINESS' });

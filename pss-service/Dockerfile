@@ -8,6 +8,9 @@ RUN npm run build
 FROM node:22-slim AS production
 WORKDIR /app
 ENV NODE_ENV=production
+ARG GIT_COMMIT_SHA=unknown
+ENV GIT_COMMIT_SHA=${GIT_COMMIT_SHA}
+ENV SERVICE_VERSION=0.1.0
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/dist ./dist

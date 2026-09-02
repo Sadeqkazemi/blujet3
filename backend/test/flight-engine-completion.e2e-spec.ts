@@ -215,7 +215,7 @@ describe('Flight engine completion', () => {
     // stale list from a previous run's (now-deleted) instances.
     await app
       .get(RedisService)
-      .del(`search:flights:RAS:ADU:${day.toISOString().slice(0, 10)}`);
+      .del(`search:v1:flights:RAS:ADU:${day.toISOString().slice(0, 10)}:ALL`);
 
     const res = await request(app.getHttpServer())
       .get(
@@ -271,7 +271,7 @@ describe('Flight engine completion', () => {
     // test always sees the instance it just created.
     await app
       .get(RedisService)
-      .del(`search:flights:KER:AZD:${dep.toISOString().slice(0, 10)}`);
+      .del(`search:v1:flights:KER:AZD:${dep.toISOString().slice(0, 10)}:ALL`);
 
     const search1 = await request(app.getHttpServer())
       .get(

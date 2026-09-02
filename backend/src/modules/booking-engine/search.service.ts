@@ -25,6 +25,7 @@ import {
   resolveCommercialCabinCapacity,
   resolveSiteCabinAvailability,
 } from './commercial-cabin-capacity';
+import { searchCacheKey } from '../../common/search-cache-key';
 
 const ACTIVE_BOOKING_STATUSES = ['DRAFT', 'HELD', 'PAID', 'TICKETED'] as const;
 const SEARCH_CABINS: readonly CabinClass[] = [
@@ -59,7 +60,7 @@ export class SearchService {
 
   async airports() {
     // v4 excludes UAT test fixtures in both the database query and cache.
-    const cacheKey = 'search:airports:v5';
+    const cacheKey = searchCacheKey('airports', 'v5');
     const cached = await this.redis.get<unknown>(cacheKey);
     if (cached) return cached;
 
@@ -76,7 +77,7 @@ export class SearchService {
   }
 
   async cabins(): Promise<CabinClass[]> {
-    const cacheKey = 'search:cabins:v3';
+    const cacheKey = searchCacheKey('cabins', 'v3');
     const cached = await this.redis.get<CabinClass[]>(cacheKey);
     if (cached) return cached;
 
@@ -115,7 +116,13 @@ export class SearchService {
    * stale seatsLeft count, which is fine since the buy flow always
    * re-validates the seat map / re-prices against Postgres directly. */
   async search(origin: string, dest: string, date: string, cabin?: CabinClass) {
-    const cacheKey = `search:flights:${origin.toUpperCase()}:${dest.toUpperCase()}:${date}:${cabin ?? 'ALL'}`;
+    const cacheKey = searchCacheKey(
+      'flights',
+      origin.toUpperCase(),
+      dest.toUpperCase(),
+      date,
+      cabin ?? 'ALL',
+    );
     const cached = await this.redis.get<unknown[]>(cacheKey);
     if (cached) return cached;
 
@@ -131,7 +138,13 @@ export class SearchService {
     cabin?: CabinClass,
   ): string {
     const date = departureAt.toISOString().slice(0, 10);
-    return `search:flights:${originCode.toUpperCase()}:${destCode.toUpperCase()}:${date}:${cabin ?? 'ALL'}`;
+    return searchCacheKey(
+      'flights',
+      originCode.toUpperCase(),
+      destCode.toUpperCase(),
+      date,
+      cabin ?? 'ALL',
+    );
   }
 
   /** Called right after a booking mutates seat availability/pricing for an
@@ -403,7 +416,13 @@ export class SearchService {
     const connections =
       results.length > 0
         ? []
-        : await this.findConnections(origin, dest, dayStart, dayEnd, requestedCabin);
+        : await this.findConnections(
+            origin,
+            dest,
+            dayStart,
+            dayEnd,
+            requestedCabin,
+          );
 
     return [...results, ...connections];
   }

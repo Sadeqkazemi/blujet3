@@ -4,6 +4,7 @@ import {
   IsNotEmpty,
   IsNumberString,
   IsOptional,
+  Matches,
   validateSync,
 } from 'class-validator';
 
@@ -99,6 +100,11 @@ class EnvironmentVariables {
   @IsOptional()
   @IsIn(['true', 'false'])
   HTTPS_ENABLED?: string;
+
+  /** Cache namespace generation; bump after catalogue-affecting releases. */
+  @IsOptional()
+  @Matches(/^[A-Za-z0-9._-]{1,64}$/)
+  SEARCH_CACHE_GEN?: string;
 
   /** Central PSS is introduced behind an explicit cutover switch. */
   @IsOptional()

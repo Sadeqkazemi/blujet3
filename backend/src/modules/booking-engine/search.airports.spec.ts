@@ -32,7 +32,11 @@ describe('SearchService airports', () => {
       'trim(airport.cityFa) !~ :testCityPattern',
       { testCityPattern: '^شهر[[:space:]]*(تست|آزمایش)' },
     );
-    expect(redis.set).toHaveBeenCalledWith('search:airports:v5', airports, 600);
+    expect(redis.set).toHaveBeenCalledWith(
+      'search:v1:airports:v5',
+      airports,
+      600,
+    );
   });
 });
 

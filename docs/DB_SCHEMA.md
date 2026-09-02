@@ -1,5 +1,24 @@
 # DB_SCHEMA.md — blujet data model
 
+## Architecture authority (v1.1)
+
+Target ownership and schema extraction are governed by
+[`docs/architecture/blujet-architecture-v1.1.md`](architecture/blujet-architecture-v1.1.md).
+TypeORM entities and migrations under `backend/src/database/` describe the
+current production schema. Historical Prisma notes below explain the original
+schema only and do not supersede current TypeORM metadata or migrations.
+
+The target starts with schema-per-service in one PostgreSQL 16 cluster.
+`inventory`, `orders`, and `payments` remain in one ACID Core Platform and may
+cross schemas inside one local transaction. Runtime code must not join another
+service's tables; cross-service references use stable UUIDs. Non-transactional
+domains may move to separate instances only in the phases approved by the ADR.
+
+All new migrations use expand/contract. A release may add compatible
+tables/columns/indexes, but may not drop or rename data required by the running
+release. Constraint tightening and removal happen in later releases after
+backfill and compatibility evidence.
+
 Source of truth: `backend/prisma/schema.prisma` (generated from this doc once
 approved). This file groups entities by the phase that introduces them, per
 `CLAUDE.md`'s workflow rule ("one feature = backend endpoint + tests +
@@ -3141,7 +3160,13 @@ No schema migration is required.
   source rows remain authoritative and no mutable reporting/event duplicate is
   introduced.
 
-## Approved central PSS/CRS schema
+## Historical central PSS/CRS schema (shadow-only under architecture v1.1)
+
+These `pss_*` models document useful Offer/Order, accountable-document,
+idempotency, outbox, and reconciliation shapes. Their earlier separate-primary
+writer topology is superseded by architecture v1.1. They may be exercised in
+the disabled shadow service, but authoritative inventory/order/payment tables
+must be implemented within the single Core Platform transaction boundary.
 
 These tables live in the dedicated PSS PostgreSQL database. Reliability tables
 are implemented in Slice 0; reservation, inventory and accountable-document

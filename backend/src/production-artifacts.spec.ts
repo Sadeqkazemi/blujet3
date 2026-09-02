@@ -18,6 +18,40 @@ const deployWorkflow = readFileSync(
   join(backendRoot, '..', '.github', 'workflows', 'deploy.yml'),
   'utf8',
 );
+const ciWorkflow = readFileSync(
+  join(backendRoot, '..', '.github', 'workflows', 'ci.yml'),
+  'utf8',
+);
+const smokeScript = readFileSync(
+  join(backendRoot, '..', 'scripts', 'smoke-service-health.sh'),
+  'utf8',
+);
+const migrationGate = readFileSync(
+  join(backendRoot, '..', 'scripts', 'check-expand-only-migrations.mjs'),
+  'utf8',
+);
+const architecture = readFileSync(
+  join(
+    backendRoot,
+    '..',
+    'docs',
+    'architecture',
+    'blujet-architecture-v1.1.md',
+  ),
+  'utf8',
+);
+const supersededPssPlan = readFileSync(
+  join(backendRoot, '..', 'docs', 'features', 'central-pss-crs.md'),
+  'utf8',
+);
+const frontendDockerfile = readFileSync(
+  join(backendRoot, '..', 'frontend', 'Dockerfile'),
+  'utf8',
+);
+const frontendIndex = readFileSync(
+  join(backendRoot, '..', 'frontend', 'index.html'),
+  'utf8',
+);
 const seedSource = readFileSync(
   join(backendRoot, 'src', 'database', 'seed.ts'),
   'utf8',
@@ -70,6 +104,51 @@ describe('production backend artifacts', () => {
     ].join('\n');
 
     expect(productionCommands).not.toContain('dist/src/');
+  });
+
+  it('keeps the v1.1 transactional core boundary authoritative', () => {
+    expect(architecture).toContain(
+      'Core Platform یک واحد استقرار و یک واحد تراکنش است',
+    );
+    expect(architecture).toContain('inventory` + `orders` + `payments`');
+    expect(supersededPssPlan).toContain('SUPERSEDED IN TOPOLOGY');
+    expect(supersededPssPlan).toContain(
+      '`PSS_INTEGRATION_ENABLED` must remain false',
+    );
+  });
+
+  it('bakes and verifies the exact deploy identity', () => {
+    expect(dockerfile).toContain('ARG GIT_COMMIT_SHA=unknown');
+    expect(compose).toContain('GIT_COMMIT_SHA: ${DEPLOY_SHA:-unknown}');
+    expect(deployWorkflow).toContain(
+      'sh scripts/smoke-service-health.sh docker-compose.prod.yml',
+    );
+    expect(smokeScript).toContain('actualCommit !== expectedCommit');
+    expect(smokeScript).toContain('blujet-backend');
+    expect(smokeScript).toContain('blujet-pss');
+    expect(frontendDockerfile).toContain('ARG VITE_GIT_COMMIT_SHA=unknown');
+    expect(frontendIndex).toContain(
+      'name="blujet-build-service" content="blujet-frontend"',
+    );
+    expect(frontendIndex).toContain(
+      'name="blujet-build-commit" content="%VITE_GIT_COMMIT_SHA%"',
+    );
+  });
+
+  it('keeps Swagger private and search invalidation generation-based', () => {
+    expect(compose).not.toContain('SWAGGER_ENABLED');
+    expect(compose).toContain('SEARCH_CACHE_GEN: ${SEARCH_CACHE_GEN:-v1}');
+  });
+
+  it('rehearses candidate migrations over the baseline and rejects destructive up migrations', () => {
+    expect(ciWorkflow).toContain('Backend migration compatibility');
+    expect(ciWorkflow).toContain('Build baseline schema');
+    expect(ciWorkflow).toContain(
+      'Rehearse candidate migration over baseline schema',
+    );
+    expect(ciWorkflow).toContain('check-expand-only-migrations.mjs');
+    expect(migrationGate).toContain('destructive operation in up()');
+    expect(migrationGate).toContain("status !== 'A'");
   });
 
   it('fails closed instead of seeding or simulating payment in production', () => {
