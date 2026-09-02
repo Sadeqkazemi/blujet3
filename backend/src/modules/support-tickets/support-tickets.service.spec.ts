@@ -40,6 +40,7 @@ function buildService(ticket: Record<string, unknown> | null) {
     storedFileRepo as never,
     audit as never,
     { list: jest.fn() } as never,
+    { enabled: jest.fn().mockReturnValue(false) } as never,
   );
   return { service, ticketRepo, storedFileRepo, qb };
 }
@@ -306,9 +307,14 @@ describe('SupportTicketsService conversations', () => {
     const result = await service.replyAsStaff(assignedManager, ticket.id, {
       body: 'پاسخ مجدد مدیر ارجاع‌گیرنده',
     });
+    const conversation = (
+      result as {
+        conversation: Array<{ senderType: string; body: string }>;
+      }
+    ).conversation;
 
     expect(
-      result.conversation.map((message) => [message.senderType, message.body]),
+      conversation.map((message) => [message.senderType, message.body]),
     ).toEqual([
       ['REQUESTER', 'متن اولیه'],
       ['REQUESTER', 'پیگیری مجدد مشتری'],

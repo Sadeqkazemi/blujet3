@@ -20,6 +20,7 @@ import type {
   UpdateBlogPostDto,
 } from './dto/blog.dtos';
 import type { AuthenticatedUser } from '../../common/types/authenticated-user';
+import { ExperienceInternalClient } from '../experience-client/experience-internal.client';
 
 const CATEGORY_LABELS_FA: Record<string, string> = {
   NEWS: 'اخبار پرواز',
@@ -62,6 +63,7 @@ export class BlogService {
     @InjectRepository(StoredFile)
     private readonly storedFileRepo: Repository<StoredFile>,
     private readonly audit: AuditService,
+    private readonly experience: ExperienceInternalClient,
   ) {}
 
   private async uniqueSlug(preferred: string): Promise<string> {
@@ -154,11 +156,14 @@ export class BlogService {
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
       coverFileId: post.coverFileId,
-      authorName: post.author.fullName,
+      authorName: post.authorName ?? post.author?.fullName ?? 'blujet',
     };
   }
 
-  async getAdminStats() {
+  async getAdminStats(actor?: AuthenticatedUser) {
+    if (this.experience.enabled() && actor) {
+      return this.experience.getBlogStats(actor);
+    }
     const [published, draft, viewsRow] = await Promise.all([
       this.blogPostRepo.count({
         where: { deletedAt: IsNull(), status: BlogPostStatus.PUBLISHED },
@@ -180,7 +185,13 @@ export class BlogService {
     };
   }
 
-  async listAdminPosts(query: ListBlogPostsQueryDto) {
+  async listAdminPosts(
+    query: ListBlogPostsQueryDto,
+    actor?: AuthenticatedUser,
+  ) {
+    if (this.experience.enabled() && actor) {
+      return this.experience.listAdminBlogPosts(actor, query);
+    }
     const posts = await this.blogPostRepo.find({
       where: {
         deletedAt: IsNull(),
@@ -194,7 +205,10 @@ export class BlogService {
     return posts.map((p) => this.toAdminRow(p));
   }
 
-  async getAdminPost(id: string) {
+  async getAdminPost(id: string, actor?: AuthenticatedUser) {
+    if (this.experience.enabled() && actor) {
+      return this.experience.getAdminBlogPost(actor, id);
+    }
     const post = await this.blogPostRepo.findOne({
       where: { id, deletedAt: IsNull() },
       relations: { author: true },
@@ -209,6 +223,19 @@ export class BlogService {
   }
 
   async createPost(actor: AuthenticatedUser, dto: CreateBlogPostDto) {
+    if (this.experience.enabled()) {
+      const saved = await this.experience.createBlogPost(actor, dto);
+      await this.audit.record({
+        actorId: actor.id,
+        actorRole: actor.role,
+        category: 'CONTENT',
+        action: 'ایجاد مقالهٔ بلاگ',
+        detail: `${actor.fullName} مقالهٔ «${saved.title}» را ایجاد کرد.`,
+        entityType: 'BlogPost',
+        entityId: saved.id,
+      });
+      return saved;
+    }
     if (dto.coverFileId) {
       await this.assertCoverFile(actor.id, dto.coverFileId);
     }
@@ -225,6 +252,7 @@ export class BlogService {
       status,
       coverFileId: dto.coverFileId ?? null,
       authorId: actor.id,
+      authorName: actor.fullName,
       updatedAt: new Date(),
       ...statusFields,
     });
@@ -252,6 +280,19 @@ export class BlogService {
     id: string,
     dto: UpdateBlogPostDto,
   ) {
+    if (this.experience.enabled()) {
+      const updated = await this.experience.updateBlogPost(actor, id, dto);
+      await this.audit.record({
+        actorId: actor.id,
+        actorRole: actor.role,
+        category: 'CONTENT',
+        action: 'ویرایش مقالهٔ بلاگ',
+        detail: `${actor.fullName} مقالهٔ «${updated.title}» را ویرایش کرد.`,
+        entityType: 'BlogPost',
+        entityId: updated.id,
+      });
+      return updated;
+    }
     const existing = await this.blogPostRepo.findOne({
       where: { id, deletedAt: IsNull() },
     });
@@ -313,6 +354,19 @@ export class BlogService {
   }
 
   async deletePost(actor: AuthenticatedUser, id: string) {
+    if (this.experience.enabled()) {
+      const deleted = await this.experience.deleteBlogPost(actor, id);
+      await this.audit.record({
+        actorId: actor.id,
+        actorRole: actor.role,
+        category: 'CONTENT',
+        action: 'حذف مقالهٔ بلاگ',
+        detail: `${actor.fullName} مقالهٔ «${id}» را حذف کرد.`,
+        entityType: 'BlogPost',
+        entityId: id,
+      });
+      return deleted;
+    }
     const existing = await this.blogPostRepo.findOne({
       where: { id, deletedAt: IsNull() },
     });
@@ -352,6 +406,9 @@ export class BlogService {
   }
 
   async listPublicPosts(query: ListPublicBlogPostsQueryDto) {
+    if (this.experience.enabled()) {
+      return this.experience.listPublicBlogPosts(query);
+    }
     const posts = await this.blogPostRepo.find({
       where: this.publicWhere(query),
       relations: { author: true },
@@ -362,7 +419,7 @@ export class BlogService {
       title: p.title,
       category: p.category,
       categoryLabelFa: CATEGORY_LABELS_FA[p.category] ?? p.category,
-      authorName: p.author.fullName,
+      authorName: p.authorName ?? p.author?.fullName ?? 'blujet',
       publishedAt: p.publishedAt ?? p.scheduledAt,
       viewCount: p.viewCount,
       coverFileId: p.coverFileId,
@@ -371,6 +428,9 @@ export class BlogService {
   }
 
   async getPublicPost(slug: string) {
+    if (this.experience.enabled()) {
+      return this.experience.getPublicBlogPost(slug);
+    }
     const post = await this.blogPostRepo.findOne({
       where: { slug, deletedAt: IsNull() },
       relations: { author: true },
@@ -400,7 +460,7 @@ export class BlogService {
       category: updated!.category,
       categoryLabelFa:
         CATEGORY_LABELS_FA[updated!.category] ?? updated!.category,
-      authorName: updated!.author.fullName,
+      authorName: updated!.authorName ?? updated!.author?.fullName ?? 'blujet',
       publishedAt: updated!.publishedAt ?? updated!.scheduledAt,
       viewCount: updated!.viewCount,
       coverFileId: updated!.coverFileId,

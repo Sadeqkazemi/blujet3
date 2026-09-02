@@ -10,6 +10,7 @@ import { AgencyMessage } from '../../database/entities/agency-message.entity';
 import { FilesController } from './files.controller';
 import { FilesService } from './files.service';
 import { AuditModule } from '../audit/audit.module';
+import { ExperienceClientModule } from '../experience-client/experience-client.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { AuditModule } from '../audit/audit.module';
       AgencyMessage,
     ]),
     AuditModule,
+    ExperienceClientModule,
   ],
   controllers: [FilesController],
   providers: [FilesService],

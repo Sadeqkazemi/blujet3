@@ -33,6 +33,7 @@ import type {
   UpdateRouteDto,
 } from './dto/site-content.dtos';
 import type { AuthenticatedUser } from '../../common/types/authenticated-user';
+import { ExperienceInternalClient } from '../experience-client/experience-internal.client';
 
 const BLOCK_DEFAULTS: Record<
   SiteContentBlockKey,
@@ -142,6 +143,7 @@ export class SiteContentService {
     @InjectRepository(FlightInstance)
     private readonly instanceRepo: Repository<FlightInstance>,
     private readonly audit: AuditService,
+    private readonly experience: ExperienceInternalClient,
   ) {}
 
   /**
@@ -241,7 +243,10 @@ export class SiteContentService {
     };
   }
 
-  async listLibrary() {
+  async listLibrary(actor?: AuthenticatedUser) {
+    if (this.experience.enabled() && actor) {
+      return this.experience.listSiteLibrary(actor);
+    }
     const rows = await this.siteMediaAssetRepo.find({
       where: { deletedAt: IsNull() },
       relations: { storedFile: true },
@@ -251,6 +256,9 @@ export class SiteContentService {
   }
 
   async addLibraryAsset(actor: AuthenticatedUser, dto: AddLibraryAssetDto) {
+    if (this.experience.enabled()) {
+      return this.experience.addSiteLibraryAsset(actor, dto);
+    }
     await this.assertImageFile(actor.id, dto.storedFileId);
     const file = await findOneOrThrow(this.storedFileRepo, {
       where: { id: dto.storedFileId },
@@ -290,6 +298,19 @@ export class SiteContentService {
   }
 
   async deleteLibraryAsset(actor: AuthenticatedUser, id: string) {
+    if (this.experience.enabled()) {
+      const deleted = await this.experience.deleteSiteLibraryAsset(actor, id);
+      await this.audit.record({
+        actorId: actor.id,
+        actorRole: actor.role,
+        category: 'CONTENT',
+        action: 'حذف تصویر از کتابخانه',
+        detail: `${actor.fullName} تصویر «${id}» را از کتابخانه حذف کرد.`,
+        entityType: 'SiteMediaAsset',
+        entityId: id,
+      });
+      return deleted;
+    }
     const asset = await this.siteMediaAssetRepo.findOneBy({
       id,
       deletedAt: IsNull(),
@@ -347,7 +368,10 @@ export class SiteContentService {
     };
   }
 
-  async listBlocks() {
+  async listBlocks(actor?: AuthenticatedUser) {
+    if (this.experience.enabled() && actor) {
+      return this.experience.listSiteBlocks(actor);
+    }
     const keys: SiteContentBlockKey[] = [
       'HERO_BANNER',
       'ANNOUNCEMENT_BAR',
@@ -362,6 +386,19 @@ export class SiteContentService {
     key: SiteContentBlockKey,
     dto: UpdateContentBlockDto,
   ) {
+    if (this.experience.enabled()) {
+      const updated = await this.experience.updateSiteBlock(actor, key, dto);
+      await this.audit.record({
+        actorId: actor.id,
+        actorRole: actor.role,
+        category: 'CONTENT',
+        action: 'ویرایش بلوک محتوای سایت',
+        detail: `${actor.fullName} بلوک «${key}» را ویرایش کرد.`,
+        entityType: 'SiteContentBlock',
+        entityId: key,
+      });
+      return updated;
+    }
     await this.ensureBlock(key);
     if (dto.imageFileId) {
       await this.assertImageFile(actor.id, dto.imageFileId);
@@ -396,7 +433,10 @@ export class SiteContentService {
     return this.toBlockRow(updated);
   }
 
-  async listDestinations() {
+  async listDestinations(actor?: AuthenticatedUser) {
+    if (this.experience.enabled() && actor) {
+      return this.experience.listSiteDestinations(actor);
+    }
     const rows = await this.siteDestinationHighlightRepo.find({
       where: { deletedAt: IsNull() },
       order: { sortOrder: 'ASC', createdAt: 'ASC' },
@@ -412,6 +452,9 @@ export class SiteContentService {
   }
 
   async createDestination(actor: AuthenticatedUser, dto: CreateDestinationDto) {
+    if (this.experience.enabled()) {
+      return this.experience.createSiteDestination(actor, dto);
+    }
     if (dto.imageFileId) {
       await this.assertImageFile(actor.id, dto.imageFileId);
     }
@@ -438,6 +481,9 @@ export class SiteContentService {
     id: string,
     dto: UpdateDestinationDto,
   ) {
+    if (this.experience.enabled()) {
+      return this.experience.updateSiteDestination(actor, id, dto);
+    }
     const existing = await this.siteDestinationHighlightRepo.findOneBy({
       id,
       deletedAt: IsNull(),
@@ -480,6 +526,9 @@ export class SiteContentService {
   }
 
   async deleteDestination(actor: AuthenticatedUser, id: string) {
+    if (this.experience.enabled()) {
+      return this.experience.deleteSiteDestination(actor, id);
+    }
     const existing = await this.siteDestinationHighlightRepo.findOneBy({
       id,
       deletedAt: IsNull(),
@@ -497,7 +546,10 @@ export class SiteContentService {
     return { id };
   }
 
-  async listRoutes() {
+  async listRoutes(actor?: AuthenticatedUser) {
+    if (this.experience.enabled() && actor) {
+      return this.experience.listSiteRoutes(actor);
+    }
     const rows = await this.siteRouteHighlightRepo.find({
       where: { deletedAt: IsNull() },
       order: { sortOrder: 'ASC', createdAt: 'ASC' },
@@ -512,6 +564,9 @@ export class SiteContentService {
   }
 
   async createRoute(actor: AuthenticatedUser, dto: CreateRouteDto) {
+    if (this.experience.enabled()) {
+      return this.experience.createSiteRoute(actor, dto);
+    }
     const row = await this.siteRouteHighlightRepo.save(
       this.siteRouteHighlightRepo.create({
         fromAirportCode: dto.fromAirportCode.toUpperCase(),
@@ -531,6 +586,9 @@ export class SiteContentService {
   }
 
   async updateRoute(actor: AuthenticatedUser, id: string, dto: UpdateRouteDto) {
+    if (this.experience.enabled()) {
+      return this.experience.updateSiteRoute(actor, id, dto);
+    }
     const existing = await this.siteRouteHighlightRepo.findOneBy({
       id,
       deletedAt: IsNull(),
@@ -570,6 +628,9 @@ export class SiteContentService {
   }
 
   async deleteRoute(actor: AuthenticatedUser, id: string) {
+    if (this.experience.enabled()) {
+      return this.experience.deleteSiteRoute(actor, id);
+    }
     const existing = await this.siteRouteHighlightRepo.findOneBy({
       id,
       deletedAt: IsNull(),
@@ -588,6 +649,33 @@ export class SiteContentService {
   }
 
   async getPublicHome(locale: 'fa' | 'en' | 'ar' = 'fa') {
+    if (this.experience.enabled()) {
+      const [content, airports, destinationStats] = await Promise.all([
+        this.experience.getPublicSiteContent(locale),
+        this.airportRepo.find(),
+        this.getDestinationStats(),
+      ]);
+      const airportMap = new Map(airports.map((a) => [a.code, a.cityFa]));
+      return {
+        blocks: content.blocks,
+        destinations: content.destinations.map((destination) => ({
+          airportCode: destination.airportCode,
+          cityFa:
+            airportMap.get(destination.airportCode) ?? destination.airportCode,
+          priceIrr: destination.priceIrr,
+          imageUrl: destination.imageUrl ?? null,
+        })),
+        routes: content.routes.map((route) => ({
+          fromAirportCode: route.fromAirportCode,
+          toAirportCode: route.toAirportCode,
+          fromCityFa:
+            airportMap.get(route.fromAirportCode) ?? route.fromAirportCode,
+          toCityFa: airportMap.get(route.toAirportCode) ?? route.toAirportCode,
+          priceIrr: route.priceIrr,
+        })),
+        destinationStats,
+      };
+    }
     const [blocks, destinations, routes, airports, destinationStats] =
       await Promise.all([
         this.listBlocks(),

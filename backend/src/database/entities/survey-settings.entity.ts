@@ -32,6 +32,9 @@ export class SurveySettings {
   @Column({ type: 'text', nullable: true })
   updatedById!: string | null;
 
+  @Column({ type: 'text', nullable: true })
+  updatedByName!: string | null;
+
   @ManyToOne(() => User, { onDelete: 'SET NULL', onUpdate: 'CASCADE' })
   @JoinColumn({
     name: 'updatedById',

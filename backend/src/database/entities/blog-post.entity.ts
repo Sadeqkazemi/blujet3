@@ -61,6 +61,11 @@ export class BlogPost {
   @Column({ type: 'text' })
   authorId!: string;
 
+  /** Immutable display snapshot used by experience-service without joining
+   * the Identity-owned users table. Nullable during expand/backfill. */
+  @Column({ type: 'text', nullable: true })
+  authorName!: string | null;
+
   @ManyToOne(() => User, { onDelete: 'RESTRICT', onUpdate: 'CASCADE' })
   @JoinColumn({
     name: 'authorId',

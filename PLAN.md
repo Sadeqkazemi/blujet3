@@ -3903,6 +3903,24 @@ contracts and retires the production mock adapters.
 - [x] Owner explicitly approved merging phases 0 and 1 on 2026-09-02;
   deployment remains deferred to a later manual dispatch.
 
+## Microservices architecture v1.1 — phase 2 experience (2026-09-02)
+
+- [x] Audit the seven target modules and identify shared-file, Core survey and
+  identity/staff coupling before extraction.
+- [x] Record the strangler slices, ownership rules, availability boundary and
+  compatibility contract before implementation.
+- [x] Extract independent content and establish `experience-service` security,
+  health, persistence, CI and real-Postgres E2E.
+- [x] Extract careers, support tickets and the generic file store while keeping
+  legacy Identity/Agency/Ops read authorization in the backend facade.
+- [x] Replace Survey joins with typed Core snapshots and route its SMS through
+  the retryable Notify outbox.
+- [x] Enable backend compatibility facades while keeping purchase paths fully
+  independent of Experience availability.
+- [x] Pass local unit/E2E/typecheck/build/migration/YAML validation.
+- [ ] Obtain passing CI, present the complete diff, and obtain explicit owner
+  approval before merge. Deployment remains manual and separate.
+
 ## Central PSS/CRS extraction — Slice 0 (2026-09-01)
 
 - [x] Record the owner-approved API, schema, migration and airline-document decisions.

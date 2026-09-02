@@ -41,6 +41,21 @@ export class SurveyInvite {
   @Column({ type: 'text' })
   flightInstanceId!: string;
 
+  @Column({ type: 'text', nullable: true })
+  contactPhoneSnapshot!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  flightNoSnapshot!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  originCityFaSnapshot!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  destCityFaSnapshot!: string | null;
+
+  @Column({ type: 'timestamp', precision: 3, nullable: true })
+  departureAtSnapshot!: Date | null;
+
   @ManyToOne(() => FlightInstance, {
     onDelete: 'RESTRICT',
     onUpdate: 'CASCADE',

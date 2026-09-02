@@ -50,8 +50,11 @@ export class CareersController {
 
   @Get('postings')
   @ApiOperation({ summary: 'فهرست همهٔ فرصت‌های شغلی (فعال و غیرفعال)' })
-  async listAllPostings() {
-    return { success: true, data: await this.careers.listAllPostings() };
+  async listAllPostings(@CurrentUser() actor: AuthenticatedUser) {
+    return {
+      success: true,
+      data: await this.careers.listAllPostings(actor),
+    };
   }
 
   @Post('postings')
@@ -81,23 +84,39 @@ export class CareersController {
 
   @Get('applications')
   @ApiOperation({ summary: 'فهرست درخواست‌های استخدام' })
-  async listApplications(@Query() query: ListApplicationsQueryDto) {
-    return { success: true, data: await this.careers.listApplications(query) };
+  async listApplications(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Query() query: ListApplicationsQueryDto,
+  ) {
+    return {
+      success: true,
+      data: await this.careers.listApplications(query, actor),
+    };
   }
 
   @Get('applications/:id')
   @ApiOperation({ summary: 'جزئیات یک درخواست استخدام' })
-  async getApplicationDetail(@Param('id') id: string) {
+  async getApplicationDetail(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
     return {
       success: true,
-      data: await this.careers.getApplicationDetail(id),
+      data: await this.careers.getApplicationDetail(id, actor),
     };
   }
 
   @Get('applications/:id/resume')
   @ApiOperation({ summary: 'دریافت فایل رزومهٔ درخواست' })
-  async getResume(@Param('id') id: string, @Res() res: Response) {
-    const { fileName, mimeType, stream } = await this.careers.getResume(id);
+  async getResume(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param('id') id: string,
+    @Res() res: Response,
+  ) {
+    const { fileName, mimeType, stream } = await this.careers.getResume(
+      id,
+      actor,
+    );
     res.setHeader('Content-Type', mimeType);
     res.setHeader(
       'Content-Disposition',

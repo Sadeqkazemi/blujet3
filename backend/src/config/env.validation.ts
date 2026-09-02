@@ -139,6 +139,29 @@ class EnvironmentVariables {
   @IsNumberString()
   NOTIFY_OUTBOX_POLL_MS?: string;
 
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  EXPERIENCE_INTEGRATION_ENABLED?: string;
+
+  @ValidateIf(
+    (config: EnvironmentVariables) =>
+      config.EXPERIENCE_INTEGRATION_ENABLED === 'true',
+  )
+  @IsNotEmpty()
+  EXPERIENCE_SERVICE_URL?: string;
+
+  @ValidateIf(
+    (config: EnvironmentVariables) =>
+      config.EXPERIENCE_INTEGRATION_ENABLED === 'true',
+  )
+  @IsNotEmpty()
+  @MinLength(32)
+  EXPERIENCE_INTERNAL_TOKEN?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  EXPERIENCE_REQUEST_TIMEOUT_MS?: string;
+
   /** Central PSS is introduced behind an explicit cutover switch. */
   @IsOptional()
   @IsIn(['true', 'false'])

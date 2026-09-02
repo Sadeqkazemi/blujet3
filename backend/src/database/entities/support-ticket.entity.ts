@@ -85,6 +85,9 @@ export class SupportTicket {
   @Column({ type: 'text', nullable: true })
   forwardedToId!: string | null;
 
+  @Column({ type: 'text', nullable: true })
+  forwardedToName!: string | null;
+
   @ManyToOne(() => User, { onDelete: 'SET NULL', onUpdate: 'CASCADE' })
   @JoinColumn({
     name: 'forwardedToId',

@@ -16,6 +16,9 @@ const compose = readFileSync(
 );
 const notifyComposeSection =
   compose.split('\n  notify-service:')[1]?.split('\n  ml-service:')[0] ?? '';
+const experienceComposeSection =
+  compose.split('\n  experience-service:')[1]?.split('\n  ml-service:')[0] ??
+  '';
 const deployWorkflow = readFileSync(
   join(backendRoot, '..', '.github', 'workflows', 'deploy.yml'),
   'utf8',
@@ -30,6 +33,10 @@ const smokeScript = readFileSync(
 );
 const notifyDockerfile = readFileSync(
   join(backendRoot, '..', 'notify-service', 'Dockerfile'),
+  'utf8',
+);
+const experienceDockerfile = readFileSync(
+  join(backendRoot, '..', 'experience-service', 'Dockerfile'),
   'utf8',
 );
 const notifyFeature = readFileSync(
@@ -144,6 +151,7 @@ describe('production backend artifacts', () => {
     expect(smokeScript).toContain('blujet-pss');
     expect(smokeScript).toContain('blujet-notify');
     expect(notifyDockerfile).toContain('ARG GIT_COMMIT_SHA=unknown');
+    expect(experienceDockerfile).toContain('ARG GIT_COMMIT_SHA=unknown');
     expect(frontendDockerfile).toContain('ARG VITE_GIT_COMMIT_SHA=unknown');
     expect(frontendIndex).toContain(
       'name="blujet-build-service" content="blujet-frontend"',
@@ -169,6 +177,26 @@ describe('production backend artifacts', () => {
     );
     expect(notifyFeature).toContain('notify_outbox_events');
     expect(notifyFeature).toContain('NOTIFY_INTEGRATION_ENABLED=false');
+  });
+
+  it('keeps Experience internal, authenticated and rollback-safe', () => {
+    expect(compose).toContain('experience-service:');
+    expect(compose).toContain(
+      'EXPERIENCE_INTEGRATION_ENABLED: ${EXPERIENCE_INTEGRATION_ENABLED:-true}',
+    );
+    expect(compose).toContain(
+      'EXPERIENCE_INTERNAL_TOKEN: ${EXPERIENCE_INTERNAL_TOKEN}',
+    );
+    expect(compose).toContain(
+      'EXPERIENCE_SERVICE_URL: http://experience-service:3300',
+    );
+    expect(experienceComposeSection).toContain("expose:\n      - '3300'");
+    expect(experienceComposeSection).not.toContain('\n    ports:');
+    expect(ciWorkflow).toContain('Experience service');
+    expect(deployWorkflow).toContain(
+      'ensure_server_secret EXPERIENCE_INTERNAL_TOKEN',
+    );
+    expect(smokeScript).toContain('blujet-experience');
   });
 
   it('keeps Swagger private and search invalidation generation-based', () => {

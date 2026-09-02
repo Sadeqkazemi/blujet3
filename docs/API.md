@@ -16,6 +16,29 @@ across primary databases. Extraction proceeds only in the documented order:
 phase 0 deployment safety, then `notify`, `experience`, `identity`, domain
 schemas, `loyalty`/`agency`, `intelligence`, and `warehouse`.
 
+### Microservices phase 2 — Experience compatibility contract
+
+Phase 2 moves Blog, Site Content, Careers, Contact, Support Tickets, Survey and
+the generic file writer behind an independently deployable
+`experience-service`. Existing public `/api/v1/**` paths, authentication,
+validation and `{ success, data }` envelopes remain stable through backend
+compatibility facades. Private service calls use `/internal/v1/**`, require
+`X-Internal-Token`, propagate `X-Request-Id`, and carry validated actor context
+where authorization is required.
+
+When `EXPERIENCE_INTEGRATION_ENABLED=true`, Experience is the sole runtime
+writer for the extracted records. An unavailable service returns the stable
+`503 EXPERIENCE_UNAVAILABLE` error only on Experience-owned endpoints; booking,
+inventory, payment, ticketing and refund request paths do not call it.
+
+Legacy Identity/Agency/Ops file reads remain authorized and streamed by the
+backend facade from the shared upload volume; writes use Experience so the
+shared `stored_files` table never has two active writers.
+
+Survey enrichment from flights/bookings and asynchronous notification delivery
+cross service boundaries through typed internal contracts. Experience does not
+join or write Core/Identity/Agency/Ops/Notify tables at runtime.
+
 ### Microservices phase 1 — notify compatibility contract
 
 The browser-facing notification contract remains unchanged:

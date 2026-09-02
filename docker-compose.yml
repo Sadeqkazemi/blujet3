@@ -60,6 +60,30 @@ services:
       retries: 10
       start_period: 20s
 
+  experience-service:
+    build: ./experience-service
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3300
+      EXPERIENCE_DATABASE_URL: postgresql://blujet:blujet@db:5432/blujet?schema=public
+      EXPERIENCE_INTERNAL_TOKEN: local-experience-internal-token-at-least-32-characters
+      PII_ENCRYPTION_KEY: 3a6dfd91b775e9cd09be8a576889adfe518a31ad1064af3d63c21ce9aadbdf10
+      EXPERIENCE_UPLOAD_DIR: /app/uploads
+    volumes:
+      - backend_uploads:/app/uploads
+    expose:
+      - '3300'
+    healthcheck:
+      test: ['CMD', 'node', '-e', "require('http').get('http://localhost:3300/health', r => process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
 volumes:
   db_data:
   pss_db_data:
+  backend_uploads:

@@ -19,6 +19,28 @@ tables/columns/indexes, but may not drop or rename data required by the running
 release. Constraint tightening and removal happen in later releases after
 backfill and compatibility evidence.
 
+## Microservices phase 2 — Experience ownership
+
+Runtime ownership moves incrementally to `experience-service` for blog posts,
+site content/highlights/media, careers settings/postings/applications, contact
+messages, support tickets, survey settings/questions/invites/responses, and
+Experience-owned stored files. During phase 2 these tables remain in the
+existing PostgreSQL `public` schema so rollback is code-only. Moving them to
+schema `experience` is deferred to phase 4 and must follow expand/contract.
+
+Relations that currently point to `User`, `Booking`, `Airport`, or operational
+tables are transitional. New Experience runtime code stores stable UUIDs and
+approved display snapshots and obtains live cross-boundary data through typed
+internal APIs; it does not use ORM relations or joins into another service's
+tables. Existing foreign keys are not dropped in this release.
+
+`stored_files` is a shared legacy table. With Experience integration enabled,
+Experience is its sole runtime writer while the backend continues to authorize
+and stream legacy Identity, Agency and Ops attachments from the shared volume.
+This avoids two writers without forcing cross-domain read authorization into
+Experience during the strangler phase. No ownership/category rewrite or
+destructive migration is introduced in this release.
+
 ## Microservices phase 1 — notify ownership and core outbox
 
 The `notify-service` becomes the sole production runtime writer for existing

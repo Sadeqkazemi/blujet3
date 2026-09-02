@@ -34,20 +34,29 @@ export class BlogAdminController {
 
   @Get('stats')
   @ApiOperation({ summary: 'آمار KPI بلاگ (منتشرشده، پیش‌نویس، بازدید)' })
-  async stats() {
-    return { success: true, data: await this.blog.getAdminStats() };
+  async stats(@CurrentUser() actor: AuthenticatedUser) {
+    return { success: true, data: await this.blog.getAdminStats(actor) };
   }
 
   @Get('posts')
   @ApiOperation({ summary: 'فهرست همهٔ مقالات (با فیلتر دسته‌بندی)' })
-  async list(@Query() query: ListBlogPostsQueryDto) {
-    return { success: true, data: await this.blog.listAdminPosts(query) };
+  async list(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Query() query: ListBlogPostsQueryDto,
+  ) {
+    return {
+      success: true,
+      data: await this.blog.listAdminPosts(query, actor),
+    };
   }
 
   @Get('posts/:id')
   @ApiOperation({ summary: 'جزئیات یک مقاله برای ویرایش' })
-  async getOne(@Param('id') id: string) {
-    return { success: true, data: await this.blog.getAdminPost(id) };
+  async getOne(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    return { success: true, data: await this.blog.getAdminPost(id, actor) };
   }
 
   @Post('posts')

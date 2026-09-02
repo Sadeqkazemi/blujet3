@@ -8,12 +8,14 @@ import { StaffDirectoryModule } from '../staff-directory/staff-directory.module'
 import { SupportTicket } from '../../database/entities/support-ticket.entity';
 import { User } from '../../database/entities/user.entity';
 import { StoredFile } from '../../database/entities/stored-file.entity';
+import { ExperienceClientModule } from '../experience-client/experience-client.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([SupportTicket, User, StoredFile]),
     AuditModule,
     StaffDirectoryModule,
+    ExperienceClientModule,
   ],
   controllers: [SupportTicketsController, MySupportTicketsController],
   providers: [SupportTicketsService],
