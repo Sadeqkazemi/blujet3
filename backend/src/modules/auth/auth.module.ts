@@ -17,6 +17,7 @@ import { MockTwoFactorProvider } from './providers/mock-two-factor.provider';
 import { CustomerReferralsModule } from '../customer-referrals/customer-referrals.module';
 import { AuditModule } from '../audit/audit.module';
 import { SmsModule } from '../sms/sms.module';
+import { IdentityTokenClient } from './identity-token.client';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { SmsModule } from '../sms/sms.module';
     StepUpService,
     JwtStrategy,
     { provide: TWO_FACTOR_PROVIDER, useClass: MockTwoFactorProvider },
+    IdentityTokenClient,
   ],
   exports: [AuthService, StepUpService, TWO_FACTOR_PROVIDER],
 })

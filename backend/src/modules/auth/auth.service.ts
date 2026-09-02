@@ -29,6 +29,7 @@ import {
   getTemporaryPanelAccessState,
 } from '../../database/temporary-panel-accounts';
 import { isSandboxAuthEnabled } from '../../common/sandbox-auth';
+import { IdentityTokenClient } from './identity-token.client';
 
 export interface AuthUserView {
   id: string;
@@ -134,6 +135,7 @@ export class AuthService {
     @Inject(TWO_FACTOR_PROVIDER)
     private readonly twoFactorProvider: TwoFactorProvider,
     private readonly customerReferrals: CustomerReferralsService,
+    private readonly identityTokens: IdentityTokenClient,
   ) {}
 
   /** Phase 12 «تغییر رمز عبور من» — the current password must verify before
@@ -421,12 +423,7 @@ export class AuthService {
         role: user.role,
         fullName: user.fullName,
       };
-      const accessToken = this.signAccessToken(jwtUser, deadline);
-      const refreshToken = await this.issueRefreshToken(
-        user.id,
-        context,
-        deadline,
-      );
+      const { accessToken, refreshToken } = await this.issueTokens(jwtUser, context, deadline);
       await this.audit.record({
         actorId: user.id,
         actorRole: user.role,
@@ -453,8 +450,7 @@ export class AuthService {
       role: user.role,
       fullName: user.fullName,
     };
-    const accessToken = this.signAccessToken(jwtUser);
-    const refreshToken = await this.issueRefreshToken(user.id, context);
+    const { accessToken, refreshToken } = await this.issueTokens(jwtUser, context);
 
     return { accessToken, refreshToken, user: toAuthUserView(user) };
   }
@@ -576,8 +572,7 @@ export class AuthService {
       role: user.role,
       fullName: user.fullName,
     };
-    const accessToken = this.signAccessToken(jwtUser);
-    const refreshToken = await this.issueRefreshToken(user.id, context);
+    const { accessToken, refreshToken } = await this.issueTokens(jwtUser, context);
 
     return { accessToken, refreshToken, user: toAuthUserView(user) };
   }
@@ -625,8 +620,7 @@ export class AuthService {
         { id: user.id },
         { lastLoginAt: new Date(), updatedAt: new Date() },
       );
-      const accessToken = this.signAccessToken(jwtUser);
-      const refreshToken = await this.issueRefreshToken(user.id, context);
+      const { accessToken, refreshToken } = await this.issueTokens(jwtUser, context);
       await this.audit.record({
         actorId: user.id,
         actorRole: user.role,
@@ -671,12 +665,7 @@ export class AuthService {
         { id: user.id },
         { lastLoginAt: new Date(), updatedAt: new Date() },
       );
-      const accessToken = this.signAccessToken(jwtUser, deadline);
-      const refreshToken = await this.issueRefreshToken(
-        user.id,
-        context,
-        deadline,
-      );
+      const { accessToken, refreshToken } = await this.issueTokens(jwtUser, context, deadline);
       await this.audit.record({
         actorId: user.id,
         actorRole: user.role,
@@ -874,8 +863,7 @@ export class AuthService {
       role: user.role,
       fullName: user.fullName,
     };
-    const accessToken = this.signAccessToken(jwtUser);
-    const refreshToken = await this.issueRefreshToken(user.id, context);
+    const { accessToken, refreshToken } = await this.issueTokens(jwtUser, context);
 
     return { accessToken, refreshToken, user: toAuthUserView(user) };
   }
@@ -955,12 +943,7 @@ export class AuthService {
         role: user.role,
         fullName: user.fullName,
       };
-      const accessToken = this.signAccessToken(jwtUser, deadline);
-      const refreshToken = await this.issueRefreshToken(
-        user.id,
-        context,
-        deadline,
-      );
+    const { accessToken, refreshToken } = await this.issueTokens(jwtUser, context, deadline);
       await this.audit.record({
         actorId: user.id,
         actorRole: user.role,
@@ -1005,8 +988,7 @@ export class AuthService {
       role: user.role,
       fullName: user.fullName,
     };
-    const accessToken = this.signAccessToken(jwtUser);
-    const refreshToken = await this.issueRefreshToken(user.id, context);
+    const { accessToken, refreshToken } = await this.issueTokens(jwtUser, context);
 
     return { accessToken, refreshToken, user: toAuthUserView(user) };
   }
@@ -1104,12 +1086,13 @@ export class AuthService {
       { id: user.id },
       { lastLoginAt: new Date(), updatedAt: new Date() },
     );
-    const jwtUser: AuthenticatedUser = { id: user.id, role: user.role, fullName: user.fullName };
-    return {
-      accessToken: this.signAccessToken(jwtUser),
-      refreshToken: await this.issueRefreshToken(user.id, context),
-      user: toAuthUserView(user),
+    const jwtUser: AuthenticatedUser = {
+      id: user.id,
+      role: user.role,
+      fullName: user.fullName,
     };
+    const tokens = await this.issueTokens(jwtUser, context);
+    return { ...tokens, user: toAuthUserView(user) };
   }
 
   /** Public purchase engine: customer phone+OTP login (design's ورود و
@@ -1225,8 +1208,7 @@ export class AuthService {
       role: user.role,
       fullName: user.fullName,
     };
-    const accessToken = this.signAccessToken(jwtUser);
-    const refreshToken = await this.issueRefreshToken(user.id, context);
+    const { accessToken, refreshToken } = await this.issueTokens(jwtUser, context);
 
     return { accessToken, refreshToken, user: toAuthUserView(user) };
   }
@@ -1329,8 +1311,7 @@ export class AuthService {
       role: updated.role,
       fullName: updated.fullName,
     };
-    const accessToken = this.signAccessToken(jwtUser);
-    const refreshToken = await this.issueRefreshToken(updated.id, context);
+    const { accessToken, refreshToken } = await this.issueTokens(jwtUser, context);
     return { accessToken, refreshToken, user: toAuthUserView(updated) };
   }
 
@@ -1373,6 +1354,10 @@ export class AuthService {
     presentedToken: string,
     context: { userAgent?: string; ip?: string },
   ): Promise<{ accessToken: string; refreshToken: string }> {
+    if (this.identityTokens.enabled()) {
+      const pair = await this.identityTokens.refresh(presentedToken, context);
+      return { accessToken: pair.accessToken, refreshToken: pair.refreshToken };
+    }
     const tokenHash = hashToken(presentedToken);
     const stored = await this.refreshTokenRepo.findOne({
       where: { tokenHash },
@@ -1461,17 +1446,13 @@ export class AuthService {
       temporaryAccessState === 'ACTIVE'
         ? stored.user.temporaryPasswordOnlyUntil!
         : undefined;
-    const accessToken = this.signAccessToken(
+    const { accessToken, refreshToken } = await this.issueTokens(
       {
         id: stored.user.id,
         role: stored.user.role,
         fullName: stored.user.fullName,
         isSuperAdmin: stored.user.isSuperAdmin,
       },
-      temporaryDeadline,
-    );
-    const refreshToken = await this.issueRefreshToken(
-      stored.userId,
       context,
       temporaryDeadline,
     );
@@ -1480,6 +1461,10 @@ export class AuthService {
   }
 
   async logout(presentedToken: string): Promise<void> {
+    if (this.identityTokens.enabled()) {
+      await this.identityTokens.logout(presentedToken);
+      return;
+    }
     const tokenHash = hashToken(presentedToken);
     await this.refreshTokenRepo.update(
       { tokenHash, revokedAt: IsNull() },
@@ -1530,6 +1515,29 @@ export class AuthService {
       },
       { secret: process.env.JWT_ACCESS_SECRET, expiresIn },
     );
+  }
+
+  private async issueTokens(
+    user: AuthenticatedUser,
+    context: { userAgent?: string; ip?: string },
+    absoluteExpiresAt?: Date,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    if (this.identityTokens.enabled()) {
+      const pair = await this.identityTokens.issue(
+        user,
+        context,
+        absoluteExpiresAt,
+      );
+      return { accessToken: pair.accessToken, refreshToken: pair.refreshToken };
+    }
+    return {
+      accessToken: this.signAccessToken(user, absoluteExpiresAt),
+      refreshToken: await this.issueRefreshToken(
+        user.id,
+        context,
+        absoluteExpiresAt,
+      ),
+    };
   }
 
   private async issueRefreshToken(

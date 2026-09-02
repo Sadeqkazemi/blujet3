@@ -176,6 +176,47 @@ class EnvironmentVariables {
   @IsOptional()
   @IsNumberString()
   PSS_REQUEST_TIMEOUT_MS?: string;
+
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  IDENTITY_INTEGRATION_ENABLED?: string;
+
+  @IsOptional()
+  @IsIn(['legacy', 'dual', 'identity'])
+  IDENTITY_JWT_VERIFICATION_MODE?: string;
+
+  @ValidateIf(
+    (config: EnvironmentVariables) =>
+      config.IDENTITY_INTEGRATION_ENABLED === 'true',
+  )
+  @IsNotEmpty()
+  IDENTITY_SERVICE_URL?: string;
+
+  @ValidateIf(
+    (config: EnvironmentVariables) =>
+      config.IDENTITY_INTEGRATION_ENABLED === 'true',
+  )
+  @IsNotEmpty()
+  @MinLength(32)
+  IDENTITY_INTERNAL_TOKEN?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  IDENTITY_JWKS_CACHE_TTL_MS?: string;
+
+  @ValidateIf(
+    (config: EnvironmentVariables) =>
+      config.IDENTITY_INTEGRATION_ENABLED === 'true',
+  )
+  @IsNotEmpty()
+  IDENTITY_JWT_ISSUER?: string;
+
+  @ValidateIf(
+    (config: EnvironmentVariables) =>
+      config.IDENTITY_INTEGRATION_ENABLED === 'true',
+  )
+  @IsNotEmpty()
+  IDENTITY_JWT_AUDIENCE?: string;
 }
 
 export function validateEnv(config: Record<string, unknown>) {
@@ -200,6 +241,21 @@ export function validateEnv(config: Record<string, unknown>) {
   ) {
     throw new Error(
       'Invalid environment configuration:\nPSS_SERVICE_URL and a PSS_INTERNAL_TOKEN of at least 32 characters are required when PSS_INTEGRATION_ENABLED=true',
+    );
+  }
+
+  if (
+    (validated.IDENTITY_INTEGRATION_ENABLED === 'true' ||
+      ['dual', 'identity'].includes(
+        validated.IDENTITY_JWT_VERIFICATION_MODE ?? 'legacy',
+      )) &&
+    (!validated.IDENTITY_SERVICE_URL ||
+      !validated.IDENTITY_INTERNAL_TOKEN ||
+      !validated.IDENTITY_JWT_ISSUER ||
+      !validated.IDENTITY_JWT_AUDIENCE)
+  ) {
+    throw new Error(
+      'Invalid environment configuration:\nIDENTITY_SERVICE_URL, IDENTITY_INTERNAL_TOKEN, IDENTITY_JWT_ISSUER and IDENTITY_JWT_AUDIENCE are required when Identity integration or dual/identity verification is enabled',
     );
   }
 

@@ -4350,7 +4350,24 @@ cutover. The service is disabled by default in Compose and exposes no host port.
 | --- | --- | --- |
 | GET | `/health/live` | Public liveness probe; returns only service/status metadata. |
 | GET | `/health` | Public readiness metadata; includes RS256 key metadata but never private key material. |
-| GET | `/internal/v1/identity/jwks.json` | Returns the active public RS256 JWK. Requires the configured `x-internal-token`; private RSA parameters are never returned. |
+| GET | `/internal/v1/identity/jwks.json` | Returns the active public RS256 JWK plus any rotation-window previous public keys. Requires the configured `x-internal-token`; private RSA parameters are never returned. |
+
+### Microservices architecture v1.1 — identity cutover
+
+When `IDENTITY_INTEGRATION_ENABLED=true`, the existing auth facade delegates
+token and session operations to Identity; the public paths and refresh cookie do
+not change. All internal calls require `X-Internal-Token`.
+
+| Method | Path | Behaviour |
+| --- | --- | --- |
+| POST | `/internal/v1/identity/tokens` | Issues an RS256 access token and refresh-backed session. |
+| POST | `/internal/v1/identity/sessions/refresh` | Rotates the refresh token and invalidates the presented token. |
+| POST | `/internal/v1/identity/sessions/logout` | Revokes a refresh-backed session. |
+| POST | `/internal/v1/identity/sessions/list` | Returns active sessions for a facade-authenticated user. |
+| POST | `/internal/v1/identity/sessions/revoke` | Revokes a non-current session owned by the requested user. |
+
+`IDENTITY_JWT_VERIFICATION_MODE=dual` is the documented rollback bridge: the
+Backend issues legacy HS256 tokens while accepting still-live RS256 tokens.
 
 ### Accountable document API
 

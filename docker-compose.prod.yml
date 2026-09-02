@@ -128,6 +128,9 @@ services:
         GIT_COMMIT_SHA: ${DEPLOY_SHA:-unknown}
     profiles: ['identity']
     restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
     environment:
       NODE_ENV: production
       PORT: 3400
@@ -136,6 +139,7 @@ services:
       IDENTITY_JWT_ISSUER: ${IDENTITY_JWT_ISSUER:-https://identity.internal.blujet}
       IDENTITY_JWT_AUDIENCE: ${IDENTITY_JWT_AUDIENCE:-blujet-gateway}
       IDENTITY_JWT_PRIVATE_KEY: ${IDENTITY_JWT_PRIVATE_KEY}
+      IDENTITY_REDIS_URL: ${IDENTITY_REDIS_URL:-redis://redis:6379}
     expose:
       - '3400'
     healthcheck:
@@ -178,6 +182,13 @@ services:
       REDIS_URL: redis://redis:6379
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      IDENTITY_INTEGRATION_ENABLED: ${IDENTITY_INTEGRATION_ENABLED:-false}
+      IDENTITY_JWT_VERIFICATION_MODE: ${IDENTITY_JWT_VERIFICATION_MODE:-legacy}
+      IDENTITY_SERVICE_URL: http://identity-service:3400
+      IDENTITY_INTERNAL_TOKEN: ${IDENTITY_INTERNAL_TOKEN}
+      IDENTITY_JWKS_CACHE_TTL_MS: ${IDENTITY_JWKS_CACHE_TTL_MS:-300000}
+      IDENTITY_JWT_ISSUER: ${IDENTITY_JWT_ISSUER:-https://identity.internal.blujet}
+      IDENTITY_JWT_AUDIENCE: ${IDENTITY_JWT_AUDIENCE:-blujet-gateway}
       ML_SERVICE_URL: http://ml-service:8000
       ML_SERVICE_INTERNAL_TOKEN: ${ML_SERVICE_INTERNAL_TOKEN}
       # Production is fail-closed. Kavenegar is configured through the IT

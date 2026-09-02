@@ -3937,6 +3937,22 @@ contracts and retires the production mock adapters.
 - [ ] Commit/push, review and merge only after explicit owner approval;
   deployment remains deferred.
 
+## Microservices architecture v1.1 — phase 4 identity token/session cutover (2026-09-02)
+
+- [x] Delegate access/refresh token issuance, refresh rotation, logout and
+  session list/revoke ownership to `identity-service` behind the existing
+  `/api/v1/auth/**` facade.
+- [x] Add explicit `legacy`, `dual` and `identity` verification modes with
+  fail-safe rollback semantics and no authentication-table dual-write.
+- [x] Verify RS256 access tokens locally using an in-memory JWKS cache with
+  issuer, audience, expiry, role and `kid` validation.
+- [x] Retain current and previous public JWKs for zero-downtime key rotation;
+  cover rotation and refresh-token replay behavior with unit/HTTP tests.
+- [x] Add local/production Compose wiring and cutover/rollback documentation;
+  keep Identity Redis required in production and keep deployment disabled.
+- [ ] Obtain owner approval for UAT flag transition, commit/push and merge;
+  deployment remains a separate approved action.
+
 ## Central PSS/CRS extraction — Slice 0 (2026-09-01)
 
 - [x] Record the owner-approved API, schema, migration and airline-document decisions.

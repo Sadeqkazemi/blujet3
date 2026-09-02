@@ -69,6 +69,7 @@ import { FinanceReportsModule } from './modules/finance-reports/finance-reports.
 import { FinancialIntegrationsModule } from './modules/financial-integrations/financial-integrations.module';
 import { AgencyBulletinsModule } from './modules/agency-bulletins/agency-bulletins.module';
 import { PssModule } from './modules/pss/pss.module';
+import { IdentityCutoverModule } from './modules/identity-cutover/identity-cutover.module';
 
 @Module({
   imports: [
@@ -192,6 +193,7 @@ import { PssModule } from './modules/pss/pss.module';
     FinancialIntegrationsModule,
     AgencyBulletinsModule,
     PssModule,
+    IdentityCutoverModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
