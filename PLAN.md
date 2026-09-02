@@ -3921,6 +3921,22 @@ contracts and retires the production mock adapters.
 - [ ] Obtain passing CI, present the complete diff, and obtain explicit owner
   approval before merge. Deployment remains manual and separate.
 
+## Microservices architecture v1.1 — phase 3 identity foundation (2026-09-02)
+
+- [x] Establish an independently deployable `identity-service` boundary with
+  internal authentication, request correlation, health and production Docker
+  artifacts.
+- [x] Add validated RSA PKCS#8 key loading and an authenticated JWKS contract
+  without exposing private key material.
+- [x] Keep the existing HS256 login/OTP/refresh/session behavior unchanged until
+  the owner-approved identity cutover slice.
+- [x] Add unit, HTTP contract, lint, typecheck and build coverage for the key
+  boundary.
+- [ ] Move Identity persistence and token issuance behind the compatibility
+  facade, then enable Gateway RS256 verification and key rotation in UAT.
+- [ ] Commit/push, review and merge only after explicit owner approval;
+  deployment remains deferred.
+
 ## Central PSS/CRS extraction — Slice 0 (2026-09-01)
 
 - [x] Record the owner-approved API, schema, migration and airline-document decisions.

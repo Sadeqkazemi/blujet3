@@ -4340,6 +4340,18 @@ integrity token. An offer is never itself inventory authorization.
 Existing `/bookings`, `/manage-booking`, `/reservation` and agency endpoints
 remain compatibility facades and must delegate to this API after cutover.
 
+### Microservices architecture v1.1 — identity foundation
+
+The first identity-service slice establishes the internal cryptographic boundary;
+legacy backend login and HS256 token issuance remain unchanged until an approved
+cutover. The service is disabled by default in Compose and exposes no host port.
+
+| Method | Path | Behaviour |
+| --- | --- | --- |
+| GET | `/health/live` | Public liveness probe; returns only service/status metadata. |
+| GET | `/health` | Public readiness metadata; includes RS256 key metadata but never private key material. |
+| GET | `/internal/v1/identity/jwks.json` | Returns the active public RS256 JWK. Requires the configured `x-internal-token`; private RSA parameters are never returned. |
+
 ### Accountable document API
 
 | Method | Path | Behaviour |

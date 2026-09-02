@@ -63,6 +63,33 @@ jobs:
           npm test
           npm run test:e2e
 
+  identity-service:
+    name: Identity service
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: identity-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: identity-service/package-lock.json
+      - name: Generate ephemeral CI signing key
+        run: |
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /tmp/blujet-identity-key.pem
+          echo "IDENTITY_JWT_PRIVATE_KEY<<KEY" >> "$GITHUB_ENV"
+          cat /tmp/blujet-identity-key.pem >> "$GITHUB_ENV"
+          echo "KEY" >> "$GITHUB_ENV"
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+      - run: npm run test:e2e
+
   notify-service:
     name: Notify service
     runs-on: ubuntu-24.04-arm
