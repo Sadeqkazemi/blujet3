@@ -33,15 +33,15 @@ type CountRow = { count: string };
 
 async function fingerprintCounts(dataSource: DataSource) {
   const [users] = await dataSource.query<CountRow[]>(
-    'SELECT COUNT(*)::text AS count FROM "users" WHERE "username" = ANY($1) OR "phone" = ANY($2)',
+    'SELECT COUNT(*)::text AS count FROM "identity"."users" WHERE "username" = ANY($1) OR "phone" = ANY($2)',
     [knownSeedUsernames, knownSeedPhones],
   );
   const [flights] = await dataSource.query<CountRow[]>(
-    'SELECT COUNT(*)::text AS count FROM "flights" WHERE "flightNo" = ANY($1)',
+    'SELECT COUNT(*)::text AS count FROM "inventory"."flights" WHERE "flightNo" = ANY($1)',
     [['EP-821', 'BJ-100']],
   );
   const [bookings] = await dataSource.query<CountRow[]>(
-    `SELECT COUNT(*)::text AS count FROM "bookings"
+    `SELECT COUNT(*)::text AS count FROM "orders"."bookings"
      WHERE "pnr" LIKE 'BJDEMO%' OR "pnr" LIKE 'BJAG%'
         OR "pnr" LIKE 'RFSEED%'`,
   );
@@ -105,10 +105,14 @@ async function main() {
     }
 
     const tables = [
-      ...new Set(dataSource.entityMetadatas.map((m) => m.tableName)),
+      ...new Set(
+        dataSource.entityMetadatas.map(
+          (metadata) =>
+            `${quoteIdentifier(metadata.schema ?? 'public')}.${quoteIdentifier(metadata.tableName)}`,
+        ),
+      ),
     ]
       .sort()
-      .map(quoteIdentifier)
       .join(', ');
     const runner = dataSource.createQueryRunner();
     await runner.connect();

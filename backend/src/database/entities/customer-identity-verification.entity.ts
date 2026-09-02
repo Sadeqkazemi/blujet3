@@ -15,7 +15,7 @@ import { User } from './user.entity';
 @Index('customer_identity_verifications_userId_key', ['userId'], {
   unique: true,
 })
-@Entity('customer_identity_verifications')
+@Entity('customer_identity_verifications', { schema: 'identity' })
 export class CustomerIdentityVerification {
   @PrimaryColumn({
     type: 'text',

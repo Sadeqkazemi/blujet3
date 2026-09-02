@@ -11,7 +11,7 @@ import {
 @Index('survey_invites_bookingId_key', ['bookingId'], { unique: true })
 @Index('survey_invites_flightInstanceId_idx', ['flightInstanceId'])
 @Index('survey_invites_token_key', ['token'], { unique: true })
-@Entity('survey_invites')
+@Entity('survey_invites', { schema: 'experience' })
 export class SurveyInvite {
   @PrimaryColumn({ type: 'text' })
   id!: string;

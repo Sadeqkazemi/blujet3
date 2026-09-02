@@ -18,6 +18,18 @@ import {
 type CountRow = { count: string };
 type IdRow = { id: string };
 
+function quoteIdentifier(value: string): string {
+  return `"${value.replaceAll('"', '""')}"`;
+}
+
+function qualifiedTable(dataSource: DataSource, table: string): string {
+  const metadata = dataSource.entityMetadatas.find(
+    (candidate) => candidate.tableName === table,
+  );
+  if (!metadata) throw new Error(`Missing entity metadata for ${table}.`);
+  return `${quoteIdentifier(metadata.schema ?? 'public')}.${quoteIdentifier(table)}`;
+}
+
 export interface SandboxFlightPurgeReport {
   mode: 'DRY_RUN' | 'SANDBOX_PURGE_EXECUTED';
   target: { flightNos: string[]; all: boolean };
@@ -49,12 +61,14 @@ async function resolveTargetFlightIds(
   opts: { flightNos: string[]; all: boolean },
 ): Promise<string[]> {
   if (opts.all) {
-    const rows = await dataSource.query<IdRow[]>('SELECT "id" FROM "flights"');
+    const rows = await dataSource.query<IdRow[]>(
+      'SELECT "id" FROM "inventory"."flights"',
+    );
     return rows.map((r) => r.id);
   }
   if (opts.flightNos.length === 0) return [];
   const rows = await dataSource.query<IdRow[]>(
-    `SELECT "id" FROM "flights" WHERE "flightNo" = ANY($1)`,
+    `SELECT "id" FROM "inventory"."flights" WHERE "flightNo" = ANY($1)`,
     [opts.flightNos],
   );
   return rows.map((r) => r.id);
@@ -68,7 +82,7 @@ async function countWhere(
 ): Promise<number> {
   if (ids.length === 0) return 0;
   const [row] = await dataSource.query<CountRow[]>(
-    `SELECT COUNT(*)::text AS count FROM "${table}" WHERE "${column}" = ANY($1)`,
+    `SELECT COUNT(*)::text AS count FROM ${qualifiedTable(dataSource, table)} WHERE ${quoteIdentifier(column)} = ANY($1)`,
     [ids],
   );
   return Number(row?.count ?? 0);
@@ -92,7 +106,7 @@ export async function runSandboxActiveFlightPurge(
   const flightIds = await resolveTargetFlightIds(dataSource, opts);
   const instanceRows = flightIds.length
     ? await dataSource.query<IdRow[]>(
-        `SELECT "id" FROM "flight_instances" WHERE "flightId" = ANY($1)`,
+        `SELECT "id" FROM "inventory"."flight_instances" WHERE "flightId" = ANY($1)`,
         [flightIds],
       )
     : [];
@@ -149,7 +163,7 @@ export async function runSandboxActiveFlightPurge(
     );
   }
   const [actorRow] = await dataSource.query<{ role: Role }[]>(
-    `SELECT "role" FROM "users" WHERE "id" = $1`,
+    `SELECT "role" FROM "identity"."users" WHERE "id" = $1`,
     [opts.actorId],
   );
   if (!actorRow) {
@@ -163,7 +177,7 @@ export async function runSandboxActiveFlightPurge(
   // are never deleted, only detached, so their ids don't matter here.
   const bookingRows = instanceIds.length
     ? await dataSource.query<IdRow[]>(
-        `SELECT "id" FROM "bookings" WHERE "flightInstanceId" = ANY($1)`,
+        `SELECT "id" FROM "orders"."bookings" WHERE "flightInstanceId" = ANY($1)`,
         [instanceIds],
       )
     : [];
@@ -178,8 +192,8 @@ export async function runSandboxActiveFlightPurge(
         case 'survey_responses':
           if (bookingIds.length || instanceIds.length) {
             await runner.query(
-              `DELETE FROM "survey_responses" WHERE "inviteId" IN (
-                 SELECT "id" FROM "survey_invites"
+              `DELETE FROM "experience"."survey_responses" WHERE "inviteId" IN (
+                 SELECT "id" FROM "experience"."survey_invites"
                  WHERE "bookingId" = ANY($1) OR "flightInstanceId" = ANY($2)
                )`,
               [bookingIds, instanceIds],
@@ -189,7 +203,7 @@ export async function runSandboxActiveFlightPurge(
         case 'survey_invites':
           if (bookingIds.length || instanceIds.length) {
             await runner.query(
-              `DELETE FROM "survey_invites" WHERE "bookingId" = ANY($1) OR "flightInstanceId" = ANY($2)`,
+              `DELETE FROM "experience"."survey_invites" WHERE "bookingId" = ANY($1) OR "flightInstanceId" = ANY($2)`,
               [bookingIds, instanceIds],
             );
           }
@@ -200,7 +214,7 @@ export async function runSandboxActiveFlightPurge(
         case 'refund_requests':
           if (bookingIds.length) {
             await runner.query(
-              `DELETE FROM "${table}" WHERE "bookingId" = ANY($1)`,
+              `DELETE FROM ${qualifiedTable(dataSource, table)} WHERE "bookingId" = ANY($1)`,
               [bookingIds],
             );
           }
@@ -216,7 +230,7 @@ export async function runSandboxActiveFlightPurge(
         case 'agency_allotments':
           if (instanceIds.length) {
             await runner.query(
-              `DELETE FROM "${table}" WHERE "flightInstanceId" = ANY($1)`,
+              `DELETE FROM ${qualifiedTable(dataSource, table)} WHERE "flightInstanceId" = ANY($1)`,
               [instanceIds],
             );
           }
@@ -224,7 +238,7 @@ export async function runSandboxActiveFlightPurge(
         case 'bookings':
           if (instanceIds.length) {
             await runner.query(
-              `DELETE FROM "bookings" WHERE "flightInstanceId" = ANY($1)`,
+              `DELETE FROM "orders"."bookings" WHERE "flightInstanceId" = ANY($1)`,
               [instanceIds],
             );
           }
@@ -232,21 +246,22 @@ export async function runSandboxActiveFlightPurge(
         case 'flight_instances':
           if (instanceIds.length) {
             await runner.query(
-              `DELETE FROM "flight_instances" WHERE "id" = ANY($1)`,
+              `DELETE FROM "inventory"."flight_instances" WHERE "id" = ANY($1)`,
               [instanceIds],
             );
           }
           break;
         case 'schedules':
           await runner.query(
-            `DELETE FROM "schedules" WHERE "flightId" = ANY($1)`,
+            `DELETE FROM "inventory"."schedules" WHERE "flightId" = ANY($1)`,
             [flightIds],
           );
           break;
         case 'flights':
-          await runner.query(`DELETE FROM "flights" WHERE "id" = ANY($1)`, [
-            flightIds,
-          ]);
+          await runner.query(
+            `DELETE FROM "inventory"."flights" WHERE "id" = ANY($1)`,
+            [flightIds],
+          );
           break;
       }
     }
@@ -340,7 +355,7 @@ async function main() {
         );
       }
       const [actorRow] = await dataSource.query<{ id: string }[]>(
-        `SELECT "id" FROM "users" WHERE "username" = $1 AND "isActive" = true`,
+        `SELECT "id" FROM "identity"."users" WHERE "username" = $1 AND "isActive" = true`,
         [actorUsername],
       );
       if (!actorRow) {

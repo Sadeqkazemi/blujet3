@@ -18,7 +18,7 @@ import { FlightInstance } from './flight-instance.entity';
   { unique: true },
 )
 @Index('agency_seat_request_flights_flightInstanceId_idx', ['flightInstanceId'])
-@Entity('agency_seat_request_flights')
+@Entity('agency_seat_request_flights', { schema: 'agency' })
 export class AgencySeatRequestFlight {
   @PrimaryColumn({
     type: 'text',

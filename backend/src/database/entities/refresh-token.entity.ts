@@ -13,7 +13,7 @@ import { User } from './user.entity';
 
 @Index('refresh_tokens_tokenHash_key', ['tokenHash'], { unique: true })
 @Index('refresh_tokens_userId_idx', ['userId'])
-@Entity('refresh_tokens')
+@Entity('refresh_tokens', { schema: 'identity' })
 export class RefreshToken {
   @PrimaryColumn({
     type: 'text',

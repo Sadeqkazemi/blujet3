@@ -24,7 +24,7 @@ import { AgencyProfile } from './agency-profile.entity';
   unique: true,
   where: `"status" IN ('ACTIVE', 'SUSPENDED')`,
 })
-@Entity('agency_api_keys')
+@Entity('agency_api_keys', { schema: 'agency' })
 export class AgencyApiKey {
   @PrimaryColumn({
     type: 'text',

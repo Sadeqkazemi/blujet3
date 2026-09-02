@@ -16,6 +16,21 @@ across primary databases. Extraction proceeds only in the documented order:
 phase 0 deployment safety, then `notify`, `experience`, `identity`, domain
 schemas, `loyalty`/`agency`, `intelligence`, and `warehouse`.
 
+### Microservices phase 5 — domain-schema compatibility contract
+
+Architecture phase 4 changes PostgreSQL ownership only. It does not add,
+remove or rename a public endpoint, request field, response field, status code
+or currency value. All browser/mobile clients continue to use `/api/v1/**` and
+all private service calls continue to use authenticated `/internal/v1/**`
+contracts.
+
+Tables move atomically from `public` to their documented owner schemas inside
+the same PostgreSQL primary. `inventory`, `orders` and `payments` remain one
+Core Platform transaction boundary. Compatibility views retain legacy
+unqualified database access during the rollout window; removing those views is
+a separate contract phase. The complete map and rollback order are documented
+in `docs/features/microservices-phase-5-schema-domains.md`.
+
 ### Microservices phase 2 — Experience compatibility contract
 
 Phase 2 moves Blog, Site Content, Careers, Contact, Support Tickets, Survey and

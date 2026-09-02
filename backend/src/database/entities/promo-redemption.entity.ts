@@ -17,7 +17,7 @@ import { User } from './user.entity';
 @Index('promo_redemptions_bookingId_key', ['bookingId'], { unique: true })
 @Index('promo_redemptions_promoCodeId_idx', ['promoCodeId'])
 @Index('promo_redemptions_userId_idx', ['userId'])
-@Entity('promo_redemptions')
+@Entity('promo_redemptions', { schema: 'payments' })
 export class PromoRedemption {
   @PrimaryColumn({
     type: 'text',

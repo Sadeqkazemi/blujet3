@@ -6,7 +6,7 @@ import { dataSourceOptions } from '../src/database/data-source.options';
  * (created by `InitialSchema`, the baseline migration under
  * `src/database/migrations/`) and asserts the schema builder has nothing
  * left to do beyond a documented allowlist of known-benign patterns — i.e.
- * all 77 entities describe the existing tables byte-for-byte (or
+ * all registered entities describe the existing domain tables byte-for-byte (or
  * provably-equivalent-but-textually-different). This is the same check
  * `typeorm migration:generate` runs internally, and guards against the
  * entities and the migration drifting apart over time.
@@ -37,7 +37,20 @@ const KNOWN_BENIGN_DIFF_PATTERNS: RegExp[] = [
   // are the same empty array, just different valid Postgres literal
   // spellings.
   /ALTER COLUMN "\w+" SET DEFAULT '\{\}'$/,
+  // `site_content_blocks.key` is both a public enum and the primary key.
+  // TypeORM's enum-relocation proposal consequently churns the unchanged PK.
+  /ALTER TABLE "experience"\."site_content_blocks" DROP CONSTRAINT "site_content_blocks_pkey"$/,
+  /ALTER TABLE "experience"\."site_content_blocks" ADD CONSTRAINT "site_content_blocks_pkey" PRIMARY KEY \("key"\)$/,
 ];
+
+type EnumCatalogRow = {
+  table_schema: string;
+  table_name: string;
+  column_name: string;
+  udt_schema: string;
+  udt_name: string;
+  enum_values: string[];
+};
 
 describe('TypeORM schema parity', () => {
   let dataSource: DataSource;
@@ -52,6 +65,71 @@ describe('TypeORM schema parity', () => {
   });
 
   it('produces only the documented allowlisted diff against the existing Prisma-migrated schema', async () => {
+    const enumColumns = dataSource.entityMetadatas.flatMap((metadata) =>
+      metadata.columns
+        .filter((column) => column.type === 'enum' && column.enumName)
+        .map((column) => ({
+          tableSchema: metadata.schema ?? 'public',
+          tableName: metadata.tableName,
+          columnName: column.databaseName,
+          enumName: column.enumName as string,
+          values: (column.enum ?? []).map(String),
+        })),
+    );
+    const enumColumnKeys = new Set(
+      enumColumns.map(
+        ({ tableSchema, tableName, columnName }) =>
+          `${tableSchema}.${tableName}.${columnName}`,
+      ),
+    );
+    const generatedEnumTypeKeys = new Set(
+      enumColumns.map(
+        ({ tableSchema, enumName }) => `${tableSchema}.${enumName}`,
+      ),
+    );
+
+    // TypeORM assumes a PostgreSQL enum lives beside its table and otherwise
+    // proposes destructive column churn. Phase 5 intentionally keeps the
+    // established enum catalogue in public for expand/contract compatibility,
+    // so validate that catalogue directly instead of allowlisting it blindly.
+    const enumCatalog = await dataSource.query<EnumCatalogRow[]>(`
+      SELECT c.table_schema,
+             c.table_name,
+             c.column_name,
+             c.udt_schema,
+             t.typname AS udt_name,
+             ARRAY_AGG(e.enumlabel::text ORDER BY e.enumsortorder)::text[] AS enum_values
+      FROM information_schema.columns c
+      JOIN pg_type t ON t.typname = CASE
+        WHEN c.data_type = 'ARRAY' THEN LTRIM(c.udt_name, '_')
+        ELSE c.udt_name
+      END
+      JOIN pg_namespace n ON n.oid = t.typnamespace
+                         AND n.nspname = c.udt_schema
+      JOIN pg_enum e ON e.enumtypid = t.oid
+      WHERE c.table_schema <> 'public'
+      GROUP BY c.table_schema, c.table_name, c.column_name,
+               c.udt_schema, t.typname
+    `);
+    const enumCatalogByColumn = new Map(
+      enumCatalog.map((row) => [
+        `${row.table_schema}.${row.table_name}.${row.column_name}`,
+        row,
+      ]),
+    );
+
+    for (const expected of enumColumns) {
+      const actual = enumCatalogByColumn.get(
+        `${expected.tableSchema}.${expected.tableName}.${expected.columnName}`,
+      );
+      expect(actual).toBeDefined();
+      expect(actual?.udt_schema).toBe('public');
+      expect(actual?.udt_name).toBe(expected.enumName);
+      expect([...(actual?.enum_values ?? [])].sort()).toEqual(
+        [...expected.values].sort(),
+      );
+    }
+
     const sqlInMemory = await dataSource.driver.createSchemaBuilder().log();
     const upQueries = sqlInMemory.upQueries.map((q) => q.query);
 
@@ -64,7 +142,7 @@ describe('TypeORM schema parity', () => {
     // is itself the evidence nothing about the index actually changed.
     const dropIndexNames = new Set(
       upQueries
-        .map((q) => /^DROP INDEX "public"\."([^"]+)"$/.exec(q)?.[1])
+        .map((q) => /^DROP INDEX "[^"]+"\."([^"]+)"$/.exec(q)?.[1])
         .filter((n): n is string => !!n),
     );
     const createIndexNames = new Set(
@@ -76,9 +154,31 @@ describe('TypeORM schema parity', () => {
       createIndexNames.has(n),
     );
 
+    const isPublicEnumRelocationNoise = (query: string): boolean => {
+      const columnMatch =
+        /^ALTER TABLE "([^"]+)"\."([^"]+)" (?:DROP COLUMN|ADD) "([^"]+)"/.exec(
+          query,
+        );
+      if (
+        columnMatch &&
+        enumColumnKeys.has(
+          `${columnMatch[1]}.${columnMatch[2]}.${columnMatch[3]}`,
+        )
+      ) {
+        return true;
+      }
+
+      const typeMatch = /^CREATE TYPE "([^"]+)"\."([^"]+)" AS ENUM/.exec(query);
+      return !!(
+        typeMatch &&
+        generatedEnumTypeKeys.has(`${typeMatch[1]}.${typeMatch[2]}`)
+      );
+    };
+
     const unexpected = upQueries.filter((query) => {
       if (KNOWN_BENIGN_DIFF_PATTERNS.some((p) => p.test(query))) return false;
-      const dropMatch = /^DROP INDEX "public"\."([^"]+)"$/.exec(query);
+      if (isPublicEnumRelocationNoise(query)) return false;
+      const dropMatch = /^DROP INDEX "[^"]+"\."([^"]+)"$/.exec(query);
       if (dropMatch && churnedIndexNames.includes(dropMatch[1])) return false;
       const createMatch = /^CREATE (?:UNIQUE )?INDEX "([^"]+)" ON /.exec(query);
       if (createMatch && churnedIndexNames.includes(createMatch[1]))

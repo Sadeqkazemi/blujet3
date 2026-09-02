@@ -16,7 +16,7 @@ import { ManagerReferralRecipient } from './manager-referral-recipient.entity';
 import { User } from './user.entity';
 
 @Index('manager_referrals_fromId_status_idx', ['fromId', 'status'])
-@Entity('manager_referrals')
+@Entity('manager_referrals', { schema: 'ops' })
 export class ManagerReferral {
   @PrimaryColumn({
     type: 'text',

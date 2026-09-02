@@ -15,7 +15,7 @@ import { AgencyProfile } from './agency-profile.entity';
 import { User } from './user.entity';
 
 @Index('agency_credit_requests_agencyId_status_idx', ['agencyId', 'status'])
-@Entity('agency_credit_requests')
+@Entity('agency_credit_requests', { schema: 'agency' })
 export class AgencyCreditRequest {
   @PrimaryColumn({
     type: 'text',

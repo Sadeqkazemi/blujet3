@@ -456,8 +456,8 @@ export class SurveyService {
       SELECT si."flightInstanceId" AS "flightInstanceId",
              COUNT(*)::int AS "count",
              AVG(sr.rating)::float8 AS "avgRating"
-      FROM survey_invites si
-      JOIN survey_responses sr ON sr."inviteId" = si.id
+      FROM experience.survey_invites si
+      JOIN experience.survey_responses sr ON sr."inviteId" = si.id
       GROUP BY si."flightInstanceId"
     `);
     if (grouped.length === 0) {

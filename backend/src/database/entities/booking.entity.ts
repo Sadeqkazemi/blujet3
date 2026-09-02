@@ -24,7 +24,7 @@ import { User } from './user.entity';
 @Index('bookings_idempotencyKey_key', ['idempotencyKey'], { unique: true })
 @Index('bookings_pnr_key', ['pnr'], { unique: true })
 @Index('bookings_userId_idx', ['userId'])
-@Entity('bookings')
+@Entity('bookings', { schema: 'orders' })
 export class Booking {
   @PrimaryColumn({ type: 'text', primaryKeyConstraintName: 'bookings_pkey' })
   id!: string;

@@ -17,7 +17,7 @@ import { User } from './user.entity';
   'flightInstanceId',
   'reviewedAt',
 ])
-@Entity('flight_reviews')
+@Entity('flight_reviews', { schema: 'ops' })
 export class FlightReview {
   @PrimaryColumn({
     type: 'text',

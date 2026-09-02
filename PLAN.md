@@ -3964,6 +3964,22 @@ contracts and retires the production mock adapters.
 - [ ] Obtain owner approval for UAT flag transition, commit/push and merge;
   deployment remains a separate approved action.
 
+## Microservices architecture v1.1 — phase 5 domain schemas (2026-09-02)
+
+- [x] Record the public API invariants, full table ownership map, Core ACID
+  boundary, compatibility window and database-first rollback order.
+- [x] Add a transactional migration that moves each business table to its owner
+  schema and leaves an updatable compatibility view in `public`.
+- [x] Qualify backend, Experience and Notify TypeORM metadata and runtime raw
+  SQL without adding dual-write or cross-service ORM joins.
+- [x] Prove migration symmetry, metadata parity, row-count preservation,
+  compatibility-view DML and cross-schema transaction behavior.
+- [x] Pass unit and focused E2E tests, typecheck, production builds,
+  changed-file read-only lint and diff validation; record the unrelated
+  repository-wide line-ending lint baseline in the phase evidence.
+- [ ] Present the complete diff and obtain explicit owner approval before
+  commit/push/merge. Deployment remains a separate approved action.
+
 ## Central PSS/CRS extraction — Slice 0 (2026-09-01)
 
 - [x] Record the owner-approved API, schema, migration and airline-document decisions.

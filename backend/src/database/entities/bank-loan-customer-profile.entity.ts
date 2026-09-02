@@ -34,7 +34,7 @@ export type BankEligibilityStatus =
   | 'INELIGIBLE'
   | 'FAILED';
 
-@Entity('bank_loan_customer_profiles')
+@Entity('bank_loan_customer_profiles', { schema: 'payments' })
 @Check(
   'bank_loan_customer_profiles_membership_check',
   `"membershipStatus" IN ('UNDECLARED','BANK_CUSTOMER','ACCOUNT_OPENING_REQUESTED','ACCOUNT_OPENED')`,

@@ -15,7 +15,7 @@ import { Booking } from './booking.entity';
 import { User } from './user.entity';
 
 @Index('wallet_entries_userId_idx', ['userId'])
-@Entity('wallet_entries')
+@Entity('wallet_entries', { schema: 'payments' })
 export class WalletEntry {
   @PrimaryColumn({
     type: 'text',

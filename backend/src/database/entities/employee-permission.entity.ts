@@ -17,7 +17,7 @@ import { User } from './user.entity';
   ['employeeId', 'permissionId'],
   { unique: true },
 )
-@Entity('employee_permissions')
+@Entity('employee_permissions', { schema: 'ops' })
 export class EmployeePermission {
   @PrimaryColumn({
     type: 'text',

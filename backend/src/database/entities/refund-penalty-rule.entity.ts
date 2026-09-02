@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { BeforeInsert, Column, Entity, PrimaryColumn } from 'typeorm';
 
-@Entity('refund_penalty_rules')
+@Entity('refund_penalty_rules', { schema: 'payments' })
 export class RefundPenaltyRule {
   @PrimaryColumn({
     type: 'text',

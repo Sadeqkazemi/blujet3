@@ -8,7 +8,7 @@ export const SITE_CONTENT_BLOCK_KEYS = [
 export type SiteContentBlockKey = (typeof SITE_CONTENT_BLOCK_KEYS)[number];
 
 @Index('site_content_blocks_imageFileId_key', ['imageFileId'], { unique: true })
-@Entity('site_content_blocks')
+@Entity('site_content_blocks', { schema: 'experience' })
 export class SiteContentBlock {
   @PrimaryColumn({
     type: 'enum',

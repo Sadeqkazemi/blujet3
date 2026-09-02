@@ -23,7 +23,7 @@ import { User } from './user.entity';
   'referrerUserId',
   'createdAt',
 ])
-@Entity('customer_referrals')
+@Entity('customer_referrals', { schema: 'loyalty' })
 export class CustomerReferral {
   @PrimaryColumn({
     type: 'text',

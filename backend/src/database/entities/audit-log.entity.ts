@@ -18,7 +18,7 @@ import { User } from './user.entity';
   'category',
   'createdAt',
 ])
-@Entity('audit_logs')
+@Entity('audit_logs', { schema: 'audit' })
 export class AuditLog {
   @PrimaryColumn({ type: 'text', primaryKeyConstraintName: 'audit_logs_pkey' })
   id!: string;

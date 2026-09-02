@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 
-@Entity('password_reset_events')
+@Entity('password_reset_events', { schema: 'identity' })
 export class PasswordResetEvent {
   @PrimaryColumn({
     type: 'text',

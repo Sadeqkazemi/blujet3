@@ -7,7 +7,7 @@ import {
   PrimaryColumn,
 } from 'typeorm';
 
-@Entity('stored_files')
+@Entity('stored_files', { schema: 'experience' })
 export class StoredFile {
   @PrimaryColumn({ type: 'text' })
   id!: string;

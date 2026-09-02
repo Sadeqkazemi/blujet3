@@ -14,7 +14,7 @@ import { Booking } from './booking.entity';
 import { ClubMember } from './club-member.entity';
 
 @Index('club_points_entries_clubMemberId_idx', ['clubMemberId'])
-@Entity('club_points_entries')
+@Entity('club_points_entries', { schema: 'loyalty' })
 export class ClubPointsEntry {
   @PrimaryColumn({
     type: 'text',

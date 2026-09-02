@@ -14,7 +14,7 @@ import { User } from './user.entity';
 
 @Index('site_media_assets_storedFileId_key', ['storedFileId'], { unique: true })
 @Index('site_media_assets_uploadedById_idx', ['uploadedById'])
-@Entity('site_media_assets')
+@Entity('site_media_assets', { schema: 'experience' })
 export class SiteMediaAsset {
   @PrimaryColumn({
     type: 'text',

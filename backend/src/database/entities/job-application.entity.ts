@@ -21,7 +21,7 @@ import { User } from './user.entity';
 
 @Index('job_applications_nationalIdHash_idx', ['nationalIdHash'])
 @Index('job_applications_status_idx', ['status'])
-@Entity('job_applications')
+@Entity('job_applications', { schema: 'experience' })
 export class JobApplication {
   @PrimaryColumn({
     type: 'text',

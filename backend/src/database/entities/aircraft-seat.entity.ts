@@ -23,7 +23,7 @@ import { AircraftDefinition } from './aircraft-definition.entity';
   { unique: true },
 )
 @Index('aircraft_seats_aircraftDefinitionId_idx', ['aircraftDefinitionId'])
-@Entity('aircraft_seats')
+@Entity('aircraft_seats', { schema: 'inventory' })
 export class AircraftSeat {
   @PrimaryColumn({
     type: 'text',

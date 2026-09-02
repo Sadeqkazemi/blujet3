@@ -15,7 +15,7 @@ import { ClubMember } from './club-member.entity';
 import { User } from './user.entity';
 
 @Index('club_card_requests_status_idx', ['status'])
-@Entity('club_card_requests')
+@Entity('club_card_requests', { schema: 'loyalty' })
 export class ClubCardRequest {
   @PrimaryColumn({
     type: 'text',

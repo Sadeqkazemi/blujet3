@@ -21,7 +21,7 @@ import { User } from './user.entity';
   'saved_passengers_gender_check',
   `"gender" IS NULL OR "gender" IN ('male', 'female')`,
 )
-@Entity('saved_passengers')
+@Entity('saved_passengers', { schema: 'orders' })
 export class SavedPassenger {
   @PrimaryColumn({
     type: 'text',

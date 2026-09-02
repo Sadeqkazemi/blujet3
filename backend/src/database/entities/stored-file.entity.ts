@@ -12,7 +12,7 @@ import {
 import { User } from './user.entity';
 
 @Index('stored_files_ownerId_idx', ['ownerId'])
-@Entity('stored_files')
+@Entity('stored_files', { schema: 'experience' })
 export class StoredFile {
   @PrimaryColumn({
     type: 'text',

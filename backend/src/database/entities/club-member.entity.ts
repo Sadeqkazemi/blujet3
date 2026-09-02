@@ -16,7 +16,7 @@ import { User } from './user.entity';
 @Index('club_members_nationalIdHash_idx', ['nationalIdHash'])
 @Index('club_members_userId_key', ['userId'], { unique: true })
 @Index('club_members_deactivatedAt_idx', ['deactivatedAt'])
-@Entity('club_members')
+@Entity('club_members', { schema: 'loyalty' })
 export class ClubMember {
   @PrimaryColumn({
     type: 'text',

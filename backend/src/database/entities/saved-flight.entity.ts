@@ -19,7 +19,7 @@ import { User } from './user.entity';
   ['userId', 'flightInstanceId', 'cabin'],
   { unique: true },
 )
-@Entity('saved_flights')
+@Entity('saved_flights', { schema: 'orders' })
 export class SavedFlight {
   @PrimaryColumn({
     type: 'text',

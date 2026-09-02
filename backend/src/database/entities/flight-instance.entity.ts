@@ -24,7 +24,7 @@ import { User } from './user.entity';
   ['scheduleId', 'departureAt'],
   { unique: true },
 )
-@Entity('flight_instances')
+@Entity('flight_instances', { schema: 'inventory' })
 export class FlightInstance {
   @PrimaryColumn({
     type: 'text',

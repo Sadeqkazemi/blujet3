@@ -24,14 +24,36 @@ integer `bigint` IRR and every wire value stays an IRR decimal string. Toman is
 only a public/customer presentation conversion. Finance, invoice, report and
 agency-portal presentation uses the unconverted IRR value with a rial unit.
 
+## Microservices phase 5 — physical domain ownership
+
+Architecture phase 4 moves all mapped business tables from `public` into
+`identity`, `inventory`, `orders`, `payments`, `loyalty`, `agency`, `notify`,
+`experience`, `ops`, or `audit` inside the same PostgreSQL primary. The
+canonical table-by-table map, compatibility window, rollout gates and rollback
+order are in
+[`docs/features/microservices-phase-5-schema-domains.md`](features/microservices-phase-5-schema-domains.md).
+
+The move uses PostgreSQL `ALTER TABLE ... SET SCHEMA`, preserving the same
+physical rows, keys, indexes, defaults, sequences and cross-schema foreign
+keys. One simple updatable view is left under each former `public` table name
+for old unqualified readers and ordinary writers. No shadow table and no
+dual-write is introduced. PostgreSQL enum types and TypeORM migration history
+remain in `public` during this expand step.
+
+New TypeORM metadata and runtime raw SQL always qualify the owning schema.
+`inventory`, `orders`, and `payments` remain one ACID Core Platform; their
+schema names are ownership boundaries, not separate databases or distributed
+transactions.
+
 ## Microservices phase 2 — Experience ownership
 
-Runtime ownership moves incrementally to `experience-service` for blog posts,
+Runtime ownership moved incrementally to `experience-service` for blog posts,
 site content/highlights/media, careers settings/postings/applications, contact
 messages, support tickets, survey settings/questions/invites/responses, and
-Experience-owned stored files. During phase 2 these tables remain in the
-existing PostgreSQL `public` schema so rollback is code-only. Moving them to
-schema `experience` is deferred to phase 4 and must follow expand/contract.
+Experience-owned stored files. During phase 2 these tables remained in the
+existing PostgreSQL `public` schema so rollback was code-only. Phase 5 now
+moves them to schema `experience` through the expand/contract compatibility
+views documented above.
 
 Relations that currently point to `User`, `Booking`, `Airport`, or operational
 tables are transitional. New Experience runtime code stores stable UUIDs and
@@ -50,9 +72,9 @@ destructive migration is introduced in this release.
 
 The `notify-service` becomes the sole production runtime writer for existing
 `notifications` and `sms_logs` rows when `NOTIFY_INTEGRATION_ENABLED=true`.
-Both tables remain physically in `public` in this phase so rollback is an
-application switch, not a destructive schema rollback. Moving them to schema
-`notify` is intentionally deferred to phase 4's expand/contract migration.
+Both tables remained physically in `public` during phase 1 so rollback was an
+application switch. Phase 5 now moves them to schema `notify` and retains
+updatable `public` compatibility views for the rollout window.
 
 New additive core table `notify_outbox_events`:
 

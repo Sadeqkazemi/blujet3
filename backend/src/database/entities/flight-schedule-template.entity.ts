@@ -29,7 +29,7 @@ import { User } from './user.entity';
   'flight_schedule_templates_distanceSource_check',
   `"distanceSource" IS NULL OR "distanceSource" IN ('AI', 'MANUAL')`,
 )
-@Entity('flight_schedule_templates')
+@Entity('flight_schedule_templates', { schema: 'inventory' })
 export class FlightScheduleTemplate {
   @PrimaryColumn({
     type: 'text',

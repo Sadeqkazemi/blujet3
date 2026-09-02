@@ -11,7 +11,7 @@ import { StoredFile } from './stored-file.entity';
 import { User } from './user.entity';
 
 @Index('site_content_blocks_imageFileId_key', ['imageFileId'], { unique: true })
-@Entity('site_content_blocks')
+@Entity('site_content_blocks', { schema: 'experience' })
 export class SiteContentBlock {
   @PrimaryColumn({
     type: 'enum',

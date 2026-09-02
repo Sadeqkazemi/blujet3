@@ -12,7 +12,7 @@ export const JOB_TYPES = ['FULL_TIME', 'REMOTE', 'PART_TIME'] as const;
 export type JobType = (typeof JOB_TYPES)[number];
 
 @Index('job_postings_imageFileId_key', ['imageFileId'], { unique: true })
-@Entity('job_postings')
+@Entity('job_postings', { schema: 'experience' })
 export class JobPosting {
   @PrimaryColumn({ type: 'text' })
   id!: string;

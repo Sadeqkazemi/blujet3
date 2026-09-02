@@ -3,7 +3,7 @@ import { ManagerReferral } from './manager-referral.entity';
 import { User } from './user.entity';
 
 @Index('manager_referral_recipients_recipientId_idx', ['recipientId'])
-@Entity('manager_referral_recipients')
+@Entity('manager_referral_recipients', { schema: 'ops' })
 export class ManagerReferralRecipient {
   @PrimaryColumn({
     type: 'text',

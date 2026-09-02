@@ -219,9 +219,9 @@ export class FinancialIntegrationsService {
       [{ totalIrr: string; bookingCount: string; passengerCount: string }]
     >(
       `SELECT
-         (SELECT COALESCE(SUM(b."priceIrr" + b."taxIrr" + b."extrasIrr"), 0)::text FROM bookings b WHERE b.status IN ('PAID','TICKETED') AND b."deletedAt" IS NULL) AS "totalIrr",
-         (SELECT COUNT(*)::text FROM bookings b WHERE b.status IN ('PAID','TICKETED') AND b."deletedAt" IS NULL) AS "bookingCount",
-         (SELECT COUNT(*)::text FROM passengers p INNER JOIN bookings b ON b.id = p."bookingId" WHERE b.status IN ('PAID','TICKETED') AND b."deletedAt" IS NULL AND p."deletedAt" IS NULL AND p."occupiesSeat" = true) AS "passengerCount"`,
+         (SELECT COALESCE(SUM(b."priceIrr" + b."taxIrr" + b."extrasIrr"), 0)::text FROM orders.bookings b WHERE b.status IN ('PAID','TICKETED') AND b."deletedAt" IS NULL) AS "totalIrr",
+         (SELECT COUNT(*)::text FROM orders.bookings b WHERE b.status IN ('PAID','TICKETED') AND b."deletedAt" IS NULL) AS "bookingCount",
+         (SELECT COUNT(*)::text FROM orders.passengers p INNER JOIN orders.bookings b ON b.id = p."bookingId" WHERE b.status IN ('PAID','TICKETED') AND b."deletedAt" IS NULL AND p."deletedAt" IS NULL AND p."occupiesSeat" = true) AS "passengerCount"`,
     );
     return {
       generatedAt: new Date().toISOString(),

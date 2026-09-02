@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 
-@Entity('survey_settings')
+@Entity('survey_settings', { schema: 'experience' })
 export class SurveySettings {
   @PrimaryColumn({
     type: 'text',

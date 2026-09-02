@@ -3,7 +3,7 @@ import { bigintTransformer } from '../transformers/bigint.transformer';
 import { AgencyProfile } from './agency-profile.entity';
 import { User } from './user.entity';
 
-@Entity('agency_credit_lines')
+@Entity('agency_credit_lines', { schema: 'agency' })
 export class AgencyCreditLine {
   @PrimaryColumn({
     type: 'text',

@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 
 @Index('agency_request_otps_phone_idx', ['phone'])
-@Entity('agency_request_otps')
+@Entity('agency_request_otps', { schema: 'agency' })
 export class AgencyRequestOtp {
   @PrimaryColumn({
     type: 'text',

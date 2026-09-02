@@ -12,7 +12,7 @@ import {
 import { SurveyInvite } from './survey-invite.entity';
 
 @Index('survey_responses_inviteId_key', ['inviteId'], { unique: true })
-@Entity('survey_responses')
+@Entity('survey_responses', { schema: 'experience' })
 export class SurveyResponse {
   @PrimaryColumn({
     type: 'text',

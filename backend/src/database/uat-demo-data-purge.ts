@@ -18,8 +18,12 @@ function quoteIdentifier(value: string): string {
 async function tableCounts(dataSource: DataSource, tables: string[]) {
   const counts: Record<string, number> = {};
   for (const table of tables) {
+    const metadata = dataSource.entityMetadatas.find(
+      (candidate) => candidate.tableName === table,
+    );
+    if (!metadata) throw new Error(`Missing entity metadata for ${table}.`);
     const [row] = await dataSource.query<CountRow[]>(
-      `SELECT COUNT(*)::text AS count FROM ${quoteIdentifier(table)}`,
+      `SELECT COUNT(*)::text AS count FROM ${quoteIdentifier(metadata.schema ?? 'public')}.${quoteIdentifier(table)}`,
     );
     counts[table] = Number(row?.count ?? 0);
   }
@@ -39,7 +43,7 @@ async function main() {
       .sort();
     const [usersToDelete] = await dataSource.query<CountRow[]>(
       `SELECT COUNT(*)::text AS count
-       FROM "users"
+       FROM "identity"."users"
        WHERE NOT (
          "isSuperAdmin" = true
          OR LOWER(COALESCE("username", '')) LIKE 'uat.%'
@@ -97,13 +101,23 @@ async function main() {
     await runner.startTransaction();
     try {
       if (purgeTables.length > 0) {
-        const quotedTables = purgeTables.map(quoteIdentifier).join(', ');
+        const quotedTables = purgeTables
+          .map((table) => {
+            const metadata = dataSource.entityMetadatas.find(
+              (candidate) => candidate.tableName === table,
+            );
+            if (!metadata) {
+              throw new Error(`Missing entity metadata for ${table}.`);
+            }
+            return `${quoteIdentifier(metadata.schema ?? 'public')}.${quoteIdentifier(table)}`;
+          })
+          .join(', ');
         await runner.query(
           `TRUNCATE TABLE ${quotedTables} RESTART IDENTITY CASCADE`,
         );
       }
       await runner.query(
-        `DELETE FROM "users"
+        `DELETE FROM "identity"."users"
          WHERE NOT (
            "isSuperAdmin" = true
            OR LOWER(COALESCE("username", '')) LIKE 'uat.%'

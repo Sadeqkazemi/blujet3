@@ -15,7 +15,7 @@ import { Booking } from './booking.entity';
 import { User } from './user.entity';
 
 @Index('payment_reconciliations_status_idx', ['status'])
-@Entity('payment_reconciliations')
+@Entity('payment_reconciliations', { schema: 'payments' })
 export class PaymentReconciliation {
   @PrimaryColumn({
     type: 'text',

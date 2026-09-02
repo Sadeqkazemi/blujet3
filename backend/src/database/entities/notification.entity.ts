@@ -24,7 +24,7 @@ import { NotificationCategory } from '../enums';
   'readAt',
 ])
 @Index('notifications_dedupeKey_key', ['dedupeKey'], { unique: true })
-@Entity('notifications')
+@Entity('notifications', { schema: 'notify' })
 export class Notification {
   @PrimaryColumn({
     type: 'text',
