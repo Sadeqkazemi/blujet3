@@ -29,6 +29,7 @@ import { WalletEntry } from '../../database/entities/wallet-entry.entity';
 import { LedgerEntry } from '../../database/entities/ledger-entry.entity';
 import { AuditService } from '../audit/audit.service';
 import { ErrorCode } from '../../common/errors';
+import { searchCacheKey } from '../../common/search-cache-key';
 import { enumerateSeats } from '../reservation/seat-layout';
 import { resolveAircraftType } from './aircraft-type.util';
 import { serializeCabinCapacities } from './flight-definition.util';
@@ -82,6 +83,13 @@ const SOLD_STATUSES = ['PAID', 'TICKETED'] as const;
 /** Product rule: weak-sale escalation begins one week before departure. */
 const WEAK_SALES_WINDOW_HOURS = 7 * 24;
 const WEAK_SALES_OCCUPANCY_PCT = 60;
+const PUBLIC_SEARCH_CACHE_CABINS: readonly (CabinClass | 'ALL')[] = [
+  'ALL',
+  'ECONOMY',
+  'COMFORT',
+  'BUSINESS',
+  'FIRST',
+];
 
 function stringifyScalar(value: unknown, fallback = ''): string {
   if (
@@ -662,10 +670,7 @@ export class FlightsService {
         existing.isInternational = dto.isInternational ?? false;
         existing.active = true;
         const restored = await this.airportRepo.save(existing);
-        await this.redis.del('search:airports');
-        await this.redis.del('search:airports:v2');
-        await this.redis.del('search:airports:v3');
-        await this.redis.del('search:airports:v4');
+        await this.redis.del(searchCacheKey('airports', 'v5'));
         await this.audit.record({
           actorId: actor.id,
           actorRole: actor.role,
@@ -694,10 +699,7 @@ export class FlightsService {
         active: true,
       }),
     );
-    await this.redis.del('search:airports');
-    await this.redis.del('search:airports:v2');
-    await this.redis.del('search:airports:v3');
-    await this.redis.del('search:airports:v4');
+    await this.redis.del(searchCacheKey('airports', 'v5'));
     await this.audit.record({
       actorId: actor.id,
       actorRole: actor.role,
@@ -722,10 +724,7 @@ export class FlightsService {
     // immediately removing the city from every new-flight/search selector.
     airport.active = false;
     await this.airportRepo.save(airport);
-    await this.redis.del('search:airports');
-    await this.redis.del('search:airports:v2');
-    await this.redis.del('search:airports:v3');
-    await this.redis.del('search:airports:v4');
+    await this.redis.del(searchCacheKey('airports', 'v5'));
     await this.audit.record({
       actorId: actor.id,
       actorRole: actor.role,
@@ -1534,8 +1533,18 @@ export class FlightsService {
     const route = instance.flight?.route;
     if (!route) return;
     const date = instance.departureAt.toISOString().slice(0, 10);
-    await this.redis.del(
-      `search:flights:${route.originCode.toUpperCase()}:${route.destCode.toUpperCase()}:${date}`,
+    await Promise.all(
+      PUBLIC_SEARCH_CACHE_CABINS.map((cabin) =>
+        this.redis.del(
+          searchCacheKey(
+            'flights',
+            route.originCode.toUpperCase(),
+            route.destCode.toUpperCase(),
+            date,
+            cabin,
+          ),
+        ),
+      ),
     );
   }
 
@@ -3197,8 +3206,18 @@ export class FlightsService {
         entityId: instance.id,
         metadata: { siteVisible: visible },
       });
-      await this.redis.del(
-        `search:flights:${instance.flight.route.originCode.toUpperCase()}:${instance.flight.route.destCode.toUpperCase()}:${instance.departureAt.toISOString().slice(0, 10)}`,
+      await Promise.all(
+        PUBLIC_SEARCH_CACHE_CABINS.map((cabin) =>
+          this.redis.del(
+            searchCacheKey(
+              'flights',
+              instance.flight.route.originCode.toUpperCase(),
+              instance.flight.route.destCode.toUpperCase(),
+              instance.departureAt.toISOString().slice(0, 10),
+              cabin,
+            ),
+          ),
+        ),
       );
     }
 

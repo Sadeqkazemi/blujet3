@@ -20,11 +20,15 @@ export class HealthController {
       await this.dataSource.query('SELECT 1');
       return {
         status: 'ok',
+        service: 'blujet-backend',
         info: {
           database: { status: 'up' },
           build: {
             status: 'up',
-            version: process.env.npm_package_version ?? 'dev',
+            version:
+              process.env.SERVICE_VERSION ??
+              process.env.npm_package_version ??
+              'dev',
             commit: process.env.GIT_COMMIT_SHA ?? 'unknown',
           },
         },
@@ -32,6 +36,7 @@ export class HealthController {
     } catch {
       throw new ServiceUnavailableException({
         status: 'error',
+        service: 'blujet-backend',
         error: { database: { status: 'down' } },
       });
     }

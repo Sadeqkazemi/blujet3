@@ -1,5 +1,21 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Architecture authority (v1.1)
+
+The target service topology and migration order are governed by
+[`docs/architecture/blujet-architecture-v1.1.md`](architecture/blujet-architecture-v1.1.md).
+The public compatibility contract remains `/api/v1`; clients never address
+internal services directly. Migration uses gateway routing and compatibility
+facades, so extracting a service does not silently rename or remove an
+existing public endpoint.
+
+`inventory`, `orders`, and `payments` remain one transactional Core Platform.
+The experimental `pss-service` shell is shadow-only until reconciled into that
+boundary; it is not authorization to split seat, order, and payment writers
+across primary databases. Extraction proceeds only in the documented order:
+phase 0 deployment safety, then `notify`, `experience`, `identity`, domain
+schemas, `loyalty`/`agency`, `intelligence`, and `warehouse`.
+
 Single source of truth is `docs/openapi.json`, regenerated on every backend
 boot (`main.ts`) and after every phase. This file is a curated summary —
 **only Phase 1 is specified below**; later phases are appended here as they
@@ -18,7 +34,11 @@ session unless marked public.
   authentication, status, and payload semantics. For example,
   `/api/v1/auth/me` and `/auth/me` reach the same handler.
 - `GET /health` and `GET /api/v1/health` are public, unauthenticated, and
-  rate-limit-exempt. They report database/build readiness without secrets.
+  rate-limit-exempt. They report `service`, `version`, and the deployed
+  `commit` together with database readiness, without secrets.
+- Swagger remains available in development/test. In production, `/docs` and
+  `/docs-json` are not mounted. A future internal/VPN documentation deployment
+  must use a separate private listener rather than a public runtime switch.
 - Every response carries `X-Request-Id`. Clients may supply a 1-128 character
   identifier containing ASCII letters, digits, `.`, `_`, `:`, or `-`; invalid
   values are replaced with a server-generated UUID.
@@ -4219,13 +4239,19 @@ the browser.
 - Public travel-extra, ancillary-service, and seat-service responses expose localized `titleFa`, `titleAr`, `titleEn`, `descriptionFa`, `descriptionAr`, and `descriptionEn` values when applicable, so checkout does not display Persian fallback content in Arabic/English.
 - Booking creation accepts only explicitly selected extras and priced seat selections. The booking snapshot persists localized extra labels; payment and invoice views render those persisted selected rows rather than reconstructing or charging the full service catalog.
 
-## Approved central PSS/CRS contract
+## Historical central PSS/CRS contract (shadow-only under architecture v1.1)
 
-This contract is implemented incrementally. Slice 0 provides the independent
+The domain shapes below remain useful, but their earlier separate-primary
+writer topology is superseded by architecture v1.1. The current `pss-service`
+must remain a disabled shadow/reconciliation shell; no sales writer may switch
+to it. Any implemented Offer/Order contracts belong inside the transactional
+Core Platform boundary.
+
+This contract was designed incrementally. Slice 0 provides the independent
 service shell and capability endpoint; reservation, inventory and document
 endpoints remain disabled until their acceptance slices pass. It replaces
-direct website ownership of inventory and reservation writes only after a
-reconciled, feature-flagged cutover. All paths below are internal-only unless
+direct website ownership only if a newer owner-approved ADR authorizes a
+reconciled cutover. All paths below are internal-only unless
 explicitly labelled as a partner NDC facade. Every command requires
 `Idempotency-Key` and propagates `X-Request-Id`; service-to-service
 authentication is mandatory.

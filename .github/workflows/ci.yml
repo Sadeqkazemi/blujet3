@@ -13,6 +13,60 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  backend-migration-compatibility:
+    name: Backend migration compatibility
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: blujet
+          POSTGRES_PASSWORD: blujet
+          POSTGRES_DB: blujet_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U blujet"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout production baseline
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: baseline
+      - name: Checkout candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          path: candidate
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            baseline/backend/package-lock.json
+            candidate/backend/package-lock.json
+      - name: Build baseline schema
+        working-directory: baseline/backend
+        run: |
+          npm ci
+          cp .env.test .env
+          npm run migration:run
+      - name: Reject contract-first migration violations
+        working-directory: candidate
+        run: node scripts/check-expand-only-migrations.mjs ${{ github.event.pull_request.base.sha }}
+      - name: Rehearse candidate migration over baseline schema
+        working-directory: candidate/backend
+        run: |
+          npm ci
+          cp .env.test .env
+          npm run migration:run
+
   pss-service:
     name: Central PSS service
     runs-on: ubuntu-24.04-arm
@@ -93,6 +147,7 @@ jobs:
       - run: npm run migration:run
       - run: npm run seed
       - run: npm run lint
+      - run: npm run typecheck
       - run: npm run build
       - run: npm test
       - run: npm run test:e2e

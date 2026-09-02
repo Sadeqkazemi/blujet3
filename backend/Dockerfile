@@ -8,6 +8,9 @@ RUN npm run build
 FROM node:22-slim AS production
 WORKDIR /app
 ENV NODE_ENV=production
+ARG GIT_COMMIT_SHA=unknown
+ENV GIT_COMMIT_SHA=${GIT_COMMIT_SHA}
+ENV SERVICE_VERSION=0.0.1
 # The backups endpoint executes the real pg_dump binary. Keep the database
 # client in the runtime image instead of turning a missing dependency into a
 # permanent FAILED backup record.

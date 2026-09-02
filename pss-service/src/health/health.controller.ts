@@ -17,7 +17,10 @@ export class HealthController {
         status: 'ok',
         service: 'blujet-pss',
         database: 'up',
-        version: process.env.npm_package_version ?? 'dev',
+        version:
+          process.env.SERVICE_VERSION ??
+          process.env.npm_package_version ??
+          'dev',
         commit: process.env.GIT_COMMIT_SHA ?? 'unknown',
       };
     } catch {

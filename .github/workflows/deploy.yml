@@ -83,6 +83,7 @@ jobs:
             export VITE_SANDBOX_AUTH=true
             docker compose -f docker-compose.prod.yml build
             docker compose -f docker-compose.prod.yml up -d --wait
+            sh scripts/smoke-service-health.sh docker-compose.prod.yml
             # One-time, owner-approved UAT access while Kavenegar is repaired.
             # Credentials never enter Actions logs: stdout is redirected on the
             # server into a root-only file. The sentinel prevents password

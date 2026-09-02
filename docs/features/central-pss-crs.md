@@ -1,6 +1,17 @@
 # Central PSS/CRS extraction and airline document lifecycle
 
-Status: **APPROVED — owner approval received 2026-09-01**
+Status: **SUPERSEDED IN TOPOLOGY by architecture v1.1**
+
+The Offer/Order, accountable-document, idempotency, outbox, and reconciliation
+contracts in this document remain useful domain requirements. The newer
+[`blujet architecture v1.1`](../architecture/blujet-architecture-v1.1.md)
+supersedes the earlier decision to make `pss-service` a separate production
+writer with a separate primary database. Under v1.1, inventory, orders, and
+payments stay in one deployable and transactional Core Platform. The existing
+`pss-service` package remains a disabled shadow/reconciliation shell until a
+later reviewed migration either folds it into that Core Platform boundary or
+a newer written ADR replaces v1.1. `PSS_INTEGRATION_ENABLED` must remain false
+in production; no writer cutover is authorized by this document.
 
 This programme turns the current direct-sale booking engine into a central,
 airline-owned Passenger Service System. The public/agency website remains a

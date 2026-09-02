@@ -11,6 +11,7 @@ import {
   configureGateway,
   configureHttpServerTimeouts,
 } from './gateway/configure-gateway';
+import { isSwaggerEnabled } from './config/swagger-policy';
 import './common/bigint-json';
 
 initSentry();
@@ -38,7 +39,9 @@ async function bootstrap() {
     )
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('docs', app, document);
+  if (isSwaggerEnabled(process.env)) {
+    SwaggerModule.setup('docs', app, document);
+  }
   // Raw spec exported after every boot — single source of truth for
   // docs/API.md. Dev-repo convenience only: the production Docker image
   // has no docs/ directory (Swagger UI itself doesn't need this file), so

@@ -5,6 +5,15 @@
 - Description: An airline website: flight search, booking, seat selection,
   payment, e-ticketing, customer club (loyalty), user wallet, agency portal,
   and multi-role management panels for flights, schedules, fares and finance.
+- Backend target architecture: `docs/architecture/blujet-architecture-v1.1.md`
+  is the owner-approved authority for service boundaries, database ownership,
+  migration order, and security topology. It supersedes older topology notes
+  when they conflict. Migration is phased/strangler: phase 0 safety first,
+  then notify, experience, identity, schema-per-domain, loyalty/agency,
+  intelligence, and warehouse. Inventory + orders + payments remain one
+  deployable, one PostgreSQL primary, and one ACID transaction boundary.
+  Never perform a big-bang split or enable the shadow `pss-service` as a
+  production writer without a newer written owner-approved ADR.
 - The visual design is FINAL. Reference files live in `design-reference/`
   (the exported HTML pages listed in "Design Reference Pages" below).
   Match them exactly: colors, spacing, typography, components. Do NOT redesign.

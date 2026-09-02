@@ -3870,6 +3870,23 @@ contracts and retires the production mock adapters.
 - [ ] Complete visual browser verification when localhost browser access is available.
 - [ ] Commit/push, merge, and deploy only after explicit user approval.
 
+## Microservices architecture v1.1 — phase 0 foundation (2026-09-02)
+
+- [x] Store the owner-provided architecture ADR and make its Core Platform
+  transaction boundary and strangler order authoritative.
+- [x] Mark the earlier separate-primary PSS writer topology as superseded;
+  preserve the existing package only as a disabled shadow/reconciliation shell.
+- [x] Propagate exact deploy commit identity into service health responses.
+- [x] Disable public production Swagger.
+- [x] Add generation-based search-cache invalidation without `FLUSHDB`.
+- [x] Add migration-baseline and non-destructive migration gates to CI.
+- [x] Add post-deploy health/commit smoke checks.
+- [x] Run focused/full unit tests, builds, production typechecks, read-only lint,
+  YAML/shell validation, migration-gate dry run, and diff validation.
+- [ ] Obtain passing PR migration rehearsal and UAT smoke evidence, then present
+  the phase
+  diff for explicit owner approval before any merge or service extraction.
+
 ## Central PSS/CRS extraction — Slice 0 (2026-09-01)
 
 - [x] Record the owner-approved API, schema, migration and airline-document decisions.
