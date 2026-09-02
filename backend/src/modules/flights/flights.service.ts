@@ -2927,38 +2927,51 @@ export class FlightsService {
           metadata: { reason, affectedBookings: bookings.length },
         }),
       );
+      const route = `${instance.flight.route.originCode} به ${instance.flight.route.destCode}`;
+      for (const booking of bookings) {
+        if (this.sms.asyncDeliveryEnabled()) {
+          await this.sms.send(
+            booking.contactPhone,
+            `مسافر گرامی، پرواز ${instance.flight.flightNo} مسیر ${route} کنسل شد. استرداد وجه توسط واحد مالی انجام می‌شود.`,
+            'FLIGHT_CANCELLED',
+            `Booking:${booking.id}:SMS:FLIGHT_CANCELLED`,
+            manager,
+          );
+        }
+        if (booking.userId) {
+          await this.notifications.notify(
+            {
+              recipientId: booking.userId,
+              category: NotificationCategory.SYSTEM,
+              action: 'FLIGHT_CANCELLED',
+              title: 'پرواز شما کنسل شد',
+              body: `پرواز ${instance.flight.flightNo} مسیر ${route} کنسل شد.`,
+              entityType: 'Booking',
+              entityId: booking.id,
+              dedupeKey: `Booking:${booking.id}:FLIGHT_CANCELLED`,
+            },
+            manager,
+          );
+        }
+      }
       return { instance, alreadyCancelled: false as const, bookings };
     });
 
     if (!result.alreadyCancelled) {
       await this.invalidateFlightSearch(result.instance);
-      const route = `${result.instance.flight.route.originCode} به ${result.instance.flight.route.destCode}`;
-      await Promise.allSettled(
-        result.bookings.flatMap((booking) => {
-          const jobs: Promise<unknown>[] = [
+      if (!this.sms.asyncDeliveryEnabled()) {
+        const route = `${result.instance.flight.route.originCode} به ${result.instance.flight.route.destCode}`;
+        await Promise.allSettled(
+          result.bookings.map((booking) =>
             this.sms.send(
               booking.contactPhone,
               `مسافر گرامی، پرواز ${result.instance.flight.flightNo} مسیر ${route} کنسل شد. استرداد وجه توسط واحد مالی انجام می‌شود.`,
               'FLIGHT_CANCELLED',
+              `Booking:${booking.id}:SMS:FLIGHT_CANCELLED`,
             ),
-          ];
-          if (booking.userId) {
-            jobs.push(
-              this.notifications.notify({
-                recipientId: booking.userId,
-                category: NotificationCategory.SYSTEM,
-                action: 'FLIGHT_CANCELLED',
-                title: 'پرواز شما کنسل شد',
-                body: `پرواز ${result.instance.flight.flightNo} مسیر ${route} کنسل شد.`,
-                entityType: 'Booking',
-                entityId: booking.id,
-                dedupeKey: `Booking:${booking.id}:FLIGHT_CANCELLED`,
-              }),
-            );
-          }
-          return jobs;
-        }),
-      );
+          ),
+        );
+      }
     }
     return {
       flightInstanceId: result.instance.id,
@@ -3124,20 +3137,23 @@ export class FlightsService {
           },
         }),
       );
+      if (booking.userId) {
+        await this.notifications.notify(
+          {
+            recipientId: booking.userId,
+            category: NotificationCategory.SYSTEM,
+            action: 'CANCELLED_FLIGHT_REFUNDED',
+            title: 'وجه بلیط به حساب شما بازگشت داده شد',
+            body: `مبلغ رزرو ${booking.pnr} به حساب شما بازگشت داده شد.`,
+            entityType: 'Booking',
+            entityId: booking.id,
+            dedupeKey: `Booking:${booking.id}:CANCELLED_FLIGHT_REFUNDED`,
+          },
+          manager,
+        );
+      }
       return { booking, alreadyRefunded: false as const };
     });
-    if (!result.alreadyRefunded && result.booking.userId) {
-      await this.notifications.notify({
-        recipientId: result.booking.userId,
-        category: NotificationCategory.SYSTEM,
-        action: 'CANCELLED_FLIGHT_REFUNDED',
-        title: 'وجه بلیط به حساب شما بازگشت داده شد',
-        body: `مبلغ رزرو ${result.booking.pnr} به حساب شما بازگشت داده شد.`,
-        entityType: 'Booking',
-        entityId: result.booking.id,
-        dedupeKey: `Booking:${result.booking.id}:CANCELLED_FLIGHT_REFUNDED`,
-      });
-    }
     return {
       bookingId: result.booking.id,
       pnr: result.booking.pnr,

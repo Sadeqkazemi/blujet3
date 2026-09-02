@@ -3,7 +3,6 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AgencyProfile } from '../../database/entities/agency-profile.entity';
-import { Notification } from '../../database/entities/notification.entity';
 import { ErrorCode } from '../../common/errors';
 import type { AuthenticatedUser } from '../../common/types/authenticated-user';
 import { NotificationCategory } from '../../database/enums';
@@ -22,8 +21,6 @@ export class AgencyBulletinsService {
   constructor(
     @InjectRepository(AgencyProfile)
     private readonly profileRepo: Repository<AgencyProfile>,
-    @InjectRepository(Notification)
-    private readonly notificationRepo: Repository<Notification>,
     private readonly notifications: NotificationsService,
     private readonly audit: AuditService,
   ) {}
@@ -118,10 +115,9 @@ export class AgencyBulletinsService {
   }
 
   async adminHistory() {
-    const rows = await this.notificationRepo.find({
-      where: { entityType: AGENCY_BULLETIN_ENTITY },
-      order: { createdAt: 'DESC' },
-    });
+    const rows = await this.notifications.listByEntityType(
+      AGENCY_BULLETIN_ENTITY,
+    );
     const groups = new Map<
       string,
       {

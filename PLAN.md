@@ -3887,6 +3887,22 @@ contracts and retires the production mock adapters.
   the phase
   diff for explicit owner approval before any merge or service extraction.
 
+## Microservices architecture v1.1 — phase 1 notify (2026-09-02)
+
+- [x] Preserve the public `/api/v1/notifications/**` compatibility contract.
+- [x] Add the encrypted, retryable core notify outbox with additive migration.
+- [x] Extract notification/SMS persistence and delivery into `notify-service`.
+- [x] Replace synchronous critical domain-to-notify calls with transactionally
+  atomic outbox enqueue; all remaining facade writes also enqueue asynchronously.
+- [x] Proxy authenticated notification reads and operational reports through
+  internal service-identity endpoints without exposing them at nginx.
+- [x] Prove idempotency, ownership, validation, health and notify-down isolation.
+- [x] Pass local backend/notify/frontend tests, builds, migration, YAML and diff
+  checks.
+- [ ] Obtain passing CI container-build and UAT Compose smoke evidence.
+- [x] Owner explicitly approved merging phases 0 and 1 on 2026-09-02;
+  deployment remains deferred to a later manual dispatch.
+
 ## Central PSS/CRS extraction — Slice 0 (2026-09-01)
 
 - [x] Record the owner-approved API, schema, migration and airline-document decisions.

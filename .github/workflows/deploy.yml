@@ -2,8 +2,6 @@ name: Deploy UAT
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
 
 permissions:
   contents: read
@@ -75,6 +73,7 @@ jobs:
             }
             ensure_server_secret PSS_POSTGRES_PASSWORD
             ensure_server_secret PSS_INTERNAL_TOKEN
+            ensure_server_secret NOTIFY_INTERNAL_TOKEN
             unset -f ensure_server_secret
             # This host is the owner-approved UAT sandbox. Keep the backend
             # mock OTP and the matching frontend notice in sync for every

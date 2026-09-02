@@ -5,6 +5,8 @@ import {
   IsNumberString,
   IsOptional,
   Matches,
+  MinLength,
+  ValidateIf,
   validateSync,
 } from 'class-validator';
 
@@ -105,6 +107,37 @@ class EnvironmentVariables {
   @IsOptional()
   @Matches(/^[A-Za-z0-9._-]{1,64}$/)
   SEARCH_CACHE_GEN?: string;
+
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  NOTIFY_INTEGRATION_ENABLED?: string;
+
+  @ValidateIf(
+    (config: EnvironmentVariables) =>
+      config.NOTIFY_INTEGRATION_ENABLED === 'true',
+  )
+  @IsNotEmpty()
+  NOTIFY_SERVICE_URL?: string;
+
+  @ValidateIf(
+    (config: EnvironmentVariables) =>
+      config.NOTIFY_INTEGRATION_ENABLED === 'true',
+  )
+  @IsNotEmpty()
+  @MinLength(32)
+  NOTIFY_INTERNAL_TOKEN?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  NOTIFY_REQUEST_TIMEOUT_MS?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  NOTIFY_EVENT_TIMEOUT_MS?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  NOTIFY_OUTBOX_POLL_MS?: string;
 
   /** Central PSS is introduced behind an explicit cutover switch. */
   @IsOptional()

@@ -81,7 +81,8 @@ for a real incident to find out backups are broken.
 
 Deployments are serialized by the GitHub `uat` environment and always check
 out the exact workflow commit SHA. The preferred rollback is a reviewed revert
-PR to `main`; after merge, the normal workflow deploys that revert commit.
+PR to `main`; after merge, an authorized operator manually dispatches the UAT
+workflow for that revert commit.
 
 For an active incident only, an operator may temporarily restore the previous
 commit on the server while the revert PR is being prepared:
@@ -307,3 +308,31 @@ Every pull request runs `pss-service/scripts/verify-backup-restore.sh` after PSS
 migrations. It creates a custom-format `pg_dump`, restores it into a temporary
 database in the isolated CI PostgreSQL container, verifies both reliability
 tables and migration history, then removes the temporary database and dump.
+
+# Notify service (phase 1 strangler)
+
+`notify-service` is internal-only and shares the current PostgreSQL cluster
+during phase 1. Set one random `NOTIFY_INTERNAL_TOKEN` of at least 32 characters
+in the server `.env`; Compose injects the same value into backend and Notify.
+The existing `PII_ENCRYPTION_KEY` is also required to decrypt authenticated
+outbox payloads and the still-encrypted Kavenegar credential snapshot.
+
+Backend migrations remain the only schema writer in this phase. Apply them
+before expecting Notify readiness, then verify both readiness and pending-event
+delivery:
+
+```bash
+docker compose -f docker-compose.prod.yml exec -T backend \
+  npm run migration:run:prod
+docker compose -f docker-compose.prod.yml exec -T notify-service \
+  node -e "fetch('http://localhost:3200/health/ready').then(async r=>{process.stdout.write(await r.text());process.exit(r.ok?0:1)}).catch(()=>process.exit(1))"
+docker compose -f docker-compose.prod.yml exec -T db \
+  psql -U blujet -d blujet -c 'SELECT "eventType", attempts, "createdAt" FROM notify_outbox_events WHERE "deliveredAt" IS NULL ORDER BY "createdAt" ASC LIMIT 20;'
+```
+
+Do not expose port `3200` on the host. Browser/mobile clients continue using
+the gateway's `/api/v1/notifications/**` contract. If a rollback is required,
+set `NOTIFY_INTEGRATION_ENABLED=false` on backend and recreate only the backend
+container; existing `notifications` and `sms_logs` tables remain compatible.
+Never print `payloadEncrypted`, provider credentials, phone numbers, OTPs, or
+temporary passwords while diagnosing a pending event.

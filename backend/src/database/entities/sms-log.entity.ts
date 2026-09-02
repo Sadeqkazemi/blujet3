@@ -10,6 +10,7 @@ import {
 import { SmsMessageType, SmsStatus } from '../enums';
 
 @Index('sms_logs_createdAt_idx', ['createdAt'])
+@Index('sms_logs_sourceEventId_key', ['sourceEventId'], { unique: true })
 @Entity('sms_logs')
 export class SmsLog {
   @PrimaryColumn({ type: 'text', primaryKeyConstraintName: 'sms_logs_pkey' })
@@ -31,6 +32,9 @@ export class SmsLog {
 
   @Column({ type: 'text', nullable: true })
   failureReason!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  sourceEventId!: string | null;
 
   @CreateDateColumn({ precision: 3, default: () => 'CURRENT_TIMESTAMP' })
   createdAt!: Date;

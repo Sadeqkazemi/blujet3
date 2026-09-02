@@ -6,6 +6,7 @@ import { MockSmsProvider } from '../../common/sms/mock-sms.provider';
 import { KavenegarSmsProvider } from '../../common/sms/kavenegar-sms.provider';
 import { SmsLog } from '../../database/entities/sms-log.entity';
 import { ExternalServiceConfig } from '../../database/entities/external-service-config.entity';
+import { NotifyOutboxModule } from '../notify-outbox/notify-outbox.module';
 
 // KavenegarSmsProvider checks the ExternalServiceConfig(key:"ext_kavenegar")
 // row (IT Manager panel, Phase 28) on every send and falls back to
@@ -13,7 +14,10 @@ import { ExternalServiceConfig } from '../../database/entities/external-service-
 // its own doc comment. The seed row ships with no key, so the existing
 // test suite never makes a real network call without any env var needed.
 @Module({
-  imports: [TypeOrmModule.forFeature([SmsLog, ExternalServiceConfig])],
+  imports: [
+    TypeOrmModule.forFeature([SmsLog, ExternalServiceConfig]),
+    NotifyOutboxModule,
+  ],
   providers: [
     SmsService,
     MockSmsProvider,

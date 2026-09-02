@@ -16,6 +16,23 @@ across primary databases. Extraction proceeds only in the documented order:
 phase 0 deployment safety, then `notify`, `experience`, `identity`, domain
 schemas, `loyalty`/`agency`, `intelligence`, and `warehouse`.
 
+### Microservices phase 1 — notify compatibility contract
+
+The browser-facing notification contract remains unchanged:
+`GET /api/v1/notifications`, `GET /api/v1/notifications/unread-count`,
+`PATCH /api/v1/notifications/:id/read`, and
+`PATCH /api/v1/notifications/read-all` retain their current authentication,
+envelope, filtering, pagination, ownership, and idempotency behavior. Existing
+unprefixed aliases remain valid during the compatibility window.
+
+When `NOTIFY_INTEGRATION_ENABLED=true`, these handlers are an authenticated
+compatibility facade over the internal `notify-service`; all notification and
+SMS writes are delivered from the durable encrypted core outbox rather than by
+a synchronous service call. If notify is unavailable, only notification reads
+return HTTP 503 with stable code `NOTIFY_UNAVAILABLE`; booking/payment state is
+not rolled back. The private endpoint contract is documented in
+`docs/features/microservices-phase-1-notify.md` and is never exposed by nginx.
+
 Single source of truth is `docs/openapi.json`, regenerated on every backend
 boot (`main.ts`) and after every phase. This file is a curated summary —
 **only Phase 1 is specified below**; later phases are appended here as they
