@@ -58,8 +58,8 @@ describe('AgencyDashboardPage', () => {
 
     expect(await screen.findByTestId('agency-dashboard')).toBeInTheDocument();
     expect(screen.getByText('فروش این ماه')).toBeInTheDocument();
-    expect(screen.getAllByText(/۳۸٬۴۰۰٬۰۰۰/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/۱۳۰٬۰۰۰٬۰۰۰/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/۳۸۴٬۰۰۰٬۰۰۰ ریال/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/۱٬۳۰۰٬۰۰۰٬۰۰۰ ریال/).length).toBeGreaterThan(0);
     expect(screen.getByText('صندلی تخصیص‌یافته')).toBeInTheDocument();
     expect(screen.getByText('۳۰')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'نمودار فروش ۶ ماه اخیر' })).toBeInTheDocument();
@@ -111,6 +111,6 @@ describe('AgencyDashboardPage', () => {
     expect(screen.queryByText('خطا در دریافت داشبورد.')).not.toBeInTheDocument();
     expect(screen.getByText('فروش این ماه')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'نمودار فروش ۶ ماه اخیر' })).toBeInTheDocument();
-    expect(screen.getAllByText('۰ تومان').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('۰ ریال').length).toBeGreaterThan(0);
   });
 });

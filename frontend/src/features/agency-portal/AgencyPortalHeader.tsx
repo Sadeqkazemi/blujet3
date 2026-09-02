@@ -7,7 +7,7 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import { useLocale, type StoredLocale } from '../../hooks/useLocale';
 import { useT } from '../../lib/i18n';
-import { localeMoney } from '../../lib/fa-format';
+import { localeRial } from '../../lib/fa-format';
 import {
   fetchNotifications,
   fetchNotificationsUnreadCount,
@@ -225,7 +225,7 @@ export default function AgencyPortalHeader({ isMobile, activeKey, agencyName, li
         <div style={{ margin: '0 17px 12px', borderRadius: 12, background: 'var(--portal-surface-2)', padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
           <div>
             <div style={{ fontSize: 10.5, color: 'var(--portal-muted)' }}>{locale === 'fa' ? 'اعتبار قابل استفاده' : locale === 'ar' ? 'الرصيد المتاح' : 'Available credit'}</div>
-            <b className="font-num" style={{ display: 'block', marginTop: 4, fontSize: 14, color: 'var(--portal-ink)' }}>{remainingIrr == null ? '—' : localeMoney(remainingIrr, locale)}</b>
+            <b className="font-num" style={{ display: 'block', marginTop: 4, fontSize: 14, color: 'var(--portal-ink)' }}>{remainingIrr == null ? '—' : `${localeRial(remainingIrr, locale)} ${locale === 'en' ? 'Rial' : locale === 'ar' ? 'ريال' : 'ریال'}`}</b>
           </div>
           <span aria-hidden style={{ width: 34, height: 34, borderRadius: 9, background: 'var(--portal-surface)', border: '1px solid var(--portal-border)', display: 'grid', placeItems: 'center', color: 'var(--portal-accent)' }}>
             <AgencyNavIcon name="credit" size={18} />

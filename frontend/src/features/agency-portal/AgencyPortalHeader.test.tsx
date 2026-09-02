@@ -52,6 +52,9 @@ describe('AgencyPortalHeader language menu', () => {
       </MemoryRouter>,
     );
 
+    await userEvent.click(screen.getByTestId('agency-user-menu-toggle'));
+    expect(await screen.findByText('۱٬۰۰۰٬۰۰۰٬۰۰۰ ریال')).toBeInTheDocument();
+    await userEvent.click(screen.getByTestId('agency-user-menu-toggle'));
     const toggle = screen.getByTestId('agency-lang-toggle');
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     await userEvent.click(toggle);

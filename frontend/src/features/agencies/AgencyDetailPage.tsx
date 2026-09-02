@@ -23,7 +23,7 @@ import {
   updateAgencyApiKey,
   updateAgencyCredit,
 } from '../../api/agencies';
-import { faDigits, faMoney, parseTomanToRial } from '../../lib/fa-format';
+import { faDigits, faRial, parseRialInputString } from '../../lib/fa-format';
 import { formatJalaliDate, formatJalaliDateTime, parseJalaliDateToIso } from '../../lib/jalali';
 import { useStepUp } from '../../hooks/useStepUp';
 import Modal from '../../components/Modal';
@@ -234,7 +234,7 @@ export default function AgencyDetailPage() {
   }
 
   async function onConfirmCredit() {
-    const rial = parseTomanToRial(creditInput);
+    const rial = parseRialInputString(creditInput);
     if (rial === null) {
       setCreditError('مبلغ واردشده معتبر نیست.');
       return;
@@ -252,7 +252,7 @@ export default function AgencyDetailPage() {
   async function onSettle() {
     try {
       const { settledIrr } = await settleAgency(agencyId);
-      setNotice(`تسویه به مبلغ ${faMoney(settledIrr)} تومان ثبت شد ✓`);
+      setNotice(`تسویه به مبلغ ${faRial(settledIrr)} ریال ثبت شد ✓`);
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'خطا در ثبت تسویه.');
@@ -290,7 +290,7 @@ export default function AgencyDetailPage() {
   }
 
   async function onIssueInvoice() {
-    const rial = parseTomanToRial(invoiceAmount);
+    const rial = parseRialInputString(invoiceAmount);
     if (rial === null) {
       setInvoiceError('مبلغ واردشده معتبر نیست.');
       return;
@@ -429,18 +429,18 @@ export default function AgencyDetailPage() {
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-lg bg-panel-canvas p-3">
           <div className="text-[10px] text-panel-muted">سقف اعتبار</div>
-          <div className="font-num mt-1 text-sm font-black text-panel-ink">{faMoney(detail.credit.limitIrr)} تومان</div>
+          <div className="font-num mt-1 text-sm font-black text-panel-ink">{faRial(detail.credit.limitIrr)} ریال</div>
         </div>
         <div className="rounded-lg bg-panel-canvas p-3">
           <div className="text-[10px] text-panel-muted">مصرف‌شده</div>
           <div className="font-num mt-1 text-sm font-black text-danger">
-            {faMoney(Math.max(Number(detail.credit.usedIrr), 0))} تومان
+            {faRial(BigInt(detail.credit.usedIrr) > 0n ? detail.credit.usedIrr : '0')} ریال
           </div>
         </div>
         <div className="rounded-lg bg-panel-canvas p-3">
           <div className="text-[10px] text-panel-muted">مانده اعتبار</div>
           <div className="font-num mt-1 text-sm font-black text-[#34d399]">
-            {faMoney(Math.max(Number(detail.credit.remainingIrr), 0))} تومان
+            {faRial(BigInt(detail.credit.remainingIrr) > 0n ? detail.credit.remainingIrr : '0')} ریال
           </div>
         </div>
       </div>
@@ -449,7 +449,7 @@ export default function AgencyDetailPage() {
 
   const statsRow = (
     <div className="grid grid-cols-3 gap-4">
-      <StatBox label="فروش کل" value={`${faMoney(detail.stats.totalSalesIrr)} تومان`} />
+      <StatBox label="فروش کل" value={`${faRial(detail.stats.totalSalesIrr)} ریال`} />
       <StatBox label="بلیط صادرشده" value={faDigits(detail.stats.ticketsIssued)} />
       <StatBox label="مسافران" value={faDigits(detail.stats.passengers)} />
     </div>
@@ -513,7 +513,7 @@ export default function AgencyDetailPage() {
               <div key={req.id} className="flex items-center justify-between rounded-lg bg-panel-canvas p-3">
                 <div className="min-w-0">
                   <div className="font-num text-xs font-bold text-panel-ink">
-                    سقف درخواستی: {faMoney(req.requestedLimitIrr)} تومان
+                    سقف درخواستی: {faRial(req.requestedLimitIrr)} ریال
                   </div>
                   {req.note && <div className="mt-0.5 text-[11px] text-panel-muted">{req.note}</div>}
                   <div className="mt-0.5 text-[10px] text-panel-muted">{formatJalaliDateTime(req.createdAt)}</div>
@@ -562,7 +562,7 @@ export default function AgencyDetailPage() {
                     {WS_SCOPE_LABEL[req.scope]} — {faDigits(req.months)} ماهه
                   </div>
                   <div className="font-num mt-0.5 text-[11px] text-panel-muted">
-                    {faMoney(req.priceIrr)} تومان
+                    {faRial(req.priceIrr)} ریال
                   </div>
                   {req.note && <div className="mt-0.5 text-[11px] text-panel-muted">{req.note}</div>}
                   <div className="mt-0.5 text-[10px] text-panel-muted">{formatJalaliDateTime(req.createdAt)}</div>
@@ -825,7 +825,7 @@ export default function AgencyDetailPage() {
                     </td>
                     <td className="font-num py-2.5">{formatJalaliDate(inv.issuedAt)}</td>
                     <td className="font-num py-2.5">{formatJalaliDate(inv.dueAt)}</td>
-                    <td className="font-num py-2.5 font-bold">{faMoney(inv.amountIrr)} تومان</td>
+                    <td className="font-num py-2.5 font-bold">{faRial(inv.amountIrr)} ریال</td>
                     <td className="py-2.5">
                       <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${st.className}`}>{st.label}</span>
                     </td>
@@ -928,7 +928,7 @@ export default function AgencyDetailPage() {
                   <td className="ltr font-num py-2.5 text-panel-muted">{f.flightNo}</td>
                   <td className="font-num py-2.5 text-panel-muted">{formatJalaliDate(f.departAt)}</td>
                   <td className="font-num py-2.5 font-bold">{faDigits(f.seatCount)}</td>
-                  <td className="font-num py-2.5 font-bold text-[#34d399]">{faMoney(f.salesIrr)} تومان</td>
+                  <td className="font-num py-2.5 font-bold text-[#34d399]">{faRial(f.salesIrr)} ریال</td>
                 </tr>
               ))}
             </tbody>
@@ -988,10 +988,10 @@ export default function AgencyDetailPage() {
 
   const financeKpiRow = (isCommercial || isFinance) && (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-      <StatBox label="درآمد کل فروش" value={`${faMoney(detail.stats.totalSalesIrr)} تومان`} />
-      <StatBox label="مجموع پرداخت‌شده" value={`${faMoney(financeSummary.paidTotalIrr)} تومان`} />
-      <StatBox label="مانده پرداخت‌نشده" value={`${faMoney(financeSummary.unpaidTotalIrr)} تومان`} />
-      <StatBox label="مانده اعتبار" value={`${faMoney(detail.credit.remainingIrr)} تومان`} />
+      <StatBox label="درآمد کل فروش" value={`${faRial(detail.stats.totalSalesIrr)} ریال`} />
+      <StatBox label="مجموع پرداخت‌شده" value={`${faRial(financeSummary.paidTotalIrr)} ریال`} />
+      <StatBox label="مانده پرداخت‌نشده" value={`${faRial(financeSummary.unpaidTotalIrr)} ریال`} />
+      <StatBox label="مانده اعتبار" value={`${faRial(detail.credit.remainingIrr)} ریال`} />
     </div>
   );
 
@@ -1000,7 +1000,7 @@ export default function AgencyDetailPage() {
       title="فاکتورهای پرداخت‌نشده"
       action={
         <span className="font-num text-sm font-extrabold text-danger">
-          {faMoney(unpaidInvoices.reduce((s, i) => s + Number(i.amountIrr), 0))} تومان
+          {faRial(unpaidInvoices.reduce((sum, invoice) => sum + BigInt(invoice.amountIrr), 0n))} ریال
         </span>
       }
     >
@@ -1014,7 +1014,7 @@ export default function AgencyDetailPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-num text-xs font-extrabold text-danger">{faMoney(inv.amountIrr)} تومان</span>
+              <span className="font-num text-xs font-extrabold text-danger">{faRial(inv.amountIrr)} ریال</span>
               <button
                 onClick={() => void onRemindInvoice(inv)}
                 className="rounded-md bg-[#f59e0b1a] px-2.5 py-1 text-[10px] font-bold text-[#b45309]"
@@ -1046,7 +1046,7 @@ export default function AgencyDetailPage() {
               }`}
             >
               {t.signedAmountIrr >= 0 ? '+' : ''}
-              {faMoney(Math.abs(t.signedAmountIrr))} تومان
+              {faRial(Math.abs(t.signedAmountIrr))} ریال
             </span>
           </div>
         ))}
@@ -1102,7 +1102,7 @@ export default function AgencyDetailPage() {
                   <div>
                     <div className="text-xs font-extrabold text-panel-ink">{r.routeFa}</div>
                     <div className="mt-0.5 text-[10.5px] text-panel-muted">
-                      {faDigits(r.seats)} صندلی · {seatRequestTermLabel(r.months)} · {faMoney(r.totalIrr)} تومان
+                      {faDigits(r.seats)} صندلی · {seatRequestTermLabel(r.months)} · {faRial(r.totalIrr)} ریال
                     </div>
                   </div>
                   <span className="rounded-2xl px-2.5 py-1 text-[10px] font-bold" style={{ color: st.color, background: st.bg }}>
@@ -1134,7 +1134,7 @@ export default function AgencyDetailPage() {
                 </div>
                 <span className={`font-num text-xs font-extrabold ${t.signedAmountIrr >= 0 ? 'text-[#34d399]' : 'text-danger'}`}>
                   {t.signedAmountIrr >= 0 ? '+' : ''}
-                  {faMoney(Math.abs(t.signedAmountIrr))} تومان
+                  {faRial(Math.abs(t.signedAmountIrr))} ریال
                 </span>
               </div>
             ))}
@@ -1296,10 +1296,10 @@ export default function AgencyDetailPage() {
       {creditOpen && (
         <Modal title="تعیین سقف اعتبار" onClose={() => setCreditOpen(false)}>
           <div className="mb-3 inline-block rounded-full bg-panel-canvas px-3 py-1 text-[11px] text-panel-muted">
-            سقف فعلی: <span className="font-num font-bold">{faMoney(detail.credit.limitIrr)} تومان</span>
+            سقف فعلی: <span className="font-num font-bold">{faRial(detail.credit.limitIrr)} ریال</span>
           </div>
           <label className="mb-1 block text-xs font-bold text-panel-ink" htmlFor="credit-input">
-            سقف اعتبار جدید (تومان)
+            سقف اعتبار جدید (ریال)
           </label>
           <input
             id="credit-input"
@@ -1331,7 +1331,7 @@ export default function AgencyDetailPage() {
       {invoiceOpen && (
         <Modal title="صدور فاکتور جدید" onClose={() => setInvoiceOpen(false)}>
           <label className="mb-1 block text-xs font-bold text-panel-ink" htmlFor="invoice-amount">
-            مبلغ فاکتور (تومان)
+            مبلغ فاکتور (ریال)
           </label>
           <input
             id="invoice-amount"
@@ -1341,9 +1341,9 @@ export default function AgencyDetailPage() {
             placeholder="مثلاً ۱۵۰۰۰۰۰۰۰"
             className="font-num w-full rounded-lg border border-panel-border-2 bg-panel-canvas p-3 text-xs text-panel-ink outline-none transition focus:border-accent"
           />
-          {parseTomanToRial(invoiceAmount) !== null && (
+          {parseRialInputString(invoiceAmount) !== null && (
             <p className="mt-1 text-[11px] text-panel-muted">
-              مبلغ واردشده: <span className="font-num">{faMoney(parseTomanToRial(invoiceAmount)!)} تومان</span>
+              مبلغ واردشده: <span className="font-num">{faRial(parseRialInputString(invoiceAmount)!)} ریال</span>
             </p>
           )}
           <label className="mb-1 mt-3 block text-xs font-bold text-panel-ink" htmlFor="invoice-due">

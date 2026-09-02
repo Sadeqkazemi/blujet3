@@ -19,6 +19,11 @@ tables/columns/indexes, but may not drop or rename data required by the running
 release. Constraint tightening and removal happen in later releases after
 backfill and compatibility evidence.
 
+Currency display policy does not change the schema: every monetary column stays
+integer `bigint` IRR and every wire value stays an IRR decimal string. Toman is
+only a public/customer presentation conversion. Finance, invoice, report and
+agency-portal presentation uses the unconverted IRR value with a rial unit.
+
 ## Microservices phase 2 — Experience ownership
 
 Runtime ownership moves incrementally to `experience-service` for blog posts,

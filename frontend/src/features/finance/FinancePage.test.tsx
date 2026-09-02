@@ -143,7 +143,7 @@ describe('FinancePage', () => {
 
     renderFinancePage();
 
-    expect(await screen.findByTestId('employee-finance-view')).toHaveTextContent('۵۰۰٬۰۰۰٬۰۰۰ تومان');
+    expect(await screen.findByTestId('employee-finance-view')).toHaveTextContent('۵٬۰۰۰٬۰۰۰٬۰۰۰ ریال');
     expect(screen.getByText('تراکنش‌های مالی اخیر')).toBeInTheDocument();
     expect(screen.queryByText('تسویه‌حساب آژانس‌های همکار')).not.toBeInTheDocument();
     expect(transactions).toHaveBeenCalledOnce();
@@ -164,7 +164,7 @@ describe('FinancePage', () => {
     expect(await screen.findByText('مانیتورینگ فروش، تراکنش‌ها و تسویه آژانس‌ها')).toBeInTheDocument();
     expect(await screen.findByText('تراکنش‌های مالی اخیر')).toBeInTheDocument();
     expect(screen.getByTestId('finance-ops-view')).toBeInTheDocument();
-    expect(screen.getByTestId('finance-kpi-revenue')).toHaveTextContent('۵۰۰ میلیون');
+    expect(screen.getByTestId('finance-kpi-revenue')).toHaveTextContent('۵ میلیارد ریال');
     expect(screen.getByTestId('finance-kpi-debt')).toHaveTextContent('۲ آژانس');
     expect(screen.getByTestId('finance-revenue-mix')).toHaveTextContent('بر اساس کانال فروش');
     expect(screen.getByText('تسویه حساب')).toBeInTheDocument();
@@ -381,8 +381,8 @@ describe('FinancePage', () => {
     expect(screen.getAllByRole('button', { name: /تهران ← دبی/ })).toHaveLength(1);
     expect(screen.queryByText('مشهد ← تهران')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /تهران ← دبی/ })).toHaveTextContent('۳ پرواز');
-    // Aggregated sales: 4.0B + 4.53B + 2.0B rial = 10.53B → 1.053B toman → «۱٫۱ میلیارد»
-    expect(screen.getByRole('button', { name: /تهران ← دبی/ })).toHaveTextContent('۱٫۱ میلیارد');
+    // Aggregated sales: 4.0B + 4.53B + 2.0B IRR = 10.53B IRR → «۱۰٫۵ میلیارد ریال».
+    expect(screen.getByRole('button', { name: /تهران ← دبی/ })).toHaveTextContent('۱۰٫۵ میلیارد ریال');
     expect(screen.getByText('پرواز EP-805')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /تهران ← دبی/ })).toHaveAttribute(
       'aria-pressed',
@@ -398,7 +398,7 @@ describe('FinancePage', () => {
     await user.click(w5Card);
     expect(w5Card).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText('پرواز W5-098')).toBeInTheDocument();
-    expect(screen.getAllByText('۴۳۴ میلیون').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('۴٫۳ میلیارد ریال').length).toBeGreaterThanOrEqual(1);
 
     // Clearing search hides cards again (no default box).
     await user.clear(screen.getByLabelText('جستجوی شماره پرواز یا مسیر'));

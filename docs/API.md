@@ -67,6 +67,12 @@ Auth: `Authorization: Bearer <accessToken>` (JWT, short-lived) +
 httpOnly refresh cookie. All endpoints below require an authenticated staff
 session unless marked public.
 
+Money fields remain integer IRR decimal strings on every API. The public site
+and customer account convert those values to toman only for display. Finance
+dashboard/report/invoice surfaces and every agency-portal surface display the
+original IRR value as rial; exports remain IRR. No endpoint changes currency by
+viewer or returns pre-converted toman values.
+
 ## API gateway contract
 
 - The canonical base path is `/api/v1`. During the compatibility window, each

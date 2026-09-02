@@ -189,6 +189,7 @@ describe("AgencySeatsPage", () => {
       "DXB",
     );
     await user.click(screen.getByTestId("agency-request-route-fi-request-1"));
+    expect(screen.getAllByText(/۳۰٬۰۰۰٬۰۰۰ ریال/).length).toBeGreaterThan(0);
     expect(
       await screen.findByTestId("agency-request-flight-detail"),
     ).toBeInTheDocument();

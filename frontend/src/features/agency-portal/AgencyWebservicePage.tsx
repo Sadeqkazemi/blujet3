@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { fetchApiKeys, fetchAgencyPortalWebservicePlans, fetchMyWebserviceRequests, requestWebservice } from '../../api/agency-portal';
 import { ApiRequestError } from '../../api/envelope';
 import { formatLocaleDate } from '../../lib/locale-format';
-import { localeMoney } from '../../lib/fa-format';
+import { localeRial } from '../../lib/fa-format';
 import { useLocale, type StoredLocale } from '../../hooks/useLocale';
 import type { AgencyApiKeySummary, AgencyApiScope, AgencyWebserviceRequest } from '../../types/agency-portal';
 
@@ -42,7 +42,7 @@ const WS_PLAN_LABELS: Record<1 | 3 | 12, Tr> = {
 };
 
 const STR: Record<StoredLocale, {
-  toman: string;
+  rial: string;
   infoBanner: string;
   errorFallback: string;
   submitErrorFallback: string;
@@ -67,7 +67,7 @@ const STR: Record<StoredLocale, {
   viewDocsLabel: string;
 }> = {
   fa: {
-    toman: 'تومان',
+    rial: 'ریال',
     infoBanner:
       'برای استفاده از وب‌سرویس ابتدا باید یک پلن را خریداری کنید؛ درخواست شما برای ادمین ارسال و پس از بررسی و تأیید، کلید دسترسی از طریق مکاتبه با آژانس ارسال می‌شود.',
     errorFallback: 'خطا در دریافت اطلاعات وب‌سرویس.',
@@ -94,7 +94,7 @@ const STR: Record<StoredLocale, {
     viewDocsLabel: 'مشاهده مستندات وب‌سرویس',
   },
   en: {
-    toman: 'Toman',
+    rial: 'Rial',
     infoBanner:
       'To use the web service you must first purchase a plan; your request is sent to the admin, and once reviewed and approved, the access key is sent to your agency via correspondence.',
     errorFallback: 'Error loading web service information.',
@@ -121,7 +121,7 @@ const STR: Record<StoredLocale, {
     viewDocsLabel: 'View web service documentation',
   },
   ar: {
-    toman: 'تومان',
+    rial: 'ريال',
     infoBanner:
       'لاستخدام الخدمة الإلكترونية يجب أولاً شراء باقة؛ يُرسل طلبك إلى المدير، وبعد المراجعة والموافقة، تُرسل مفتاح الوصول إلى وكالتك عبر المراسلات.',
     errorFallback: 'خطأ في تحميل معلومات الخدمة الإلكترونية.',
@@ -169,7 +169,7 @@ export default function AgencyWebservicePage() {
   const wsPlans = ([1, 3, 12] as const).map((key) => ({
     key,
     label: WS_PLAN_LABELS[key],
-    priceLabel: localeMoney(planPrices[key], locale),
+    priceLabel: localeRial(planPrices[key], locale),
   }));
 
   const selPlan = wsPlans.find((p) => p.key === plan)!;
@@ -271,7 +271,7 @@ export default function AgencyWebservicePage() {
               >
                 <div className="text-xs font-extrabold text-[#0d2640]">{p.label[locale]}</div>
                 <div className="mt-1 text-[11px] font-bold text-[#1668c4]">
-                  {p.priceLabel} {t.toman}
+                  {p.priceLabel} {t.rial}
                 </div>
               </div>
             ))}
@@ -292,7 +292,7 @@ export default function AgencyWebservicePage() {
             <div>
               <div className="text-[10.5px] text-[#8a96a6]">{t.payableLabel}</div>
               <div className="text-base font-black text-[#0d2640]">
-                {selPlan.priceLabel} <span className="text-[10px] font-normal text-[#8a96a6]">{t.toman}</span>
+                {selPlan.priceLabel} <span className="text-[10px] font-normal text-[#8a96a6]">{t.rial}</span>
               </div>
             </div>
             <button
@@ -366,7 +366,7 @@ export default function AgencyWebservicePage() {
                     <div className="font-black text-[#1a2d42]">{SCOPE_LABEL[request.scope][locale]}</div>
                     <div className="mt-1 text-[10px] text-muted">{request.months} · {formatLocaleDate(request.createdAt, locale)}</div>
                   </div>
-                  <div className="font-black text-[#0d2640]">{localeMoney(request.priceIrr, locale)} {t.toman}</div>
+                  <div className="font-black text-[#0d2640]">{localeRial(request.priceIrr, locale)} {t.rial}</div>
                   <span className={`rounded-full px-3 py-1 text-[10px] font-bold ${request.status === 'PENDING' ? 'bg-[#fff1e5] text-[#c87322]' : request.status === 'APPROVED' ? 'bg-[#e9f7f0] text-[#23895f]' : 'bg-red-50 text-red-600'}`}>{status}</span>
                 </div>
               );

@@ -47,7 +47,7 @@ export function payInvoice(invoiceId: string) {
 }
 
 export function requestCreditIncrease(
-  requestedLimitIrr: number,
+  requestedLimitIrr: string,
   note?: string,
 ) {
   return apiPost<AgencyCreditRequest>("/agency-portal/credit-requests", {

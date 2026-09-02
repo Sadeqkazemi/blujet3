@@ -27,7 +27,7 @@ describe('FinanceReportsPage', () => {
 
     render(<FinanceReportsPage />);
     expect(await screen.findByText('آژانس سپهر')).toBeInTheDocument();
-    expect(screen.getByText('۳۰٬۰۰۰٬۰۰۰ تومان')).toBeInTheDocument();
+    expect(screen.getByText('۳۰۰٬۰۰۰٬۰۰۰ ریال')).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'چارترها' }));
     await waitFor(() =>

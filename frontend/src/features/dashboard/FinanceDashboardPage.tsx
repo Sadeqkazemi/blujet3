@@ -7,7 +7,7 @@ import {
 } from '../../api/reporting';
 import { fetchCartable } from '../../api/cartable';
 import type { CartableListResult } from '../../types/cartable';
-import { faDigits, faMoney } from '../../lib/fa-format';
+import { faDigits, faRial } from '../../lib/fa-format';
 import type {
   CompletedFlightsSummary,
   FinanceDashboardStats,
@@ -162,8 +162,8 @@ export default function FinanceDashboardPage() {
             }
           />
           <StatCard
-            label="درآمد (تومان)"
-            value={faMoney(stats.revenueThisMonthIrr)}
+            label="درآمد (ریال)"
+            value={faRial(stats.revenueThisMonthIrr)}
             trendPct={stats.revenueTrendPct}
             iconClass="bg-[#f59e0b18] text-[#b45309]"
             icon={
@@ -183,7 +183,7 @@ export default function FinanceDashboardPage() {
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-sm font-bold text-white">نمودار فروش</h2>
-              <p className="mt-0.5 text-[11px] text-[#6b7b94]">به تفکیک کانال · تومان</p>
+              <p className="mt-0.5 text-[11px] text-[#6b7b94]">به تفکیک کانال · ریال</p>
             </div>
             <div className="flex gap-1 rounded-lg border border-[#28344c] bg-[#18223a] p-1">
               {CHART_MODES.map((m) => (
@@ -206,21 +206,21 @@ export default function FinanceDashboardPage() {
                 <span className="h-2 w-2 rounded-sm bg-[#3b82f6]" />
                 سیستمی
               </div>
-              <div className="font-num font-black text-[#60a5fa]">{faMoney(channelSums.system)}</div>
+              <div className="font-num font-black text-[#60a5fa]">{faRial(channelSums.system)}</div>
             </div>
             <div className="rounded-lg border border-[#28344c] bg-[#18223a] p-3 text-xs">
               <div className="mb-1 flex items-center gap-1.5 text-[10px] text-[#6b7b94]">
                 <span className="h-2 w-2 rounded-sm bg-[#a855f7]" />
                 چارتر
               </div>
-              <div className="font-num font-black text-[#c084fc]">{faMoney(channelSums.charter)}</div>
+              <div className="font-num font-black text-[#c084fc]">{faRial(channelSums.charter)}</div>
             </div>
             <div className="rounded-lg border border-[#28344c] bg-[#18223a] p-3 text-xs">
               <div className="mb-1 flex items-center gap-1.5 text-[10px] text-[#6b7b94]">
                 <span className="h-2 w-2 rounded-sm bg-[#34d399]" />
                 آژانس
               </div>
-              <div className="font-num font-black text-[#34d399]">{faMoney(channelSums.agency)}</div>
+              <div className="font-num font-black text-[#34d399]">{faRial(channelSums.agency)}</div>
             </div>
           </div>
 

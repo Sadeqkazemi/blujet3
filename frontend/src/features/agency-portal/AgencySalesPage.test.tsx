@@ -57,8 +57,8 @@ describe('AgencySalesPage RTRD redesign', () => {
     expect(screen.getByRole('tab', { name: 'RTRD' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'PSR' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'PRR' })).toBeInTheDocument();
-    expect(screen.getByText('۷۶٬۰۰۰٬۰۰۰ تومان')).toBeInTheDocument();
-    expect(screen.getByText('۱۵٬۰۰۰٬۰۰۰ تومان')).toBeInTheDocument();
+    expect(screen.getByText('۷۶۰٬۰۰۰٬۰۰۰ ریال')).toBeInTheDocument();
+    expect(screen.getByText('۱۵۰٬۰۰۰٬۰۰۰ ریال')).toBeInTheDocument();
   });
 
   it('shows immutable registration identity and contact fields from the authenticated agency profile', async () => {

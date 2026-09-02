@@ -108,6 +108,54 @@ export function localeMoney(
   return formatToman(Math.round(Number(amountRial) / 10), locale);
 }
 
+/** Formats an integer IRR amount without converting it to toman. */
+export function localeRial(
+  amountRial: number | string | bigint,
+  locale: DisplayLocale,
+): string {
+  const integer =
+    typeof amountRial === 'number'
+      ? BigInt(Math.round(amountRial))
+      : BigInt(amountRial);
+  const grouped = integer.toLocaleString('en-US');
+  if (locale === 'en') return grouped;
+  const withSeparator = grouped.replace(/,/g, '٬');
+  return locale === 'ar' ? arDigits(withSeparator) : faDigits(withSeparator);
+}
+
+/** Persian-digit IRR formatter for finance and agency surfaces. */
+export function faRial(amountRial: number | string | bigint): string {
+  return localeRial(amountRial, 'fa');
+}
+
+/** Compact IRR label for finance charts; no rial→toman conversion occurs. */
+export function faRialCompact(amountRial: number | string | bigint): string {
+  const rial = Number(amountRial);
+  const billion = rial / 1_000_000_000;
+  if (Math.abs(billion) >= 1) {
+    const rounded = Math.round(billion * 10) / 10;
+    const raw = Number.isInteger(rounded)
+      ? rounded.toLocaleString('en-US')
+      : rounded.toLocaleString('en-US', {
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1,
+        });
+    return `${faDigits(raw.replace(/,/g, '٬').replace('.', '٫'))} میلیارد`;
+  }
+  const million = Math.round(rial / 1_000_000);
+  if (Math.abs(million) >= 1) {
+    return `${faDigits(million.toLocaleString('en-US').replace(/,/g, '٬'))} میلیون`;
+  }
+  return faRial(amountRial);
+}
+
+/** Compact IRR number when the chart renders the unit in a separate label. */
+export function faRialCompactNumber(
+  amountRial: number | string | bigint,
+): string {
+  return faRialCompact(amountRial).replace(/ (میلیارد|میلیون)$/, '');
+}
+
 /** Persian-digit percentage, e.g. faPercent(12.5) -> "۱۲.۵٪" */
 export function faPercent(value: number): string {
   return `${faDigits(value)}٪`;
@@ -153,6 +201,16 @@ export function parseTomanToRialString(input: string): string | null {
   const cleaned = latinDigits(input).replace(/[٬,\s]/g, '');
   if (!cleaned || !/^\d+$/.test(cleaned)) return null;
   return (BigInt(cleaned) * 10n).toString();
+}
+
+/**
+ * Normalizes a rial amount typed by the user to an integer IRR decimal
+ * string. No currency conversion is performed.
+ */
+export function parseRialInputString(input: string): string | null {
+  const cleaned = latinDigits(input).replace(/[٬,\s]/g, '');
+  if (!cleaned || !/^\d+$/.test(cleaned)) return null;
+  return BigInt(cleaned).toString();
 }
 
 /**

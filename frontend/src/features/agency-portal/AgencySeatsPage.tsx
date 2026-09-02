@@ -16,7 +16,7 @@ import {
 } from "../../api/agency-portal";
 import { fetchSeatMap } from "../../api/publicSite";
 import { publicCabinLabel } from "../../lib/flight-definition";
-import { localeMoney } from "../../lib/fa-format";
+import { localeRial } from "../../lib/fa-format";
 import { formatLocaleDateTime, localeDigits } from "../../lib/locale-format";
 import { useLocale, type StoredLocale } from "../../hooks/useLocale";
 import type {
@@ -112,6 +112,7 @@ const STR: Record<
 export default function AgencySeatsPage() {
   const { locale } = useLocale();
   const t = STR[locale];
+  const currencyUnit = locale === "en" ? "Rial" : locale === "ar" ? "ريال" : "ریال";
   const [rows, setRows] = useState<AgencyAllotmentRow[] | null>(null);
   const [requestOptions, setRequestOptions] = useState<
     AgencySeatRequestOption[] | null
@@ -770,7 +771,7 @@ export default function AgencySeatsPage() {
                         className={`mt-1 block text-sm ${isReleased ? "text-[#23895f]" : "text-[#c87322]"}`}
                       >
                         {isReleased
-                          ? localeMoney(row.pricePerSeatIrr!, locale)
+                          ? `${localeRial(row.pricePerSeatIrr!, locale)} ${currencyUnit}`
                           : locale === "fa"
                             ? "قابل درخواست از بازرگانی"
                             : locale === "ar"
@@ -1238,19 +1239,21 @@ export default function AgencySeatsPage() {
                       className={`rounded-xl border px-3 py-3 text-xs font-black disabled:cursor-not-allowed disabled:opacity-40 ${payMethod === "CREDIT" ? "border-[#1668c4] bg-[#eef5ff] text-[#1668c4]" : "border-[#d6e4f8]"}`}
                     >
                       {locale === "fa"
-                        ? `اعتباری · مانده ${localeMoney(agencyCredit?.remainingIrr ?? "0", locale)} تومان`
-                        : `Credit · ${localeMoney(agencyCredit?.remainingIrr ?? "0", locale)} Toman`}
+                        ? `اعتباری · مانده ${localeRial(agencyCredit?.remainingIrr ?? "0", locale)} ${currencyUnit}`
+                        : locale === "ar"
+                          ? `ائتمان · الرصيد ${localeRial(agencyCredit?.remainingIrr ?? "0", locale)} ${currencyUnit}`
+                          : `Credit · ${localeRial(agencyCredit?.remainingIrr ?? "0", locale)} ${currencyUnit}`}
                     </button>
                   </div>
                 </div>
                 <div className="flex items-center justify-between rounded-xl border border-[#e8eef6] bg-[#f8fafc] p-4 text-xs text-[#687587]">
                   <span>
                     {locale === "fa"
-                      ? `${localeMoney(requestFlight.pricePerSeatIrr ?? "0", locale)} × ${localeDigits(orderSeatCount, locale)} صندلی × ${localeDigits(selectedOccurrences.length, locale)} پرواز`
+                      ? `${localeRial(requestFlight.pricePerSeatIrr ?? "0", locale)} ${currencyUnit} × ${localeDigits(orderSeatCount, locale)} صندلی × ${localeDigits(selectedOccurrences.length, locale)} پرواز`
                       : `${orderSeatCount} seats × ${selectedOccurrences.length} flights`}
                   </span>
                   <b className="text-base text-[#0d2640]">
-                    {localeMoney(selectedOrderTotalIrr.toString(), locale)}
+                    {localeRial(selectedOrderTotalIrr.toString(), locale)} {currencyUnit}
                   </b>
                 </div>
                 <button
@@ -1346,8 +1349,7 @@ export default function AgencySeatsPage() {
                 </div>
               </div>
               <div className="text-sm font-black text-[#23895f]">
-                {localeMoney(request.totalPriceIrr, locale)}{" "}
-                {locale === "fa" ? "تومان" : "Toman"}
+                {localeRial(request.totalPriceIrr, locale)} {currencyUnit}
               </div>
               <span
                 className={`rounded-full px-3 py-1 text-[10px] font-bold ${request.status === "REJECTED" ? "bg-red-50 text-red-600" : "bg-[#fff1e5] text-[#c87322]"}`}
