@@ -1,0 +1,25 @@
+node_modules/
+.npm-cache/
+dist/
+dev-dist/
+.env
+.env.local
+*.log
+.local-dev-logs/
+
+# Backend
+backend/dist/
+
+# ML service
+ml-service/__pycache__/
+ml-service/.venv/
+ml-service/*.egg-info/
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+__pycache__/
+*.pyc
+dump.rdb

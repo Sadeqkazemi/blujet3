@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box;}html,body{margin:0;}details>summary{list-style:none;}details>summary::-webkit-details-marker{display:none;}details[open] .chev{transform:rotate(180deg);}</style>
+<script src="./image-slot.js"></script>
+<script src="./site-data.js"></script>
+</helmet>
+
+<div dir="{{ pageDir }}" style="font-family:Vazirmatn,sans-serif; background:#f6f8fb; color:#16202e; min-height:100vh; --accent:#1668c4;">
+
+  <!-- HEADER -->
+  <header style="position:sticky; top:0; z-index:50;">
+    <div style="background:{{ headerBarBg }}; border-bottom:{{ headerBorderB }}; box-shadow:0 2px 12px -8px rgba(13,38,102,.25);">
+      <div style="max-width:1180px; margin:0 auto; padding:0 26px; height:{{ headerH }}; display:flex; align-items:center; justify-content:space-between;">
+        <span onClick="{{ toggleMobileMenu }}" style="display:{{ hamburgerDisplay }}; width:38px; height:38px; align-items:center; justify-content:center; border-radius:10px; cursor:pointer; flex:none; font-size:17px; color:{{ hamburgerColor }};">☰</span>
+        <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:9px; text-decoration:none; color:inherit; cursor:pointer;">
+          <div style="width:38px; height:38px; border-radius:10px; background:{{ logoSquareBg }}; display:flex; align-items:center; justify-content:center; color:{{ logoIconColor }}; font-size:18px;">✈</div>
+          <span style="font-weight:900; font-size:18px; letter-spacing:-.5px; color:{{ logoTextColor }};">blujet</span>
+        </a>
+        <nav style="display:{{ navDisplay }}; gap:{{ navGap }}; font-size:{{ navFontSize }}; color:#3b4554; font-weight:600; height:100%; align-items:center; white-space:nowrap;">
+          <a href="صفحه اصلی.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">{{ navFlights }}</a>
+          <a href="مقاصد.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">{{ navDestinations }}</a>
+          <a href="باشگاه مشتریان.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">{{ navLoyalty }}</a>
+          <a href="پشتیبانی.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">{{ navSupport }}</a>
+        </nav>
+        <div style="display:{{ navDisplay }}; align-items:center; gap:10px;">
+          <span onClick="{{ toggleLang }}" style="display:flex; align-items:center; gap:6px; cursor:pointer; color:#5a6678; border:1.5px solid #e2e7ee; border-radius:20px; padding:6px 12px; font-size:12.5px; font-weight:700;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 4 5.7 4 9s-1.5 6.5-4 9c-2.5-2.5-4-5.7-4-9s1.5-6.5 4-9z"/></svg>{{ langLabel }}</span>
+          <div style="position:relative;">
+            <div onClick="{{ toggleNotif }}" style="width:42px; height:42px; border-radius:50%; background:#f3f5f8; display:flex; align-items:center; justify-content:center; color:#5a6678; font-size:15.5px; position:relative; cursor:pointer;">🔔<span style="position:absolute; top:5px; left:8px; min-width:16px; height:16px; padding:0 3px; box-sizing:border-box; border-radius:8px; background:#e5484d; border:1.5px solid #fff; color:#fff; font-size:9px; font-weight:800; display:flex; align-items:center; justify-content:center; line-height:1;">2</span></div>
+            <sc-if value="{{ notifOpen }}" hint-placeholder-val="{{false}}">
+              <div onClick="{{ toggleNotif }}" style="position:fixed; inset:0; z-index:120;"></div>
+              <div style="position:absolute; top:52px; right:0; width:340px; background:#fff; border:1px solid #e6eaf0; border-radius:14px; box-shadow:0 20px 50px -16px rgba(13,38,64,.35); z-index:130; overflow:hidden;">
+                <div style="padding:11px 12px; border-bottom:1px solid #eef1f5; display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; font-weight:800; color:#0d2640;">{{ hdrNotifications }}</span><span style="font-size:10px; font-weight:700; color:var(--accent,#1668c4); background:#eef4fb; padding:2px 7px; border-radius:12px;">{{ lblNewCount }}</span></div>
+                <sc-for list="{{ notifs }}" as="n" hint-placeholder-count="3">
+                  <div style="display:flex; gap:9px; padding:11px 12px; border-bottom:1px solid #f4f6fa; background:{{ n.bg }};">
+                    <span style="width:34px; height:34px; border-radius:10px; background:#f3f5f8; display:flex; align-items:center; justify-content:center; font-size:14.5px; flex:none;">{{ n.icon }}</span>
+                    <div style="min-width:0;"><div style="font-size:11.5px; font-weight:700; color:#16202e;">{{ n.title }}</div><div style="font-size:11px; color:#6b7787; margin-top:2px; line-height:1.7;">{{ n.body }}</div><div style="font-size:9.5px; color:#9aa4b2; margin-top:4px;">{{ n.time }}</div></div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+          <div style="position:relative;">
+            <div onClick="{{ toggleMenu }}" style="display:flex; align-items:center; gap:8px; background:{{ menuBtnBg }}; border:1px solid {{ menuBtnBorder }}; padding:4px 10px 4px 7px; border-radius:28px; cursor:pointer;" style-hover="border-color:var(--accent,#1668c4);"><div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,var(--accent,#1668c4),#0d3b66); color:#fff; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-5.33 0-9 2.69-9 6v2h18v-2c0-3.31-3.67-6-9-6z"/></svg></div><div style="line-height:1.35; white-space:nowrap;"><div style="font-size:12px; font-weight:700;">{{ userName }}</div></div><span style="color:#9aa4b2; font-size:9px; margin-right:2px; flex:none; transition:transform .15s; transform:{{ menuChevron }};">▾</span></div>
+            <sc-if value="{{ menuOpen }}" hint-placeholder-val="{{false}}">
+              <div onClick="{{ closeMenu }}" style="position:fixed; inset:0; z-index:55;"></div>
+              <div style="position:absolute; top:56px; right:0; width:302px; background:#fff; border:1px solid #e6eaf0; border-radius:16px; box-shadow:0 20px 46px -14px rgba(13,38,102,.4); padding:12px; z-index:60;">
+                <div style="display:flex; align-items:center; gap:11px; padding:4px 4px 12px;">
+                  <div style="width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,var(--accent,#1668c4),#0d3b66); color:#fff; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-5.33 0-9 2.69-9 6v2h18v-2c0-3.31-3.67-6-9-6z"/></svg></div>
+                  <div style="line-height:1.5; min-width:0;"><div style="font-size:13.5px; font-weight:800; color:#16202e;">{{ userName }}</div><div style="font-size:11px; color:#9aa4b2; font-family:'Roboto Mono',monospace;" dir="ltr">{{ headerPhone }}</div></div>
+                </div>
+                <div onClick="{{ goWallet }}" style="background:linear-gradient(135deg,#0d2640,#16406e); color:#fff; border-radius:13px; padding:12px 13px; display:flex; align-items:center; justify-content:space-between; cursor:pointer;">
+                  <div style="line-height:1.5;"><div style="font-size:10.5px; color:#aac4e2;">{{ lblWalletTotal }}</div><div style="font-size:16px; font-weight:900; margin-top:2px;">{{ walletBalanceFa }} <span style="font-size:10.5px; font-weight:400; opacity:.8;">{{ currencyLabel }}</span></div></div>
+                  <span onClick="{{ copyWallet }}" style="width:30px; height:30px; border-radius:9px; background:#ffffff1c; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></span>
+                </div>
+                <div style="height:1px; background:#eef1f5; margin:11px 2px;"></div>
+                <sc-for list="{{ profileMenu }}" as="m" hint-placeholder-count="4">
+                  <div onClick="{{ m.onClick }}" style="display:flex; align-items:center; gap:10px; padding:9px 8px; border-radius:10px; cursor:pointer;" style-hover="background:#f4f7fb;"><span style="width:20px; height:20px; display:flex; color:#5a6678; flex:none;" dangerouslySetInnerHTML="{{ m.icon }}"></span><span style="font-size:12px; font-weight:600; color:#16202e; flex:1;">{{ m.label }}</span></div>
+                </sc-for>
+                <div style="height:1px; background:#eef1f5; margin:8px 2px;"></div>
+                <div onClick="{{ doLogout }}" style="display:flex; align-items:center; gap:10px; padding:9px 8px; border-radius:10px; cursor:pointer; color:#e5484d;" style-hover="background:#fdecec;"><span style="width:20px; height:20px; display:flex; flex:none;" dangerouslySetInnerHTML="{{ logoutIcon }}"></span><span style="font-size:12px; font-weight:700;">{{ btnLogout }}</span></div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+        <div style="display:{{ mobileIconRowDisplay }}; align-items:center; gap:6px;">
+          <span onClick="{{ toggleLang }}" style="width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; cursor:pointer;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 4 5.7 4 9s-1.5 6.5-4 9c-2.5-2.5-4-5.7-4-9s1.5-6.5 4-9z"/></svg></span>
+          <div style="position:relative;">
+            <div onClick="{{ toggleMenu }}" style="width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.16); color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-5.33 0-9 2.69-9 6v2h18v-2c0-3.31-3.67-6-9-6z"/></svg></div>
+            <sc-if value="{{ menuOpen }}" hint-placeholder-val="{{false}}">
+              <div onClick="{{ closeMenu }}" style="position:fixed; inset:0; z-index:120;"></div>
+              <div style="position:absolute; top:46px; left:0; right:auto; width:280px; max-width:80vw; background:#fff; border:1px solid #e6eaf0; border-radius:16px; box-shadow:0 20px 46px -14px rgba(13,38,102,.4); padding:12px; z-index:130;">
+                <div style="display:flex; align-items:center; gap:11px; padding:4px 4px 12px;">
+                  <div style="width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,var(--accent,#1668c4),#0d3b66); color:#fff; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-5.33 0-9 2.69-9 6v2h18v-2c0-3.31-3.67-6-9-6z"/></svg></div>
+                  <div style="line-height:1.5; min-width:0;"><div style="font-size:13.5px; font-weight:800; color:#16202e;">{{ userName }}</div><div style="font-size:11px; color:#9aa4b2; font-family:'Roboto Mono',monospace;" dir="ltr">{{ headerPhone }}</div></div>
+                </div>
+                <div onClick="{{ goWallet }}" style="background:linear-gradient(135deg,#0d2640,#16406e); color:#fff; border-radius:13px; padding:12px 13px; display:flex; align-items:center; justify-content:space-between; cursor:pointer;">
+                  <div style="line-height:1.5;"><div style="font-size:10.5px; color:#aac4e2;">{{ lblWalletTotal }}</div><div style="font-size:16px; font-weight:900; margin-top:2px;">{{ walletBalanceFa }} <span style="font-size:10.5px; font-weight:400; opacity:.8;">{{ currencyLabel }}</span></div></div>
+                  <span onClick="{{ copyWallet }}" style="width:30px; height:30px; border-radius:9px; background:#ffffff1c; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></span>
+                </div>
+                <div style="height:1px; background:#eef1f5; margin:11px 2px;"></div>
+                <sc-for list="{{ profileMenu }}" as="m" hint-placeholder-count="4">
+                  <div onClick="{{ m.onClick }}" style="display:flex; align-items:center; gap:10px; padding:9px 8px; border-radius:10px; cursor:pointer;" style-hover="background:#f4f7fb;"><span style="width:20px; height:20px; display:flex; color:#5a6678; flex:none;" dangerouslySetInnerHTML="{{ m.icon }}"></span><span style="font-size:12px; font-weight:600; color:#16202e; flex:1;">{{ m.label }}</span></div>
+                </sc-for>
+                <div style="height:1px; background:#eef1f5; margin:8px 2px;"></div>
+                <div onClick="{{ doLogout }}" style="display:flex; align-items:center; gap:10px; padding:9px 8px; border-radius:10px; cursor:pointer; color:#e5484d;" style-hover="background:#fdecec;"><span style="width:20px; height:20px; display:flex; flex:none;" dangerouslySetInnerHTML="{{ logoutIcon }}"></span><span style="font-size:12px; font-weight:700;">{{ btnLogout }}</span></div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MOBILE MENU DRAWER -->
+  <sc-if value="{{ mobileMenuOpen }}" hint-placeholder-val="{{false}}">
+    <div style="position:fixed; inset:0; background:#fff; z-index:210; display:flex; flex-direction:column; overflow-y:auto;">
+      <div style="display:flex; align-items:center; justify-content:center; position:relative; padding:26px 20px 18px;">
+        <span style="font-size:22px; font-weight:800; color:#16202e;">{{ menuTitle }}</span>
+        <span onClick="{{ toggleMobileMenu }}" style="position:absolute; right:20px; top:22px; width:34px; height:34px; display:flex; align-items:center; justify-content:center; font-size:24px; color:#16202e; cursor:pointer;">×</span>
+      </div>
+      <div style="padding:4px 24px 0; display:flex; flex-direction:column;">
+        <a href="صفحه اصلی.dc.html" style="padding:20px 0; text-decoration:none; color:#16202e; font-size:17px; font-weight:700; display:flex; align-items:center; justify-content:space-between;">{{ navFlights }}</a>
+        <a href="پنل کاربر.dc.html" style="padding:20px 0; text-decoration:none; color:#16202e; font-size:17px; font-weight:700; border-top:1px solid #eef1f5; display:flex; align-items:center; justify-content:space-between;"><span style="white-space:nowrap;">{{ lblProfileManagement }}</span></a>
+        <a href="مقاصد.dc.html" style="padding:20px 0; text-decoration:none; color:#16202e; font-size:17px; font-weight:700; border-top:1px solid #eef1f5; display:flex; align-items:center; justify-content:space-between;">{{ navDestinations }}</a>
+        <a href="باشگاه مشتریان.dc.html" style="padding:20px 0; text-decoration:none; color:#16202e; font-size:17px; font-weight:700; border-top:1px solid #eef1f5; display:flex; align-items:center; justify-content:space-between;">{{ navLoyalty }}</a>
+        <a href="پشتیبانی.dc.html" style="padding:20px 0; text-decoration:none; color:#16202e; font-size:17px; font-weight:700; border-top:1px solid #eef1f5; border-bottom:1px solid #eef1f5; display:flex; align-items:center; justify-content:space-between;">{{ navSupport }}</a>
+      </div>
+      <div style="margin-top:auto; padding:14px 24px 32px;">
+        <a href="صفحه اصلی.dc.html" style="display:block; padding:10px 0; text-decoration:none; color:#e5484d; font-size:14px; font-weight:700;">{{ btnLogout }}</a>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- HERO + LOOKUP -->
+  <section style="background:linear-gradient(135deg,#0d2640,#16406e); color:#fff; padding:34px 22px 40px;">
+    <div style="max-width:880px; margin:0 auto; text-align:center;">
+      <h1 style="font-size:27px; font-weight:900; margin:0 0 8px;">{{ heroTitle }}</h1>
+      <p style="font-size:13px; color:#aac4e2; margin:0 0 4px;">{{ heroSub }}</p>
+    </div>
+  </section>
+
+  <section style="max-width:1180px; margin:32px auto 56px; padding:0 26px; position:relative;">
+
+    <sc-if value="{{ showLookup }}" hint-placeholder-val="{{true}}">
+    <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:21px; box-shadow:0 18px 50px -28px rgba(13,38,102,.5);">
+      <div style="display:flex; gap:13px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:220px;"><div style="font-size:11.5px; color:#8a96a6; margin-bottom:8px; font-weight:600;">{{ lblPnr }}</div><input value="{{ pnr }}" onInput="{{ onPnr }}" placeholder="{{ phPnr }}" style="width:100%; height:52px; border:1.5px solid #e2e7ee; border-radius:12px; background:#fafbfd; padding:0 12px; font-family:inherit; font-size:13.5px; font-weight:700; color:#16202e; outline:none;" style-focus="border-color:var(--accent,#1668c4); background:#fff;" /></div>
+        <div style="flex:1; min-width:220px;"><div style="font-size:11.5px; color:#8a96a6; margin-bottom:8px; font-weight:600;">{{ lblLastName }}</div><input value="{{ lname }}" onInput="{{ onLname }}" placeholder="{{ phLastName }}" style="width:100%; height:52px; border:1.5px solid #e2e7ee; border-radius:12px; background:#fafbfd; padding:0 12px; font-family:inherit; font-size:13.5px; font-weight:700; color:#16202e; outline:none;" style-focus="border-color:var(--accent,#1668c4); background:#fff;" /></div>
+      </div>
+      <div onClick="{{ doLookup }}" style="margin-top:20px; height:54px; border-radius:13px; background:var(--accent,#1668c4); color:#fff; display:flex; align-items:center; justify-content:center; gap:7px; font-size:14px; font-weight:800; cursor:pointer; white-space:nowrap; box-shadow:0 14px 30px -14px rgba(22,104,196,.6);" style-hover="background:#125aab;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>{{ lookupBtn }}</div>
+      <div style="margin-top:16px; font-size:11.5px; color:#9aa4b2; text-align:center;">{{ noteEmailSms }}</div>
+    </div>
+
+    <div style="margin-top:38px;">
+      <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:15px; gap:12px;">
+        <div><div style="font-size:16.5px; font-weight:900; color:#16202e;">{{ hdrPopularDest }}</div><div style="font-size:11.5px; color:#8a96a6; margin-top:4px;">{{ subPopularDest }}</div></div>
+        <a href="مقاصد.dc.html" style="font-size:11.5px; font-weight:700; color:var(--accent,#1668c4); text-decoration:none; white-space:nowrap;">{{ linkViewAllDest }}</a>
+      </div>
+      <div style="display:grid; grid-template-columns:{{ destCols }}; gap:18px;">
+        <sc-for list="{{ destinations }}" as="d" hint-placeholder-count="4">
+          <a href="نتایج پرواز.dc.html" style="position:relative; height:270px; border-radius:18px; overflow:hidden; display:block; text-decoration:none; background:#dbe7f6; transition:all .2s;" style-hover="box-shadow:0 26px 52px -22px rgba(13,38,102,.45); transform:translateY(-4px);">
+            <image-slot id="{{ d.imgId }}" shape="rect" placeholder="{{ d.imgPlaceholder }}" style="position:absolute; inset:0; display:block; width:100%; height:100%;"></image-slot>
+            <div style="position:absolute; inset:0; background:linear-gradient(180deg,rgba(13,38,64,0) 40%,rgba(13,38,64,.82)); pointer-events:none;"></div>
+            <sc-if value="{{ d.hasTag }}" hint-placeholder-val="{{false}}"><span style="position:absolute; top:12px; right:12px; white-space:nowrap; background:#caa53a; color:#fff; font-size:10px; font-weight:800; padding:4px 11px; border-radius:14px;">{{ d.tag }}</span></sc-if>
+            <span style="position:absolute; top:12px; left:12px; background:rgba(255,255,255,.16); backdrop-filter:blur(4px); color:#fff; font-size:9.5px; font-weight:700; padding:3px 9px; border-radius:12px; pointer-events:none;">{{ d.category }}</span>
+            <div style="position:absolute; right:0; left:0; bottom:0; padding:13px 15px; display:flex; align-items:flex-end; justify-content:space-between; gap:10px; pointer-events:none;">
+              <span style="line-height:1.6;"><span style="display:block; color:#fff; font-size:16.5px; font-weight:900; text-shadow:0 1px 6px rgba(0,0,0,.4);">{{ d.city }} <span style="font-size:10px; font-weight:600; color:#c9dcf3;" dir="ltr">{{ d.code }}</span></span><span style="display:block; color:#c9dcf3; font-size:10.5px;">{{ d.meta }}</span></span>
+              <span style="text-align:left; line-height:1.5; white-space:nowrap;"><span style="display:block; color:#9fc0e8; font-size:9px;">{{ lblStartsFrom }}</span><span style="display:block; color:#fff; font-size:14px; font-weight:900;">{{ d.price }} <span style="font-size:9px; font-weight:400; color:#c9dcf3;">{{ currencyLabel }}</span></span></span>
+            </div>
+          </a>
+        </sc-for>
+      </div>
+      <div style="margin-top:44px; position:relative; border-radius:24px; overflow:hidden; min-height:208px; box-shadow:0 18px 44px -28px rgba(13,38,102,.4);">
+        <image-slot id="rezerv-banner-bg" shape="rect" placeholder="{{ bannerImgPlaceholder }}" style="position:absolute; inset:0; display:block; width:100%; height:100%;"></image-slot>
+        <div style="position:absolute; inset:0; background:linear-gradient(100deg,rgba(13,38,102,.9) 0%,rgba(22,104,196,.66) 48%,rgba(22,104,196,.12) 100%); pointer-events:none;"></div>
+        <div style="position:relative; z-index:2; display:flex; align-items:center; justify-content:space-between; gap:26px; padding:{{ bannerPad }}; flex-wrap:wrap;">
+          <div style="max-width:560px;">
+            <div style="display:inline-flex; align-items:center; gap:7px; background:#ffffff22; color:#fff; padding:5px 11px; border-radius:20px; font-size:11.5px; font-weight:600; margin-bottom:14px;"><span style="width:7px; height:7px; border-radius:50%; background:#7ee0b0;"></span><span>{{ bannerBadge }}</span></div>
+            <h2 style="font-size:25px; font-weight:800; color:#fff; margin:0 0 10px; letter-spacing:-.5px; text-wrap:balance;">{{ bannerTitle }}</h2>
+            <p style="font-size:13.5px; color:#e7eefb; margin:0; line-height:1.7; max-width:480px;">{{ bannerSub }}</p>
+          </div>
+          <a href="باشگاه مشتریان.dc.html" style="flex:none; display:inline-flex; align-items:center; gap:7px; padding:11px 25px; background:#fff; color:var(--accent,#1668c4); border-radius:12px; font-size:13.5px; font-weight:800; text-decoration:none; box-shadow:0 12px 28px -14px rgba(11,33,56,.5);"><span>{{ bannerBtn }}</span> <span style="font-size:15.5px;">{{ arrowIcon }}</span></a>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ showNotFound }}" hint-placeholder-val="{{false}}">
+    <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:44px 24px; text-align:center; box-shadow:0 18px 50px -28px rgba(13,38,102,.5);">
+      <div style="width:64px; height:64px; border-radius:50%; background:#f6f8fb; color:#8a96a6; display:flex; align-items:center; justify-content:center; font-size:26px; margin:0 auto 16px;">🔍</div>
+      <div style="font-size:15px; font-weight:800; color:#16202e; margin-bottom:6px;">{{ hdrNotFound }}</div>
+      <div style="font-size:12px; color:#8a96a6; margin-bottom:20px; line-height:1.9;">{{ subNotFound }}</div>
+      <div onClick="{{ reset }}" style="display:inline-flex; height:46px; padding:0 22px; border-radius:12px; background:var(--accent,#1668c4); color:#fff; align-items:center; justify-content:center; font-size:12.5px; font-weight:800; cursor:pointer;">{{ btnSearchAgain }}</div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ showResult }}" hint-placeholder-val="{{false}}">
+    <div style="display:flex; flex-direction:column; gap:15px; max-width:880px; margin:0 auto;">
+
+      <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; overflow:hidden; box-shadow:0 18px 50px -30px rgba(13,38,102,.5);">
+        <div style="background:linear-gradient(135deg,#0d2640,#16406e); color:#fff; padding:12px 18px; display:flex; align-items:center; justify-content:space-between;">
+          <div style="display:flex; align-items:center; gap:8px;"><div style="width:30px; height:30px; border-radius:8px; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-size:13.5px;">✈</div><span style="font-size:13.5px; font-weight:800;">{{ airline }}</span><span style="font-size:10px; font-weight:700; color:#7ee2b0; background:rgba(16,185,129,.18); padding:3px 10px; border-radius:14px; margin-right:4px;">{{ lblConfirmed }}</span></div>
+          <div style="text-align:left;"><div style="font-size:10px; color:#aac4e2;">{{ lblPnr }}</div><div style="font-size:14.5px; font-weight:800; font-family:'Roboto Mono',monospace;" dir="ltr">{{ pnrShow }}</div></div>
+        </div>
+        <div style="padding:18px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+          <div style="text-align:center;"><div style="font-size:27px; font-weight:900; color:#16202e;" dir="ltr">{{ depCode }}</div><div style="font-size:11.5px; color:#8a96a6; margin-top:2px;">{{ depCity }}</div><div style="font-size:13.5px; font-weight:700; color:var(--accent,#1668c4); margin-top:6px;">{{ depTime }}</div></div>
+          <div style="flex:1; min-width:120px; display:flex; flex-direction:column; align-items:center; color:#c2cad6;"><div style="font-size:11px; color:#8a96a6;">{{ duration }}</div><div style="width:100%; height:2px; background:#e6eaf0; position:relative; margin:7px 0;"><span style="position:absolute; left:50%; top:-7px; font-size:12.5px; color:var(--accent,#1668c4);">✈</span></div><div style="font-size:10.5px; color:#9aa4b2;">{{ flightNo }}</div></div>
+          <div style="text-align:center;"><div style="font-size:27px; font-weight:900; color:#16202e;" dir="ltr">{{ arrCode }}</div><div style="font-size:11.5px; color:#8a96a6; margin-top:2px;">{{ arrCity }}</div><div style="font-size:13.5px; font-weight:700; color:var(--accent,#1668c4); margin-top:6px;">{{ arrTime }}</div></div>
+        </div>
+        <div style="border-top:1.5px dashed #e2e7ee; padding:12px 18px; display:grid; grid-template-columns:{{ ticketDetailCols }}; gap:11px; position:relative;">
+          <span style="position:absolute; right:-11px; top:-11px; width:20px; height:20px; border-radius:50%; background:#f6f8fb; border:1px solid #eef1f5;"></span>
+          <span style="position:absolute; left:-11px; top:-11px; width:20px; height:20px; border-radius:50%; background:#f6f8fb; border:1px solid #eef1f5;"></span>
+          <div><div style="font-size:10.5px; color:#9aa4b2;">{{ lblDate }}</div><div style="font-size:12px; font-weight:700; margin-top:3px;">{{ date }}</div></div>
+          <div><div style="font-size:10.5px; color:#9aa4b2;">{{ lblTerminal }}</div><div style="font-size:12px; font-weight:700; margin-top:3px;">{{ terminal }}</div></div>
+          <div><div style="font-size:10.5px; color:#9aa4b2;">{{ lblGate }}</div><div style="font-size:12px; font-weight:700; margin-top:3px;">{{ gate }}</div></div>
+          <div><div style="font-size:10.5px; color:#9aa4b2;">{{ lblCabin }}</div><div style="font-size:12px; font-weight:700; margin-top:3px;">{{ cabin }}</div></div>
+        </div>
+      </div>
+
+      <div style="background:#fff; border:1px solid #eef1f5; border-radius:14px; padding:15px;">
+        <div style="font-size:13.5px; font-weight:800; margin-bottom:14px;">{{ hdrPassengers }}</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <sc-for list="{{ pax }}" as="p" hint-placeholder-count="2">
+            <div style="display:flex; align-items:center; justify-content:space-between; background:#f6f8fb; border-radius:11px; padding:11px 11px;">
+              <div style="display:flex; align-items:center; gap:10px;"><span style="width:38px; height:38px; border-radius:50%; background:#eef4fb; color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:11.5px;">{{ p.initials }}</span><div><div style="font-size:12.5px; font-weight:700;">{{ p.name }}</div><div style="font-size:10.5px; color:#9aa4b2;">{{ lblSeat }} {{ p.seat }} · {{ p.checkinLabel }}</div></div></div>
+              <span style="font-size:10.5px; font-weight:700; color:{{ p.statusColor }}; background:{{ p.statusBg }}; padding:4px 10px; border-radius:14px;">{{ p.statusText }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <sc-if value="{{ showActions }}" hint-placeholder-val="{{true}}">
+      <div style="display:grid; grid-template-columns:{{ actionsCols }}; gap:11px;">
+        <div onClick="{{ changeSeat }}" style="background:#fff; border:1px solid #eef1f5; border-radius:14px; padding:14px 12px; text-align:center; cursor:pointer;" style-hover="border-color:#dbe7f6; box-shadow:0 14px 30px -20px rgba(13,38,102,.3);"><div style="width:40px; height:40px; margin:0 auto 9px; border-radius:11px; background:#eef4fb; color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="10" height="12" rx="2"/><path d="M6 8V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><path d="M6 12h4M6 16h4"/><path d="M17 8v8M17 8l-2 2M17 8l2 2"/></svg></div><div style="font-size:12px; font-weight:700;">{{ btnChangeSeat }}</div></div>
+        <div onClick="{{ openRefund }}" style="background:#fff; border:1px solid #eef1f5; border-radius:14px; padding:14px 12px; text-align:center; cursor:pointer;" style-hover="border-color:#f5c9c9; box-shadow:0 14px 30px -20px rgba(180,40,40,.3);"><div style="width:40px; height:40px; margin:0 auto 9px; border-radius:11px; background:#fdeeee; color:#d64545; display:flex; align-items:center; justify-content:center;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 5 5v1"/></svg></div><div style="font-size:12px; font-weight:700;">{{ btnRefundTicket }}</div></div>
+        <div onClick="{{ downloadTicket }}" style="background:#fff; border:1px solid #eef1f5; border-radius:14px; padding:14px 12px; text-align:center; cursor:pointer;" style-hover="border-color:#dbe7f6; box-shadow:0 14px 30px -20px rgba(13,38,102,.3);"><div style="width:40px; height:40px; margin:0 auto 9px; border-radius:11px; background:#eef4fb; color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M5 21h14"/></svg></div><div style="font-size:12px; font-weight:700;">{{ btnDownloadTicket }}</div></div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ showRefund }}" hint-placeholder-val="{{false}}">
+      <sc-if value="{{ refundDone }}" hint-placeholder-val="{{false}}">
+        <div style="background:#fff; border:1px solid #eef1f5; border-radius:14px; padding:24px 21px; text-align:center;">
+          <div style="width:64px; height:64px; border-radius:50%; background:#eef9f1; color:#1f8a5b; display:flex; align-items:center; justify-content:center; font-size:27px; margin:0 auto 14px;">✓</div>
+          <div style="font-size:16px; font-weight:900; margin-bottom:6px;">{{ hdrRefundSubmitted }}</div>
+          <div style="font-size:12px; color:#8a96a6; margin-bottom:18px; line-height:1.9;">{{ subRefundSubmitted }} <span style="font-weight:800; color:#16202e;" dir="ltr">RF-{{ pnrShow }}</span></div>
+          <div style="display:inline-flex; background:#f6f8fb; border-radius:12px; padding:13px 22px; gap:26px;">
+            <div style="text-align:center;"><div style="font-size:10.5px; color:#9aa4b2; margin-bottom:3px;">{{ lblFareAmount }}</div><div style="font-size:13px; font-weight:800; color:#16202e;">{{ refFare }}</div></div>
+            <div style="text-align:center;"><div style="font-size:10.5px; color:#9aa4b2; margin-bottom:3px;">{{ lblPenalty }}</div><div style="font-size:13px; font-weight:800; color:#d64545;">{{ refPenalty }}</div></div>
+            <div style="text-align:center;"><div style="font-size:10.5px; color:#9aa4b2; margin-bottom:3px;">{{ lblRefundAmount }}</div><div style="font-size:13px; font-weight:800; color:#1f8a5b;">{{ refReturn }}</div></div>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ refundPending }}" hint-placeholder-val="{{true}}">
+        <div style="background:#fff; border:1px solid #eef1f5; border-radius:14px; padding:16px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;"><span style="font-size:13.5px; font-weight:800;">{{ btnRefundTicket }}</span><span style="font-size:11px; font-weight:700; color:#b06a00; background:#fcf3e6; padding:4px 10px; border-radius:14px;">{{ lblPenaltyRate }} {{ refPenaltyPct }}</span></div>
+          <div style="font-size:11.5px; color:#5a6678; line-height:1.9; margin-bottom:14px;">{{ subRefundPending }}</div>
+          <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
+            <sc-for list="{{ refundPax }}" as="p" hint-placeholder-count="2">
+              <label onClick="{{ p.toggle }}" style="display:flex; align-items:center; justify-content:space-between; background:#f6f8fb; border:1.5px solid {{ p.border }}; border-radius:11px; padding:11px 12px; cursor:pointer;">
+                <div style="display:flex; align-items:center; gap:10px;"><span style="width:22px; height:22px; flex:none; border-radius:6px; border:1.5px solid {{ p.border }}; background:{{ p.checkBg }}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px;">{{ p.mark }}</span><div><div style="font-size:12.5px; font-weight:700;">{{ p.name }}</div><div style="font-size:10.5px; color:#9aa4b2;">{{ lblSeat }} {{ p.seat }}</div></div></div>
+                <span style="font-size:12px; font-weight:800; color:#16202e;">{{ p.fare }}</span>
+              </label>
+            </sc-for>
+          </div>
+          <div style="background:#f6f8fb; border-radius:12px; padding:13px 15px; margin-bottom:16px; display:flex; flex-direction:column; gap:9px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; font-size:12px; color:#5a6678;"><span>{{ lblSelectedFareTotal }}</span><span style="font-weight:700; color:#16202e;">{{ refFare }}</span></div>
+            <div style="display:flex; align-items:center; justify-content:space-between; font-size:12px; color:#5a6678;"><span>{{ lblPenalty }} ({{ refPenaltyPct }})</span><span style="font-weight:700; color:#d64545;">−{{ refPenalty }}</span></div>
+            <div style="border-top:1px dashed #dbe2ea; padding-top:9px; display:flex; align-items:center; justify-content:space-between; font-size:13px; font-weight:800; color:#16202e;"><span>{{ lblRefundAmount }}</span><span style="color:#1f8a5b;">{{ refReturn }}</span></div>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <div onClick="{{ confirmRefund }}" style="flex:1; height:52px; border-radius:12px; background:{{ refundBtnBg }}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13.5px; font-weight:800; cursor:{{ refundBtnCursor }};">{{ btnConfirmRefund }}</div>
+            <div onClick="{{ cancelRefund }}" style="height:52px; padding:0 20px; border-radius:12px; border:1.5px solid #e2e7ee; color:#3b4554; display:flex; align-items:center; font-size:12.5px; font-weight:700; cursor:pointer;">{{ btnCancel }}</div>
+          </div>
+        </div>
+      </sc-if>
+      </sc-if>
+
+      <div onClick="{{ reset }}" style="text-align:center; font-size:11.5px; color:#8a96a6; cursor:pointer; font-weight:600;">{{ linkSearchAnother }}</div>
+    </div>
+    </sc-if>
+
+  </section>
+
+  <!-- FOOTER -->
+  <footer style="background:#0d2640; color:#aebfd4;">
+    <sc-if value="{{ notMobile }}" hint-placeholder-val="{{true}}">
+    <div style="max-width:1180px; margin:0 auto; padding:39px 26px 20px; display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr; gap:33px;">
+      <div>
+        <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:9px; margin-bottom:16px; text-decoration:none;"><div style="width:36px; height:36px; border-radius:10px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:16px;">✈</div><span style="font-weight:900; font-size:18px; color:#fff;">blujet</span></a>
+        <p style="font-size:13.5px; line-height:1.85; margin:0 0 20px; max-width:300px;">{{ footerTagline }}</p>
+        <div style="display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:16px;">
+          <span onClick="{{ dlAppStore }}" style="display:flex; align-items:center; gap:7px; background:#ffffff14; border:1px solid #ffffff1f; color:#fff; padding:8px 14px; border-radius:10px; font-size:11.5px; font-weight:700; cursor:pointer; white-space:nowrap;"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 12.5c-.03-2.36 1.93-3.5 2.02-3.55-1.1-1.6-2.8-1.82-3.4-1.85-1.44-.15-2.83.85-3.56.85-.74 0-1.87-.83-3.08-.8-1.58.02-3.05.92-3.86 2.34-1.66 2.88-.42 7.13 1.2 9.46.79 1.13 1.72 2.4 2.95 2.36 1.18-.05 1.63-.76 3.06-.76 1.42 0 1.83.76 3.08.73 1.28-.02 2.08-1.15 2.86-2.29.9-1.3 1.27-2.57 1.29-2.64-.03-.01-2.47-.95-2.5-3.76-.02-2.35 1.92-3.48 2-3.53-1.1-1.62-2.8-1.8-3.4-1.83M14.65 4.87c.66-.8 1.1-1.9.98-3.02-.95.04-2.1.63-2.78 1.43-.61.7-1.15 1.85-1 2.93 1.06.08 2.14-.53 2.8-1.34"/></svg>App Store</span>
+          <span onClick="{{ dlGooglePlay }}" style="display:flex; align-items:center; gap:7px; background:#ffffff14; border:1px solid #ffffff1f; color:#fff; padding:8px 14px; border-radius:10px; font-size:11.5px; font-weight:700; cursor:pointer; white-space:nowrap;"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3.6 2.3c-.35.2-.6.6-.6 1.1v17.2c0 .5.25.9.6 1.1l9.6-9.7L3.6 2.3zm12.5 8.7 2.5-1.4c.7-.4.7-1.4 0-1.8l-2.6-1.5-2.7 2.8 2.8 2.9zm-2.9-2 2.7-2.8L5.1 1.7l8.1 7.3zm0 2.1-8.1 8.2 10.9-6.3-2.8-1.9z"/></svg>Google Play</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">{{ badgeTrust }}</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">{{ badgeTravelAssoc }}</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">{{ badgeSamandehi }}</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">{{ badgeIata }}</span>
+        </div>
+      </div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">{{ footerColServices }}</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="نتایج پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerBookFlight }}</a><a href="مدیریت رزرو.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerManageBooking }}</a><a href="وضعیت پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerFlightStatus }}</a><a href="باشگاه مشتریان.dc.html" style="color:#aebfd4; text-decoration:none;">{{ navLoyalty }}</a></div></div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">{{ footerColCompany }}</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="درباره ما.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerAbout }}</a><a href="تماس با ما.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerContact }}</a><a href="قوانین و مقررات.dc.html" style="color:#aebfd4; text-decoration:none;">{{ navTravelInfo }}</a></div></div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">{{ navSupport }}</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerHelpCenter }}</a><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerFaq }}</a></div></div>
+    </div>
+    <div style="border-top:1px solid #ffffff12;"><div style="max-width:1180px; margin:0 auto; padding:15px 26px; display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:#7d92ad;"><span>{{ footerCopyright }}</span></div></div>
+    </sc-if>
+
+    <sc-if value="{{ isMobile }}" hint-placeholder-val="{{false}}">
+    <div style="padding:34px 24px 6px; text-align:center;">
+      <div style="display:flex; align-items:center; justify-content:center; gap:9px; margin-bottom:14px;"><div style="width:34px; height:34px; border-radius:10px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:15px;">✈</div><span style="font-weight:900; font-size:17px; color:#fff;">blujet</span></div>
+      <p style="font-size:12.5px; line-height:1.8; margin:0 auto 16px; max-width:270px; color:#aebfd4;">{{ footerTagline }}</p>
+      <div style="display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+        <span onClick="{{ dlAppStore }}" style="display:flex; align-items:center; gap:6px; background:#ffffff14; border:1px solid #ffffff1f; color:#fff; padding:7px 12px; border-radius:10px; font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap;"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 12.5c-.03-2.36 1.93-3.5 2.02-3.55-1.1-1.6-2.8-1.82-3.4-1.85-1.44-.15-2.83.85-3.56.85-.74 0-1.87-.83-3.08-.8-1.58.02-3.05.92-3.86 2.34-1.66 2.88-.42 7.13 1.2 9.46.79 1.13 1.72 2.4 2.95 2.36 1.18-.05 1.63-.76 3.06-.76 1.42 0 1.83.76 3.08.73 1.28-.02 2.08-1.15 2.86-2.29.9-1.3 1.27-2.57 1.29-2.64-.03-.01-2.47-.95-2.5-3.76-.02-2.35 1.92-3.48 2-3.53-1.1-1.62-2.8-1.8-3.4-1.83M14.65 4.87c.66-.8 1.1-1.9.98-3.02-.95.04-2.1.63-2.78 1.43-.61.7-1.15 1.85-1 2.93 1.06.08 2.14-.53 2.8-1.34"/></svg>App Store</span>
+        <span onClick="{{ dlGooglePlay }}" style="display:flex; align-items:center; gap:6px; background:#ffffff14; border:1px solid #ffffff1f; color:#fff; padding:7px 12px; border-radius:10px; font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap;"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3.6 2.3c-.35.2-.6.6-.6 1.1v17.2c0 .5.25.9.6 1.1l9.6-9.7L3.6 2.3zm12.5 8.7 2.5-1.4c.7-.4.7-1.4 0-1.8l-2.6-1.5-2.7 2.8 2.8 2.9zm-2.9-2 2.7-2.8L5.1 1.7l8.1 7.3zm0 2.1-8.1 8.2 10.9-6.3-2.8-1.9z"/></svg>Google Play</span>
+      </div>
+      <div style="display:flex; align-items:center; justify-content:center; gap:7px; flex-wrap:wrap;">
+        <span style="width:44px; height:44px; border-radius:11px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:7px; color:#9fb2c9; line-height:1.3; padding:4px;">{{ badgeTrust }}</span>
+        <span style="width:44px; height:44px; border-radius:11px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:7px; color:#9fb2c9; line-height:1.3; padding:4px;">{{ badgeTravelAssoc }}</span>
+        <span style="width:44px; height:44px; border-radius:11px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:7px; color:#9fb2c9; line-height:1.3; padding:4px;">{{ badgeSamandehi }}</span>
+        <span style="width:44px; height:44px; border-radius:11px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:7px; color:#9fb2c9; line-height:1.3; padding:4px;">{{ badgeIata }}</span>
+      </div>
+    </div>
+    <div style="margin-top:22px; border-top:1px solid #ffffff14;">
+      <details><summary style="display:flex; align-items:center; justify-content:space-between; padding:15px 24px; font-size:13.5px; font-weight:700; color:#fff; border-bottom:1px solid #ffffff14;">{{ footerColServices }}<span class="chev" style="color:#7d92ad; font-size:12px; transition:transform .2s;">⌄</span></summary>
+        <div style="padding:14px 24px 18px; display:flex; flex-direction:column; align-items:flex-end; gap:13px; font-size:13px; border-bottom:1px solid #ffffff14;"><a href="نتایج پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerBookFlight }}</a><a href="مدیریت رزرو.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerManageBooking }}</a><a href="وضعیت پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerFlightStatus }}</a><a href="باشگاه مشتریان.dc.html" style="color:#aebfd4; text-decoration:none;">{{ navLoyalty }}</a></div>
+      </details>
+      <details><summary style="display:flex; align-items:center; justify-content:space-between; padding:15px 24px; font-size:13.5px; font-weight:700; color:#fff; border-bottom:1px solid #ffffff14;">{{ footerColCompany }}<span class="chev" style="color:#7d92ad; font-size:12px; transition:transform .2s;">⌄</span></summary>
+        <div style="padding:14px 24px 18px; display:flex; flex-direction:column; align-items:flex-end; gap:13px; font-size:13px; border-bottom:1px solid #ffffff14;"><a href="درباره ما.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerAbout }}</a><a href="تماس با ما.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerContact }}</a><a href="قوانین و مقررات.dc.html" style="color:#aebfd4; text-decoration:none;">{{ navTravelInfo }}</a></div>
+      </details>
+      <details><summary style="display:flex; align-items:center; justify-content:space-between; padding:15px 24px; font-size:13.5px; font-weight:700; color:#fff; border-bottom:1px solid #ffffff14;">{{ navSupport }}<span class="chev" style="color:#7d92ad; font-size:12px; transition:transform .2s;">⌄</span></summary>
+        <div style="padding:14px 24px 18px; display:flex; flex-direction:column; align-items:flex-end; gap:13px; font-size:13px; border-bottom:1px solid #ffffff14;"><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerHelpCenter }}</a><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerFaq }}</a></div>
+      </details>
+    </div>
+    <div style="padding:16px 24px; text-align:center; font-size:11px; color:#7d92ad;">{{ footerCopyright }}</div>
+    </sc-if>
+  </footer>
+
+  <!-- TOAST -->
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; z-index:9000; background:rgba(8,22,40,.6); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; padding:24px;"><div style="width:420px; max-width:100%; background:#fff; border-radius:22px; box-shadow:0 50px 120px -30px rgba(4,16,34,.7); padding:40px 32px 30px; text-align:center; position:relative; overflow:hidden;"><div style="position:absolute; top:0; left:0; right:0; height:5px; background:linear-gradient(90deg,var(--accent,#1668c4),#5ea3e8);"></div><div style="width:96px; height:96px; border-radius:50%; background:#e8f0fb; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;"><span style="width:56px; height:56px; border-radius:50%; background:var(--accent,#1668c4); color:#fff; display:flex; align-items:center; justify-content:center; font-size:26px; box-shadow:0 10px 24px -8px rgba(22,104,196,.55);">✓</span></div><div style="font-size:16.5px; font-weight:900; color:#16202e; line-height:2;">{{ toast }}</div><div style="margin-top:10px; font-size:11px; color:#9aa7b8; font-weight:600;">{{ toastAutoClose }}</div></div></div>
+  </sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;setupMode&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;حالت حساب&quot;}}">
+
+class Component extends DCLogic {
+  state = { pnr: "", lname: "", found: false, notFound: false, view: "actions", refundSel: { p0: true, p1: false }, refundDone: false, toast: "", notifOpen: false, menuOpen: false, mobileMenuOpen: false,
+    isMobile: (typeof window !== "undefined" && window.innerWidth < 768),
+    lang: (typeof localStorage !== "undefined" && localStorage.getItem("blujet_lang")) || "fa" };
+  componentDidMount() {
+    this._mq = window.matchMedia("(max-width:767px)");
+    this._mqHandler = (e) => this.setState({ isMobile: e.matches });
+    if (this._mq.addEventListener) this._mq.addEventListener("change", this._mqHandler); else this._mq.addListener(this._mqHandler);
+  }
+  componentWillUnmount() {
+    if (this._mq) { if (this._mq.removeEventListener) this._mq.removeEventListener("change", this._mqHandler); else this._mq.removeListener(this._mqHandler); }
+    clearTimeout(this._toastT);
+  }
+  toast(t){ this.setState({ toast: t }); clearTimeout(this._toastT); this._toastT = setTimeout(() => this.setState({ toast: "" }), 2800); }
+  _svg(p, size){ return { __html: '<svg width="'+(size||20)+'" height="'+(size||20)+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>' }; }
+  renderVals(){ const v = this._vals(); return (this.state && this.state.lang === "ar" && typeof window !== "undefined" && window.arDeep) ? window.arDeep(v) : v; }
+  _vals() {
+    const isEN = this.state.lang === "en";
+    const fa = (n) => String(n).replace(/[0-9]/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
+    const money = (n) => isEN ? n.toLocaleString("en-US") : fa(n.toLocaleString("en-US"));
+    const isMobile = this.state.isMobile;
+
+    const paxData = isEN
+      ? [ { key:"p0", initials:"NR", name:"Negar Rezaei", seat:"14C", fareNum:4200000 }, { key:"p1", initials:"MR", name:"Mehdi Rezaei", seat:"14D", fareNum:4200000 } ]
+      : [ { key:"p0", initials:"نر", name:"نگار رضایی", seat:"۱۴C", fareNum:4200000 }, { key:"p1", initials:"مر", name:"مهدی رضایی", seat:"۱۴D", fareNum:4200000 } ];
+    const sel = this.state.refundSel;
+    const selected = paxData.filter(p => sel[p.key]);
+    const fareSum = selected.reduce((s, p) => s + p.fareNum, 0);
+    const penaltyPctNum = 30;
+    const penalty = Math.round(fareSum * penaltyPctNum / 100);
+    const refundReturn = fareSum - penalty;
+    const canRefund = selected.length > 0;
+
+    const destinations = isEN ? [
+      { imgId:"dest-1", imgPlaceholder:"Kish photo", hasTag:true, tag:"Bestseller", category:"Domestic", city:"Kish", code:"KIH", meta:"1h 45m · 28 flights/week", price:"1,480,000" },
+      { imgId:"dest-2", imgPlaceholder:"Mashhad photo", hasTag:false, tag:"", category:"Domestic", city:"Mashhad", code:"MHD", meta:"1h 25m · 42 flights/week", price:"980,000" },
+      { imgId:"dest-4", imgPlaceholder:"Dubai photo", hasTag:false, tag:"", category:"International", city:"Dubai", code:"DXB", meta:"2h 10m · 18 flights/week", price:"5,200,000" },
+      { imgId:"dest-3", imgPlaceholder:"Istanbul photo", hasTag:true, tag:"Direct flight", category:"International", city:"Istanbul", code:"IST", meta:"3h 15m · 14 flights/week", price:"6,800,000" }
+    ] : [
+      { imgId:"dest-1", imgPlaceholder:"عکس کیش", hasTag:true, tag:"پرفروش", category:"داخلی", city:"کیش", code:"KIH", meta:"۱ ساعت ۴۵ دقیقه · ۲۸ پرواز در هفته", price:"۱٬۴۸۰٬۰۰۰" },
+      { imgId:"dest-2", imgPlaceholder:"عکس مشهد", hasTag:false, tag:"", category:"داخلی", city:"مشهد", code:"MHD", meta:"۱ ساعت ۲۵ دقیقه · ۴۲ پرواز در هفته", price:"۹۸۰٬۰۰۰" },
+      { imgId:"dest-4", imgPlaceholder:"عکس دبی", hasTag:false, tag:"", category:"بین‌المللی", city:"دبی", code:"DXB", meta:"۲ ساعت ۱۰ دقیقه · ۱۸ پرواز در هفته", price:"۵٬۲۰۰٬۰۰۰" },
+      { imgId:"dest-3", imgPlaceholder:"عکس استانبول", hasTag:true, tag:"پرواز مستقیم", category:"بین‌المللی", city:"استانبول", code:"IST", meta:"۳ ساعت ۱۵ دقیقه · ۱۴ پرواز در هفته", price:"۶٬۸۰۰٬۰۰۰" }
+    ];
+
+    return {
+      isEN, pageDir: isEN ? "ltr" : "rtl",
+      toggleLang: () => { const nl = this.state.lang === "fa" ? "en" : (this.state.lang === "en" ? "ar" : "fa"); try { localStorage.setItem("blujet_lang", nl); } catch(e) {} this.setState({ lang: nl }); },
+      langLabel: isEN ? "AR" : (this.state.lang === "ar" ? "FA" : "EN"),
+
+      isMobile, notMobile: !isMobile,
+      mobileMenuOpen: this.state.mobileMenuOpen,
+      toggleMobileMenu: () => this.setState(s => ({ mobileMenuOpen: !s.mobileMenuOpen })),
+      navDisplay: isMobile ? "none" : "flex",
+      hamburgerDisplay: isMobile ? "flex" : "none",
+      headerBarBg: isMobile ? "var(--accent,#1668c4)" : "#fff",
+      headerBorderB: isMobile ? "none" : "1px solid #e6eaf0",
+      headerH: isMobile ? "62px" : "70px",
+      logoTextColor: isMobile ? "#fff" : "#16202e",
+      logoSquareBg: isMobile ? "#fff" : "var(--accent,#1668c4)",
+      logoIconColor: isMobile ? "var(--accent,#1668c4)" : "#fff",
+      hamburgerColor: isMobile ? "#fff" : "#0d2640",
+      mobileIconRowDisplay: isMobile ? "flex" : "none",
+      navGap: isEN ? "18px" : "30px",
+      navFontSize: isEN ? "13.5px" : "15.5px",
+      navFlights: isEN ? "Flights" : "پرواز",
+      navDestinations: isEN ? "Destinations" : "مقاصد پروازی",
+      navLoyalty: isEN ? "Loyalty Club" : "باشگاه مشتریان",
+      navSupport: isEN ? "Support" : "پشتیبانی",
+      navTravelInfo: isEN ? "Terms & Conditions" : "قوانین و مقررات",
+
+      userName: isEN ? "Negar Rezaei" : "نگار رضایی",
+      headerPhone: isEN ? "0912 345 6789" : "۰۹۱۲ ۳۴۵ ۶۷۸۹",
+      lblWalletTotal: isEN ? "Total wallet balance" : "جمع کیف‌پول‌های من",
+      walletBalanceFa: isEN ? "2,450,000" : "۲٬۴۵۰٬۰۰۰",
+      currencyLabel: isEN ? "" : "تومان",
+      copyWallet: (e) => { if(e&&e.stopPropagation) e.stopPropagation(); this.toast(isEN?"Wallet amount copied ✓":"مبلغ کیف پول کپی شد ✓"); },
+      goWallet: () => { window.location.href = "پنل کاربر.dc.html"; },
+
+      notifOpen: this.state.notifOpen,
+      toggleNotif: () => this.setState(s => ({ notifOpen: !s.notifOpen })),
+      hdrNotifications: isEN ? "Notifications" : "اعلان‌ها",
+      lblNewCount: isEN ? "2 new" : "۲ جدید",
+      notifs: isEN ? [
+        { icon:"✈", title:"Trip reminder", body:"Your Tehran → Dubai flight is tomorrow. Online check-in is open.", time:"1 hour ago", bg:"#f6faff" },
+        { icon:"★", title:"Loyalty points", body:"450 points were added from your last purchase.", time:"Yesterday", bg:"#fff" },
+        { icon:"🏷", title:"Discount code", body:"Code BLUE20 is active for domestic flights until end of week.", time:"2 days ago", bg:"#fff" }
+      ] : [
+        { icon:"✈", title:"یادآوری سفر", body:"پرواز تهران → دبی شما فرداست. آنلاین چک‌این باز است.", time:"۱ ساعت پیش", bg:"#f6faff" },
+        { icon:"★", title:"امتیاز باشگاه", body:"۴۵۰ امتیاز از خرید قبلی به حساب شما اضافه شد.", time:"دیروز", bg:"#fff" },
+        { icon:"🏷", title:"کد تخفیف", body:"کد BLUE20 برای پروازهای داخلی تا پایان هفته فعال است.", time:"۲ روز پیش", bg:"#fff" }
+      ],
+
+      menuOpen: this.state.menuOpen,
+      menuBtnBg: this.state.menuOpen ? "#f4f7fb" : "#fff",
+      menuBtnBorder: this.state.menuOpen ? "var(--accent,#1668c4)" : "#e6eaf0",
+      menuChevron: this.state.menuOpen ? "rotate(180deg)" : "rotate(0deg)",
+      toggleMenu: () => this.setState(s => ({ menuOpen: !s.menuOpen })),
+      closeMenu: () => this.setState({ menuOpen: false }),
+      profileMenu: [
+        { label: isEN?"View Profile":"مشاهده پروفایل", icon:this._svg('<path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-5.33 0-9 2.69-9 6v2h18v-2c0-3.31-3.67-6-9-6z"/>',18), onClick:()=>{ window.location.href = "پنل کاربر.dc.html"; } },
+        { label: isEN?"Trips & Booking":"سفرها و مدیریت رزرو", icon:this._svg('<path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v2.2a1.6 1.6 0 0 0 0 2.6v2.2A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 15.5v-2.2a1.6 1.6 0 0 0 0-2.6Z"/>',18), onClick:()=>{ this.setState({ menuOpen:false }); this.reset && this.reset(); } },
+        { label: isEN?"Refund Ticket":"استرداد بلیط", icon:this._svg('<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 5 5v1"/>',18), onClick:()=>{ this.setState({ menuOpen:false, view:"refund" }); } },
+        { label: isEN?"Loyalty Club":"باشگاه مشتریان", icon:this._svg('<path d="m6 15 6-6 6 6"/><path d="m6 9 6-6 6 6"/>',18), onClick:()=>{ window.location.href = "باشگاه مشتریان.dc.html"; } }
+      ],
+      doLogout: () => { window.location.href = "ورود و ثبتنام.dc.html"; },
+      logoutIcon: this._svg('<path d="M9 21H5.5A1.5 1.5 0 0 1 4 19.5v-15A1.5 1.5 0 0 1 5.5 3H9"/><path d="m15 17 5-5-5-5"/><path d="M20 12H9"/>', 19),
+      btnLogout: isEN ? "Log Out" : "خروج از حساب",
+
+      menuTitle: isEN ? "Menu" : "منو",
+      lblProfileManagement: isEN ? "Manage Profile" : "مدیریت پروفایل",
+
+      heroTitle: isEN ? "Manage Your Booking" : "مدیریت رزرو",
+      heroSub: isEN ? "Look up your booking by reservation code, change seats, download your ticket, or request a refund." : "رزرو خود را با کد رزرو مشاهده، تغییر صندلی، دانلود بلیط یا استرداد کنید.",
+
+      destCols: isMobile ? "repeat(2,1fr)" : "repeat(4,1fr)",
+      bannerPad: isMobile ? "24px 22px" : "34px 46px",
+      ticketDetailCols: isMobile ? "repeat(2,1fr)" : "repeat(4,1fr)",
+      actionsCols: isMobile ? "1fr" : "repeat(3,1fr)",
+      footerCols: isMobile ? "1fr" : "1.6fr 1fr 1fr 1fr",
+
+      showLookup: !this.state.found && !this.state.notFound,
+      showResult: this.state.found,
+      showNotFound: this.state.notFound,
+      pnr: this.state.pnr, onPnr: (e) => this.setState({ pnr: e.target.value }),
+      lname: this.state.lname, onLname: (e) => this.setState({ lname: e.target.value }),
+      lblPnr: isEN ? "Booking code" : "کد رزرو",
+      phPnr: isEN ? "e.g. AS-88421" : "مثلاً AS-88421",
+      lblLastName: isEN ? "Passenger last name" : "نام خانوادگی مسافر",
+      phLastName: isEN ? "Last name" : "نام خانوادگی",
+      lookupBtn: isEN ? "View Booking" : "مشاهده رزرو",
+      noteEmailSms: isEN ? "The booking code was sent to you by email/SMS at purchase confirmation." : "کد رزرو در ایمیل/پیامک تأیید خرید برای شما ارسال شده است.",
+      doLookup: () => {
+        if (!(this.state.pnr || "").trim() || !(this.state.lname || "").trim()) { this.toast(isEN?"Enter the booking code and last name":"کد رزرو و نام خانوادگی را وارد کنید"); return; }
+        if (!!(this.props.setupMode) || this.state.lang === "ar") { this.setState({ notFound: true }); this.toast(isEN?"Booking not found":"رزروی یافت نشد"); return; }
+        this.setState({ found: true, notFound: false, view: "actions", refundDone: false }); this.toast(isEN?"Booking found ✓":"رزرو پیدا شد ✓");
+      },
+      reset: () => this.setState({ found: false, notFound: false, view: "actions", refundDone: false }),
+
+      hdrPopularDest: isEN ? "Popular Destinations" : "مقاصد محبوب",
+      subPopularDest: isEN ? "The most in-demand routes this season, at the best prices." : "پرطرفدارترین مسیرهای این فصل با بهترین قیمت",
+      linkViewAllDest: isEN ? "View all destinations ‹" : "مشاهده همه مقاصد ‹",
+      lblStartsFrom: isEN ? "From" : "شروع از",
+      destinations,
+      bannerImgPlaceholder: isEN ? "Loyalty club banner photo" : "عکس بنر باشگاه مشتریان را اینجا رها کنید",
+      bannerBadge: isEN ? "blujet Loyalty Club" : "باشگاه مشتریان blujet",
+      bannerTitle: isEN ? "Earn points with every flight" : "با هر پرواز، امتیاز بگیرید",
+      bannerSub: isEN ? "Free membership in the blujet loyalty club — turn points into tickets and cabin upgrades." : "عضویت رایگان در باشگاه مشتریان blujet — امتیازها را به بلیط و ارتقای کلاس پروازی تبدیل کنید.",
+      bannerBtn: isEN ? "Join the club" : "عضویت در باشگاه",
+      arrowIcon: isEN ? "→" : "←",
+
+      hdrNotFound: isEN ? "Booking not found" : "رزروی یافت نشد",
+      subNotFound: isEN ? "The booking code and last name entered don't match any booking." : "کد رزرو و نام خانوادگی وارد‌شده با هیچ رزروی مطابقت ندارد.",
+      btnSearchAgain: isEN ? "Search again" : "جستجوی دوباره",
+
+      airline: isEN ? "Iran Air" : "ایران ایر", pnrShow: this.state.pnr || "AS-88421",
+      lblConfirmed: isEN ? "Confirmed" : "تأییدشده",
+      depCode: "THR", depCity: isEN ? "Tehran — Mehrabad" : "تهران — مهرآباد", depTime: "۰۸:۳۰",
+      arrCode: "DXB", arrCity: isEN ? "Dubai" : "دبی", arrTime: "۱۰:۴۵",
+      duration: isEN ? "2h 15m" : "۲ ساعت و ۱۵ دقیقه", flightNo: "IR-651",
+      date: isEN ? "Sat, Jul 3, 2026" : "شنبه، ۱۲ تیر ۱۴۰۵", terminal: isEN ? "Terminal 2" : "ترمینال ۲", gate: "B12", cabin: isEN ? "Economy" : "اکونومی",
+      lblDate: isEN ? "Date" : "تاریخ", lblTerminal: isEN ? "Terminal" : "ترمینال", lblGate: isEN ? "Gate" : "گیت", lblCabin: isEN ? "Cabin" : "کلاس",
+
+      hdrPassengers: isEN ? "Passengers" : "مسافران",
+      lblSeat: isEN ? "Seat" : "صندلی",
+      pax: paxData.map(p => ({ initials:p.initials, name:p.name, seat:p.seat, checkinLabel:(isEN?"Seat "+p.seat+" confirmed":"صندلی " + p.seat + " تأییدشده"), statusText:isEN?"Issued":"صادرشده", statusColor:"#1f8a5b", statusBg:"#eef9f1" })),
+
+      showActions: this.state.view === "actions",
+      showRefund: this.state.view === "refund",
+      openRefund: () => this.setState({ view: "refund", refundDone: false }),
+      cancelRefund: () => this.setState({ view: "actions" }),
+      changeSeat: () => this.toast(isEN?"Seat change screen opened":"صفحهٔ تغییر صندلی باز شد"),
+      downloadTicket: () => this.toast(isEN?"Downloading e-ticket…":"بلیط الکترونیکی در حال دانلود است…"),
+      btnChangeSeat: isEN ? "Change Seat" : "تغییر صندلی",
+      btnRefundTicket: isEN ? "Refund Ticket" : "استرداد بلیط",
+      btnDownloadTicket: isEN ? "Download Ticket" : "دانلود بلیط",
+
+      refundDone: this.state.refundDone,
+      refundPending: !this.state.refundDone,
+      hdrRefundSubmitted: isEN ? "Refund request submitted" : "درخواست استرداد ثبت شد",
+      subRefundSubmitted: isEN ? "The refundable amount after penalty will be returned to your card within 3–7 business days. Tracking code:" : "مبلغ قابل استرداد پس از کسر جریمه، طی ۳ تا ۷ روز کاری به کارت پرداخت‌کننده بازگردانده می‌شود. کد پیگیری:",
+      lblFareAmount: isEN ? "Fare Paid" : "مبلغ بلیط",
+      lblPenalty: isEN ? "Penalty" : "جریمه",
+      lblRefundAmount: isEN ? "Refundable" : "بازگشتی",
+      lblPenaltyRate: isEN ? "Subject to penalty" : "مشمول جریمه",
+      subRefundPending: isEN ? "Choose the passengers whose tickets you want refunded. The penalty is calculated based on the fare rules and time to departure." : "مسافرانی که می‌خواهید بلیط‌شان مسترد شود را انتخاب کنید. جریمه بر اساس قوانین نرخی بلیط و فاصله تا زمان پرواز محاسبه می‌شود.",
+      lblSelectedFareTotal: isEN ? "Total selected fare" : "جمع مبلغ بلیط انتخابی",
+      refundPax: paxData.map(p => ({
+        name: p.name, seat: p.seat, fare: money(p.fareNum) + (isEN?" Toman":" تومان"),
+        toggle: () => this.setState(s => ({ refundSel: { ...s.refundSel, [p.key]: !s.refundSel[p.key] } })),
+        mark: sel[p.key] ? "✓" : "",
+        checkBg: sel[p.key] ? "var(--accent,#1668c4)" : "#fff",
+        border: sel[p.key] ? "var(--accent,#1668c4)" : "#c9d3df"
+      })),
+      refFare: money(fareSum) + (isEN?" Toman":" تومان"),
+      refPenalty: money(penalty) + (isEN?" Toman":" تومان"),
+      refReturn: money(refundReturn) + (isEN?" Toman":" تومان"),
+      refPenaltyPct: isEN ? penaltyPctNum + "%" : "٪" + fa(penaltyPctNum),
+      refundBtnBg: canRefund ? "#d64545" : "#dca9a9",
+      refundBtnCursor: canRefund ? "pointer" : "not-allowed",
+      btnConfirmRefund: isEN ? "Confirm & Submit Refund" : "تأیید و ثبت استرداد",
+      btnCancel: isEN ? "Cancel" : "انصراف",
+      confirmRefund: () => { if (canRefund) { this.setState({ refundDone: true }); this.toast(isEN?"Refund request submitted ✓":"درخواست استرداد ثبت شد ✓"); } else { this.toast(isEN?"Select at least one passenger":"حداقل یک مسافر را انتخاب کنید"); } },
+      linkSearchAnother: isEN ? "‹ Search another booking" : "‹ جستجوی رزرو دیگر",
+
+      footerTagline: isEN ? "Book domestic and international flights online at the best prices with loyalty rewards." : "رزرو آنلاین بلیط پروازهای داخلی و بین‌المللی با بهترین قیمت و خدمات باشگاه مشتریان.",
+      badgeTrust: isEN ? "E-Trust Seal" : "نماد اعتماد الکترونیکی",
+      badgeTravelAssoc: isEN ? "Travel Agents Guild" : "انجمن صنفی دفاتر خدمات مسافرتی",
+      badgeSamandehi: isEN ? "Samandehi" : "ساماندهی",
+      badgeIata: isEN ? "IATA Member" : "عضو IATA",
+      footerColServices: isEN ? "Services" : "خدمات",
+      footerColCompany: isEN ? "Company" : "شرکت",
+      footerBookFlight: isEN ? "Book a Flight" : "رزرو پرواز",
+      footerManageBooking: isEN ? "Manage Booking" : "مدیریت رزرو",
+      footerFlightStatus: isEN ? "Flight Status" : "وضعیت پرواز",
+      footerAbout: isEN ? "About Us" : "درباره ما",
+      footerContact: isEN ? "Contact Us" : "تماس با ما",
+      footerHelpCenter: isEN ? "Help Center" : "مرکز راهنما",
+      footerFaq: isEN ? "FAQ" : "سوالات متداول",
+      sitePhone: isEN ? "021 - 91000000" : "۰۲۱ - ۹۱۰۰۰۰۰۰",
+      phoneAlign: isEN ? "left" : "right",
+      footerCopyright: isEN ? "© 2026 blujet. All rights reserved." : "© ۱۴۰۵ blujet. تمامی حقوق محفوظ است.",
+      dlAppStore: () => this.toast(isEN?"App Store download link coming soon":"لینک دانلود از App Store به‌زودی فعال می‌شود"),
+      dlGooglePlay: () => this.toast(isEN?"Google Play download link coming soon":"لینک دانلود از Google Play به‌زودی فعال می‌شود"),
+
+      toast: this.state.toast, hasToast: !!this.state.toast,
+      toastAutoClose: isEN ? "This message closes automatically" : "این پیام به‌صورت خودکار بسته می‌شود"
+    };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+.results-edit-search-dialog {
+  overflow: visible;
+}
+
+.results-edit-search-route {
+  position: relative;
+}
+
+@media (max-width: 640px) {
+  .results-edit-search-overlay {
+    align-items: flex-end !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+  }
+
+  .results-edit-search-dialog {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: calc(100dvh - 10px);
+    margin: auto 0 0 !important;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border-radius: 24px 24px 0 0 !important;
+    box-shadow: 0 -18px 60px -28px rgba(13, 38, 64, 0.55) !important;
+  }
+
+  .results-edit-search-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    min-height: 56px;
+    padding: 10px 16px !important;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(12px);
+  }
+
+  .results-edit-search-body {
+    padding: 16px 14px calc(18px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .results-edit-search-trip-types {
+    justify-content: center;
+    width: fit-content;
+    margin: 0 auto 18px !important;
+    padding: 4px;
+    border: 1px solid #e5eaf1;
+    border-radius: 999px;
+    background: #f5f8fc;
+  }
+
+  .results-edit-search-route {
+    /* Keep the swap control in the layout between the two airport fields.
+       Absolute centering against the whole card placed it above the visual
+       midpoint because each field includes its label. */
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    align-items: stretch !important;
+    padding: 12px;
+    border: 1px solid #e4eaf2;
+    border-radius: 18px;
+    background: #f9fbfd;
+  }
+
+  .results-edit-search-airport {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .results-edit-search-route > .results-edit-search-airport:first-child {
+    order: 1;
+  }
+
+  .results-edit-search-route > .results-edit-search-airport:last-child {
+    order: 3;
+  }
+
+  .results-edit-search-airport-button {
+    height: 54px !important;
+    padding-inline: 14px !important;
+    border-color: #dce5f0 !important;
+    border-radius: 13px !important;
+    background: #fff !important;
+  }
+
+  .results-edit-search-swap {
+    position: relative !important;
+    align-self: center !important;
+    order: 2;
+    z-index: 3;
+    width: 36px !important;
+    height: 36px !important;
+    margin-block: -6px !important;
+    margin-inline: 0 !important;
+    border-color: #cfe0f4 !important;
+    background: #eef5ff !important;
+    box-shadow: 0 4px 12px rgba(22, 104, 196, 0.13);
+    /* The destination label occupies the upper part of the visual gap.
+       Shift the control by half that label height so it is centered between
+       the two input boxes themselves, not between their wrapper elements. */
+    transform: translateY(13px) !important;
+  }
+
+  .results-edit-search-swap-icon {
+    display: block;
+    line-height: 1;
+    transform: rotate(90deg);
+  }
+
+  .results-edit-search-airport-menu {
+    inset-inline: 0 !important;
+    top: 78px !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  .results-edit-search-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+    margin-top: 18px !important;
+  }
+
+  .results-edit-search-date-control {
+    grid-column: 1 / -1;
+    min-width: 0 !important;
+  }
+
+  .results-edit-search-passenger-control,
+  .results-edit-search-cabin-control {
+    min-width: 0 !important;
+  }
+
+  .results-edit-search-passenger-control > button,
+  .results-edit-search-cabin-control > select,
+  .results-edit-search-date-control > button {
+    min-width: 0;
+    height: 52px !important;
+    border-color: #dce5f0 !important;
+    background: #fff !important;
+  }
+
+  .results-edit-search-calendar {
+    padding: 12px 8px !important;
+  }
+
+  .results-edit-search-apply {
+    height: 56px !important;
+    margin-top: 20px !important;
+    border-radius: 15px !important;
+    box-shadow: 0 12px 24px -14px rgba(22, 104, 196, 0.75);
+  }
+}

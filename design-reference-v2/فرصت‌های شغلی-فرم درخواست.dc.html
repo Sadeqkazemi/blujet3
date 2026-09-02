@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+  .jf-input{ height:46px; border:1.5px solid #e2e7ee; border-radius:11px; background:#fafbfd; padding:0 12px; font-family:inherit; font-size:12.5px; outline:none; width:100%; color:#16202e; }
+  .jf-input:focus{ border-color:#1668c4; }
+  .jf-label{ font-size:12px; font-weight:700; color:#5a6678; margin-bottom:16px; }
+</style>
+<script src="./site-data.js"></script>
+<script src="./image-slot.js"></script>
+</helmet>
+
+<div dir="rtl" style="font-family:Vazirmatn,sans-serif; background:#f6f8fb; color:#16202e; min-height:100vh; --accent:#1668c4;">
+
+  <header style="position:sticky; top:0; z-index:50;">
+    <div style="background:{{ headerBarBg }}; border-bottom:{{ headerBorderB }}; box-shadow:0 2px 12px -8px rgba(13,38,102,.25);">
+      <div style="max-width:1400px; margin:0 auto; padding:0 26px; height:70px; display:flex; align-items:center; justify-content:space-between; position:relative;">
+        <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:9px; text-decoration:none; color:#16202e; order:{{ logoOrder }}; position:{{ logoPosition }}; left:{{ logoLeft }}; transform:{{ logoTransform }};">
+          <div style="width:38px; height:38px; border-radius:10px; background:{{ logoSquareBg }}; display:flex; align-items:center; justify-content:center; color:{{ logoIconColor }}; font-size:18px;">✈</div>
+          <span style="font-weight:900; font-size:18px; letter-spacing:-.5px; color:{{ logoTextColor }};">blujet</span>
+        </a>
+        <span onClick="{{ toggleMobileMenu }}" style="display:{{ hamburgerDisplay }}; width:38px; height:38px; align-items:center; justify-content:center; border-radius:10px; cursor:pointer; flex:none; font-size:17px; color:{{ hamburgerColor }};">☰</span><nav style="display:{{ navDisplay }}; gap:30px; font-size:15.5px; color:#3b4554; font-weight:600; height:100%; align-items:center;">
+          <a href="صفحه اصلی.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">پرواز</a>
+          <a href="مقاصد.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">مقاصد پروازی</a>
+          <a href="باشگاه مشتریان.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">باشگاه مشتریان</a>
+          <a href="فرصتهای شغلی.dc.html" style="cursor:pointer; text-decoration:none; color:var(--accent,#1668c4);">فرصت‌های شغلی</a>
+          <a href="پشتیبانی.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">پشتیبانی</a>
+        </nav>
+        <div style="display:{{ navDisplay }}; align-items:center; gap:10px;">
+          <div style="position:relative;">
+            <div onClick="{{ toggleLang }}" style="width:42px; height:42px; border-radius:50%; background:#f3f5f8; display:flex; align-items:center; justify-content:center; color:#5a6678; cursor:pointer;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 4 5.7 4 9s-1.5 6.5-4 9c-2.5-2.5-4-5.7-4-9s1.5-6.5 4-9z"/></svg></div>
+            <sc-if value="{{ langOpen }}" hint-placeholder-val="{{false}}">
+              <div onClick="{{ toggleLang }}" style="position:fixed; inset:0; z-index:120;"></div>
+              <div style="position:absolute; top:52px; left:0; width:170px; background:#fff; border:1px solid #e6eaf0; border-radius:14px; box-shadow:0 20px 50px -16px rgba(13,38,64,.35); z-index:130; overflow:hidden; padding:6px;">
+                <div onClick="{{ setLangFa }}" style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:9px 11px; border-radius:9px; font-size:12.5px; font-weight:600; color:#16202e; cursor:pointer;">فارسی<span style="color:var(--accent,#1668c4); font-weight:900;">✓</span></div>
+                <div onClick="{{ setLangEn }}" style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:9px 11px; border-radius:9px; font-size:12.5px; font-weight:600; color:#16202e; cursor:pointer;">English</div>
+              </div>
+            </sc-if>
+          </div>
+          <div style="position:relative;">
+            <div onClick="{{ toggleUserMenu }}" style="display:flex; align-items:center; gap:8px; background:#fff; border:1px solid #e6eaf0; padding:4px 10px 4px 7px; border-radius:28px; cursor:pointer;"><div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,var(--accent,#1668c4),#0d3b66); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13.5px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="8.2" r="4.4"/><path d="M12 14.6c-5.5 0-9.2 3-9.9 7.4h19.8c-.7-4.4-4.4-7.4-9.9-7.4z"/></svg></div><div style="line-height:1.35;"><div style="font-size:12px; font-weight:700; color:#16202e;">نگار رضایی</div><div style="font-size:12px; color:#caa53a; font-weight:700;">★ عضو طلایی</div></div><span style="font-size:10px; color:#9aa4b2;">▼</span></div>
+            <sc-if value="{{ userMenuOpen }}" hint-placeholder-val="{{false}}">
+              <div onClick="{{ toggleUserMenu }}" style="position:fixed; inset:0; z-index:120;"></div>
+              <div style="position:absolute; top:54px; left:0; width:280px; background:#fff; border:1px solid #e6eaf0; border-radius:16px; box-shadow:0 20px 50px -16px rgba(13,38,64,.35); z-index:130; overflow:hidden; padding:5px;">
+                <a href="پنل کاربر.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:13.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);">👤</span>مشاهده پروفایل</a>
+                <a href="مدیریت رزرو.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:13.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);">🧳</span>سفرها و مدیریت رزرو</a>
+                <a href="باشگاه مشتریان.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:13.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);">★</span>باشگاه مشتریان</a>
+                <a href="ورود و ثبتنام.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:13.5px; color:#e5484d; font-weight:600; text-decoration:none;"><span>↩</span>خروج از حساب</a>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+        <sc-if value="{{ hamburgerShown }}" hint-placeholder-val="{{false}}">
+        <div style="display:flex; align-items:center; gap:2px; order:{{ iconRowOrder }};">
+          <span onClick="{{ toggleUserMenu }}" style="width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; cursor:pointer;"><svg width="19" height="19" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="8.2" r="4.4"/><path d="M12 14.6c-5.5 0-9.2 3-9.9 7.4h19.8c-.7-4.4-4.4-7.4-9.9-7.4z"/></svg></span>
+        </div>
+        </sc-if>
+      </div>
+    </div>
+    <sc-if value="{{ mobileMenuOpen }}" hint-placeholder-val="{{false}}">
+      <div onClick="{{ toggleMobileMenu }}" style="position:fixed; inset:0; background:rgba(13,38,64,.45); z-index:200;"></div>
+      <div style="position:fixed; top:0; right:0; bottom:0; width:78vw; max-width:320px; background:#fff; z-index:210; box-shadow:-8px 0 30px rgba(13,38,102,.2); padding:20px; display:flex; flex-direction:column; gap:6px; overflow-y:auto;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+          <span onClick="{{ toggleMobileMenu }}" style="width:34px; height:34px; border-radius:9px; background:#f3f5f8; display:flex; align-items:center; justify-content:center; font-size:16px; color:#5a6678; cursor:pointer;">×</span>
+        </div>
+        <a href="صفحه اصلی.dc.html" style="padding:12px 8px; border-radius:9px; text-decoration:none; color:#16202e; font-size:14px; font-weight:700; border-bottom:1px solid #f2f4f7;">پرواز</a>
+        <a href="مقاصد.dc.html" style="padding:12px 8px; border-radius:9px; text-decoration:none; color:#16202e; font-size:14px; font-weight:700; border-bottom:1px solid #f2f4f7;">مقاصد پروازی</a>
+        <a href="باشگاه مشتریان.dc.html" style="padding:12px 8px; border-radius:9px; text-decoration:none; color:#16202e; font-size:14px; font-weight:700; border-bottom:1px solid #f2f4f7;">باشگاه مشتریان</a>
+        <a href="فرصتهای شغلی.dc.html" style="padding:12px 8px; border-radius:9px; text-decoration:none; color:var(--accent,#1668c4); font-size:14px; font-weight:700; border-bottom:1px solid #f2f4f7;">فرصت‌های شغلی</a>
+        <a href="پشتیبانی.dc.html" style="padding:12px 8px; border-radius:9px; text-decoration:none; color:#16202e; font-size:14px; font-weight:700;">پشتیبانی</a>
+      </div>
+    </sc-if>
+  </header>
+  <div style="background:#eef3fa; border-bottom:1px solid #e6eaf0;">
+    <div style="max-width:1400px; margin:0 auto; padding:10px 26px;">
+      <a href="فرصتهای شغلی.dc.html" style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; color:var(--accent,#1668c4); text-decoration:none;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>بازگشت به فرصت‌های شغلی</a>
+    </div>
+  </div>
+
+  <sc-if value="{{ submitted }}" hint-placeholder-val="{{false}}">
+    <section style="max-width:640px; margin:70px auto; padding:0 26px; text-align:center;">
+      <div style="background:#fff; border:1px solid #eef1f5; border-radius:18px; padding:44px 30px;">
+        <div style="width:74px; height:74px; border-radius:50%; background:#eef9f1; display:flex; align-items:center; justify-content:center; margin:0 auto 18px;"><span style="width:44px; height:44px; border-radius:50%; background:#1f8a5b; color:#fff; display:flex; align-items:center; justify-content:center; font-size:20px;">✓</span></div>
+        <h2 style="font-size:19px; font-weight:900; margin:0 0 8px;">درخواست شما با موفقیت ثبت شد</h2>
+        <p style="font-size:13.5px; color:#7a8794; margin:0;">پس از بررسی رزومه توسط واحد منابع انسانی، در صورت تأیید صلاحیت، از طریق شماره تماس یا ایمیل با شما تماس گرفته می‌شود.</p>
+        <a href="فرصتهای شغلی.dc.html" style="display:inline-flex; align-items:center; gap:8px; margin-top:22px; font-size:13.5px; font-weight:800; color:#fff; background:linear-gradient(135deg,var(--accent,#1668c4),#0d3b66); padding:13px 26px; border-radius:12px; text-decoration:none; box-shadow:0 14px 28px -12px rgba(22,104,196,.55);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>بازگشت به فرصت‌های شغلی</a>
+      </div>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{ notSubmitted }}" hint-placeholder-val="{{true}}">
+
+  <section style="background:#fff; border-bottom:1px solid #eef1f5; padding:26px 22px;">
+    <div style="max-width:900px; margin:0 auto; display:flex; align-items:center; gap:18px; flex-wrap:wrap;">
+      <div style="width:78px; height:78px; border-radius:14px; background:#eef3fa; flex:none; display:flex; align-items:center; justify-content:center; overflow:hidden;"><image-slot id="job-form-icon" shape="rounded" placeholder="لوگو" style="width:100%; height:100%;"></image-slot></div>
+      <div>
+        <div style="font-size:12.5px; font-weight:700; color:#9aa4b2;">استخدام</div>
+        <h1 style="font-size:22px; font-weight:900; margin:4px 0 0;">{{ jobTitle }}</h1>
+        <div style="font-size:12.5px; color:#7a8794; margin-top:4px;">{{ jobMeta }}</div>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width:900px; margin:30px auto 0; padding:0 26px; display:grid; grid-template-columns:{{ cols2 }}; gap:26px;">
+    <div>
+      <h3 style="font-size:14.5px; font-weight:800; margin:0 0 12px;">شرایط احراز عمومی:</h3>
+      <ul style="margin:0; padding:0 18px 0 0; display:flex; flex-direction:column; gap:9px; font-size:13px; color:#3b4554; line-height:1.7;">
+        <sc-for list="{{ generalReqs }}" as="r" hint-placeholder-count="4"><li>{{ r }}</li></sc-for>
+      </ul>
+    </div>
+    <div>
+      <h3 style="font-size:14.5px; font-weight:800; margin:0 0 12px;">شرایط احراز تخصصی:</h3>
+      <ul style="margin:0; padding:0 18px 0 0; display:flex; flex-direction:column; gap:9px; font-size:13px; color:#3b4554; line-height:1.7;">
+        <sc-for list="{{ specialReqs }}" as="r" hint-placeholder-count="4"><li>{{ r }}</li></sc-for>
+      </ul>
+    </div>
+  </section>
+
+  <section style="max-width:900px; margin:34px auto 70px; padding:0 26px;">
+
+    <div style="background:#eef1f5; border-radius:10px; padding:11px 16px; font-size:13px; font-weight:700; color:#5a6678; margin-bottom:22px;">اطلاعات شخصی</div>
+
+    <h3 style="font-size:15.5px; font-weight:800; margin:0 0 16px;">اطلاعات فردی</h3>
+    <div style="display:grid; grid-template-columns:{{ cols4 }}; gap:11px; margin-bottom:14px;">
+      <input class="jf-input" placeholder="نام" value="{{ firstName }}" onInput="{{ onFirstName }}" />
+      <input class="jf-input" placeholder="نام خانوادگی" value="{{ lastName }}" onInput="{{ onLastName }}" />
+      <input class="jf-input" placeholder="کد ملی" dir="ltr" value="{{ nationalId }}" onInput="{{ onNationalId }}" />
+      <input class="jf-input" placeholder="نام پدر" value="{{ fatherName }}" onInput="{{ onFatherName }}" />
+    </div>
+    <div style="display:grid; grid-template-columns:{{ cols3 }}; gap:11px; margin-bottom:18px;">
+      <input class="jf-input" placeholder="تاریخ تولد (مثال: ۱۳۷۸/۰۵/۲۱)" value="{{ birthDate }}" onInput="{{ onBirthDate }}" />
+      <select class="jf-input" value="{{ birthProvince }}" onChange="{{ onBirthProvince }}"><option value="">استان محل تولد</option><sc-for list="{{ provinces }}" as="p" hint-placeholder-count="1"><option value="{{ p }}">{{ p }}</option></sc-for></select>
+      <input class="jf-input" placeholder="شهر محل تولد" value="{{ birthCity }}" onInput="{{ onBirthCity }}" />
+    </div>
+
+    <div style="display:grid; grid-template-columns:{{ cols3 }}; gap:22px; margin-bottom:20px;">
+      <div>
+        <div style="font-size:12.5px; font-weight:700; margin-bottom:9px;">جنسیت:</div>
+        <div style="display:flex; gap:16px; font-size:12.5px;">
+          <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="radio" name="gender" checked="{{ isFemale }}" onChange="{{ setFemale }}" />خانم</label>
+          <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="radio" name="gender" checked="{{ isMale }}" onChange="{{ setMale }}" />آقا</label>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12.5px; font-weight:700; margin-bottom:9px;">وضعیت تاهل:</div>
+        <div style="display:flex; gap:16px; font-size:12.5px;">
+          <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="radio" name="marital" checked="{{ isSingle }}" onChange="{{ setSingle }}" />مجرد</label>
+          <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="radio" name="marital" checked="{{ isMarried }}" onChange="{{ setMarried }}" />متاهل</label>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12.5px; font-weight:700; margin-bottom:9px;">خدمت سربازی:</div>
+        <div style="display:flex; gap:16px; font-size:12.5px; flex-wrap:wrap;">
+          <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="radio" name="military" checked="{{ isConscript }}" onChange="{{ setConscript }}" />مشمول</label>
+          <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="radio" name="military" checked="{{ isExempt }}" onChange="{{ setExempt }}" />دارای کارت پایان خدمت</label>
+          <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="radio" name="military" checked="{{ isWaived }}" onChange="{{ setWaived }}" />معافیت</label>
+        </div>
+        <sc-if value="{{ isWaived }}" hint-placeholder-val="{{false}}">
+          <input class="jf-input" placeholder="نوع معافیت" value="{{ exemptionType }}" onInput="{{ onExemptionType }}" style="margin-top:9px; height:40px;" />
+        </sc-if>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:{{ cols3 }}; gap:11px; margin-bottom:11px;">
+      <input class="jf-input" placeholder="شماره تماس" dir="ltr" value="{{ phone }}" onInput="{{ onPhone }}" />
+      <input class="jf-input" placeholder="آدرس ایمیل" dir="ltr" value="{{ email }}" onInput="{{ onEmail }}" />
+      <select class="jf-input" value="{{ residenceProvince }}" onChange="{{ onResidenceProvince }}"><option value="">استان محل سکونت</option><sc-for list="{{ provinces }}" as="p" hint-placeholder-count="1"><option value="{{ p }}">{{ p }}</option></sc-for></select>
+    </div>
+    <input class="jf-input" placeholder="آدرس محل سکونت" value="{{ residenceAddress }}" onInput="{{ onResidenceAddress }}" style="margin-bottom:26px;" />
+
+    <div style="background:#eef1f5; border-radius:10px; padding:11px 16px; font-size:13px; font-weight:700; color:#5a6678; margin-bottom:22px;">سوابق</div>
+
+    <h3 style="font-size:14.5px; font-weight:800; margin:0 0 14px;">سوابق تحصیلی/دوره های آموزشی</h3>
+    <sc-for list="{{ eduEntries }}" as="e" hint-placeholder-count="1">
+      <div style="margin-bottom:14px; padding-bottom:14px; border-bottom:1px dashed #e2e7ee;">
+        <div style="display:grid; grid-template-columns:{{ cols2 }}; gap:11px; margin-bottom:11px;">
+          <input class="jf-input" placeholder="رشته تحصیلی" value="{{ e.major }}" onInput="{{ e.onMajor }}" />
+          <input class="jf-input" placeholder="مقطع تحصیلی" value="{{ e.degree }}" onInput="{{ e.onDegree }}" />
+        </div>
+        <input class="jf-input" placeholder="دوره ها و گواهی‌نامه ها" value="{{ e.courses }}" onInput="{{ e.onCourses }}" style="margin-bottom:11px;" />
+        <input class="jf-input" placeholder="دوره های آموزشی غیر مرتبط" value="{{ e.otherCourses }}" onInput="{{ e.onOtherCourses }}" />
+      </div>
+    </sc-for>
+    <span onClick="{{ addEdu }}" style="display:inline-block; font-size:12.5px; font-weight:700; color:#fff; background:var(--accent,#1668c4); padding:10px 16px; border-radius:9px; cursor:pointer; margin-bottom:30px;">افزودن سابقه تحصیلی</span>
+
+    <h3 style="font-size:14.5px; font-weight:800; margin:0 0 14px;">تجربه کاری / سوابق</h3>
+    <sc-for list="{{ workEntries }}" as="w" hint-placeholder-count="1">
+      <div style="margin-bottom:14px; padding-bottom:14px; border-bottom:1px dashed #e2e7ee;">
+        <div style="display:grid; grid-template-columns:{{ cols4 }}; gap:11px; margin-bottom:11px;">
+          <input class="jf-input" placeholder="نام شرکت" value="{{ w.company }}" onInput="{{ w.onCompany }}" />
+          <input class="jf-input" placeholder="سمت سازمانی" value="{{ w.position }}" onInput="{{ w.onPosition }}" />
+          <input class="jf-input" placeholder="از سال" value="{{ w.fromYear }}" onInput="{{ w.onFromYear }}" />
+          <input class="jf-input" placeholder="تا سال" value="{{ w.toYear }}" onInput="{{ w.onToYear }}" />
+        </div>
+        <input class="jf-input" placeholder="علت قطع همکاری" value="{{ w.reason }}" onInput="{{ w.onReason }}" />
+      </div>
+    </sc-for>
+    <span onClick="{{ addWork }}" style="display:inline-block; font-size:12.5px; font-weight:700; color:#fff; background:var(--accent,#1668c4); padding:10px 16px; border-radius:9px; cursor:pointer; margin-bottom:16px;">افزودن سابقه</span>
+
+    <div style="background:#eef1f5; border-radius:10px; padding:11px 16px; font-size:13px; font-weight:700; color:#5a6678; margin:26px 0 22px;">نرم‌افزارها / مهارت‌های تکمیلی</div>
+    <input class="jf-input" placeholder="مهارت های تکمیلی" value="{{ skills }}" onInput="{{ onSkills }}" style="margin-bottom:30px;" />
+
+    <h3 style="font-size:15.5px; font-weight:800; margin:0 0 16px;">آشنایی با زبان های خارجه</h3>
+    <sc-for list="{{ langEntries }}" as="l" hint-placeholder-count="1">
+      <div style="display:grid; grid-template-columns:{{ cols2 }}; gap:11px; margin-bottom:11px;">
+        <select class="jf-input" value="{{ l.lang }}" onChange="{{ l.onLang }}"><option value="">انتخاب زبان</option><sc-for list="{{ langOptions }}" as="lo" hint-placeholder-count="1"><option value="{{ lo }}">{{ lo }}</option></sc-for></select>
+        <select class="jf-input" value="{{ l.level }}" onChange="{{ l.onLevel }}"><option value="">سطح</option><sc-for list="{{ levelOptions }}" as="lv" hint-placeholder-count="1"><option value="{{ lv }}">{{ lv }}</option></sc-for></select>
+      </div>
+    </sc-for>
+    <span onClick="{{ addLang }}" style="display:inline-block; font-size:12.5px; font-weight:700; color:#fff; background:var(--accent,#1668c4); padding:10px 16px; border-radius:9px; cursor:pointer; margin-bottom:14px;">افزودن زبان</span>
+    <input class="jf-input" placeholder="دیگر زبان ها" value="{{ otherLangs }}" onInput="{{ onOtherLangs }}" style="margin-bottom:26px;" />
+
+    <div onClick="{{ pickFile }}" style="border:1.5px dashed #c7d0dc; border-radius:13px; padding:30px 20px; text-align:center; cursor:pointer; margin-bottom:26px;">
+      <div style="font-size:24px; margin-bottom:8px;">⤒</div>
+      <div style="font-size:13.5px; font-weight:700; color:{{ fileNameColor }};">{{ fileNameLabel }}</div>
+      <div style="font-size:11.5px; color:#9aa4b2; margin-top:6px;">لطفاً فایل با پسوند PDF و حجم حداکثر ۳ مگابایت بارگذاری کنید</div>
+      <span style="display:inline-block; margin-top:12px; font-size:12px; font-weight:700; border:1px solid #d7dee7; border-radius:9px; padding:8px 16px; color:#3b4554;">انتخاب فایل</span>
+      <input ref="{{ fileInputRef }}" type="file" accept="application/pdf" onChange="{{ onFileChange }}" style="display:none;" />
+    </div>
+
+    <div onClick="{{ submit }}" style="height:52px; border-radius:12px; background:var(--accent,#1668c4); color:#fff; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; cursor:pointer;">ارسال درخواست</div>
+
+  </section>
+  </sc-if>
+
+  <footer style="background:#0d2640; color:#aebfd4;">
+    <sc-if value="{{ notMobile }}" hint-placeholder-val="{{true}}">
+    <div style="max-width:1400px; margin:0 auto; padding:39px 26px 20px; display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr; gap:33px;">
+      <div>
+        <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:9px; margin-bottom:16px; text-decoration:none;"><div style="width:36px; height:36px; border-radius:10px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:16px;">✈</div><span style="font-weight:900; font-size:18px; color:#fff;">blujet</span></a>
+        <p style="font-size:13.5px; line-height:1.85; margin:0 0 20px; max-width:300px;">رزرو آنلاین بلیط پروازهای داخلی و بین‌المللی با بهترین قیمت و خدمات باشگاه مشتریان.</p>
+      </div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">خدمات</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="نتایج پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">رزرو پرواز</a><a href="مدیریت رزرو.dc.html" style="color:#aebfd4; text-decoration:none;">مدیریت رزرو</a><a href="وضعیت پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">وضعیت پرواز</a><a href="باشگاه مشتریان.dc.html" style="color:#aebfd4; text-decoration:none;">باشگاه مشتریان</a></div></div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">شرکت</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="درباره ما.dc.html" style="color:#aebfd4; text-decoration:none;">درباره ما</a><a href="تماس با ما.dc.html" style="color:#aebfd4; text-decoration:none;">تماس با ما</a><a href="قوانین و مقررات.dc.html" style="color:#aebfd4; text-decoration:none;">قوانین و مقررات</a><a href="فرصتهای شغلی.dc.html" style="color:#fff; font-weight:700; text-decoration:none;">فرصت‌های شغلی</a></div></div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">پشتیبانی</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">مرکز راهنما</a><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">سوالات متداول</a></div></div>
+    </div>
+    <div style="border-top:1px solid #ffffff12;"><div style="max-width:1400px; margin:0 auto; padding:15px 26px; display:flex; justify-content:space-between; align-items:center; font-size:13.5px; color:#7d92ad;"><span>© ۱۴۰۵ blujet. تمامی حقوق محفوظ است.</span></div></div>
+    </sc-if>
+    <sc-if value="{{ isMobile }}" hint-placeholder-val="{{false}}">
+    <div style="padding:34px 24px 6px; text-align:center;">
+      <div style="display:flex; align-items:center; justify-content:center; gap:9px; margin-bottom:14px;"><div style="width:34px; height:34px; border-radius:10px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:15px;">✈</div><span style="font-weight:900; font-size:17px; color:#fff;">blujet</span></div>
+    </div>
+    <div style="margin-top:6px; border-top:1px solid #ffffff14;">
+      <details><summary style="display:flex; align-items:center; justify-content:space-between; padding:15px 24px; font-size:13.5px; font-weight:700; color:#fff; border-bottom:1px solid #ffffff14;">خدمات<span style="color:#7d92ad; font-size:12px;">⌄</span></summary>
+        <div style="padding:14px 24px 18px; display:flex; flex-direction:column; align-items:flex-end; gap:13px; font-size:13px; border-bottom:1px solid #ffffff14;"><a href="نتایج پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">رزرو پرواز</a><a href="مدیریت رزرو.dc.html" style="color:#aebfd4; text-decoration:none;">مدیریت رزرو</a><a href="وضعیت پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">وضعیت پرواز</a><a href="باشگاه مشتریان.dc.html" style="color:#aebfd4; text-decoration:none;">باشگاه مشتریان</a></div>
+      </details>
+      <details><summary style="display:flex; align-items:center; justify-content:space-between; padding:15px 24px; font-size:13.5px; font-weight:700; color:#fff; border-bottom:1px solid #ffffff14;">شرکت<span style="color:#7d92ad; font-size:12px;">⌄</span></summary>
+        <div style="padding:14px 24px 18px; display:flex; flex-direction:column; align-items:flex-end; gap:13px; font-size:13px; border-bottom:1px solid #ffffff14;"><a href="درباره ما.dc.html" style="color:#aebfd4; text-decoration:none;">درباره ما</a><a href="تماس با ما.dc.html" style="color:#aebfd4; text-decoration:none;">تماس با ما</a><a href="قوانین و مقررات.dc.html" style="color:#aebfd4; text-decoration:none;">قوانین و مقررات</a><a href="فرصتهای شغلی.dc.html" style="color:#fff; font-weight:700; text-decoration:none;">فرصت‌های شغلی</a></div>
+      </details>
+      <details><summary style="display:flex; align-items:center; justify-content:space-between; padding:15px 24px; font-size:13.5px; font-weight:700; color:#fff;">پشتیبانی<span style="color:#7d92ad; font-size:12px;">⌄</span></summary>
+        <div style="padding:14px 24px 18px; display:flex; flex-direction:column; align-items:flex-end; gap:13px; font-size:13px;"><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">مرکز راهنما</a><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">سوالات متداول</a></div>
+      </details>
+    </div>
+    <div style="padding:16px 24px; text-align:center; font-size:13px; color:#7d92ad;">© ۱۴۰۵ blujet. تمامی حقوق محفوظ است.</div>
+    </sc-if>
+  </footer>
+
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{false}}">
+    <div style="position:fixed; bottom:26px; left:50%; transform:translateX(-50%); background:#16202e; color:#fff; padding:12px 20px; border-radius:11px; font-size:13px; font-weight:700; z-index:500; box-shadow:0 14px 40px -12px rgba(0,0,0,.4);">{{ toast }}</div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;setupMode&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;حالت حساب&quot;}}">
+class Component extends DCLogic {
+  state = {
+    firstName:"", lastName:"", nationalId:"", fatherName:"", birthDate:"", birthProvince:"", birthCity:"",
+    gender:"", marital:"", military:"", exemptionType:"", phone:"", email:"", residenceProvince:"", residenceAddress:"",
+    skills:"", otherLangs:"", fileName:"", toast:"", submitted:false,
+    eduEntries:[{major:"",degree:"",courses:"",otherCourses:""}],
+    workEntries:[{company:"",position:"",fromYear:"",toYear:"",reason:""}],
+    langEntries:[{lang:"",level:""}],
+    isMobile:(typeof window !== "undefined" && window.innerWidth < 768), mobileMenuOpen:false, langOpen:false, userMenuOpen:false
+  };
+  fileInputRef = null;
+  componentDidMount() {
+    this._mq = window.matchMedia("(max-width:847px)");
+    this._mqHandler = (e) => this.setState({ isMobile: e.matches });
+    if (this._mq.addEventListener) this._mq.addEventListener("change", this._mqHandler); else this._mq.addListener(this._mqHandler);
+  }
+  componentWillUnmount() {
+    if (this._mq) { if (this._mq.removeEventListener) this._mq.removeEventListener("change", this._mqHandler); else this._mq.removeListener(this._mqHandler); }
+  }
+
+  getJob() {
+    if (this.props.setupMode) return null;
+    const SD = (typeof window !== "undefined") ? window.SiteData : null;
+    if (!SD) return null;
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("job");
+    return (id && SD.getJob(id)) || SD.getActiveJobs()[0] || null;
+  }
+
+  toast(t){ this.setState({ toast:t }); clearTimeout(this._tt); this._tt = setTimeout(() => this.setState({ toast:"" }), 2800); }
+
+  patchList(key, idx, field, value) {
+    this.setState(s => { const list = s[key].slice(); list[idx] = Object.assign({}, list[idx], { [field]: value }); return { [key]: list }; });
+  }
+
+  submit() {
+    const s = this.state;
+    if (!s.firstName.trim() || !s.lastName.trim() || !s.nationalId.trim() || !s.phone.trim()) {
+      this.toast("لطفاً حداقل نام، نام خانوادگی، کد ملی و شماره تماس را وارد کنید");
+      return;
+    }
+    const job = this.getJob();
+    if (typeof window !== "undefined" && window.SiteData) {
+      window.SiteData.addJobApplication({
+        id: "JA-" + Date.now(), jobId: job ? job.id : null, jobTitle: job ? job.title : "",
+        firstName: s.firstName, lastName: s.lastName, nationalId: s.nationalId, phone: s.phone, email: s.email,
+        eduEntries: s.eduEntries, workEntries: s.workEntries, langEntries: s.langEntries,
+        at: "هم‌اکنون"
+      });
+    }
+    this.setState({ submitted:true });
+  }
+
+  renderVals() {
+    const s = this.state;
+    const job = this.getJob();
+    const provinces = ["آذربایجان شرقی","آذربایجان غربی","اردبیل","اصفهان","البرز","ایلام","بوشهر","تهران","چهارمحال و بختیاری","خراسان جنوبی","خراسان رضوی","خراسان شمالی","خوزستان","زنجان","سمنان","سیستان و بلوچستان","فارس","قزوین","قم","کردستان","کرمان","کرمانشاه","کهگیلویه و بویراحمد","گلستان","گیلان","لرستان","مازندران","مرکزی","هرمزگان","همدان","یزد"];
+    const langOptions = ["انگلیسی","عربی","فرانسوی","آلمانی","ترکی استانبولی","اسپانیایی","روسی","چینی"];
+    const levelOptions = ["مبتدی","متوسط","پیشرفته","زبان مادری"];
+
+    const eduEntries = s.eduEntries.map((e,i) => ({
+      major:e.major, degree:e.degree, courses:e.courses, otherCourses:e.otherCourses,
+      onMajor:(ev)=>this.patchList("eduEntries",i,"major",ev.target.value),
+      onDegree:(ev)=>this.patchList("eduEntries",i,"degree",ev.target.value),
+      onCourses:(ev)=>this.patchList("eduEntries",i,"courses",ev.target.value),
+      onOtherCourses:(ev)=>this.patchList("eduEntries",i,"otherCourses",ev.target.value)
+    }));
+    const workEntries = s.workEntries.map((w,i) => ({
+      company:w.company, position:w.position, fromYear:w.fromYear, toYear:w.toYear, reason:w.reason,
+      onCompany:(ev)=>this.patchList("workEntries",i,"company",ev.target.value),
+      onPosition:(ev)=>this.patchList("workEntries",i,"position",ev.target.value),
+      onFromYear:(ev)=>this.patchList("workEntries",i,"fromYear",ev.target.value),
+      onToYear:(ev)=>this.patchList("workEntries",i,"toYear",ev.target.value),
+      onReason:(ev)=>this.patchList("workEntries",i,"reason",ev.target.value)
+    }));
+    const langEntries = s.langEntries.map((l,i) => ({
+      lang:l.lang, level:l.level,
+      onLang:(ev)=>this.patchList("langEntries",i,"lang",ev.target.value),
+      onLevel:(ev)=>this.patchList("langEntries",i,"level",ev.target.value)
+    }));
+
+    const isMobile = s.isMobile;
+    return {
+      isMobile, notMobile: !isMobile,
+      mobileMenuOpen: s.mobileMenuOpen, toggleMobileMenu: () => this.setState(st => ({ mobileMenuOpen: !st.mobileMenuOpen })),
+      navDisplay: isMobile ? "none" : "flex", hamburgerDisplay: isMobile ? "flex" : "none", hamburgerShown: isMobile,
+      headerBarBg: isMobile ? "var(--accent,#1668c4)" : "#fff", headerBorderB: isMobile ? "none" : "1px solid #e6eaf0",
+      logoTextColor: isMobile ? "#fff" : "#16202e", logoSquareBg: isMobile ? "#fff" : "var(--accent,#1668c4)", logoIconColor: isMobile ? "var(--accent,#1668c4)" : "#fff",
+      hamburgerColor: isMobile ? "#fff" : "#0d2640", logoOrder: isMobile ? 3 : 0, iconRowOrder: isMobile ? 2 : 0,
+      logoPosition: isMobile ? "absolute" : "static", logoLeft: isMobile ? "50%" : "auto", logoTransform: isMobile ? "translateX(-50%)" : "none",
+      cols4: isMobile ? "1fr" : "repeat(4,1fr)", cols3: isMobile ? "1fr" : "repeat(3,1fr)", cols2: isMobile ? "1fr" : "1fr 1fr",
+      langOpen: s.langOpen, toggleLang: () => this.setState(st => ({ langOpen: !st.langOpen, userMenuOpen: false })),
+      setLangFa: () => this.setState({ langOpen: false }), setLangEn: () => this.setState({ langOpen: false }),
+      userMenuOpen: s.userMenuOpen, toggleUserMenu: () => this.setState(st => ({ userMenuOpen: !st.userMenuOpen, langOpen: false })),
+      jobTitle: job ? job.title : "همکاری با blujet",
+      jobMeta: job ? (job.dept + " · " + job.city + " · " + job.type) : "فرصت شغلی",
+      generalReqs: job ? job.generalReqs : ["جنسیت خانم و آقا","حداقل یک سال سابقه کار مرتبط","عدم سوء پیشینه و اعتیاد"],
+      specialReqs: job ? job.specialReqs : ["آشنایی با حوزهٔ مرتبط با شغل مورد نظر"],
+      provinces, langOptions, levelOptions,
+      firstName:s.firstName, onFirstName:(e)=>this.setState({firstName:e.target.value}),
+      lastName:s.lastName, onLastName:(e)=>this.setState({lastName:e.target.value}),
+      nationalId:s.nationalId, onNationalId:(e)=>this.setState({nationalId:e.target.value}),
+      fatherName:s.fatherName, onFatherName:(e)=>this.setState({fatherName:e.target.value}),
+      birthDate:s.birthDate, onBirthDate:(e)=>this.setState({birthDate:e.target.value}),
+      birthProvince:s.birthProvince, onBirthProvince:(e)=>this.setState({birthProvince:e.target.value}),
+      birthCity:s.birthCity, onBirthCity:(e)=>this.setState({birthCity:e.target.value}),
+      isFemale:s.gender==="female", setFemale:()=>this.setState({gender:"female"}),
+      isMale:s.gender==="male", setMale:()=>this.setState({gender:"male"}),
+      isSingle:s.marital==="single", setSingle:()=>this.setState({marital:"single"}),
+      isMarried:s.marital==="married", setMarried:()=>this.setState({marital:"married"}),
+      isConscript:s.military==="conscript", setConscript:()=>this.setState({military:"conscript"}),
+      isExempt:s.military==="exempt", setExempt:()=>this.setState({military:"exempt"}),
+      isWaived:s.military==="waived", setWaived:()=>this.setState({military:"waived"}),
+      exemptionType:s.exemptionType, onExemptionType:(e)=>this.setState({exemptionType:e.target.value}),
+      phone:s.phone, onPhone:(e)=>this.setState({phone:e.target.value}),
+      email:s.email, onEmail:(e)=>this.setState({email:e.target.value}),
+      residenceProvince:s.residenceProvince, onResidenceProvince:(e)=>this.setState({residenceProvince:e.target.value}),
+      residenceAddress:s.residenceAddress, onResidenceAddress:(e)=>this.setState({residenceAddress:e.target.value}),
+      eduEntries, addEdu:()=>this.setState(st=>({eduEntries:st.eduEntries.concat([{major:"",degree:"",courses:"",otherCourses:""}])})),
+      workEntries, addWork:()=>this.setState(st=>({workEntries:st.workEntries.concat([{company:"",position:"",fromYear:"",toYear:"",reason:""}])})),
+      skills:s.skills, onSkills:(e)=>this.setState({skills:e.target.value}),
+      langEntries, addLang:()=>this.setState(st=>({langEntries:st.langEntries.concat([{lang:"",level:""}])})),
+      otherLangs:s.otherLangs, onOtherLangs:(e)=>this.setState({otherLangs:e.target.value}),
+      fileInputRef:(el)=>{ this.fileInputRef = el; },
+      pickFile:()=>{ if (this.fileInputRef) this.fileInputRef.click(); },
+      onFileChange:(e)=>{ const f = e.target.files && e.target.files[0]; if (f) this.setState({fileName:f.name}); },
+      fileNameLabel: s.fileName || "فایل مورد نظر را انتخاب کنید",
+      fileNameColor: s.fileName ? "#1668c4" : "#16202e",
+      submit:()=>this.submit(),
+      submitted:s.submitted, notSubmitted:!s.submitted,
+      toast:s.toast, hasToast:!!s.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

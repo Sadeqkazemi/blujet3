@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box;}html,body{margin:0;}a{color:#1668c4;}a:hover{color:#0d4f9e;}
+input{font-family:inherit;}input:focus{outline:none;border-color:#1668c4 !important;background:#f3f7fc !important;}
+@keyframes planeFloat{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-16px) rotate(-1.5deg);}}</style>
+</helmet>
+
+<div dir="{{ pageDir }}" style="font-family:{{ fontFam }}; color:#16202e; min-height:100vh; --accent:#1668c4; display:flex; align-items:center; justify-content:center; padding:26px; position:relative; background:#ffffff;">
+
+  <div style="width:980px; max-width:100%; background:#fff; border-radius:26px; overflow:hidden; box-shadow:0 50px 110px -38px rgba(13,38,102,.4); border:1px solid #e4edf8; display:grid; grid-template-columns:{{ cardCols }};">
+
+    <div style="padding:{{ formPad }}; display:flex; flex-direction:column;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
+        <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:9px; text-decoration:none; color:#16202e;"><div style="width:40px; height:40px; border-radius:11px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px;">✈</div><span style="font-weight:900; font-size:19px;">blujet</span></a>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span onClick="{{ toggleLang }}" style="display:flex; align-items:center; gap:6px; cursor:pointer; color:#5a6678; border:1.5px solid #e2e7ee; border-radius:20px; padding:7px 13px; font-size:12px; font-weight:700;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 4 5.7 4 9s-1.5 6.5-4 9c-2.5-2.5-4-5.7-4-9s1.5-6.5 4-9z"/></svg>{{ langLabel }}</span>
+          <sc-if value="{{ showForgotLink }}" hint-placeholder-val="{{true}}">
+            <a href="فراموشی رمز.dc.html" style="display:{{ forgotLinkDisplay }}; text-decoration:none; font-size:11.5px; color:#8a96a6; font-weight:700; border:1.5px solid #e6ebf2; border-radius:100px; padding:8px 15px;" style-hover="color:#1668c4; border-color:#c9dcf3;">{{ forgotLabel }}</a>
+          </sc-if>
+          <a href="صفحه اصلی.dc.html" style="display:{{ closeBtnDisplay }}; width:36px; height:36px; border-radius:50%; background:#f3f5f8; color:#5a6678; align-items:center; justify-content:center; font-size:18px; text-decoration:none;">×</a>
+        </div>
+      </div>
+
+      <div style="display:flex; background:#f1f5fa; border-radius:13px; padding:4px; margin-bottom:22px;">
+        <span onClick="{{ setUser }}" style="flex:1; text-align:center; padding:9px; border-radius:9px; font-size:12.5px; font-weight:{{ uw }}; cursor:pointer; background:{{ ubg }}; color:{{ uc }}; box-shadow:{{ ush }};">{{ acctUserLabel }}</span>
+        <span onClick="{{ setAgency }}" style="flex:1; text-align:center; padding:9px; border-radius:9px; font-size:12.5px; font-weight:{{ aw }}; cursor:pointer; background:{{ abg }}; color:{{ ac }}; box-shadow:{{ ash }};">{{ acctAgencyLabel }}</span>
+      </div>
+
+      <div style="display:flex; gap:21px; border-bottom:1.5px solid #eef1f5; margin-bottom:24px;">
+        <span onClick="{{ setLogin }}" style="padding-bottom:11px; font-size:14.5px; font-weight:800; color:{{ loginC }}; border-bottom:3px solid {{ loginB }}; cursor:pointer; margin-bottom:-1.5px;">{{ tabLoginLabel }}</span>
+        <span onClick="{{ setSignup }}" style="padding-bottom:11px; font-size:14.5px; font-weight:800; color:{{ signupC }}; border-bottom:3px solid {{ signupB }}; cursor:pointer; margin-bottom:-1.5px;">{{ tabSignupLabel }}</span>
+      </div>
+
+      <h1 style="font-size:22px; font-weight:900; margin:0 0 8px;">{{ title }}</h1>
+      <p style="font-size:12.5px; color:#7d8ba0; margin:0 0 22px; line-height:2;">{{ subtitle }}</p>
+
+      <!-- ============ ENGLISH: EMAIL + GOOGLE ============ -->
+      <sc-if value="{{ isEN }}" hint-placeholder-val="{{false}}">
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <div onClick="{{ continueWithGoogle }}" style="height:52px; border-radius:13px; border:1.5px solid #dfe6ef; background:#fff; display:flex; align-items:center; justify-content:center; gap:10px; font-size:13.5px; font-weight:700; color:#16202e; cursor:pointer; white-space:nowrap; padding:0 10px;" style-hover="background:#f7f9fc; border-color:#c9dcf3;">
+            <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20.4H24v7.2h11.3c-1.6 4.6-6 8-11.3 8-6.9 0-12.5-5.6-12.5-12.6S17.1 10.4 24 10.4c3.2 0 6.1 1.2 8.3 3.2l5.1-5.1C34.1 5.6 29.3 3.6 24 3.6 12.9 3.6 4 12.5 4 23.6S12.9 43.6 24 43.6c11 0 20-8.9 20-20 0-1.2-.1-2.4-.4-3.1z"/><path fill="#FF3D00" d="M6.3 14.6l6.6 4.8C14.7 15.1 19 12.4 24 12.4c3.2 0 6.1 1.2 8.3 3.2l5.1-5.1C34.1 6.9 29.3 4.4 24 4.4c-7.7 0-14.4 4.4-17.7 10.2z"/><path fill="#4CAF50" d="M24 43.6c5.2 0 9.9-1.8 13.6-4.9l-6.3-5.2C29.3 35.6 26.8 36.5 24 36.5c-5.3 0-9.7-3.4-11.3-8l-6.6 5.1C9.5 39.1 16.2 43.6 24 43.6z"/><path fill="#1976D2" d="M43.6 20.5H42V20.4H24v7.2h11.3c-.8 2.2-2.2 4.1-4.1 5.4l6.3 5.2C41 34.6 44 29.5 44 23.6c0-1.2-.1-2.4-.4-3.1z"/></svg>
+            {{ googleLabel }}
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; color:#b7c0cd; font-size:11px; font-weight:700;"><div style="flex:1; height:1px; background:#eef1f5;"></div>{{ orLabel }}<div style="flex:1; height:1px; background:#eef1f5;"></div></div>
+
+          <sc-if value="{{ showSignupFields }}" hint-placeholder-val="{{false}}">
+            <sc-if value="{{ isAgency }}" hint-placeholder-val="{{false}}">
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div>
+                  <div style="font-size:12px; color:#42506a; font-weight:700; margin-bottom:8px;">{{ agNameLabel }}</div>
+                  <input type="text" value="{{ agName }}" onChange="{{ setAgName }}" placeholder="{{ agNamePlaceholder }}" style="width:100%; height:52px; border:1.5px solid #dfe6ef; border-radius:13px; background:#fafbfd; padding:0 14px; font-size:13.5px; color:#16202e;">
+                </div>
+                <div>
+                  <div style="font-size:12px; color:#42506a; font-weight:700; margin-bottom:8px;">{{ agLicLabel }}</div>
+                  <input type="text" dir="ltr" value="{{ agLic }}" onChange="{{ setAgLic }}" placeholder="XXXX-XXXX" style="width:100%; height:52px; border:1.5px solid #dfe6ef; border-radius:13px; background:#fafbfd; padding:0 14px; font-size:13.5px; color:#16202e;">
+                </div>
+              </div>
+            </sc-if>
+            <div>
+              <div style="font-size:12px; color:#42506a; font-weight:700; margin-bottom:8px;">{{ nameLabel }}</div>
+              <input type="text" value="{{ name }}" onChange="{{ setName }}" placeholder="{{ namePlaceholder }}" style="width:100%; height:52px; border:1.5px solid #dfe6ef; border-radius:13px; background:#fafbfd; padding:0 14px; font-size:13.5px; color:#16202e;">
+            </div>
+          </sc-if>
+
+          <div>
+            <div style="font-size:12px; color:#42506a; font-weight:700; margin-bottom:8px;">{{ emailLabel }}</div>
+            <input type="email" dir="ltr" value="{{ email }}" onChange="{{ setEmail }}" placeholder="you@gmail.com" style="width:100%; height:54px; border:1.5px solid #dfe6ef; border-radius:13px; background:#fafbfd; padding:0 16px; font-size:14.5px; font-weight:600; color:#16202e;">
+            <div style="font-size:11px; color:{{ emailHintColor }}; margin-top:7px; font-weight:600;">{{ emailHint }}</div>
+          </div>
+
+          <div>
+            <div style="font-size:12px; color:#42506a; font-weight:700; margin-bottom:8px;">{{ passwordLabel }}</div>
+            <input type="password" dir="ltr" value="{{ password }}" onChange="{{ setPassword }}" placeholder="••••••••" style="width:100%; height:54px; border:1.5px solid #dfe6ef; border-radius:13px; background:#fafbfd; padding:0 16px; font-size:14.5px; font-weight:600; color:#16202e;">
+            <div style="font-size:11px; color:{{ passwordHintColor }}; margin-top:7px; font-weight:600;">{{ passwordHint }}</div>
+          </div>
+
+          <sc-if value="{{ showSignupFields }}" hint-placeholder-val="{{false}}">
+            <div onClick="{{ toggleTerms }}" style="display:flex; align-items:center; gap:8px; font-size:11.5px; color:#3b4554; cursor:pointer;"><span style="width:19px; height:19px; border:1.5px solid {{ termsBorder }}; border-radius:6px; flex:none; background:{{ termsBg }}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px;">{{ termsCheck }}</span><a href="قوانین و مقررات.dc.html" style="color:var(--accent,#1668c4); font-weight:700;">{{ termsLinkLabel }}</a><span>{{ termsSuffix }}</span></div>
+          </sc-if>
+
+          <div onClick="{{ submitEmail }}" style="height:56px; border-radius:13px; background:{{ sendBg }}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; cursor:{{ sendCursor }}; box-shadow:{{ sendShadow }}; transition:background .2s;">{{ emailSubmitLabel }}</div>
+        </div>
+      </sc-if>
+
+      <!-- ============ PHONE + OTP (all languages) ============ -->
+      <sc-if value="{{ isEN }}" hint-placeholder-val="{{false}}">
+        <sc-if value="{{ isIdPhase }}" hint-placeholder-val="{{true}}">
+          <div style="display:flex; align-items:center; gap:10px; color:#b7c0cd; font-size:11px; font-weight:700; margin:2px 0 15px;"><div style="flex:1; height:1px; background:#eef1f5;"></div>{{ orPhoneLabel }}<div style="flex:1; height:1px; background:#eef1f5;"></div></div>
+        </sc-if>
+      </sc-if>
+      <sc-if value="{{ true }}" hint-placeholder-val="{{true}}">
+        <sc-if value="{{ isIdPhase }}" hint-placeholder-val="{{true}}">
+          <div style="display:flex; flex-direction:column; gap:15px;">
+            <sc-if value="{{ showSignupFields }}" hint-placeholder-val="{{false}}">
+              <sc-if value="{{ isAgency }}" hint-placeholder-val="{{false}}">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                  <div>
+                    <div style="font-size:12px; color:#42506a; font-weight:700; margin-bottom:8px;">{{ agNameLabel }}</div>
+                    <input type="text" value="{{ agName }}" onChange="{{ setAgName }}" placeholder="{{ agNamePlaceholder }}" style="width:100%; height:52px; border:1.5px solid #dfe6ef; border-radius:13px; background:#fafbfd; padding:0 14px; font-size:13.5px; color:#16202e;">
+                  </div>
+                  <div>
+                    <div style="font-size:12px; color:#42506a; font-weight:700; margin-bottom:8px;">{{ agLicLabel }}</div>
+                    <input type="text" dir="ltr" value="{{ agLic }}" onChange="{{ setAgLic }}" placeholder="XXXX-XXXX" style="width:100%; height:52px; border:1.5px solid #dfe6ef; border-radius:13px; background:#fafbfd; padding:0 14px; font-size:13.5px; color:#16202e;">
+                  </div>
+                </div>
+              </sc-if>
+              <div>
+                <div style="font-size:12px; color:#42506a; font-weight:700; margin-bottom:8px;">{{ nameLabel }}</div>
+                <input type="text" value="{{ name }}" onChange="{{ setName }}" placeholder="{{ namePlaceholder }}" style="width:100%; height:52px; border:1.5px solid #dfe6ef; border-radius:13px; background:#fafbfd; padding:0 14px; font-size:13.5px; color:#16202e;">
+              </div>
+            </sc-if>
+
+            <div>
+              <div style="font-size:12px; color:#42506a; font-weight:700; margin-bottom:8px;">{{ mobileLabel }}</div>
+              <div style="position:relative;">
+                <input type="tel" dir="ltr" value="{{ phone }}" onChange="{{ setPhone }}" placeholder="0912 345 6789" maxLength="{{ phoneMax }}" style="width:100%; height:54px; border:1.5px solid #dfe6ef; border-radius:13px; background:#fafbfd; padding:0 16px 0 52px; font-size:16px; font-weight:700; letter-spacing:1px; color:#16202e;">
+                <span style="position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:12px; color:#9aa7b8; font-weight:700;">+98</span>
+              </div>
+              <div style="font-size:11px; color:{{ phoneHintColor }}; margin-top:7px; font-weight:600;">{{ phoneHint }}</div>
+            </div>
+
+            <sc-if value="{{ showSignupFields }}" hint-placeholder-val="{{false}}">
+              <div onClick="{{ toggleTerms }}" style="display:flex; align-items:center; gap:8px; font-size:11.5px; color:#3b4554; cursor:pointer;"><span style="width:19px; height:19px; border:1.5px solid {{ termsBorder }}; border-radius:6px; flex:none; background:{{ termsBg }}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px;">{{ termsCheck }}</span><a href="قوانین و مقررات.dc.html" style="color:var(--accent,#1668c4); font-weight:700;">{{ termsLinkLabel }}</a><span>{{ termsSuffix }}</span></div>
+            </sc-if>
+
+            <div onClick="{{ sendCode }}" style="height:56px; border-radius:13px; background:{{ phoneSendBg }}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; cursor:{{ phoneSendCursor }}; box-shadow:{{ phoneSendShadow }}; transition:background .2s;">{{ sendLabel }}</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isOtpPhase }}" hint-placeholder-val="{{false}}">
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            <div>
+              <div style="font-size:12px; color:#42506a; font-weight:700; margin-bottom:10px;">{{ otpSentPrefix }} <span dir="ltr" style="color:var(--accent,#1668c4);">{{ phoneFa }}</span></div>
+              <div style="display:flex; gap:10px; direction:ltr;">
+                <sc-for list="{{ otpCells }}" as="c" hint-placeholder-count="5">
+                  <input type="tel" value="{{ c.v }}" onChange="{{ c.change }}" onKeyDown="{{ c.keydown }}" ref="{{ c.ref }}" maxLength="1" style="flex:1; width:100%; height:60px; border:1.5px solid {{ c.border }}; border-radius:13px; background:{{ c.bg }}; text-align:center; font-size:22px; font-weight:800; color:#16202e; padding:0;">
+                </sc-for>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; font-size:12px;">
+              <span onClick="{{ editPhone }}" style="color:#8a96a6; font-weight:700; cursor:pointer;">{{ editPhoneLabel }}</span>
+              <span onClick="{{ resend }}" style="color:var(--accent,#1668c4); font-weight:800; cursor:pointer;">{{ resendLabel }}</span>
+            </div>
+            <div onClick="{{ confirm }}" style="height:56px; border-radius:13px; background:{{ confirmBg }}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; cursor:{{ confirmCursor }}; box-shadow:{{ confirmShadow }}; transition:background .2s;">{{ confirmLabel }}</div>
+          </div>
+        </sc-if>
+      </sc-if>
+
+      <sc-if value="{{ showAgencyNote }}" hint-placeholder-val="{{false}}">
+        <div style="margin-top:18px; background:#eef4fb; border:1px solid #dce8f7; border-radius:12px; padding:11px; font-size:11.5px; color:#3b556f; line-height:1.9;">{{ agencyNoteText }}</div>
+      </sc-if>
+
+      <div style="margin-top:auto; padding-top:24px; display:flex; align-items:center; gap:7px; font-size:11px; color:#9aa7b8; font-weight:600;"><span style="width:7px; height:7px; border-radius:50%; background:#1f8a5b;"></span>{{ secureNote }}</div>
+    </div>
+
+    <div style="background:linear-gradient(160deg,#0d2640,var(--accent,#1668c4)); position:relative; overflow:hidden; display:{{ visualDisplay }}; flex-direction:column; justify-content:flex-end; padding:30px 28px;">
+      <div style="position:absolute; top:-80px; left:-60px; width:260px; height:260px; border-radius:50%; background:#ffffff14;"></div>
+      <div style="position:absolute; top:130px; right:-50px; width:150px; height:150px; border-radius:50%; background:#ffffff0d;"></div>
+      <svg viewBox="0 0 400 600" preserveAspectRatio="none" style="position:absolute; inset:0; width:100%; height:100%; opacity:.5;">
+        <path d="M 430 560 C 300 430, 210 320, 60 150" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2" stroke-dasharray="2 12" stroke-linecap="round"></path>
+      </svg>
+      <img src="uploads/Picture1.png" alt="blujet aircraft" style="position:absolute; top:11%; left:-24%; width:150%; animation:planeFloat 7s ease-in-out infinite; filter:drop-shadow(0 30px 40px rgba(5,18,36,.45)); pointer-events:none;">
+      <div style="position:relative; color:#fff;">
+        <div style="font-size:21px; font-weight:900; line-height:1.7; margin-bottom:10px;">{{ visualTitle }}</div>
+        <p style="font-size:12px; color:#d6e4f7; line-height:2.1; margin:0;">{{ visualSub }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+  <div dir="{{ pageDir }}" onClick="{{ closeToast }}" style="position:fixed; inset:0; z-index:9000; background:rgba(13,38,64,.55); display:flex; align-items:center; justify-content:center; padding:24px; font-family:{{ fontFam }};">
+    <div style="width:400px; max-width:100%; background:#fff; border-radius:18px; box-shadow:0 40px 100px -30px rgba(4,16,34,.6); padding:36px 30px; text-align:center;">
+      <div style="width:110px; height:110px; border-radius:50%; background:{{ toastTint }}; color:{{ toastColor }}; display:flex; align-items:center; justify-content:center; font-size:48px; margin:0 auto 24px;">{{ toastIcon }}</div>
+      <div style="font-size:19px; font-weight:900; color:#16202e;">{{ toastTitle }}</div>
+    </div>
+  </div>
+</sc-if>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { lang: "fa", mode: "login", acct: "user", phase: "id", phone: "", email: "", password: "", name: "", agName: "", agLic: "", terms: false, otp: ["","","","",""], toast: "", toastKind: "ok", toastTitle: "", isMobile: (typeof window !== "undefined" && window.innerWidth < 768) };
+  constructor(p){ super(p); this.otpRefs = [0,1,2,3,4].map(() => React.createRef()); }
+  componentDidMount() {
+    try { const l = localStorage.getItem("blujet_lang"); if (l === "en" || l === "fa" || l === "ar") this.setState({ lang: l }); } catch(e) {}
+    this._mq = window.matchMedia("(max-width:767px)");
+    this._mqHandler = (e) => this.setState({ isMobile: e.matches });
+    if (this._mq.addEventListener) this._mq.addEventListener("change", this._mqHandler); else this._mq.addListener(this._mqHandler);
+  }
+  componentWillUnmount() {
+    if (this._mq) { if (this._mq.removeEventListener) this._mq.removeEventListener("change", this._mqHandler); else this._mq.removeListener(this._mqHandler); }
+  }
+  toast(t, kind, title){ this.setState({ toast: t, toastKind: kind || "ok", toastTitle: title }); clearTimeout(this._toastT); this._toastT = setTimeout(() => this.setState({ toast: "" }), 2200); }
+  fa(s){ return String(s).replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]); }
+  renderVals() {
+    const { mode, acct, phase, phone, email, password, name, agName, agLic, terms, otp } = this.state;
+    const isEN = this.state.lang === "en", isAR = this.state.lang === "ar", isFA = !isEN && !isAR;
+    const login = mode === "login", agency = acct === "agency", signup = !login;
+    const phoneOk = /^09\d{9}$/.test(phone);
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const passwordOk = password.length >= 6;
+    const infoOk = isEN
+      ? (login ? (emailOk && passwordOk) : (emailOk && passwordOk && name.trim().length >= 2 && terms && (!agency || (agName.trim() && agLic.trim()))))
+      : (login ? phoneOk : (phoneOk && name.trim().length >= 3 && terms && (!agency || (agName.trim() && agLic.trim()))));
+    const phoneInfoOk = login ? phoneOk : (phoneOk && name.trim().length >= (isEN ? 2 : 3) && terms && (!agency || (agName.trim() && agLic.trim())));
+    const otpOk = otp.every(v => v !== "");
+    const seg = (on) => ({ bg: on ? "#fff" : "transparent", color: on ? "var(--accent,#1668c4)" : "#6b7585", weight: on ? "700" : "600", shadow: on ? "0 2px 7px rgba(13,38,102,.14)" : "none" });
+    const u = seg(!agency), a = seg(agency);
+    const isMobile = this.state.isMobile;
+    const btn = (ok) => ({ bg: ok ? "var(--accent,#1668c4)" : "#c3cedd", cursor: ok ? "pointer" : "not-allowed", shadow: ok ? "0 14px 30px -12px rgba(22,104,196,.65)" : "none" });
+    const b1 = btn(infoOk), b2 = btn(otpOk), bp = btn(phoneInfoOk);
+    const doLogin = () => {
+      try {
+        localStorage.setItem('blujet_auth', agency ? 'agency' : 'in');
+        if (agency) localStorage.setItem('blujet_agency_name', (agName && agName.trim()) ? agName.trim() : (isEN ? 'Persian Travel Agency' : (isAR ? 'وكالة السفر الفارسية' : 'آژانس مسافرتی پرشین')));
+        if (!agency) {
+          const enteredName = (name && name.trim()) ? name.trim() : "";
+          if (enteredName) localStorage.setItem('blujet_user_name', enteredName);
+          if (email && email.trim()) localStorage.setItem('blujet_user_email', email.trim());
+          if (phone && phone.trim()) localStorage.setItem('blujet_user_phone', phone.trim());
+          // Email/Google sign-in on the EN flow never collects a national ID/passport or phone,
+          // so that account is treated as an incomplete profile until the user fills it in.
+          const complete = (isFA || isAR) ? true : false;
+          localStorage.setItem('blujet_profile_complete', complete ? '1' : '0');
+        }
+      } catch(e) {}
+      let dest = "صفحه اصلی.dc.html";
+      try {
+        const pending = localStorage.getItem('blujet_pending_flight');
+        if (pending) { localStorage.setItem('blujet_buy_flight', pending); localStorage.removeItem('blujet_pending_flight'); dest = "تکمیل خرید.dc.html"; }
+      } catch(e) {}
+      window.location.href = dest;
+    };
+    return {
+      isEN, isFA, isAR, pageDir: isEN ? "ltr" : "rtl", fontFam: isEN ? "Inter, sans-serif" : "Vazirmatn, sans-serif",
+      langLabel: isEN ? "EN" : (isAR ? "AR" : "FA"),
+      toggleLang: () => { const nl = isEN ? "fa" : (isAR ? "en" : "ar"); try { localStorage.setItem("blujet_lang", nl); } catch(e) {} this.setState({ lang: nl, phase: "id" }); },
+      showForgotLink: true, forgotLabel: isEN ? "Forgot password?" : (isAR ? "نسيت كلمة المرور؟" : "فراموشی رمز"),
+      forgotLinkDisplay: "block",
+      closeBtnDisplay: this.state.isMobile ? "flex" : "none",
+      setUser: () => this.setState({ acct: "user", phase: "id" }),
+      setAgency: () => this.setState({ acct: "agency", phase: "id" }),
+      setLogin: () => this.setState({ mode: "login", phase: "id" }),
+      setSignup: () => this.setState({ mode: "signup", phase: "id" }),
+      acctUserLabel: isEN ? "Personal" : (isAR ? "شخصي" : "کاربر عادی"), acctAgencyLabel: isEN ? "Partner Agency" : (isAR ? "وكالة شريكة" : "آژانس همکار"),
+      tabLoginLabel: isEN ? "Log in" : (isAR ? "تسجيل الدخول" : "ورود"), tabSignupLabel: isEN ? "Sign up" : (isAR ? "إنشاء حساب" : "ثبت‌نام"),
+      ubg: u.bg, uc: u.color, uw: u.weight, ush: u.shadow,
+      abg: a.bg, ac: a.color, aw: a.weight, ash: a.shadow,
+      loginC: login ? "var(--accent,#1668c4)" : "#9aa4b2", loginB: login ? "var(--accent,#1668c4)" : "transparent",
+      signupC: signup ? "var(--accent,#1668c4)" : "#9aa4b2", signupB: signup ? "var(--accent,#1668c4)" : "transparent",
+      title: isEN
+        ? (login ? "Log in to your account" : (agency ? "Partner agency sign-up" : "Create your account"))
+        : (isAR
+          ? (phase === "otp" ? "أدخل رمز التحقق" : (login ? "تسجيل الدخول إلى حسابك" : (agency ? "تسجيل وكالة شريكة" : "إنشاء حسابك")))
+          : (phase === "otp" ? "کد تأیید را وارد کن" : (login ? "ورود به حساب" : (agency ? "ثبت‌نام آژانس همکار" : "ساخت حساب کاربری")))),
+      subtitle: isEN
+        ? (login ? "Use your email and password, continue with Google, or log in with your phone number." : (agency ? "Enter your agency details to request a B2B partnership." : "Sign up with email, Google, or your phone number to start booking."))
+        : (isAR
+          ? (phase === "otp" ? "تم إرسال رمز مكوّن من 5 أرقام إلى هاتفك؛ أدخله لتأكيد هويتك." : (login ? (agency ? "سجّل الدخول إلى لوحة B2B برقم هاتف الوكالة المسجّل." : "أدخل رقم هاتفك؛ سيُرسل إليك رمز الدخول.") : (agency ? "أدخل بيانات الوكالة لتقديم طلب الشراكة." : "أدخل بياناتك وفعّل حسابك برمز عبر الرسائل النصية.")))
+          : (phase === "otp" ? "کد ۵ رقمی به موبایلت پیامک شد؛ با وارد کردن آن هویتت تأیید می‌شود." : (login ? (agency ? "با شماره موبایل ثبت‌شده‌ی آژانس وارد پنل B2B شوید." : "شماره موبایلت را وارد کن؛ کد ورود برایت پیامک می‌شود.") : (agency ? "اطلاعات آژانس را وارد کنید تا درخواست همکاری ثبت شود." : "اطلاعاتت را وارد کن و با کد پیامکی حسابت را فعال کن.")))),
+      googleLabel: isEN ? "Continue with Google" : (isAR ? "المتابعة عبر Google" : "ادامه با گوگل"),
+      continueWithGoogle: () => { try { localStorage.setItem('blujet_user_name', isEN ? 'Negar Rezaei' : (isAR ? 'نيغار رضائي' : 'نگار رضایی')); localStorage.setItem('blujet_user_email', 'negar@gmail.com'); localStorage.setItem('blujet_profile_complete', '0'); } catch(e) {} this.toast(isEN ? "Signed in with Google." : (isAR ? "تم تسجيل الدخول عبر Google." : "با گوگل وارد شدید."), "ok", isEN ? "Signed in" : (isAR ? "تم تسجيل الدخول" : "ورود موفق")); setTimeout(doLogin, 900); },
+      orLabel: isEN ? "OR" : (isAR ? "أو" : "یا"),
+      isIdPhase: phase === "id", isOtpPhase: phase === "otp",
+      showSignupFields: signup,
+      isAgency: agency,
+      showAgencyNote: agency && signup,
+      agencyNoteText: isEN ? "Agency accounts are activated after blujet reviews your license and documents, unlocking special B2B rates." : (isAR ? "تُفعَّل حسابات الوكالات بعد مراجعة blujet لترخيصك ومستنداتك، لتحصل على أسعار B2B خاصة." : "حساب آژانس پس از تأیید مدارک و مجوز فعالیت توسط کارشناسان blujet فعال می‌شود و به پنل B2B با نرخ‌های ویژه دسترسی خواهید داشت."),
+      agNameLabel: isEN ? "Agency name" : (isAR ? "اسم الوكالة" : "نام آژانس"), agNamePlaceholder: isEN ? "Company / agency name" : (isAR ? "اسم الشركة / الوكالة" : "نام شرکت/آژانس"),
+      agLicLabel: isEN ? "License number" : (isAR ? "رقم الترخيص" : "شماره مجوز بند ب"),
+      nameLabel: agency ? (isEN ? "Manager name" : (isAR ? "اسم المدير" : "نام مدیر آژانس")) : (isEN ? "Full name" : (isAR ? "الاسم الكامل" : "نام و نام خانوادگی")),
+      namePlaceholder: agency ? (isEN ? "Manager's name" : (isAR ? "اسم المدير" : "نام مسئول")) : (isEN ? "e.g. Sara Ahmadi" : (isAR ? "مثلاً سارة أحمدي" : "مثال: نگار رضایی")),
+      name, setName: e => this.setState({ name: e.target.value }),
+      agName, setAgName: e => this.setState({ agName: e.target.value }),
+      agLic, setAgLic: e => this.setState({ agLic: e.target.value }),
+      emailLabel: isEN ? "Email address" : (isAR ? "البريد الإلكتروني" : "ایمیل"),
+      email, setEmail: e => this.setState({ email: e.target.value }),
+      emailHint: email === "" ? "" : (emailOk ? (isEN ? "✓ Looks good" : (isAR ? "✓ يبدو جيدًا" : "✓ معتبر است")) : (isEN ? "Enter a valid email address" : (isAR ? "أدخل بريدًا إلكترونيًا صالحًا" : "ایمیل معتبر نیست"))),
+      emailHintColor: email === "" ? "#9aa7b8" : (emailOk ? "#1f8a5b" : "#d64545"),
+      passwordLabel: isEN ? "Password" : (isAR ? "كلمة المرور" : "رمز عبور"),
+      password, setPassword: e => this.setState({ password: e.target.value }),
+      passwordHint: password === "" ? (isEN ? "At least 6 characters" : (isAR ? "6 أحرف على الأقل" : "حداقل ۶ کاراکتر")) : (passwordOk ? (isEN ? "✓ Looks good" : (isAR ? "✓ يبدو جيدًا" : "✓ معتبر است")) : (isEN ? "At least 6 characters" : (isAR ? "6 أحرف على الأقل مطلوبة" : "حداقل ۶ کاراکتر لازم است"))),
+      passwordHintColor: password === "" ? "#9aa7b8" : (passwordOk ? "#1f8a5b" : "#d64545"),
+      terms, termsBorder: terms ? "var(--accent,#1668c4)" : "#ccd3dd", termsBg: terms ? "var(--accent,#1668c4)" : "#fff", termsCheck: terms ? "✓" : "",
+      toggleTerms: () => this.setState(s => ({ terms: !s.terms })),
+      termsLinkLabel: isEN ? "Terms & Conditions" : (isAR ? "الشروط والأحكام" : "قوانین و مقررات"),
+      termsSuffix: isEN ? " and Privacy Policy of blujet." : (isAR ? " وسياسة الخصوصية لـ blujet." : "و حریم خصوصی blujet را می‌پذیرم."),
+      emailSubmitLabel: login ? (isEN ? "Log in" : (isAR ? "تسجيل الدخول" : "ورود")) : (agency ? (isEN ? "Submit request" : (isAR ? "إرسال الطلب" : "ثبت درخواست")) : (isEN ? "Create account" : (isAR ? "إنشاء حساب" : "ساخت حساب"))),
+      sendBg: b1.bg, sendCursor: b1.cursor, sendShadow: b1.shadow,
+      submitEmail: () => {
+        if (!infoOk) {
+          if (!emailOk) this.toast(isEN ? "Please enter a valid email address." : (isAR ? "يرجى إدخال بريد إلكتروني صالح." : "ایمیل معتبر نیست."), "err", isEN ? "Check your email" : (isAR ? "تحقق من بريدك الإلكتروني" : "خطا"));
+          else if (!passwordOk) this.toast(isEN ? "Password must be at least 6 characters." : (isAR ? "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل." : "رمز باید حداقل ۶ کاراکتر باشد."), "err", isEN ? "Check your password" : (isAR ? "تحقق من كلمة المرور" : "خطا"));
+          else if (signup && name.trim().length < 2) this.toast(isEN ? "Please enter your full name." : (isAR ? "يرجى إدخال اسمك الكامل." : "نام را کامل وارد کن."), "err", isEN ? "Missing info" : (isAR ? "معلومات ناقصة" : "خطا"));
+          else if (signup && agency && (!agName.trim() || !agLic.trim())) this.toast(isEN ? "Enter agency name and license number." : (isAR ? "أدخل اسم الوكالة ورقم الترخيص." : "نام آژانس و شماره مجوز را وارد کنید."), "err", isEN ? "Missing info" : (isAR ? "معلومات ناقصة" : "خطا"));
+          else this.toast(isEN ? "You must accept the Terms & Conditions." : (isAR ? "يجب الموافقة على الشروط والأحكام." : "پذیرش قوانین لازم است."), "err", isEN ? "Accept terms" : (isAR ? "وافق على الشروط" : "خطا"));
+          return;
+        }
+        this.toast(login ? (isEN ? "Welcome back!" : (isAR ? "مرحبًا بعودتك!" : "خوش آمدید!")) : (isEN ? "Account created." : (isAR ? "تم إنشاء الحساب." : "حساب ساخته شد.")), "ok", isEN ? "Success" : (isAR ? "تم بنجاح" : "موفق"));
+        setTimeout(doLogin, 900);
+      },
+      phone, phoneMax: 11, phoneFa: isEN ? phone : this.fa(phone),
+      orPhoneLabel: isEN ? "OR USE PHONE NUMBER" : (isAR ? "أو برقم الجوال" : "یا با شماره موبایل"),
+      mobileLabel: isEN ? "Mobile number" : (isAR ? "رقم الجوال" : "شماره موبایل"),
+      otpSentPrefix: isEN ? "5-digit code sent to" : (isAR ? "تم إرسال رمز مكوّن من 5 أرقام إلى" : "کد ۵ رقمی پیامک‌شده به"),
+      editPhoneLabel: isEN ? "✎ Edit number" : (isAR ? "✎ تعديل الرقم" : "✎ ویرایش شماره"),
+      resendLabel: isEN ? "Resend code" : (isAR ? "إعادة إرسال الرمز" : "ارسال مجدد کد"),
+      setPhone: e => this.setState({ phone: e.target.value.replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/\D/g, "").slice(0, 11) }),
+      phoneHint: phone === "" ? (isEN ? "e.g. 09123456789" : (isAR ? "مثال: 09123456789" : "مثال: ۰۹۱۲۳۴۵۶۷۸۹")) : (phoneOk ? (isEN ? "✓ Looks good" : (isAR ? "✓ الرقم صحيح" : "✓ شماره معتبر است")) : (isEN ? "Number must start with 09 and be 11 digits" : (isAR ? "يجب أن يبدأ الرقم بـ 09 ويتكون من 11 رقمًا" : "شماره باید با ۰۹ شروع شود و ۱۱ رقم باشد"))),
+      phoneHintColor: phone === "" ? "#9aa7b8" : (phoneOk ? "#1f8a5b" : "#d64545"),
+      sendLabel: login ? (isEN ? "Send login code" : (isAR ? "إرسال رمز الدخول" : "ارسال کد ورود")) : (agency ? (isEN ? "Submit request & get code" : (isAR ? "إرسال الطلب واستلام الرمز" : "ثبت درخواست و دریافت کد")) : (isEN ? "Get activation code" : (isAR ? "استلام رمز التفعيل" : "دریافت کد فعال‌سازی"))),
+      phoneSendBg: bp.bg, phoneSendCursor: bp.cursor, phoneSendShadow: bp.shadow,
+      sendCode: () => {
+        if (!phoneInfoOk) {
+          if (!phoneOk) this.toast(isEN ? "Invalid phone number; it must start with 09 and be 11 digits." : (isAR ? "رقم الهاتف غير صالح؛ يجب أن يبدأ بـ 09 ويتكون من 11 رقمًا." : "شماره موبایل معتبر نیست؛ باید با ۰۹ شروع شود و ۱۱ رقم باشد."), "err", isEN ? "Check the number" : (isAR ? "تحقق من الرقم" : "شماره را بررسی کن"));
+          else if (signup && name.trim().length < (isEN ? 2 : 3)) this.toast(isEN ? "Please enter your full name." : (isAR ? "أدخل اسمك الكامل." : "نام و نام خانوادگی را کامل وارد کن."), "err", isEN ? "Missing info" : (isAR ? "معلومات ناقصة" : "اطلاعات ناقص است"));
+          else if (signup && agency && (!agName.trim() || !agLic.trim())) this.toast(isEN ? "Enter agency name and license number." : (isAR ? "أدخل اسم الوكالة ورقم الترخيص." : "نام آژانس و شماره مجوز بند ب را وارد کنید."), "err", isEN ? "Missing info" : (isAR ? "معلومات الوكالة ناقصة" : "اطلاعات آژانس ناقص است"));
+          else this.toast(isEN ? "You must accept the Terms & Conditions." : (isAR ? "يجب الموافقة على الشروط والأحكام للمتابعة." : "برای ادامه باید قوانین و مقررات را بپذیری."), "err", isEN ? "Accept terms" : (isAR ? "الموافقة على الشروط" : "پذیرش قوانین"));
+          return;
+        }
+        this.toast((isEN ? "A 5-digit code was sent to " : (isAR ? "تم إرسال رمز مكوّن من 5 أرقام إلى " : "کد ۵ رقمی به شماره ")) + (isEN ? phone : this.fa(phone)) + (isEN ? "." : (isAR ? "." : " پیامک شد.")), "ok", login ? (isEN ? "Login code sent" : (isAR ? "تم إرسال رمز الدخول" : "کد ورود ارسال شد")) : (isEN ? "Activation code sent" : (isAR ? "تم إرسال رمز التفعيل" : "کد فعال‌سازی ارسال شد")));
+        this.setState({ phase: "otp", otp: ["","","","",""] }, () => this.otpRefs[0].current && this.otpRefs[0].current.focus());
+      },
+      otpCells: otp.map((v, i) => ({
+        v, ref: this.otpRefs[i],
+        border: v ? "var(--accent,#1668c4)" : "#dfe6ef", bg: v ? "#f3f7fc" : "#fafbfd",
+        change: e => { const d = e.target.value.replace(/[۰-۹]/g, x => "۰۱۲۳۴۵۶۷۸۹".indexOf(x)).replace(/\D/g, "").slice(-1); const next = otp.slice(); next[i] = d; this.setState({ otp: next }); if (d && i < 4 && this.otpRefs[i+1].current) this.otpRefs[i+1].current.focus(); },
+        keydown: e => { if (e.key === "Backspace" && !otp[i] && i > 0 && this.otpRefs[i-1].current) this.otpRefs[i-1].current.focus(); }
+      })),
+      editPhone: () => this.setState({ phase: "id" }),
+      resend: () => this.toast((isEN ? "A new code was sent to " : (isAR ? "تم إرسال رمز جديد إلى " : "کد جدید به شماره ")) + (isEN ? phone : this.fa(phone)) + (isEN ? "." : (isAR ? "." : " پیامک شد.")), "ok", isEN ? "Code resent" : (isAR ? "إعادة إرسال الرمز" : "ارسال مجدد کد")),
+      confirmLabel: login ? (isEN ? "Confirm & log in" : (isAR ? "تأكيد وتسجيل الدخول" : "تأیید و ورود")) : (isEN ? "Confirm & create account" : (isAR ? "تأكيد وإنشاء الحساب" : "تأیید و ساخت حساب")),
+      confirmBg: b2.bg, confirmCursor: b2.cursor, confirmShadow: b2.shadow,
+      confirm: () => {
+        if (!otpOk) { this.toast(isEN ? "Please enter the full 5-digit code." : (isAR ? "أدخل الرمز المكوّن من 5 أرقام كاملًا." : "کد ۵ رقمی را کامل وارد کن."), "err", isEN ? "Incomplete code" : (isAR ? "الرمز غير مكتمل" : "کد ناقص است")); return; }
+        doLogin();
+      },
+      secureNote: isEN ? "Secure sign-in with email, phone, or Google" : (isAR ? "تسجيل دخول آمن برمز لمرة واحدة — دون الحاجة لكلمة مرور" : "ورود امن با کد یک‌بارمصرف — بدون نیاز به رمز عبور"),
+      visualTitle: isEN ? "Start your journey smarter" : (isAR ? "ابدأ رحلتك بذكاء" : "سفرت را هوشمندانه\nآغاز کن"),
+      visualSub: isEN ? "With a blujet account, book faster, earn points, and enjoy cashback and loyalty club perks." : (isAR ? "مع حساب blujet، احجز أسرع، اجمع نقاطًا، واستمتع بالاسترداد النقدي ومزايا نادي العملاء." : "با حساب blujet سریع‌تر بلیط بخر، امتیاز جمع کن و از کش‌بک و خدمات باشگاه مشتریان بهره‌مند شو."),
+      toast: this.state.toast, hasToast: !!this.state.toast,
+      toastTitle: this.state.toastTitle || (isEN ? "Done" : (isAR ? "تم" : "انجام شد")),
+      toastColor: this.state.toastKind === "err" ? "#b8452f" : "var(--accent,#1668c4)",
+      toastTint: this.state.toastKind === "err" ? "#faeae6" : "#e8f0fb",
+      toastIcon: this.state.toastKind === "err" ? "!" : "✓",
+      closeToast: () => this.setState({ toast: "" }),
+      cardCols: isMobile ? "1fr" : "1fr 400px",
+      visualDisplay: isMobile ? "none" : "flex",
+      formPad: isMobile ? "26px 22px 22px" : "34px 40px 28px"
+    };
+  }
+}
+</script>
+</body>
+</html>

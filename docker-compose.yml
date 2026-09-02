@@ -1,0 +1,65 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: blujet
+      POSTGRES_PASSWORD: blujet
+      POSTGRES_DB: blujet
+    ports:
+      - '5432:5432'
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U blujet']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  pss-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: blujet_pss
+      POSTGRES_PASSWORD: blujet_pss
+      POSTGRES_DB: blujet_pss
+    ports:
+      - '5433:5432'
+    volumes:
+      - pss_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U blujet_pss -d blujet_pss']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  pss-service:
+    build: ./pss-service
+    depends_on:
+      pss-db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3100
+      PSS_DATABASE_URL: postgresql://blujet_pss:blujet_pss@pss-db:5432/blujet_pss?schema=public
+      PSS_INTERNAL_TOKEN: local-pss-internal-token-at-least-32-characters
+    ports:
+      - '3100:3100'
+    healthcheck:
+      test: ['CMD', 'node', '-e', "require('http').get('http://localhost:3100/health', r => process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+volumes:
+  db_data:
+  pss_db_data:

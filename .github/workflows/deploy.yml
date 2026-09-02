@@ -1,0 +1,437 @@
+name: Deploy UAT
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: uat-deployment
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    name: Required CI
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: Deploy exact commit
+    needs: ci
+    environment: uat
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1
+        env:
+          # Forwarded into the remote session by name (envs: below)
+          # rather than interpolated as literal text into the script -
+          # the value never appears in the rendered workflow/script string.
+          UAT_PANEL_SHARED_PASSWORD: ${{ secrets.UAT_PANEL_SHARED_PASSWORD }}
+          DEPLOY_SHA: ${{ github.sha }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          envs: UAT_PANEL_SHARED_PASSWORD,DEPLOY_SHA
+          script: |
+            set -e
+            cd /opt/app
+            case "${DEPLOY_SHA:-}" in
+              ''|*[!0-9a-f]*)
+                echo "Refusing deploy: invalid commit SHA." >&2
+                exit 1
+                ;;
+            esac
+            if [ "${#DEPLOY_SHA}" -ne 40 ]; then
+              echo "Refusing deploy: commit SHA must have 40 characters." >&2
+              exit 1
+            fi
+            git fetch --no-tags origin "$DEPLOY_SHA"
+            git checkout --detach "$DEPLOY_SHA"
+            # Central PSS secrets live only on the UAT host. Bootstrap them
+            # once when an older host has no values yet; never print or copy
+            # them into Actions, the repository, or container logs.
+            umask 077
+            touch .env
+            chmod 600 .env
+            ensure_server_secret() {
+              secret_name="$1"
+              current_value="$(awk -v key="$secret_name" '
+                index($0, key "=") == 1 {
+                  value = substr($0, length(key) + 2)
+                }
+                END { print value }
+              ' .env)"
+              if [ "${#current_value}" -lt 32 ]; then
+                generated_value="$(openssl rand -hex 32)"
+                printf '\n%s=%s\n' "$secret_name" "$generated_value" >> .env
+                unset generated_value
+              fi
+              unset current_value
+            }
+            ensure_server_secret PSS_POSTGRES_PASSWORD
+            ensure_server_secret PSS_INTERNAL_TOKEN
+            unset -f ensure_server_secret
+            # This host is the owner-approved UAT sandbox. Keep the backend
+            # mock OTP and the matching frontend notice in sync for every
+            # compose build/recreation without writing secrets to the repo.
+            export AUTH_SANDBOX_ENABLED=true
+            export VITE_SANDBOX_AUTH=true
+            docker compose -f docker-compose.prod.yml build
+            docker compose -f docker-compose.prod.yml up -d --wait
+            # One-time, owner-approved UAT access while Kavenegar is repaired.
+            # Credentials never enter Actions logs: stdout is redirected on the
+            # server into a root-only file. The sentinel prevents password
+            # rotation/recreation on later deploys; initial DB expiry is 7 days.
+            credentials=/root/blujet-temporary-panel-credentials.json
+            sentinel=/root/.blujet-temporary-panel-bootstrap-complete
+            if [ ! -f "$sentinel" ]; then
+              umask 077
+              docker compose -f docker-compose.prod.yml exec -T \
+                -e TEMP_PANEL_BOOTSTRAP_CONFIRM=CREATE_7_DAY_PANEL_TEST_ACCOUNTS \
+                backend node dist/database/bootstrap-temporary-panel-accounts.js --execute \
+                > "$credentials"
+              chmod 600 "$credentials"
+              touch "$sentinel"
+              chmod 600 "$sentinel"
+            fi
+            # Owner-approved one-time migration to easier-to-type temporary
+            # passwords. The script preserves the existing seven-day expiry,
+            # rotates all accounts atomically, and revokes active sessions.
+            rotation_sentinel=/root/.blujet-temporary-panel-password-format-v1-complete
+            if [ ! -f "$rotation_sentinel" ]; then
+              umask 077
+              temporary_credentials="$(mktemp /root/blujet-temporary-panel-credentials.json.XXXXXX)"
+              cleanup_temporary_credentials() {
+                if [ -n "${temporary_credentials:-}" ]; then
+                  rm -f "$temporary_credentials"
+                fi
+              }
+              trap cleanup_temporary_credentials EXIT
+              docker compose -f docker-compose.prod.yml exec -T \
+                -e TEMP_PANEL_ROTATE_CONFIRM=ROTATE_TEMPORARY_PANEL_PASSWORDS_ALPHANUMERIC_V1 \
+                backend node dist/database/rotate-temporary-panel-passwords.js --execute \
+                > "$temporary_credentials"
+              chmod 600 "$temporary_credentials"
+              mv -f "$temporary_credentials" "$credentials"
+              temporary_credentials=
+              touch "$rotation_sentinel"
+              chmod 600 "$rotation_sentinel"
+              trap - EXIT
+            fi
+            # One-time move to a single shared UAT password (owner-approved):
+            # bootstraps any temporary accounts added since the original
+            # seven (uat.employee, uat.agency, uat.customer - bootstrap
+            # skips ones that already exist) and rotates every temporary
+            # account's password to UAT_PANEL_SHARED_PASSWORD.
+            # $UAT_PANEL_SHARED_PASSWORD is forwarded into this session by
+            # appleboy/ssh-action's `envs:` (see the step's `env:` above) -
+            # never interpolated into this script as literal text by GitHub's
+            # expression templating, and the two scripts below never print it, so
+            # it never reaches these stdout redirects or the Actions log.
+            shared_password_sentinel=/root/.blujet-uat-shared-password-v1-complete
+            if [ ! -f "$shared_password_sentinel" ]; then
+              if [ -z "${UAT_PANEL_SHARED_PASSWORD:-}" ]; then
+                echo "Refusing: UAT_PANEL_SHARED_PASSWORD secret is empty or unset." >&2
+                exit 1
+              fi
+              umask 077
+              docker compose -f docker-compose.prod.yml exec -T \
+                -e TEMP_PANEL_BOOTSTRAP_CONFIRM=CREATE_7_DAY_PANEL_TEST_ACCOUNTS \
+                -e UAT_PANEL_SHARED_PASSWORD="$UAT_PANEL_SHARED_PASSWORD" \
+                backend node dist/database/bootstrap-temporary-panel-accounts.js --execute \
+                > /root/blujet-uat-shared-password-bootstrap-v1.json
+              chmod 600 /root/blujet-uat-shared-password-bootstrap-v1.json
+              docker compose -f docker-compose.prod.yml exec -T \
+                -e TEMP_PANEL_ROTATE_CONFIRM=ROTATE_TEMPORARY_PANEL_PASSWORDS_SHARED_V1 \
+                -e UAT_PANEL_SHARED_PASSWORD="$UAT_PANEL_SHARED_PASSWORD" \
+                backend node dist/database/rotate-temporary-panel-passwords.js --execute \
+                > /root/blujet-uat-shared-password-rotation-v1.json
+              chmod 600 /root/blujet-uat-shared-password-rotation-v1.json
+              touch "$shared_password_sentinel"
+              chmod 600 "$shared_password_sentinel"
+            fi
+            # Provision the operations-manager UAT account introduced after
+            # the shared-password v1 sentinel had already been consumed on
+            # the live UAT host. Bootstrap is idempotent and therefore skips
+            # every existing temporary account while creating only the new
+            # uat.operations identity with the same shared secret.
+            operations_account_sentinel=/root/.blujet-uat-operations-account-v1-complete
+            if [ ! -f "$operations_account_sentinel" ]; then
+              if [ -z "${UAT_PANEL_SHARED_PASSWORD:-}" ]; then
+                echo "Refusing: UAT_PANEL_SHARED_PASSWORD secret is empty or unset." >&2
+                exit 1
+              fi
+              umask 077
+              docker compose -f docker-compose.prod.yml exec -T \
+                -e TEMP_PANEL_BOOTSTRAP_CONFIRM=CREATE_7_DAY_PANEL_TEST_ACCOUNTS \
+                -e UAT_PANEL_SHARED_PASSWORD="$UAT_PANEL_SHARED_PASSWORD" \
+                backend node dist/database/bootstrap-temporary-panel-accounts.js --execute \
+                > /root/blujet-uat-operations-account-v1.json
+              chmod 600 /root/blujet-uat-operations-account-v1.json
+              touch "$operations_account_sentinel"
+              chmod 600 "$operations_account_sentinel"
+            fi
+            # Self-healing audited sandbox commerce setup.  The provisioner
+            # is idempotent (deterministic wallet grant ids) and is deliberately
+            # run on every deploy so a restored database or a missing UAT
+            # agency profile cannot leave the portal with an empty active-
+            # flights response while an old host sentinel still exists.
+            umask 077
+            commerce_audit=/root/blujet-uat-sandbox-commerce-latest.json
+            docker compose -f docker-compose.prod.yml exec -T \
+              -e NODE_ENV=production \
+              -e UAT_COMMERCE_CONFIRM=PROVISION_UAT_SANDBOX_COMMERCE_V1 \
+              backend node dist/database/provision-uat-sandbox-commerce.js --execute \
+              > "$commerce_audit"
+            chmod 600 "$commerce_audit"
+            # Owner-approved, one-time seven-day extension of the reserved UAT
+            # identities. The command validates every reserved account, caps
+            # access at 14 days from its original creation, writes security
+            # audit rows, and revokes existing refresh sessions. Its sentinel
+            # prevents a later deployment from extending the window again.
+            access_extension_sentinel=/root/.blujet-uat-temporary-access-extension-v1-complete
+            if [ ! -f "$access_extension_sentinel" ]; then
+              umask 077
+              access_extension_audit=/root/blujet-uat-temporary-access-extension-v1.json
+              docker compose -f docker-compose.prod.yml exec -T \
+                -e NODE_ENV=production \
+                -e TEMP_PANEL_EXTENSION_CONFIRM=EXTEND_TEMPORARY_PANEL_ACCESS_7_DAYS_V1 \
+                backend node dist/database/extend-temporary-panel-access.js --execute \
+                > "$access_extension_audit"
+              chmod 600 "$access_extension_audit"
+              touch "$access_extension_sentinel"
+              chmod 600 "$access_extension_sentinel"
+            fi
+            # Owner-approved extension v2: active temporary identities move
+            # forward by seven days; an already-expired identity receives a
+            # fresh seven-day window from this execution. A separate sentinel,
+            # confirmation phrase and root-only audit file make this grant
+            # one-time, reviewable and independent from extension v1.
+            access_extension_v2_sentinel=/root/.blujet-uat-temporary-access-extension-v2-complete
+            if [ ! -f "$access_extension_v2_sentinel" ]; then
+              umask 077
+              access_extension_v2_audit=/root/blujet-uat-temporary-access-extension-v2.json
+              docker compose -f docker-compose.prod.yml exec -T \
+                -e NODE_ENV=production \
+                -e TEMP_PANEL_EXTENSION_CONFIRM=EXTEND_TEMPORARY_PANEL_ACCESS_7_DAYS_V2 \
+                backend node dist/database/extend-temporary-panel-access-v2.js --execute \
+                > "$access_extension_v2_audit"
+              chmod 600 "$access_extension_v2_audit"
+              touch "$access_extension_v2_sentinel"
+              chmod 600 "$access_extension_v2_sentinel"
+            fi
+            # Owner-approved extension v3: grant every reserved UAT identity
+            # one additional seven-day window. This is independent from v1/v2,
+            # fails closed at the absolute 35-day ceiling, revokes refresh
+            # sessions, and records a root-only audit artifact exactly once.
+            access_extension_v3_sentinel=/root/.blujet-uat-temporary-access-extension-v3-complete
+            if [ ! -f "$access_extension_v3_sentinel" ]; then
+              umask 077
+              access_extension_v3_audit=/root/blujet-uat-temporary-access-extension-v3.json
+              docker compose -f docker-compose.prod.yml exec -T \
+                -e NODE_ENV=production \
+                -e TEMP_PANEL_EXTENSION_CONFIRM=EXTEND_TEMPORARY_PANEL_ACCESS_7_DAYS_V3 \
+                backend node dist/database/extend-temporary-panel-access-v3.js --execute \
+                > "$access_extension_v3_audit"
+              chmod 600 "$access_extension_v3_audit"
+              touch "$access_extension_v3_sentinel"
+              chmod 600 "$access_extension_v3_sentinel"
+            fi
+            # One-time recovery for shared-password drift discovered after
+            # the v3 identity normalization. Reuse the guarded rotation
+            # command so only exact active/unexpired uat.* identities are
+            # re-hashed, every deadline is preserved, existing sessions are
+            # revoked, and no password material reaches stdout or the audit.
+            shared_password_reconciliation_v2_sentinel=/root/.blujet-uat-shared-password-reconciliation-v2-complete
+            if [ ! -f "$shared_password_reconciliation_v2_sentinel" ]; then
+              if [ -z "${UAT_PANEL_SHARED_PASSWORD:-}" ]; then
+                echo "Refusing: UAT_PANEL_SHARED_PASSWORD secret is empty or unset." >&2
+                exit 1
+              fi
+              umask 077
+              shared_password_reconciliation_v2_audit=/root/blujet-uat-shared-password-reconciliation-v2.json
+              docker compose -f docker-compose.prod.yml exec -T \
+                -e TEMP_PANEL_ROTATE_CONFIRM=ROTATE_TEMPORARY_PANEL_PASSWORDS_SHARED_V1 \
+                -e UAT_PANEL_SHARED_PASSWORD="$UAT_PANEL_SHARED_PASSWORD" \
+                backend node dist/database/rotate-temporary-panel-passwords.js --execute \
+                > "$shared_password_reconciliation_v2_audit"
+              chmod 600 "$shared_password_reconciliation_v2_audit"
+              touch "$shared_password_reconciliation_v2_sentinel"
+              chmod 600 "$shared_password_reconciliation_v2_sentinel"
+            fi
+            # Follow-up recovery after the protected GitHub secret was aligned
+            # with the owner-provided UAT credential. The v2 sentinel may have
+            # been consumed with the previous secret, so v3 deliberately uses
+            # its own one-time sentinel and root-only audit artifact.
+            shared_password_reconciliation_v3_sentinel=/root/.blujet-uat-shared-password-reconciliation-v3-complete
+            if [ ! -f "$shared_password_reconciliation_v3_sentinel" ]; then
+              if [ -z "${UAT_PANEL_SHARED_PASSWORD:-}" ]; then
+                echo "Refusing: UAT_PANEL_SHARED_PASSWORD secret is empty or unset." >&2
+                exit 1
+              fi
+              umask 077
+              shared_password_reconciliation_v3_audit=/root/blujet-uat-shared-password-reconciliation-v3.json
+              docker compose -f docker-compose.prod.yml exec -T \
+                -e TEMP_PANEL_ROTATE_CONFIRM=ROTATE_TEMPORARY_PANEL_PASSWORDS_SHARED_V1 \
+                -e UAT_PANEL_SHARED_PASSWORD="$UAT_PANEL_SHARED_PASSWORD" \
+                backend node dist/database/rotate-temporary-panel-passwords.js --execute \
+                > "$shared_password_reconciliation_v3_audit"
+              chmod 600 "$shared_password_reconciliation_v3_audit"
+              touch "$shared_password_reconciliation_v3_sentinel"
+              chmod 600 "$shared_password_reconciliation_v3_sentinel"
+            fi
+            # Access extension v3 persisted the two phone-login identities in
+            # display form (09...) while auth looks them up canonically
+            # (+98...). Repair only those exact, trusted, active UAT rows once;
+            # the command refuses conflicts and revokes their existing sessions.
+            phone_login_reconciliation_v1_sentinel=/root/.blujet-uat-temporary-phone-login-reconciliation-v1-complete
+            if [ ! -f "$phone_login_reconciliation_v1_sentinel" ]; then
+              umask 077
+              phone_login_reconciliation_v1_audit=/root/blujet-uat-temporary-phone-login-reconciliation-v1.json
+              docker compose -f docker-compose.prod.yml exec -T \
+                -e NODE_ENV=production \
+                -e TEMP_PHONE_LOGIN_RECONCILE_CONFIRM=RECONCILE_TEMPORARY_PHONE_LOGINS_V1 \
+                backend node dist/database/reconcile-temporary-phone-login-accounts.js --execute --preserve-conflicts \
+                > "$phone_login_reconciliation_v1_audit"
+              chmod 600 "$phone_login_reconciliation_v1_audit"
+              touch "$phone_login_reconciliation_v1_sentinel"
+              chmod 600 "$phone_login_reconciliation_v1_sentinel"
+            fi
+            # One-time UAT cleanup. A root-only PostgreSQL backup is completed
+            # before the safeguarded purge; required access accounts and
+            # reference/configuration tables are retained by the purge policy.
+              purge_sentinel=/root/.blujet-uat-demo-data-purge-v1-complete
+            if [ ! -f "$purge_sentinel" ]; then
+              umask 077
+                purge_backup="/root/blujet-uat-before-demo-purge-$(date -u +%Y%m%dT%H%M%SZ).dump"
+                purge_audit=/root/blujet-uat-demo-data-purge-v1.json
+              docker compose -f docker-compose.prod.yml exec -T db \
+                pg_dump -U blujet -d blujet --format=custom > "$purge_backup"
+              chmod 600 "$purge_backup"
+              docker compose -f docker-compose.prod.yml exec -T backend \
+                node dist/database/uat-demo-data-purge.js > "$purge_audit"
+              docker compose -f docker-compose.prod.yml exec -T \
+                -e UAT_DEMO_PURGE_CONFIRM=PURGE_BLUJET_UAT_DEMO_DATA \
+                -e UAT_DEMO_PURGE_BACKUP_REF="$purge_backup" \
+                backend node dist/database/uat-demo-data-purge.js --execute-purge \
+                >> "$purge_audit"
+              chmod 600 "$purge_audit"
+              docker compose -f docker-compose.prod.yml exec -T redis \
+                redis-cli FLUSHDB > /dev/null
+              touch "$purge_sentinel"
+              chmod 600 "$purge_sentinel"
+              fi
+              catalog_sentinel=/root/.blujet-uat-flight-catalog-cleanup-v1-complete
+              if [ ! -f "$catalog_sentinel" ]; then
+                umask 077
+                catalog_backup="/root/blujet-uat-before-flight-catalog-cleanup-$(date -u +%Y%m%dT%H%M%SZ).dump"
+                catalog_audit=/root/blujet-uat-flight-catalog-cleanup-v1.json
+                docker compose -f docker-compose.prod.yml exec -T db \
+                  pg_dump -U blujet -d blujet --format=custom > "$catalog_backup"
+                chmod 600 "$catalog_backup"
+                docker compose -f docker-compose.prod.yml exec -T \
+                  -e UAT_FLIGHT_CATALOG_CLEANUP_CONFIRM=CLEAR_BLUJET_UAT_FLIGHT_CATALOG \
+                  -e UAT_FLIGHT_CATALOG_DELETE_ROUTES_CONFIRM=DELETE_BLUJET_UAT_ROUTES \
+                  -e UAT_FLIGHT_CATALOG_CLEANUP_BACKUP_REF="$catalog_backup" \
+                  backend node dist/database/uat-flight-catalog-cleanup.js --execute-cleanup \
+                  > "$catalog_audit"
+                chmod 600 "$catalog_audit"
+                docker compose -f docker-compose.prod.yml exec -T redis \
+                  redis-cli FLUSHDB > /dev/null
+                touch "$catalog_sentinel"
+                chmod 600 "$catalog_sentinel"
+              fi
+              # Owner-approved one-time reset of every sandbox flight so the
+              # operations -> CEO -> public-sale workflow can be retested from
+              # a clean catalog. Shared airports/routes and UAT access accounts
+              # are intentionally retained. A root-only backup and dry-run
+              # report are written before the transactional purge.
+              flight_reset_sentinel=/root/.blujet-uat-all-flights-purge-20260809-v1-complete
+              if [ ! -f "$flight_reset_sentinel" ]; then
+                umask 077
+                flight_reset_backup="/root/blujet-uat-before-all-flights-purge-$(date -u +%Y%m%dT%H%M%SZ).dump"
+                flight_reset_audit=/root/blujet-uat-all-flights-purge-20260809-v1.json
+                docker compose -f docker-compose.prod.yml exec -T db \
+                  pg_dump -U blujet -d blujet --format=custom > "$flight_reset_backup"
+                chmod 600 "$flight_reset_backup"
+                docker compose -f docker-compose.prod.yml exec -T \
+                  -e NODE_ENV=uat \
+                  -e AUTH_SANDBOX_ENABLED=true \
+                  backend node dist/database/sandbox-active-flight-purge.js \
+                  --all-flights --actor=uat.it > "$flight_reset_audit"
+                docker compose -f docker-compose.prod.yml exec -T \
+                  -e NODE_ENV=uat \
+                  -e AUTH_SANDBOX_ENABLED=true \
+                  -e SANDBOX_FLIGHT_PURGE_CONFIRM=PURGE_BLUJET_SANDBOX_ACTIVE_FLIGHTS \
+                  -e SANDBOX_FLIGHT_PURGE_ALL_CONFIRM=PURGE_ALL_BLUJET_SANDBOX_FLIGHTS \
+                  backend node dist/database/sandbox-active-flight-purge.js \
+                  --execute-purge --all-flights --actor=uat.it \
+                  >> "$flight_reset_audit"
+                chmod 600 "$flight_reset_audit"
+                docker compose -f docker-compose.prod.yml exec -T redis \
+                  redis-cli FLUSHDB > /dev/null
+                touch "$flight_reset_sentinel"
+                chmod 600 "$flight_reset_sentinel"
+              fi
+              # Owner-approved one-time financial scenario for the exact
+              # synthetic KL2550 occurrence. A fresh backup is completed
+              # first. The runner validates flight number/route/date/capacity,
+              # all three cabins, reserved uat.* actors and sandbox mode;
+              # deterministic booking/payment keys make interrupted retries
+              # safe. Root-only JSON/CSV evidence is retained on the host.
+              kl2550_scenario_sentinel=/root/.blujet-uat-kl2550-financial-scenario-v1-complete
+              if [ ! -f "$kl2550_scenario_sentinel" ]; then
+                if [ -z "${UAT_PANEL_SHARED_PASSWORD:-}" ]; then
+                  echo "Refusing: UAT_PANEL_SHARED_PASSWORD secret is empty or unset." >&2
+                  exit 1
+                fi
+                umask 077
+                kl2550_backup="/root/blujet-uat-before-kl2550-$(date -u +%Y%m%dT%H%M%SZ).dump"
+                kl2550_audit=/root/blujet-uat-kl2550-financial-scenario-v1.json
+                kl2550_csv=/root/blujet-uat-kl2550-sales-v1.csv
+                docker compose -f docker-compose.prod.yml exec -T db \
+                  pg_dump -U blujet -d blujet --format=custom > "$kl2550_backup"
+                chmod 600 "$kl2550_backup"
+                docker compose -f docker-compose.prod.yml exec -T \
+                  -e NODE_ENV=production \
+                  -e AUTH_SANDBOX_ENABLED=true \
+                  -e UAT_PANEL_SHARED_PASSWORD="$UAT_PANEL_SHARED_PASSWORD" \
+                  -e UAT_KL2550_FINANCIAL_CONFIRM=SELL_OUT_KL2550_AND_REFUND_10_V1 \
+                  -e UAT_KL2550_INSTANCE_ID=ef2d652c-47b2-4167-bb7c-ba09be3d18dc \
+                  -e UAT_KL2550_BACKUP_REF="$kl2550_backup" \
+                  -e UAT_KL2550_EXPORT_PATH=/app/backups/uat-kl2550-sales-v1.csv \
+                  backend node dist/database/run-uat-kl2550-financial-scenario.js --execute \
+                  > "$kl2550_audit"
+                docker compose -f docker-compose.prod.yml cp \
+                  backend:/app/backups/uat-kl2550-sales-v1.csv "$kl2550_csv"
+                chmod 600 "$kl2550_audit" "$kl2550_csv"
+                touch "$kl2550_scenario_sentinel"
+                chmod 600 "$kl2550_scenario_sentinel"
+              fi
+              # Owner-approved one-time exact reconciliation: both reserved
+              # UAT wallets must finish at 100,000,000 toman. A backup and
+              # root-only audit record protect this financial mutation.
+              wallet_reconcile_sentinel=/root/.blujet-uat-wallet-reconcile-100m-v2-complete
+              if [ ! -f "$wallet_reconcile_sentinel" ]; then
+                umask 077
+                wallet_backup="/root/blujet-uat-before-wallet-reconcile-$(date -u +%Y%m%dT%H%M%SZ).dump"
+                wallet_audit=/root/blujet-uat-wallet-reconcile-100m-v2.json
+                docker compose -f docker-compose.prod.yml exec -T db \
+                  pg_dump -U blujet -d blujet --format=custom > "$wallet_backup"
+                chmod 600 "$wallet_backup"
+                docker compose -f docker-compose.prod.yml exec -T \
+                  -e NODE_ENV=production \
+                  -e AUTH_SANDBOX_ENABLED=true \
+                  -e UAT_WALLET_RECONCILE_CONFIRM=RECONCILE_UAT_WALLETS_TO_100M_TOMAN_V2 \
+                  backend node dist/database/reconcile-uat-wallet-balances.js --execute \
+                  > "$wallet_audit"
+                chmod 600 "$wallet_audit"
+                touch "$wallet_reconcile_sentinel"
+                chmod 600 "$wallet_reconcile_sentinel"
+              fi
+              docker image prune -f

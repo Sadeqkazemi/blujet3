@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;}
+    body{margin:0;}
+    ::-webkit-scrollbar{width:9px;height:9px;}
+    ::-webkit-scrollbar-thumb{background:#cdd6e2;border-radius:6px;}
+  </style>
+  <script src="./site-data.js"></script>
+</helmet>
+
+<div dir="{{ pageDir }}" style="font-family:Vazirmatn,sans-serif; background:#f6f8fb; color:#16202e; min-height:100vh; display:grid; grid-template-columns:{{ rootCols }}; --accent:#1668c4;">
+
+  <!-- ============ HEADER (matches صفحه اصلی) ============ -->
+  <header style="grid-column:1/-1; position:sticky; top:0; z-index:150;">
+    <div style="background:{{ headerBarBg }}; border-bottom:{{ headerBorderB }}; box-shadow:0 2px 12px -8px rgba(13,38,102,.25);">
+      <div style="padding:0 22px; height:{{ headerH }}; display:flex; align-items:center; justify-content:space-between;">
+        <span onClick="{{ toggleMobileMenu }}" style="display:{{ hamburgerDisplay }}; width:38px; height:38px; align-items:center; justify-content:center; border-radius:10px; cursor:pointer; flex:none; font-size:17px; color:{{ hamburgerColor }};">☰</span>
+        <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:9px; text-decoration:none; color:inherit; cursor:pointer;">
+          <div style="width:38px; height:38px; border-radius:10px; background:{{ logoSquareBg }}; display:flex; align-items:center; justify-content:center; color:{{ logoIconColor }}; font-size:18px;">✈</div>
+          <span style="font-weight:900; font-size:18px; letter-spacing:-.5px; color:{{ logoTextColor }};">blujet</span>
+        </a>
+        <nav style="display:{{ navDisplay }}; gap:30px; font-size:15.5px; color:#3b4554; font-weight:600; height:100%; align-items:center; white-space:nowrap;">
+          <a href="صفحه اصلی.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">{{ navFlights }}</a>
+          <a href="مقاصد.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">{{ navDestinations }}</a>
+          <a href="باشگاه مشتریان.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">{{ navLoyalty }}</a>
+          <a href="پشتیبانی.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">{{ navSupport }}</a>
+        </nav>
+        <div style="display:{{ navDisplay }}; align-items:center; gap:10px;">
+          <span onClick="{{ toggleLang }}" style="display:flex; align-items:center; gap:6px; cursor:pointer; color:#5a6678; border:1.5px solid #e2e7ee; border-radius:20px; padding:6px 12px; font-size:12.5px; font-weight:700;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 4 5.7 4 9s-1.5 6.5-4 9c-2.5-2.5-4-5.7-4-9s1.5-6.5 4-9z"/></svg>{{ langLabel }}</span>
+          <div style="position:relative;">
+            <div onClick="{{ toggleNotif }}" style="width:42px; height:42px; border-radius:50%; background:#f3f5f8; display:flex; align-items:center; justify-content:center; color:#5a6678; font-size:15.5px; position:relative; cursor:pointer;">🔔<sc-if value="{{ hasNotifs }}" hint-placeholder-val="{{ true }}"><span style="position:absolute; top:5px; left:8px; min-width:16px; height:16px; padding:0 3px; box-sizing:border-box; border-radius:8px; background:#e5484d; border:1.5px solid #fff; color:#fff; font-size:9px; font-weight:800; display:flex; align-items:center; justify-content:center; line-height:1;">{{ notifCount }}</span></sc-if></div>
+            <sc-if value="{{ notifOpen }}" hint-placeholder-val="{{false}}">
+              <div onClick="{{ toggleNotif }}" style="position:fixed; inset:0; z-index:120;"></div>
+              <div style="position:absolute; top:52px; right:0; width:340px; background:#fff; border:1px solid #e6eaf0; border-radius:14px; box-shadow:0 20px 50px -16px rgba(13,38,64,.35); z-index:130; overflow:hidden;">
+                <div style="padding:11px 12px; border-bottom:1px solid #eef1f5; display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; font-weight:800; color:#0d2640;">{{ hdrNotifications }}</span><sc-if value="{{ hasNotifs }}" hint-placeholder-val="{{ true }}"><span style="font-size:10px; font-weight:700; color:var(--accent,#1668c4); background:#eef4fb; padding:2px 7px; border-radius:12px;">{{ lblNewCount }}</span></sc-if></div>
+                <sc-for list="{{ notifs }}" as="n" hint-placeholder-count="2">
+                  <div style="display:flex; gap:9px; padding:11px 12px; border-bottom:1px solid #f4f6fa; background:{{ n.bg }};">
+                    <span style="width:34px; height:34px; border-radius:10px; background:#f3f5f8; display:flex; align-items:center; justify-content:center; font-size:14.5px; flex:none;">{{ n.icon }}</span>
+                    <div style="min-width:0;"><div style="font-size:11.5px; font-weight:700; color:#16202e;">{{ n.title }}</div><div style="font-size:11px; color:#6b7787; margin-top:2px; line-height:1.7;">{{ n.meta }}</div><div style="font-size:9.5px; color:#9aa4b2; margin-top:4px;">{{ n.time }}</div></div>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ noNotifs }}" hint-placeholder-val="{{ false }}"><div style="padding:26px 14px; text-align:center; color:#8a96a6; font-size:11.5px;">{{ noNotifsLabel }}</div></sc-if>
+              </div>
+            </sc-if>
+          </div>
+          <div style="position:relative;">
+            <div onClick="{{ toggleUserMenu }}" style="display:flex; align-items:center; gap:8px; background:#fff; border:1px solid #e6eaf0; padding:4px 10px 4px 7px; border-radius:30px; cursor:pointer;"><div style="width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg,#1668c4,#3b8ae0); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12.5px;">PA</div><div style="line-height:1.35;"><div style="font-size:12px; font-weight:700; color:#16202e;">{{ agencyName }}</div><div style="font-size:10px; color:#caa53a; font-weight:700;">{{ b2bPartnerLabel }}</div></div><span style="font-size:8px; color:#9aa4b2; margin-right:2px;">▼</span></div>
+            <sc-if value="{{ userMenuOpen }}" hint-placeholder-val="{{false}}">
+              <div onClick="{{ closeUserMenu }}" style="position:fixed; inset:0; z-index:120;"></div>
+              <div style="position:absolute; top:54px; right:0; width:300px; background:#fff; border:1px solid #e6eaf0; border-radius:16px; box-shadow:0 20px 50px -16px rgba(13,38,64,.35); z-index:130; overflow:hidden;">
+                <div style="padding:15px; background:linear-gradient(135deg,#0d2640,#16406e); color:#fff;">
+                  <div style="display:flex; align-items:center; gap:10px;"><div style="width:46px; height:46px; border-radius:10px; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13.5px;">PA</div><div style="line-height:1.5;"><div style="font-size:13.5px; font-weight:800;">{{ agencyName }}</div><div style="font-size:10.5px; color:#caa53a; font-weight:700;">{{ b2bPartnerLabel }}</div></div></div>
+                </div>
+                <div style="padding:5px;">
+                  <a href="پنل آژانس.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);">👤</span>{{ lblAgencyPanel }}</a>
+                  <span onClick="{{ toggleUserMenu }}" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#16202e; font-weight:600; cursor:pointer;"><span style="color:var(--accent,#1668c4);">🧳</span>{{ lblTripsBooking }}</span>
+                  <span onClick="{{ doLogout }}" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#e5484d; font-weight:600; cursor:pointer;"><span>↩</span>{{ btnLogout }}</span>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+        <div style="display:{{ mobileIconRowDisplay }}; align-items:center; gap:6px;">
+          <span onClick="{{ toggleLang }}" style="width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; cursor:pointer;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 4 5.7 4 9s-1.5 6.5-4 9c-2.5-2.5-4-5.7-4-9s1.5-6.5 4-9z"/></svg></span>
+          <div style="position:relative;">
+            <span onClick="{{ toggleUserMenu }}" style="width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; cursor:pointer;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></span>
+            <sc-if value="{{ userMenuOpen }}" hint-placeholder-val="{{false}}">
+              <div onClick="{{ closeUserMenu }}" style="position:fixed; inset:0; z-index:120;"></div>
+              <div style="position:absolute; top:46px; left:0; right:auto; width:280px; max-width:80vw; background:#fff; border:1px solid #e6eaf0; border-radius:16px; box-shadow:0 20px 50px -16px rgba(13,38,64,.35); z-index:130; overflow:hidden;">
+                <div style="padding:15px; background:linear-gradient(135deg,#0d2640,#16406e); color:#fff;">
+                  <div style="display:flex; align-items:center; gap:10px;"><div style="width:46px; height:46px; border-radius:10px; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13.5px;">PA</div><div style="line-height:1.5;"><div style="font-size:13.5px; font-weight:800;">{{ agencyName }}</div><div style="font-size:10.5px; color:#caa53a; font-weight:700;">{{ b2bPartnerLabel }}</div></div></div>
+                </div>
+                <div style="padding:5px;">
+                  <a href="پنل آژانس.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);">👤</span>{{ lblAgencyPanel }}</a>
+                  <span onClick="{{ toggleUserMenu }}" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#16202e; font-weight:600; cursor:pointer;"><span style="color:var(--accent,#1668c4);">🧳</span>{{ lblTripsBooking }}</span>
+                  <span onClick="{{ doLogout }}" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#e5484d; font-weight:600; cursor:pointer;"><span>↩</span>{{ btnLogout }}</span>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <sc-if value="{{ mobileMenuOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; background:#fff; z-index:210; display:flex; flex-direction:column; overflow-y:auto;">
+      <div style="display:flex; align-items:center; justify-content:center; position:relative; padding:26px 20px 18px;">
+        <span style="font-size:22px; font-weight:800; color:#16202e;">{{ menuTitle }}</span>
+        <span onClick="{{ toggleMobileMenu }}" style="position:absolute; right:20px; top:22px; width:34px; height:34px; display:flex; align-items:center; justify-content:center; font-size:24px; color:#16202e; cursor:pointer;">×</span>
+      </div>
+      <div style="padding:4px 24px 0; display:flex; flex-direction:column;">
+        <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="7">
+          <div onClick="{{ n.go }}" style="padding:20px 0; color:#16202e; font-size:17px; font-weight:{{ n.drawerWeight }}; border-top:{{ n.drawerBorder }}; cursor:pointer; display:flex; align-items:center; justify-content:space-between;">
+            {{ n.label }}
+            <sc-if value="{{ n.showDrawerChevron }}" hint-placeholder-val="{{ true }}"><span style="color:#9aa4b2;" dangerouslySetInnerHTML="{{ chevronSvg }}"></span></sc-if>
+          </div>
+        </sc-for>
+      </div>
+      <div style="margin-top:auto; padding:14px 24px 32px;">
+        <span onClick="{{ doLogout }}" style="display:block; padding:10px 0; color:#e5484d; font-size:14px; font-weight:700; cursor:pointer;">{{ btnLogout }}</span>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- SIDEBAR -->
+  <sc-if value="{{ notMobile }}" hint-placeholder-val="{{ true }}">
+  <aside style="background:#fff; border-left:1px solid #e9eef4; padding:15px 11px; display:flex; flex-direction:column; gap:4px; position:sticky; top:0; height:100vh;">
+    <div style="background:#f0f5fb; border:1px solid #e1ebf6; border-radius:13px; padding:11px 11px; margin-bottom:14px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg,#1668c4,#3b8ae0); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12.5px; color:#fff;">PA</div>
+        <div style="line-height:1.4; min-width:0;"><div style="font-size:12px; font-weight:800; color:#0d2640; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ agencyName }}</div><div style="font-size:10px; color:#1f8a5b; font-weight:700;">{{ activeCodeLabel }}</div></div>
+      </div>
+    </div>
+
+    <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="6">
+      <div onClick="{{ n.go }}" style="display:flex; align-items:center; gap:9px; padding:9px 11px; border-radius:11px; cursor:pointer; font-size:12.5px; font-weight:{{ n.weight }}; color:{{ n.color }}; background:{{ n.bg }};">
+        <span style="width:20px; height:20px; display:flex; flex:none;">{{ n.icon }}</span>
+        <span style="flex:1;">{{ n.label }}</span>
+        <sc-if value="{{ n.badge }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px; font-weight:800; color:#fff; background:#e8553a; min-width:19px; height:19px; padding:0 5px; border-radius:10px; display:flex; align-items:center; justify-content:center;">{{ n.badgeNum }}</span></sc-if>
+      </div>
+    </sc-for>
+
+    <span onClick="{{ doLogout }}" style="margin-top:auto; display:flex; align-items:center; gap:7px; padding:10px 11px; border-top:1px solid #eef2f7; cursor:pointer; color:#e8553a; font-size:12px; font-weight:700;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      {{ btnLogout }}
+    </span>
+  </aside>
+  </sc-if>
+
+  <!-- MAIN -->
+  <main style="padding:{{ mainPad }}; min-width:0;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:22px;">
+      <div><h1 style="font-size:20px; font-weight:900; color:#0d2640; margin:0;">{{ pageTitle }}</h1><div style="font-size:11.5px; color:#7a8696; margin-top:3px;">{{ pageSub }}</div></div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <div onClick="{{ openCompose }}" style="height:42px; padding:0 15px; background:var(--accent); color:#fff; border-radius:10px; display:flex; align-items:center; gap:7px; font-size:12px; font-weight:700; cursor:pointer;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>{{ newMessageLabel }}</div>
+        <div style="width:42px; height:42px; border-radius:10px; background:#fff; border:1px solid #e6ecf3; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#5a6678;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.5 21a2 2 0 0 1-3 0"/></svg></div>
+      </div>
+    </div>
+
+    <!-- ============ DASHBOARD ============ -->
+    <sc-if value="{{ showDashboard }}" hint-placeholder-val="{{ true }}">
+      <div style="display:grid; grid-template-columns:{{ kpiCols }}; gap:13px; margin-bottom:20px;">
+        <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+          <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:12px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+              <div style="width:40px; height:40px; border-radius:10px; background:{{ k.iconBg }}; color:{{ k.iconColor }}; display:flex; align-items:center; justify-content:center;">{{ k.icon }}</div>
+<sc-if value="{{ k.trend }}" hint-placeholder-val="{{ true }}"><span style="font-size:11px; font-weight:700; color:{{ k.trendColor }}; background:{{ k.trendBg }}; padding:2px 7px; border-radius:7px;">{{ k.trend }}</span></sc-if>
+            </div>
+            <div style="font-size:21.5px; font-weight:900; color:#0d2640; letter-spacing:-.5px;">{{ k.value }}</div>
+            <div style="font-size:11.5px; color:#8a96a6; margin-top:3px;">{{ k.label }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="display:grid; grid-template-columns:{{ dashCols }}; gap:13px;">
+        <!-- sales chart -->
+        <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:14px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+            <div style="flex:1; min-width:0;"><h3 style="font-size:14px; font-weight:800; color:#0d2640; margin:0; white-space:nowrap;">{{ salesTrendTitle }}</h3><div style="font-size:11px; color:#8a96a6; margin-top:3px; white-space:nowrap;">{{ salesTrendSub }}</div></div>
+          </div>
+          <div style="display:flex; align-items:flex-end; gap:11px; height:170px; padding-top:5px;">
+            <sc-for list="{{ salesBars }}" as="b" hint-placeholder-count="6">
+              <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:7px; height:100%; justify-content:flex-end;">
+                <div style="font-size:10px; font-weight:700; color:#5a6678;">{{ b.val }}</div>
+                <div style="width:100%; max-width:34px; height:{{ b.h }}; background:linear-gradient(180deg,#3b8ae0,#1668c4); border-radius:7px 7px 0 0;"></div>
+                <div style="font-size:10.5px; color:#8a96a6; font-weight:600;">{{ b.m }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <!-- credit summary -->
+        <div style="background:linear-gradient(135deg,#0d2640,#16406e); border-radius:14px; padding:15px; color:#fff; display:flex; flex-direction:column;">
+          <div style="font-size:11.5px; color:#aac4e2; font-weight:600;">{{ creditRemainingCardLabel }}</div>
+          <div style="font-size:27px; font-weight:900; margin:6px 0 2px; letter-spacing:-.5px;">{{ creditRemaining }}</div>
+          <div style="font-size:11.5px; color:#8fb0d6;">{{ creditLimitLine }}</div>
+          <div style="height:9px; background:rgba(255,255,255,.16); border-radius:6px; margin:16px 0 8px; overflow:hidden;"><div style="width:{{ creditBarW }}; height:100%; background:linear-gradient(90deg,#4ade80,#22c55e); border-radius:6px;"></div></div>
+          <div style="display:flex; justify-content:space-between; font-size:11px; color:#aac4e2;"><span>{{ usedLabel }} {{ creditUsed }}</span><span>{{ creditPct }}</span></div>
+          <div onClick="{{ goCredit }}" style="margin-top:auto; padding-top:13px;"><div style="background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.18); border-radius:10px; height:42px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; cursor:pointer;">{{ viewStatementLabel }}</div></div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ ALLOCATED SEATS ============ -->
+    <sc-if value="{{ showSeats }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-direction:column; gap:11px;">
+        <div style="background:#eef4fb; border:1px solid #d9e7f6; border-radius:13px; padding:11px 12px; display:flex; align-items:center; gap:8px; font-size:12px; color:#1a4674;">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          {{ seatsInfoBanner }}
+        </div>
+        <sc-for list="{{ seatFlights }}" as="f" hint-placeholder-count="4">
+          <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:12px 14px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:11px;">
+              <div style="display:flex; align-items:center; gap:11px;">
+                <div style="width:46px; height:46px; border-radius:11px; background:#eef4fb; color:var(--accent); display:flex; align-items:center; justify-content:center; font-size:20px;">✈</div>
+                <div>
+                  <div style="font-size:14.5px; font-weight:800; color:#0d2640;">{{ f.route }}</div>
+                  <div style="font-size:11.5px; color:#8a96a6; margin-top:2px;">{{ f.flightNo }} · {{ f.date }} · {{ f.time }}</div>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:20px;">
+                <div style="text-align:center;"><div style="font-size:10.5px; color:#8a96a6; margin-bottom:2px;">{{ demandLabel }}</div><div style="font-size:15.5px; font-weight:800; color:#0d2640;">{{ f.demand }}</div></div>
+                <div style="text-align:center;"><div style="font-size:10.5px; color:#8a96a6; margin-bottom:2px;">{{ allocatedLabel }}</div><div style="font-size:15.5px; font-weight:800; color:#8a5cf6;">{{ f.alloc }}</div></div>
+                <div style="text-align:center;"><div style="font-size:10.5px; color:#8a96a6; margin-bottom:2px;">{{ soldLabel }}</div><div style="font-size:15.5px; font-weight:800; color:#1f8a5b;">{{ f.sold }}</div></div>
+                <div style="text-align:center;"><div style="font-size:10.5px; color:#8a96a6; margin-bottom:2px;">{{ remainingLabel }}</div><div style="font-size:15.5px; font-weight:800; color:var(--accent);">{{ f.left }}</div></div>
+                <div style="display:flex; align-items:center; gap:6px; height:34px; padding:0 11px; background:#eaf7f0; color:#1f8a5b; border:1px solid #cdeede; border-radius:18px; font-size:11.5px; font-weight:700;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>{{ flightLicenseLabel }}</div>
+              </div>
+            </div>
+            <div style="height:8px; background:#eef2f7; border-radius:5px; margin-top:16px; overflow:hidden;"><div style="width:{{ f.pct }}; height:100%; background:linear-gradient(90deg,#1f8a5b,#34d399); border-radius:5px;"></div></div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- ============ WEB SERVICE DOCS ============ -->
+    <sc-if value="{{ showApiDocs }}" hint-placeholder-val="{{ false }}">
+      <div style="overflow-x:auto;">
+      <div style="display:grid; grid-template-columns:200px minmax(0,1fr); gap:16px; align-items:start; min-width:640px;">
+        <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:8px; display:flex; flex-direction:column; gap:2px; position:sticky; top:12px;">
+          <sc-for list="{{ docNav }}" as="d" hint-placeholder-count="5">
+            <div onClick="{{ d.onPick }}" style="padding:10px 11px; border-radius:9px; cursor:pointer; font-size:12.5px; font-weight:{{ d.weight }}; color:{{ d.color }}; background:{{ d.bg }};">{{ d.label }}</div>
+          </sc-for>
+        </div>
+        <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:20px; min-width:0;">
+          <sc-if value="{{ docIntro }}" hint-placeholder-val="{{ true }}">
+            <h3 style="font-size:16px; font-weight:800; color:#0d2640; margin:0 0 10px;">{{ docIntroTitle }}</h3>
+            <p style="font-size:12.5px; color:#5a6678; line-height:2; margin:0 0 18px;">{{ docIntroP1 }}</p>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div style="background:#f6f8fb; border:1px solid #e9eef4; border-radius:11px; padding:11px 12px;">
+                <div style="font-size:10.5px; color:#8a96a6; margin-bottom:6px;">{{ docBaseUrlLabel }}</div>
+                <div style="font-size:12.5px; font-weight:700; color:#0d2640; font-family:monospace; direction:ltr; text-align:left;">{{ wsBaseUrl }}</div>
+              </div>
+              <div style="background:#f6f8fb; border:1px solid #e9eef4; border-radius:11px; padding:11px 12px;">
+                <div style="font-size:10.5px; color:#8a96a6; margin-bottom:6px;">{{ docFormatLabel }}</div>
+                <div style="font-size:12.5px; color:#16202e;">{{ docFormatVal }}</div>
+              </div>
+              <div style="background:#f6f8fb; border:1px solid #e9eef4; border-radius:11px; padding:11px 12px;">
+                <div style="font-size:10.5px; color:#8a96a6; margin-bottom:6px;">{{ docRateLabel }}</div>
+                <div style="font-size:12.5px; color:#16202e;">{{ docRateVal }}</div>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ docAuth }}" hint-placeholder-val="{{ false }}">
+            <h3 style="font-size:16px; font-weight:800; color:#0d2640; margin:0 0 10px;">{{ docAuthTitle }}</h3>
+            <p style="font-size:12.5px; color:#5a6678; line-height:2; margin:0 0 14px;">{{ docAuthP1 }}</p>
+            <pre style="background:#0d2640; color:#dbe7f7; border-radius:11px; padding:14px 16px; font-size:12px; font-family:monospace; direction:ltr; text-align:left; margin:0 0 16px; white-space:pre;">{{ docAuthSample }}</pre>
+            <p style="font-size:12px; color:#8a96a6; line-height:1.9; margin:0;">{{ docAuthP2 }}</p>
+          </sc-if>
+          <sc-if value="{{ docEndpoints }}" hint-placeholder-val="{{ false }}">
+            <p style="font-size:12px; color:#8a96a6; margin:0 0 16px;">{{ docEndpointsHint }}</p>
+            <div style="display:flex; flex-direction:column; gap:22px;">
+              <sc-for list="{{ docGroups }}" as="g" hint-placeholder-count="3">
+                <div>
+                  <div onClick="{{ g.onToggle }}" style="display:flex; align-items:center; justify-content:space-between; border-bottom:2px solid #eef2f7; padding-bottom:8px; margin-bottom:10px; cursor:pointer;">
+                    <span style="font-size:15px; font-weight:800; color:#0d2640;">{{ g.title }}</span>
+                    <span style="font-size:13px; color:#8a96a6; transition:transform .15s; transform:{{ g.chevron }};">⌃</span>
+                  </div>
+                  <sc-if value="{{ g.open }}" hint-placeholder-val="{{ true }}">
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                      <sc-for list="{{ g.eps }}" as="e" hint-placeholder-count="3">
+                        <div style="border:1px solid #cdeede; background:#f4fbf7; border-radius:9px; overflow:hidden; min-width:0;">
+                          <div onClick="{{ e.onToggle }}" dir="ltr" style="display:flex; align-items:center; gap:10px; padding:11px 13px; cursor:pointer; white-space:nowrap;">
+                            <span style="font-size:10.5px; font-weight:800; color:#fff; background:#3aa876; padding:5px 12px; border-radius:6px; font-family:monospace; flex:none;">{{ e.method }}</span>
+                            <span style="font-size:12.5px; font-weight:700; color:#0d2640; font-family:monospace; direction:ltr;">{{ e.path }}</span>
+                            <sc-if value="{{ e.locked }}" hint-placeholder-val="{{ true }}"><span style="width:22px; height:22px; border-radius:50%; background:#eef1f5; color:#6b7787; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></span></sc-if>
+                            <span style="font-size:12px; color:#8a96a6; transition:transform .15s; transform:{{ e.chevron }}; flex:none;">⌄</span>
+                          </div>
+                          <sc-if value="{{ e.isOpen }}" hint-placeholder-val="{{ false }}">
+                            <div style="background:#fff; border-top:1px solid #e2f0e8; padding:13px;">
+                              <p style="font-size:12px; color:#5a6678; line-height:1.8; margin:0 0 10px;">{{ e.desc }}</p>
+                              <div style="font-size:10px; font-weight:700; color:#8a96a6; margin-bottom:4px;">{{ docReqLabel }}</div>
+                              <pre style="background:#0d2640; color:#dbe7f7; border-radius:9px; padding:11px 13px; font-size:11px; font-family:monospace; direction:ltr; text-align:left; margin:0 0 10px; white-space:pre;">{{ e.req }}</pre>
+                              <div style="font-size:10px; font-weight:700; color:#8a96a6; margin-bottom:4px;">{{ docResLabel }}</div>
+                              <pre style="background:#f6f8fb; border:1px solid #e9eef4; color:#16202e; border-radius:9px; padding:11px 13px; font-size:11px; font-family:monospace; direction:ltr; text-align:left; margin:0; white-space:pre;">{{ e.res }}</pre>
+                            </div>
+                          </sc-if>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ docErrors }}" hint-placeholder-val="{{ false }}">
+            <p style="font-size:12px; color:#8a96a6; margin:0 0 14px;">{{ docErrorsHint }}</p>
+            <div style="border:1px solid #eef2f7; border-radius:12px; overflow:hidden;">
+              <sc-for list="{{ errorRows }}" as="er" hint-placeholder-count="6">
+                <div style="display:flex; align-items:flex-start; gap:12px; padding:11px 14px; border-top:1px solid #f0f2f6;">
+                  <span style="font-size:12px; font-weight:800; color:#c0343a; font-family:monospace; flex:none; width:36px;">{{ er.code }}</span>
+                  <div style="min-width:0;"><div style="font-size:12.5px; font-weight:700; color:#0d2640;">{{ er.title }}</div><div style="font-size:11.5px; color:#8a96a6; margin-top:2px;">{{ er.desc }}</div></div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ docChangelog }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <sc-for list="{{ changelogRows }}" as="c" hint-placeholder-count="4">
+                <div style="display:flex; align-items:flex-start; gap:12px; border-top:1px solid #f0f2f6; padding-top:12px;">
+                  <span style="font-size:12px; font-weight:800; color:#1668c4; flex:none; width:44px;">{{ c.v }}</span>
+                  <div style="min-width:0;"><div style="font-size:11px; color:#8a96a6; margin-bottom:3px;" dir="ltr">{{ c.date }}</div><div style="font-size:12.5px; color:#16202e; line-height:1.8;">{{ c.note }}</div></div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ WEB SERVICE ============ -->
+    <sc-if value="{{ showWebservice }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-direction:column; gap:13px;">
+        <div style="background:#eef4fb; border:1px solid #d9e7f6; border-radius:13px; padding:11px 12px; display:flex; align-items:center; gap:8px; font-size:12px; color:#1a4674; line-height:1.8;">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M8 8l-4 4 4 4"/><path d="M16 8l4 4-4 4"/><path d="M13.5 6l-3 12"/></svg>
+          {{ wsInfoBanner }}
+        </div>
+
+        <sc-if value="{{ wsActive }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:14px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:18px; flex-wrap:wrap;">
+              <div style="display:flex; align-items:center; gap:9px;"><span style="width:40px; height:40px; border-radius:10px; background:#eaf7f0; color:#1f8a5b; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8l-4 4 4 4"/><path d="M16 8l4 4-4 4"/><path d="M13.5 6l-3 12"/></svg></span><div style="line-height:1.4;"><div style="font-size:14px; font-weight:800; color:#0d2640;">{{ wsActiveTitle }}</div><div style="font-size:11px; color:#8a96a6;">{{ wsActivePlan }}</div></div></div>
+              <span style="font-size:11px; font-weight:700; color:#1f8a5b; background:#eaf7f0; border:1px solid #cdeede; padding:5px 11px; border-radius:18px; flex:none;">{{ wsActiveBadge }}</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div style="background:#f6f8fb; border:1px solid #e9eef4; border-radius:11px; padding:11px 12px;">
+                <div style="font-size:10.5px; color:#8a96a6; margin-bottom:6px;">{{ wsBaseUrlLabel2 }}</div>
+                <div style="font-size:12px; font-weight:700; color:#0d2640; font-family:monospace; direction:ltr; text-align:left;">{{ wsBaseUrl }}</div>
+              </div>
+              <div style="background:#f6f8fb; border:1px solid #e9eef4; border-radius:11px; padding:11px 12px;">
+                <div style="font-size:10.5px; color:#8a96a6; margin-bottom:6px;">{{ wsApiKeyLabel }}</div>
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;" dir="ltr">
+                  <div style="font-size:12px; font-weight:700; color:#0d2640; font-family:monospace; direction:ltr; text-align:left; min-width:0; overflow:hidden; text-overflow:ellipsis;">{{ wsKeyShown }}</div>
+                  <div style="display:flex; align-items:center; gap:7px; flex:none;">
+                    <span onClick="{{ toggleWsKey }}" style="height:34px; padding:0 11px; background:#fff; border:1px solid #d9e7f6; color:var(--accent); border-radius:9px; display:flex; align-items:center; gap:5px; font-size:11.5px; font-weight:700; cursor:pointer; white-space:nowrap;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>{{ wsShowLabel }}</span>
+                    <span onClick="{{ copyWsKey }}" style="height:34px; padding:0 11px; background:#fff; border:1px solid #d9e7f6; color:var(--accent); border-radius:9px; display:flex; align-items:center; gap:5px; font-size:11.5px; font-weight:700; cursor:pointer; white-space:nowrap;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>{{ wsCopyLabel }}</span>
+                  </div>
+                </div>
+              </div>
+              <span onClick="{{ openWsDocs }}" style="height:44px; border:1px solid #d9e7f6; color:var(--accent); border-radius:10px; display:flex; align-items:center; justify-content:center; gap:7px; font-size:12px; font-weight:700; cursor:pointer; text-align:center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>{{ wsViewDocsLabel }}</span>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ wsPending }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fff; border:1px solid #f7e0c4; border-radius:14px; padding:15px; display:flex; align-items:center; gap:13px; flex-wrap:wrap;">
+            <span style="width:46px; height:46px; border-radius:12px; background:#fdf1e7; color:#e8893a; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+            <div style="line-height:1.6; flex:1; min-width:0;"><div style="font-size:13.5px; font-weight:800; color:#0d2640;">{{ wsPendingTitle }}</div><div style="font-size:11.5px; color:#8a96a6; margin-top:2px;">{{ wsPendingSub }}</div></div>
+            <span style="font-size:11px; font-weight:700; color:#e8893a; background:#fdf1e7; border:1px solid #f7e0c4; padding:5px 12px; border-radius:16px; flex:none;">{{ wsPendingBadge }}</span>
+          </div>
+        </sc-if>
+
+        <div style="display:grid; grid-template-columns:{{ wsCols }}; gap:13px; align-items:start;">
+          <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:14px;">
+            <div style="font-size:13.5px; font-weight:800; color:#0d2640; margin-bottom:4px;">{{ wsNewPurchaseTitle }}</div>
+            <div style="font-size:11px; color:#8a96a6; margin-bottom:16px;">{{ wsNewPurchaseSub }}</div>
+            <div style="display:flex; flex-direction:column; gap:11px;">
+              <div><label style="display:block; font-size:11.5px; font-weight:700; color:#16202e; margin-bottom:7px;">{{ wsTypeLabel }}</label><select value="{{ wsReqType }}" onChange="{{ onWsReqType }}" style="width:100%; box-sizing:border-box; height:44px; background:#f6f8fb; border:1px solid #e1ebf6; border-radius:10px; padding:0 10px; color:#16202e; font-family:inherit; font-size:12px; outline:none; cursor:pointer;"><sc-for list="{{ wsTypeOptions }}" as="o" hint-placeholder-count="4"><option value="{{ o.value }}">{{ o.label }}</option></sc-for></select></div>
+              <div><label style="display:block; font-size:11.5px; font-weight:700; color:#16202e; margin-bottom:7px;">{{ wsDurationLabel }}</label>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <sc-for list="{{ wsPlanOptions }}" as="p" hint-placeholder-count="3"><div onClick="{{ p.onPick }}" style="flex:1; min-width:88px; border:1.5px solid {{ p.border }}; background:{{ p.bg }}; border-radius:10px; padding:9px 6px; text-align:center; cursor:pointer;"><div style="font-size:11.5px; font-weight:800; color:#0d2640;">{{ p.label }}</div><div style="font-size:10px; color:#8a96a6; margin-top:2px;">{{ p.priceLabel }}</div></div></sc-for>
+                </div>
+              </div>
+              <div><label style="display:block; font-size:11.5px; font-weight:700; color:#16202e; margin-bottom:7px;">{{ wsNoteLabel }}</label><textarea value="{{ wsReqNote }}" onInput="{{ onWsReqNote }}" placeholder="{{ wsNotePlaceholder }}" style="width:100%; box-sizing:border-box; min-height:74px; resize:vertical; background:#f6f8fb; border:1px solid #e1ebf6; border-radius:10px; padding:9px 11px; color:#16202e; font-family:inherit; font-size:12px; line-height:1.85; outline:none;"></textarea></div>
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:11px 12px; background:#f6f8fb; border:1px solid #e9eef4; border-radius:11px; flex-wrap:wrap;"><span style="font-size:12px; color:#5a6678;">{{ wsPayableLabel }}</span><span style="font-size:15.5px; font-weight:900; color:#0d2640; white-space:nowrap;">{{ wsPriceLabel }} <span style="font-size:11px; font-weight:600; color:#8a96a6;">{{ tomanLabel }}</span></span></div>
+              <span onClick="{{ submitWsReq }}" style="height:46px; border-radius:11px; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; gap:7px; font-size:12.5px; font-weight:800; cursor:pointer; text-align:center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg>{{ wsSubmitLabel }}</span>
+            </div>
+          </div>
+          <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; overflow:hidden;">
+            <div style="padding:11px 14px; border-bottom:1px solid #eef2f7; font-size:13.5px; font-weight:800; color:#0d2640;">{{ wsMyRequestsTitle }}</div>
+            <sc-for list="{{ wsReqRows }}" as="r" hint-placeholder-count="2">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px; border-bottom:1px solid #f4f6fa; flex-wrap:wrap;">
+                <div style="min-width:0;"><div style="font-size:12px; font-weight:700; color:#16202e;">{{ r.type }}</div><div style="font-size:10.5px; color:#8a96a6; margin-top:3px;">{{ r.plan }} · {{ r.priceLabel }} {{ tomanLabel }} · {{ r.date }}</div></div>
+                <span style="font-size:10.5px; font-weight:700; color:{{ r.stColor }}; background:{{ r.stBg }}; padding:4px 10px; border-radius:14px; flex:none;">{{ r.stLabel }}</span>
+              </div>
+            </sc-for>
+            <sc-if value="{{ wsNoRequests }}" hint-placeholder-val="{{ true }}"><div style="padding:22px 14px; text-align:center; color:#8a96a6; font-size:11.5px;">{{ wsNoRequestsLabel }}</div></sc-if>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ CREDIT & BALANCE ============ -->
+    <sc-if value="{{ showCredit }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-direction:column; gap:13px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <span style="font-size:13.5px; font-weight:800; color:#0d2640;">{{ creditBalanceTitle }}</span>
+          <span onClick="{{ openTopup }}" style="height:42px; padding:0 17px; background:var(--accent); color:#fff; border-radius:11px; display:inline-flex; align-items:center; gap:7px; font-size:12.5px; font-weight:800; cursor:pointer;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>{{ addCreditLabel }}</span>
+        </div>
+        <div style="display:grid; grid-template-columns:{{ creditSummaryCols }}; gap:13px;">
+          <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:14px;"><div style="font-size:11.5px; color:#8a96a6;">{{ creditLimitLabel }}</div><div style="font-size:20.5px; font-weight:900; color:#0d2640; margin-top:6px;">{{ creditLimit }}</div></div>
+          <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:14px;"><div style="font-size:11.5px; color:#8a96a6;">{{ creditUsedLabel }}</div><div style="font-size:20.5px; font-weight:900; color:#e8553a; margin-top:6px;">{{ creditUsed }}</div></div>
+          <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:14px;"><div style="font-size:11.5px; color:#8a96a6;">{{ creditRemainingLabel }}</div><div style="font-size:20.5px; font-weight:900; color:#1f8a5b; margin-top:6px;">{{ creditRemaining }}</div></div>
+        </div>
+        <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; overflow:hidden;">
+          <div style="padding:11px 14px; border-bottom:1px solid #eef2f7; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+            <span style="font-size:13.5px; font-weight:800; color:#0d2640;">{{ invoicesTitle }}</span>
+            <sc-if value="{{ hasUnpaid }}" hint-placeholder-val="{{ true }}"><span style="font-size:10.5px; font-weight:700; color:#e8893a; background:#fdf1e7; border:1px solid #f7e0c4; padding:4px 10px; border-radius:14px;">{{ invUnpaidCount }} {{ invoicesPendingLabel }}</span></sc-if>
+          </div>
+          <sc-for list="{{ invoiceRows }}" as="v" hint-placeholder-count="3">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:11px; padding:12px 14px; border-bottom:1px solid #f4f6fa; flex-wrap:wrap;">
+              <div style="display:flex; align-items:center; gap:11px; min-width:0;">
+                <div style="width:38px; height:38px; border-radius:9px; background:#eef4fb; color:var(--accent); display:flex; align-items:center; justify-content:center; flex:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18l2.5-1.5L10 21l2-1.5L14 21l2.5-1.5L19 21V3l-2.5 1.5L14 3l-2 1.5L10 3 7.5 4.5z"/><path d="M9 8h6M9 12h6"/></svg></div>
+                <div style="min-width:0;"><div style="font-size:12px; font-weight:700; color:#16202e;">{{ v.desc }}</div><div style="font-size:10.5px; color:#8a96a6; margin-top:3px;">{{ v.no }} · {{ issuedOnLabel }} {{ v.date }} · {{ dueOnLabel }} {{ v.due }}</div></div>
+              </div>
+              <div style="display:flex; align-items:center; gap:13px; flex-wrap:wrap;">
+                <div style="text-align:left;"><div style="font-size:13px; font-weight:800; color:#0d2640;">{{ v.amount }}</div><div style="font-size:10px; font-weight:700; color:{{ v.stColor }}; margin-top:2px;">{{ v.stLabel }}</div></div>
+                <sc-if value="{{ v.canPay }}" hint-placeholder-val="{{ true }}"><span onClick="{{ v.pay }}" style="height:40px; padding:0 16px; background:var(--accent); color:#fff; border-radius:10px; display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; cursor:pointer; flex:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>{{ payFromCreditLabel }}</span></sc-if>
+                <sc-if value="{{ v.isPaid }}" hint-placeholder-val="{{ false }}"><span style="height:40px; padding:0 15px; background:#eaf7f0; color:#1f8a5b; border:1px solid #cdeede; border-radius:10px; display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; flex:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>{{ paidLabel }}</span></sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; overflow:hidden;">
+          <div style="padding:11px 14px; border-bottom:1px solid #eef2f7; font-size:13.5px; font-weight:800; color:#0d2640;">{{ recentActivityTitle }}</div>
+          <sc-for list="{{ transactions }}" as="t" hint-placeholder-count="5">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:11px 14px; border-bottom:1px solid #f4f6fa;">
+              <div style="display:flex; align-items:center; gap:11px;">
+                <div style="width:36px; height:36px; border-radius:9px; background:{{ t.bg }}; color:{{ t.color }}; display:flex; align-items:center; justify-content:center;">{{ t.icon }}</div>
+                <div><div style="font-size:12px; font-weight:700; color:#16202e;">{{ t.title }}</div><div style="font-size:11px; color:#8a96a6; margin-top:2px;">{{ t.date }}</div></div>
+              </div>
+              <div style="font-size:13px; font-weight:800; color:{{ t.color }};">{{ t.amount }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ SALES REPORT ============ -->
+    <sc-if value="{{ showReport }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-direction:column; gap:13px;">
+
+        <!-- OVERVIEW: clickable category cards -->
+        <sc-if value="{{ reportOverview }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid; grid-template-columns:{{ reportCardCols }}; gap:13px;">
+            <sc-for list="{{ reportCards }}" as="c" hint-placeholder-count="4">
+              <div onClick="{{ c.onOpen }}" style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:15px; cursor:pointer; display:flex; align-items:center; gap:13px;" style-hover="border-color:#cddff2; box-shadow:0 3px 14px rgba(20,40,80,.07);">
+                <span style="width:46px; height:46px; border-radius:12px; background:{{ c.bg }}; color:{{ c.color }}; display:flex; align-items:center; justify-content:center; flex:none;">{{ c.icon }}</span>
+                <div style="min-width:0; flex:1;">
+                  <div style="font-size:12px; color:#8a96a6;">{{ c.label }}</div>
+                  <div style="font-size:18px; font-weight:900; color:#0d2640; margin-top:3px;">{{ c.value }}</div>
+                  <div style="font-size:11px; color:{{ c.color }}; font-weight:700; margin-top:5px; display:flex; align-items:center; gap:4px;">{{ c.sub }} <span style="font-size:13px;">←</span></div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <!-- financial activity report -->
+          <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; overflow:hidden;">
+            <div style="padding:12px 14px; border-bottom:1px solid #eef2f7; display:flex; align-items:center; gap:8px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1668c4" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+              <span style="font-size:13.5px; font-weight:800; color:#0d2640;">{{ financialActivityTitle }}</span>
+              <span style="margin-inline-start:auto; font-size:11px; color:#8a96a6;">{{ financialActivitySub }}</span>
+            </div>
+            <sc-for list="{{ activityRows }}" as="t" hint-placeholder-count="4">
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:11px 14px; border-bottom:1px solid #f4f6fa;">
+                <div style="display:flex; align-items:center; gap:11px; min-width:0;">
+                  <div style="width:36px; height:36px; border-radius:9px; background:{{ t.bg }}; color:{{ t.color }}; display:flex; align-items:center; justify-content:center; flex:none;">{{ t.icon }}</div>
+                  <div style="min-width:0;"><div style="font-size:12px; font-weight:700; color:#16202e;">{{ t.title }}</div><div style="font-size:10.5px; color:#8a96a6; margin-top:2px;">{{ t.meta }}</div></div>
+                </div>
+                <div style="text-align:left; flex:none;"><div style="font-size:13px; font-weight:800; color:{{ t.color }};">{{ t.amount }}</div><div style="font-size:10px; color:#9aa4b2; margin-top:2px;">{{ t.date }}</div></div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <!-- DETAIL sub-view (opens like a new page) -->
+        <sc-if value="{{ reportDetail }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; align-items:center; gap:11px; margin-bottom:2px;">
+            <span onClick="{{ backToReport }}" style="width:40px; height:40px; border-radius:10px; background:#fff; border:1px solid #e3e9f1; color:#0d2640; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
+            <div><div style="font-size:15px; font-weight:900; color:#0d2640;">{{ reportDetailTitle }}</div><div style="font-size:11px; color:#8a96a6; margin-top:2px;">بازگشت به گزارش فروش</div></div>
+            <span onClick="{{ exportExcel }}" style="margin-inline-start:auto; height:38px; padding:0 13px; background:#fff; border:1px solid #d9e7f6; color:var(--accent); border-radius:9px; font-size:11.5px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:5px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>خروجی Excel</span>
+          </div>
+
+          <!-- total sales: issued tickets table -->
+          <sc-if value="{{ rvSales }}" hint-placeholder-val="{{ true }}">
+            <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; overflow-x:auto; padding:0 7px;">
+              <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr 0.9fr 1fr; padding:11px; font-size:11px; color:#8a96a6; font-weight:700; border-bottom:1px solid #f4f6fa; min-width:520px;"><span>مسافر</span><span>مسیر</span><span>تاریخ</span><span>کلاس</span><span>مبلغ</span></div>
+              <sc-for list="{{ salesRows }}" as="s" hint-placeholder-count="6">
+                <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr 0.9fr 1fr; padding:11px; font-size:11.5px; color:#16202e; border-bottom:1px solid #f6f8fb; align-items:center; min-width:520px;"><span style="font-weight:700;">{{ s.name }}</span><span>{{ s.route }}</span><span style="color:#5a6678;">{{ s.date }}</span><span style="color:#5a6678;">{{ s.cls }}</span><span style="font-weight:800; color:#0d2640;">{{ s.amount }}</span></div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <!-- per-flight sales -->
+          <sc-if value="{{ rvPerFlight }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; overflow-x:auto; padding:0 7px;">
+              <div style="display:grid; grid-template-columns:2fr 1fr 1.2fr; padding:11px; font-size:11px; color:#8a96a6; font-weight:700; border-bottom:1px solid #f4f6fa; min-width:380px;"><span>مسیر پرواز</span><span>تعداد بلیط</span><span>مبلغ فروش</span></div>
+              <sc-for list="{{ perFlightRows }}" as="p" hint-placeholder-count="4">
+                <div style="display:grid; grid-template-columns:2fr 1fr 1.2fr; padding:12px 11px; font-size:12px; color:#16202e; border-bottom:1px solid #f6f8fb; align-items:center; min-width:380px;"><span style="font-weight:800; color:#0d2640;">{{ p.route }}</span><span style="color:#5a6678;">{{ p.count }}</span><span style="font-weight:800; color:#1f8a5b;">{{ p.total }}</span></div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <!-- purchased web services -->
+          <sc-if value="{{ rvWebservice }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; overflow:hidden;">
+              <sc-for list="{{ purchasedWs }}" as="r" hint-placeholder-count="2">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:13px 14px; border-bottom:1px solid #f4f6fa;">
+                  <div style="display:flex; align-items:center; gap:11px; min-width:0;"><span style="width:38px; height:38px; border-radius:9px; background:#f2ecfb; color:#7c3aed; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8l-4 4 4 4"/><path d="M16 8l4 4-4 4"/><path d="M13.5 6l-3 12"/></svg></span><div style="min-width:0;"><div style="font-size:12.5px; font-weight:700; color:#16202e;">{{ r.type }}</div><div style="font-size:10.5px; color:#8a96a6; margin-top:3px;">{{ r.plan }} · {{ r.priceLabel }} تومان · {{ r.date }}</div></div></div>
+                  <span style="font-size:10.5px; font-weight:700; color:{{ r.stColor }}; background:{{ r.stBg }}; padding:4px 10px; border-radius:14px; flex:none;">{{ r.stLabel }}</span>
+                </div>
+              </sc-for>
+              <sc-if value="{{ purchasedNone }}" hint-placeholder-val="{{ false }}"><div style="padding:24px; text-align:center; color:#8a96a6; font-size:12px;">هنوز وب‌سرویسی خریداری نشده است.</div></sc-if>
+            </div>
+          </sc-if>
+
+          <!-- unpaid invoices -->
+          <sc-if value="{{ rvInvoices }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; overflow:hidden;">
+              <sc-for list="{{ unpaidInvoiceRows }}" as="v" hint-placeholder-count="2">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:11px; padding:13px 14px; border-bottom:1px solid #f4f6fa; flex-wrap:wrap;">
+                  <div style="display:flex; align-items:center; gap:11px; min-width:0;"><div style="width:38px; height:38px; border-radius:9px; background:#fdf1e7; color:#e8893a; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18l2.5-1.5L10 21l2-1.5L14 21l2.5-1.5L19 21V3l-2.5 1.5L14 3l-2 1.5L10 3 7.5 4.5z"/><path d="M9 8h6M9 12h6"/></svg></div><div style="min-width:0;"><div style="font-size:12px; font-weight:700; color:#16202e;">{{ v.desc }}</div><div style="font-size:10.5px; color:#8a96a6; margin-top:3px;">{{ v.no }} · سررسید {{ v.due }}</div></div></div>
+                  <div style="display:flex; align-items:center; gap:13px; flex-wrap:wrap;"><div style="text-align:left;"><div style="font-size:13px; font-weight:800; color:#0d2640;">{{ v.amount }}</div><div style="font-size:10px; font-weight:700; color:{{ v.stColor }}; margin-top:2px;">{{ v.stLabel }}</div></div><span onClick="{{ v.pay }}" style="height:40px; padding:0 16px; background:var(--accent); color:#fff; border-radius:10px; display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; cursor:pointer; flex:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>پرداخت از اعتبار</span></div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ unpaidNone }}" hint-placeholder-val="{{ false }}"><div style="padding:24px; text-align:center; color:#1f8a5b; font-size:12px; font-weight:700;">✓ همهٔ فاکتورها پرداخت شده‌اند.</div></sc-if>
+            </div>
+          </sc-if>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- ============ CARTABLE / MESSAGES ============ -->
+    <sc-if value="{{ showInbox }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid; grid-template-columns:{{ inboxCols }}; gap:13px; align-items:stretch;">
+        <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; overflow:hidden;">
+          <div style="padding:12px 12px; border-bottom:1px solid #eef2f7; font-size:13px; font-weight:800; color:#0d2640;">{{ inboxTitle }}</div>
+          <sc-for list="{{ messages }}" as="m" hint-placeholder-count="4">
+            <div onClick="{{ m.open }}" style="padding:11px 12px; border-bottom:1px solid #f4f6fa; cursor:pointer; background:{{ m.bg }}; border-right:3px solid {{ m.bar }};">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                <span style="font-size:12px; font-weight:800; color:#0d2640;">{{ m.from }}</span>
+                <span style="font-size:10px; color:#9aa4b2;">{{ m.time }}</span>
+              </div>
+              <div style="font-size:11.5px; color:#5a6678; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ m.subject }}</div>
+            </div>
+          </sc-for>
+          <sc-if value="{{ noMessages }}" hint-placeholder-val="{{ false }}"><div style="padding:26px 14px; text-align:center; color:#8a96a6; font-size:11.5px;">{{ noMessagesLabel }}</div></sc-if>
+        </div>
+        <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:16px; min-height:340px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:13px; border-bottom:1px solid #eef2f7;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:42px; height:42px; border-radius:10px; background:#eef4fb; color:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:11.5px;">{{ openMsgInitial }}</div>
+              <div><div style="font-size:13.5px; font-weight:800; color:#0d2640;">{{ openMsgFrom }}</div><div style="font-size:11px; color:#8a96a6;">{{ openMsgTime }}</div></div>
+            </div>
+            <span style="font-size:11px; font-weight:700; color:{{ openMsgTagColor }}; background:{{ openMsgTagBg }}; padding:4px 9px; border-radius:8px;">{{ openMsgTag }}</span>
+          </div>
+          <h3 style="font-size:15.5px; font-weight:800; color:#0d2640; margin:18px 0 12px;">{{ openMsgSubject }}</h3>
+          <p style="font-size:12.5px; line-height:1.85; color:#3f546b; margin:0; white-space:pre-line;">{{ openMsgBody }}</p>
+          <div style="margin-top:24px; padding-top:15px; border-top:1px solid #eef2f7; display:flex; gap:8px;">
+            <input value="{{ replyText }}" onInput="{{ onReply }}" placeholder="{{ replyPlaceholder }}" style="flex:1; height:46px; background:#f6f8fb; border:1px solid #e3e9f1; border-radius:11px; padding:0 13px; font-family:inherit; font-size:12px; color:#16202e;"/>
+            <div onClick="{{ sendReply }}" style="height:46px; padding:0 20px; background:var(--accent); color:#fff; border-radius:11px; display:flex; align-items:center; font-size:12px; font-weight:700; cursor:pointer;">{{ sendReplyLabel }}</div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ PROFILE & DOCUMENTS ============ -->
+    <sc-if value="{{ showProfile }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid; grid-template-columns:{{ profileCols }}; gap:13px; align-items:start;">
+        <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:16px;">
+          <div style="display:flex; align-items:center; gap:11px; padding-bottom:15px; border-bottom:1px solid #eef2f7; margin-bottom:18px;">
+            <div style="width:58px; height:58px; border-radius:14px; background:linear-gradient(135deg,#1668c4,#3b8ae0); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px; color:#fff;">PA</div>
+            <div><div style="font-size:16px; font-weight:900; color:#0d2640;">{{ profileTitle }}</div><div style="font-size:11.5px; color:#1f8a5b; font-weight:700; margin-top:3px;">{{ accountActiveLabel }}</div></div>
+          </div>
+          <sc-for list="{{ profileFields }}" as="p" hint-placeholder-count="6">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid #f4f6fa;">
+              <span style="font-size:11.5px; color:#8a96a6;">{{ p.label }}</span>
+              <span style="font-size:12px; font-weight:700; color:#16202e;">{{ p.value }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:16px;">
+          <h3 style="font-size:14px; font-weight:800; color:#0d2640; margin:0 0 16px;">{{ documentsTitle }}</h3>
+          <div style="display:flex; flex-direction:column; gap:9px;">
+            <sc-for list="{{ documents }}" as="d" hint-placeholder-count="3">
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:11px 12px; background:#f8fafc; border:1px solid #eef2f7; border-radius:12px;">
+                <div style="display:flex; align-items:center; gap:9px;">
+                  <div style="width:36px; height:36px; border-radius:9px; background:#fff; border:1px solid #e6ecf3; color:var(--accent); display:flex; align-items:center; justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+                  <div><div style="font-size:12px; font-weight:700; color:#16202e;">{{ d.name }}</div><div style="font-size:10.5px; color:#8a96a6;">{{ d.meta }}</div></div>
+                </div>
+                <span style="font-size:10.5px; font-weight:700; color:{{ d.statusColor }}; background:{{ d.statusBg }}; padding:3px 8px; border-radius:7px;">{{ d.status }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <label style="margin-top:14px; display:flex; align-items:center; justify-content:center; gap:7px; height:46px; border:1.5px dashed #c3d2e3; border-radius:12px; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+            {{ uploadDocLabel }}
+            <input type="file" onChange="{{ onUploadDoc }}" style="display:none;"/>
+          </label>
+        </div>
+      </div>
+    </sc-if>
+  </main>
+
+  <!-- ============ COMPOSE MODAL ============ -->
+  <sc-if value="{{ composeOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeCompose }}" style="position:fixed; inset:0; background:rgba(13,38,64,.4); display:flex; align-items:center; justify-content:center; z-index:160; padding:14px;">
+      <div onClick="{{ stop }}" style="background:#fff; border-radius:16px; width:520px; max-width:100%; max-height:88vh; overflow:auto; box-shadow:0 30px 80px -20px rgba(13,38,64,.5);">
+        <div style="padding:12px 15px; border-bottom:1px solid #eef2f7; display:flex; align-items:center; justify-content:space-between;">
+          <h3 style="font-size:14.5px; font-weight:800; color:#0d2640; margin:0;">{{ cmTitleLabel }}</h3>
+          <span onClick="{{ closeCompose }}" style="cursor:pointer; color:#9aa4b2; font-size:20px; line-height:1;">×</span>
+        </div>
+        <div style="padding:14px 15px; display:flex; flex-direction:column; gap:11px;">
+          <div>
+            <label style="display:block; font-size:11.5px; font-weight:700; color:#16202e; margin-bottom:7px;">{{ cmRecipientLabel }}</label>
+            <select value="{{ cmRecipient }}" onChange="{{ onCmRecipient }}" style="width:100%; height:46px; background:#f6f8fb; border:1px solid #e3e9f1; border-radius:11px; padding:0 11px; font-family:inherit; font-size:12px; color:#16202e;">
+              <option value="">{{ cmRecipientPlaceholder }}</option>
+              <sc-for list="{{ recipients }}" as="r" hint-placeholder-count="4"><option value="{{ r }}">{{ r }}</option></sc-for>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-size:11.5px; font-weight:700; color:#16202e; margin-bottom:7px;">{{ cmSubjectLabel }}</label>
+            <input value="{{ cmSubject }}" onInput="{{ onCmSubject }}" placeholder="{{ cmSubjectPlaceholder }}" style="width:100%; height:46px; background:#f6f8fb; border:1px solid #e3e9f1; border-radius:11px; padding:0 11px; font-family:inherit; font-size:12px; color:#16202e;"/>
+          </div>
+          <div>
+            <label style="display:block; font-size:11.5px; font-weight:700; color:#16202e; margin-bottom:7px;">{{ cmBodyLabel }}</label>
+            <textarea value="{{ cmBody }}" onInput="{{ onCmBody }}" placeholder="{{ cmBodyPlaceholder }}" style="width:100%; min-height:120px; background:#f6f8fb; border:1px solid #e3e9f1; border-radius:11px; padding:11px 11px; font-family:inherit; font-size:12px; color:#16202e; resize:vertical;"></textarea>
+          </div>
+          <sc-if value="{{ cmErr }}" hint-placeholder-val="{{ false }}"><div style="font-size:11.5px; color:#e8553a; font-weight:700;">{{ cmErrLabel }}</div></sc-if>
+          <div style="display:flex; gap:8px; padding-top:3px;">
+            <div onClick="{{ sendCompose }}" style="flex:1; height:46px; background:var(--accent); color:#fff; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:700; cursor:pointer;">{{ cmSendLabel }}</div>
+            <div onClick="{{ closeCompose }}" style="height:46px; padding:0 18px; background:#f0f3f7; color:#5a6678; border-radius:11px; display:flex; align-items:center; font-size:12px; font-weight:700; cursor:pointer;">{{ cmCancelLabel }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ============ TOP-UP CREDIT MODAL ============ -->
+  <sc-if value="{{ topupOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeTopup }}" style="position:fixed; inset:0; background:rgba(13,38,64,.4); display:flex; align-items:center; justify-content:center; z-index:160; padding:14px;">
+      <div onClick="{{ stopProp }}" style="background:#fff; border-radius:16px; width:420px; max-width:100%; box-shadow:0 30px 80px -20px rgba(13,38,64,.5); overflow:hidden;">
+        <div style="padding:15px 18px; border-bottom:1px solid #eef2f7; display:flex; align-items:center; justify-content:space-between;">
+          <div style="display:flex; align-items:center; gap:9px;"><span style="width:38px; height:38px; border-radius:10px; background:#eef4fb; color:var(--accent); display:flex; align-items:center; justify-content:center;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span><span style="font-size:14.5px; font-weight:800; color:#0d2640;">{{ topupModalTitle }}</span></div>
+          <span onClick="{{ closeTopup }}" style="width:32px; height:32px; border-radius:8px; background:#f4f6fa; color:#5a6678; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:15px;">✕</span>
+        </div>
+        <div style="padding:18px;">
+          <div style="font-size:12px; color:#5a6678; line-height:1.85; margin-bottom:14px;">{{ topupModalDesc }}</div>
+          <label style="display:block; font-size:11.5px; font-weight:700; color:#16202e; margin-bottom:7px;">{{ topupAmountLabel }}</label>
+          <input value="{{ topupAmount }}" onInput="{{ onTopupAmount }}" placeholder="{{ topupPlaceholder }}" inputmode="numeric" style="width:100%; box-sizing:border-box; height:46px; background:#f6f8fb; border:1px solid #e1ebf6; border-radius:11px; padding:0 13px; font-family:inherit; font-size:14px; font-weight:700; color:#0d2640; outline:none; text-align:left; direction:ltr;"/>
+          <div style="display:flex; gap:8px; margin-top:18px;">
+            <span onClick="{{ closeTopup }}" style="flex:1; height:46px; border:1px solid #e3e9f1; color:#5a6678; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:700; cursor:pointer;">{{ cancelLabel2 }}</span>
+            <span onClick="{{ submitTopup }}" style="flex:1.4; height:46px; background:var(--accent); color:#fff; border-radius:11px; display:flex; align-items:center; justify-content:center; gap:7px; font-size:12.5px; font-weight:800; cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>{{ confirmAddCreditLabel }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- LOGOUT CONFIRM -->
+  <sc-if value="{{ logoutConfirm }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ cancelLogout }}" style="position:fixed; inset:0; background:rgba(13,38,102,.35); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; padding:16px; z-index:200;">
+      <div onClick="{{ stopProp }}" style="background:#fff; border-radius:18px; width:380px; max-width:100%; padding:24px 22px; text-align:center; box-shadow:0 30px 80px -20px rgba(13,38,102,.4);">
+        <div style="width:60px; height:60px; border-radius:50%; background:#fdecec; color:#e5484d; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></div>
+        <div style="font-size:16.5px; font-weight:900; color:#0d2640; margin-bottom:8px;">{{ hdrLogoutConfirm }}</div>
+        <div style="font-size:12.5px; color:#5a6678; line-height:1.9; margin-bottom:22px;">{{ subLogoutConfirm }}</div>
+        <div style="display:flex; gap:10px;">
+          <span onClick="{{ confirmLogout }}" style="flex:1; height:48px; border-radius:12px; background:#e5484d; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; cursor:pointer;">{{ btnLogout }}</span>
+          <span onClick="{{ cancelLogout }}" style="flex:1; height:48px; border-radius:12px; border:1.5px solid #e2e7ee; color:#5a6678; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; cursor:pointer;">{{ cancelLabel2 }}</span>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- TOAST -->
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#0d2640; color:#fff; padding:11px 16px; border-radius:12px; font-size:12px; font-weight:700; box-shadow:018px 50px -12px rgba(13,38,64,.55); z-index:90;">{{ toast }}</div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;setupMode&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;حالت حساب&quot;}}">
+class Component extends DCLogic {
+  componentDidMount(){
+    this._sdh = () => this.forceUpdate(); window.addEventListener("sitedata:change", this._sdh); window.addEventListener("storage", this._sdh);
+    this._mq = window.matchMedia("(max-width:900px)");
+    this._mqh = (e) => this.setState({ isMobile: e.matches });
+    if (this._mq.addEventListener) this._mq.addEventListener("change", this._mqh); else this._mq.addListener(this._mqh);
+    this.setState({ isMobile: this._mq.matches });
+    try { const an = localStorage.getItem('blujet_agency_name'); if (an) this.setState({ agencyName: an }); } catch(e) {}
+  }
+  componentWillUnmount(){ window.removeEventListener("sitedata:change", this._sdh); window.removeEventListener("storage", this._sdh); if (this._mq) { if (this._mq.removeEventListener) this._mq.removeEventListener("change", this._mqh); else this._mq.removeListener(this._mqh); } }
+  state = { isMobile: (typeof window !== "undefined" && window.innerWidth <= 900), mobileMenuOpen: false, notifOpen: false, userMenuOpen: false, docSection: "intro", lang: (typeof localStorage !== "undefined" && localStorage.getItem('blujet_lang')) || 'en', tab: "dashboard", reportView: "overview", paidInv: [], activityLog: [], topupOpen: false, topupAmount: "", openMsg: 0, replyText: "", composeOpen: false, cmRecipient: "", cmSubject: "", cmBody: "", cmErr: false, toast: "", wsReqType: "search", wsReqPlan: "y1", wsReqNote: "", wsReqErr: false, wsKeyVisible: false, wsRequests: [ { id:1, type:"Flight search & booking", date:"Jul 3", status:"approved", note:"" }, { id:2, type:"Allocated-seat inquiry", date:"Jul 9", status:"pending", note:"" } ] };
+
+  submitWsReq(){
+    const typeMap = { search:"Flight search & booking (API)", seat:"Allocated-seat inquiry (API)", credit:"Credit & invoice inquiry (API)", report:"Sales report feed (API)" };
+    const planMap = { m6:{label:"6-month",base:26000000}, y1:{label:"1-year",base:48000000}, y2:{label:"2-year",base:84000000} };
+    const type = typeMap[this.state.wsReqType] || "Web service";
+    const plan = planMap[this.state.wsReqPlan] || planMap.y1;
+    if (!window.SiteData) return;
+    const id = "WS-" + Math.floor(Math.random()*9000+1000);
+    window.SiteData.addWebServiceRequest({ id, agency:"blujet", agencyId:"AG-1", type, plan:plan.label, price:plan.base, note:(this.state.wsReqNote||"").trim(), status:"submitted", assignee:null, at:"Just now", jy:1405, jm:4, jd:12, history:[{step:"submitted", label:"ثبت درخواست خرید توسط آژانس", at:"Just now"}] });
+    this.setState({ wsReqNote:"", wsReqErr:false });
+    this.toast("Purchase request for “"+type+"” submitted and sent to the admin ✓");
+  }
+
+  toFa(s){ return String(s); }
+  faMoney(n){ const lang = this.state.lang; const v = Math.round(Number(n||0)).toLocaleString("en-US"); if (lang === "en") return v + " Toman"; if (lang === "ar") return v.replace(/[0-9]/g, d => "٠١٢٣٤٥٦٧٨٩"[Number(d)]).replace(/,/g,"٬") + " تومان"; return v.replace(/[0-9]/g, d => "۰۱۲۳۴۵۶۷۸۹"[Number(d)]).replace(/,/g,"٬") + " تومان"; }
+  payInvoice(v){
+    if((this.state.paidInv||[]).includes(v.no)) return;
+    const isEN = this.state.lang === "en";
+    const isAR = this.state.lang === "ar";
+    this.setState(s => ({
+      paidInv: [...(s.paidInv||[]), v.no],
+      activityLog: [{ kind:"payment", title:(isEN?"Invoice payment ":(isAR?"دفع الفاتورة ":"پرداخت فاکتور "))+v.no, meta:v.desc, date:isEN?"Today":(isAR?"اليوم":"امروز"), sign:-1, amt:v.amtNum, amount:"−"+this.faMoney(v.amtNum) }, ...(s.activityLog||[])]
+    }));
+    this.toast(isEN ? ("Invoice "+v.no+" was paid from credit and logged in the report ✓") : (isAR ? ("تم دفع الفاتورة "+v.no+" من الرصيد وتم تسجيلها في التقرير ✓") : ("فاکتور "+v.no+" از اعتبار پرداخت و در گزارش ثبت شد ✓")));
+  }
+  submitTopup(){
+    const isEN = this.state.lang === "en";
+    const isAR = this.state.lang === "ar";
+    const raw = String(this.state.topupAmount||"").replace(/[^0-9]/g,"");
+    const n = parseInt(raw,10);
+    if(!n || n < 1000000){ this.toast(isEN ? "Top-up amount must be at least 1,000,000 Toman" : (isAR ? "يجب أن لا يقل مبلغ الشحن عن 1,000,000 تومان" : "مبلغ افزایش اعتبار باید حداقل ۱٬۰۰۰٬۰۰۰ تومان باشد")); return; }
+    this.setState(s => ({
+      topupOpen:false, topupAmount:"",
+      activityLog: [{ kind:"topup", title:isEN?"Account credit top-up":(isAR?"شحن رصيد الحساب":"افزایش اعتبار حساب"), meta:isEN?"Deposit to agency wallet":(isAR?"إيداع في محفظة الوكالة":"واریز به کیف پول آژانس"), date:isEN?"Today":(isAR?"اليوم":"امروز"), sign:1, amt:n, amount:"+"+this.faMoney(n) }, ...(s.activityLog||[])]
+    }));
+    this.toast((isEN ? "Account credit increased by " : "اعتبار حساب به میزان ") + this.faMoney(n) + (isEN ? " and logged in the report ✓" : " افزایش یافت و در گزارش ثبت شد ✓"));
+  }
+  toast(t){ this.setState({ toast: t }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: "" }), 2600); }
+  doLogout(){ this.setState({ logoutConfirm: true, mobileMenuOpen: false, userMenuOpen: false }); }
+  confirmLogout(){
+    if (this._loggingOut) return;
+    this._loggingOut = true;
+    this.setState({ logoutConfirm: false });
+    const isEN = this.state.lang === "en", isAR = this.state.lang === "ar";
+    this.toast(isEN ? "Logging out…" : (isAR ? "جارٍ تسجيل الخروج…" : "در حال خروج از حساب…"));
+    clearTimeout(this._logoutT);
+    this._logoutT = setTimeout(() => { window.location.href = "ورود و ثبتنام.dc.html"; }, 900);
+  }
+
+  buildApiDocs(isEN){
+    const sec = this.state.docSection || "intro";
+    const goDoc = (k) => () => this.setState({ docSection: k });
+    const SECS = isEN
+      ? [ { key:"intro", label:"Introduction" }, { key:"auth", label:"Authentication" }, { key:"endpoints", label:"Endpoints" }, { key:"errors", label:"Error Codes" }, { key:"changelog", label:"Changelog" } ]
+      : [ { key:"intro", label:"معرفی" }, { key:"auth", label:"احراز هویت" }, { key:"endpoints", label:"متدها (Endpoints)" }, { key:"errors", label:"کدهای خطا" }, { key:"changelog", label:"تاریخچه نسخه‌ها" } ];
+    const docNav = SECS.map(s => ({ key:s.key, label:s.label, onPick:goDoc(s.key),
+      bg: sec===s.key ? "#eef4fb" : "transparent", color: sec===s.key ? "#1668c4" : "#5a6678", weight: sec===s.key ? "800" : "600" }));
+    const openEps = this.state.docOpenEps || {};
+    const openGroups = this.state.docOpenGroups || { Token:true, Flight:true, Accounting:true };
+    const toggleGroup = (g) => () => this.setState(s => ({ docOpenGroups: { ...(s.docOpenGroups||{Token:true,Flight:true,Accounting:true}), [g]: !((s.docOpenGroups||{Token:true,Flight:true,Accounting:true})[g]) } }));
+    const toggleEp = (id) => () => this.setState(s => ({ docOpenEps: { ...(s.docOpenEps||{}), [id]: !(s.docOpenEps||{})[id] } }));
+    const GROUPS = [
+      { key:"Token", title: isEN?"Token":"توکن", eps:[
+        { id:"getAuthorizeToken", method:"POST", path:"/api/v2/accounting/getAuthorizeToken", locked:false,
+          desc: isEN?"Obtain an access token using your agency username and password. Send this token as a Bearer header on every subsequent call.":"دریافت توکن دسترسی با نام کاربری و رمز عبور آژانس. این توکن را در تمام درخواست‌های بعدی به‌صورت هدر Bearer ارسال کنید.",
+          req:`POST /api/v2/accounting/getAuthorizeToken\nContent-Type: application/json\n\n{\n  "username": "agency_user",\n  "password": "********",\n  "grant_type": "password"\n}`,
+          res:`{\n  "access_token": "eyJhbGciOiJIUzI1NiIs...",\n  "token_type": "bearer",\n  "expires_in": 3600\n}` } ] },
+      { key:"Flight", title: isEN?"Flight":"پرواز", eps:[
+        { id:"FlightSchedule", method:"POST", path:"/api/v2/inventory/FlightSchedule", locked:true,
+          desc: isEN?"Get the flight schedule (timetable) between an origin and destination for a date range.":"دریافت برنامه پروازی (تایم‌تیبل) بین مبدأ و مقصد برای یک بازه تاریخ.",
+          req:`POST /api/v2/inventory/FlightSchedule\nAuthorization: Bearer {access_token}\n\n{\n  "origin": "THR",\n  "destination": "MHD",\n  "fromDate": "2026-08-10",\n  "toDate": "2026-08-15"\n}`,
+          res:`{\n  "err": null,\n  "data": {\n    "flights": [\n      { "flightNo": "B9-201", "depTime": "07:30", "arrTime": "08:55", "days": [1,2,3,4,5] }\n    ]\n  }\n}` },
+        { id:"FlightSearch", method:"POST", path:"/api/v2/flight/FlightSearch", locked:true,
+          desc: isEN?"Search available flights and fares for an exact travel date.":"جست‌وجوی پروازها و نرخ‌های موجود برای یک تاریخ سفر مشخص.",
+          req:`POST /api/v2/flight/FlightSearch\nAuthorization: Bearer {access_token}\n\n{\n  "origin": "THR",\n  "destination": "MHD",\n  "date": "2026-08-12",\n  "adult": 1,\n  "child": 0,\n  "infant": 0\n}`,
+          res:`{\n  "err": null,\n  "data": {\n    "outbound": [\n      { "flightId": "IR-4021", "airline": "blujet", "price": 1480000, "seatsLeft": 12 }\n    ]\n  }\n}` },
+        { id:"AirPrice", method:"POST", path:"/api/v2/flight/AirPrice", locked:true,
+          desc: isEN?"Re-validate the final price and available services for a selected flight before booking.":"اعتبارسنجی نهایی قیمت و خدمات قابل‌ارائه برای پرواز انتخاب‌شده پیش از رزرو.",
+          req:`POST /api/v2/flight/AirPrice\nAuthorization: Bearer {access_token}\n\n{\n  "flightId": "IR-4021"\n}`,
+          res:`{\n  "err": null,\n  "data": {\n    "flights": [ { "flightId": "IR-4021", "price": 1480000 } ],\n    "services": [ { "code": "BAG20", "price": 350000 } ]\n  }\n}` },
+        { id:"Book", method:"POST", path:"/api/v2/flight/Book", locked:true,
+          desc: isEN?"Create a reservation (PNR) for the priced flight with passenger details.":"ایجاد رزرو (PNR) برای پرواز قیمت‌گذاری‌شده همراه با اطلاعات مسافران.",
+          req:`POST /api/v2/flight/Book\nAuthorization: Bearer {access_token}\n\n{\n  "flightId": "IR-4021",\n  "passengers": [\n    { "firstName": "Ali", "lastName": "Rezaei", "nationalId": "0012345678" }\n  ]\n}`,
+          res:`{\n  "err": null,\n  "data": {\n    "seats": [{ "passenger": "Ali Rezaei", "seat": "12A" }],\n    "pnr": "BJ7X2K"\n  }\n}` },
+        { id:"Confirm", method:"POST", path:"/api/v2/flight/Confirm", locked:true,
+          desc: isEN?"Confirm and finalize a reservation, deducting the fare from agency credit.":"تأیید و نهایی‌سازی رزرو و کسر مبلغ بلیت از اعتبار آژانس.",
+          req:`POST /api/v2/flight/Confirm\nAuthorization: Bearer {access_token}\n\n{\n  "pnr": "BJ7X2K"\n}`,
+          res:`{\n  "err": null,\n  "data": { "pnr": "BJ7X2K", "status": "confirmed" }\n}` },
+        { id:"AirDemandTicket", method:"POST", path:"/api/v2/flight/AirDemandTicket", locked:true,
+          desc: isEN?"Request ticket issuance for a confirmed reservation.":"درخواست صدور بلیت برای رزرو تأییدشده.",
+          req:`POST /api/v2/flight/AirDemandTicket\nAuthorization: Bearer {access_token}\n\n{\n  "pnr": "BJ7X2K"\n}`,
+          res:`{\n  "err": null,\n  "data": {\n    "flights": [{ "flightId": "IR-4021" }],\n    "tickets": [{ "ticketNumber": "081-2456879213" }]\n  }\n}` },
+        { id:"TicketInfo", method:"POST", path:"/api/v2/flight/TicketInfo", locked:true,
+          desc: isEN?"Get full ticket details and current status by PNR or ticket number.":"دریافت جزئیات کامل بلیت و وضعیت فعلی آن بر اساس PNR یا شماره بلیت.",
+          req:`POST /api/v2/flight/TicketInfo\nAuthorization: Bearer {access_token}\n\n{\n  "pnr": "BJ7X2K"\n}`,
+          res:`{\n  "err": null,\n  "data": { "pnr": "BJ7X2K", "status": "issued", "ticketNumber": "081-2456879213" }\n}` },
+        { id:"AirRule", method:"POST", path:"/api/v2/flight/AirRule", locked:true,
+          desc: isEN?"Get the fare rules (change/refund conditions) for a flight by reference number.":"دریافت قوانین نرخی (شرایط تغییر/استرداد) یک پرواز بر اساس شماره مرجع.",
+          req:`POST /api/v2/flight/AirRule\nAuthorization: Bearer {access_token}\n\n{\n  "ref_number": "IR-4021"\n}`,
+          res:`{\n  "err": null,\n  "data": { "rules": [{ "title": "Refund", "text": "10% penalty up to 3h before departure" }] }\n}` },
+        { id:"Cancel", method:"POST", path:"/api/v2/flight/Cancel", locked:true,
+          desc: isEN?"Cancel one or more tickets on a reservation and start the refund voucher process.":"لغو یک یا چند بلیت از یک رزرو و شروع فرآیند صدور واچر استرداد.",
+          req:`POST /api/v2/flight/Cancel\nAuthorization: Bearer {access_token}\n\n{\n  "pnr": "BJ7X2K",\n  "tickets": ["081-2456879213"]\n}`,
+          res:`{\n  "err": null,\n  "data": { "voucher": "VC-5521", "tickets": ["081-2456879213"] }\n}` },
+        { id:"CancelTracking", method:"POST", path:"/api/v2/flight/CancelTracking", locked:true,
+          desc: isEN?"Track the status of a previously submitted cancellation/refund request.":"پیگیری وضعیت یک درخواست لغو/استرداد ثبت‌شده قبلی.",
+          req:`POST /api/v2/flight/CancelTracking\nAuthorization: Bearer {access_token}\n\n{\n  "voucher": "VC-5521"\n}`,
+          res:`{\n  "err": null,\n  "data": { "tickets": ["081-2456879213"], "status": "refunded" }\n}` } ] },
+      { key:"Accounting", title: isEN?"Accounting":"مالی", eps:[
+        { id:"myCredit", method:"POST", path:"/api/v2/accounting/myCredit", locked:true,
+          desc: isEN?"Get your agency's current credit balance and limit.":"دریافت موجودی و سقف اعتبار فعلی آژانس شما.",
+          req:`POST /api/v2/accounting/myCredit\nAuthorization: Bearer {access_token}`,
+          res:`{\n  "err": null,\n  "data": { "credit": 128500000, "creditLimit": 500000000, "currency": "IRR" }\n}` } ] },
+    ];
+    const docGroups = GROUPS.map(g => ({
+      key:g.key, title:g.title, onToggle:toggleGroup(g.key), open: openGroups[g.key] !== false,
+      chevron: (openGroups[g.key] !== false) ? "rotate(0deg)" : "rotate(-90deg)",
+      eps: g.eps.map(e => ({ ...e, isOpen: !!openEps[e.id], onToggle: toggleEp(e.id),
+        chevron: openEps[e.id] ? "rotate(180deg)" : "rotate(0deg)" }))
+    }));
+    const ERR = isEN ? [
+      { code:"401", title:"Unauthorized", desc:"Missing or invalid API key." },
+      { code:"403", title:"Forbidden", desc:"Web service plan inactive or suspended." },
+      { code:"404", title:"Not Found", desc:"Flight or booking (PNR) not found." },
+      { code:"409", title:"Conflict", desc:"Seats no longer available at the quoted price." },
+      { code:"422", title:"Validation Error", desc:"One or more request fields are invalid." },
+      { code:"429", title:"Too Many Requests", desc:"Rate limit exceeded — see the Introduction section." },
+    ] : [
+      { code:"401", title:"عدم احراز هویت", desc:"کلید API ارسال نشده یا نامعتبر است." },
+      { code:"403", title:"دسترسی مجاز نیست", desc:"پلن وب‌سرویس غیرفعال یا معلق شده است." },
+      { code:"404", title:"یافت نشد", desc:"پرواز یا رزرو (PNR) مورد نظر پیدا نشد." },
+      { code:"409", title:"تداخل", desc:"صندلی با قیمت اعلام‌شده دیگر موجود نیست." },
+      { code:"422", title:"خطای اعتبارسنجی", desc:"یک یا چند فیلد درخواست نامعتبر است." },
+      { code:"429", title:"تعداد درخواست بیش از حد", desc:"محدودیت نرخ درخواست رد شده — به بخش معرفی مراجعه کنید." },
+    ];
+    const CHANGELOG = isEN ? [
+      { v:"v1.3", date:"2026-06-01", note:"Added DELETE /bookings/{pnr} for cancellations and refunds." },
+      { v:"v1.2", date:"2026-03-15", note:"Added seatsLeft field to search results." },
+      { v:"v1.1", date:"2025-11-20", note:"Added POST /bookings/{pnr}/issue endpoint." },
+      { v:"v1.0", date:"2025-08-01", note:"Initial public release of the agency booking API." },
+    ] : [
+      { v:"v1.3", date:"۱۴۰۵/۰۳/۱۱", note:"افزوده‌شدن DELETE /bookings/{pnr} برای لغو و استرداد وجه." },
+      { v:"v1.2", date:"۱۴۰۴/۱۲/۲۴", note:"افزوده‌شدن فیلد seatsLeft به نتایج جست‌وجو." },
+      { v:"v1.1", date:"۱۴۰۴/۰۸/۲۹", note:"افزوده‌شدن متد POST /bookings/{pnr}/issue." },
+      { v:"v1.0", date:"۱۴۰۴/۰۵/۱۰", note:"انتشار عمومی اولیه وب‌سرویس رزرو آژانس." },
+    ];
+    return {
+      docNav,
+      docIntro: sec==="intro", docAuth: sec==="auth", docEndpoints: sec==="endpoints", docErrors: sec==="errors", docChangelog: sec==="changelog",
+      docTitle: (SECS.find(s=>s.key===sec)||SECS[0]).label,
+      docGroups, errorRows: ERR, changelogRows: CHANGELOG,
+      docIntroTitle: isEN?"Agency Booking API":"وب‌سرویس رزرو آژانس",
+      docIntroP1: isEN?"This REST API lets your systems search flights, create bookings, issue tickets, and manage cancellations directly, without using the agency panel UI.":"این وب‌سرویس REST به سیستم شما امکان می‌دهد بدون استفاده از رابط پنل آژانس، مستقیماً پرواز جست‌وجو کند، رزرو بسازد، بلیت صادر کند و لغو/استرداد را مدیریت کند.",
+      docBaseUrlLabel: isEN?"Base URL":"آدرس پایه",
+      docFormatLabel: isEN?"Data format":"قالب داده",
+      docFormatVal: isEN?"All requests and responses use JSON (UTF-8).":"همه درخواست‌ها و پاسخ‌ها با فرمت JSON (UTF-8) هستند.",
+      docRateLabel: isEN?"Rate limit":"محدودیت نرخ درخواست",
+      docRateVal: isEN?"60 requests per minute per API key. Exceeding this returns HTTP 429.":"۶۰ درخواست در دقیقه به ازای هر کلید API. عبور از این حد، خطای HTTP 429 برمی‌گرداند.",
+      docAuthTitle: isEN?"Authenticating requests":"احراز هویت درخواست‌ها",
+      docAuthP1: isEN?"Send your agency's API key as a Bearer token in the Authorization header of every request.":"کلید API آژانس خود را به‌صورت Bearer token در هدر Authorization هر درخواست ارسال کنید.",
+      docAuthSample:`Authorization: Bearer YOUR_API_KEY`,
+      docAuthP2: isEN?"Your API key is available in the Web Service tab once your plan is approved and active.":"کلید API شما پس از تأیید و فعال‌شدن پلن، در تب «وب سرویس» در دسترس است.",
+      docEndpointsHint: isEN?"All paths below are relative to the base URL shown in the Introduction section.":"همه مسیرهای زیر نسبت به آدرس پایه ذکرشده در بخش «معرفی» هستند.",
+      docReqLabel: isEN?"Request":"درخواست", docResLabel: isEN?"Response":"پاسخ",
+      docErrorsHint: isEN?"On failure, the response body includes a matching \"error\" object with this code.":"در صورت خطا، بدنه پاسخ شامل یک شیء \"error\" با همین کد است.",
+    };
+  }
+
+  icon(name){
+    const s = 'width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
+    const paths = {
+      dash: '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+      seat: '<path d="M5 11V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v6"/><path d="M5 11h11a2 2 0 0 1 2 2v3H5z"/><path d="M5 16v3M18 16v3"/>',
+      credit: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
+      report: '<path d="M3 3v18h18"/><path d="M7 14l3.5-3.5 3 3L20 7"/>',
+      inbox: '<path d="M4 13h4l1.5 3h5L16 13h4"/><path d="M5.5 13L7 5.5h10L18.5 13v5a1 1 0 0 1-1 1H6.5a1 1 0 0 1-1-1z"/>',
+      profile: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/>',
+      webservice: '<path d="M8 8l-4 4 4 4"/><path d="M16 8l4 4-4 4"/><path d="M13.5 6l-3 12"/>',
+      apidocs: '<path d="M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5"/><path d="M8.5 12h7M8.5 15.5h7M8.5 8.5h3"/>'
+    };
+    return React.createElement('svg', { dangerouslySetInnerHTML: { __html: paths[name] }, width:20, height:20, viewBox:"0 0 24 24", fill:"none", stroke:"currentColor", strokeWidth:1.8, strokeLinecap:"round", strokeLinejoin:"round" });
+  }
+  miniIcon(html, color){
+    return React.createElement('svg', { dangerouslySetInnerHTML: { __html: html }, width:20, height:20, viewBox:"0 0 24 24", fill:"none", stroke:"currentColor", strokeWidth:1.8, strokeLinecap:"round", strokeLinejoin:"round" });
+  }
+
+  messagesData(){ return [
+    { from:"مدیر تجاری", initial:"مت", time:"۱ ساعت پیش", tag:"قیمت‌گذاری", tagColor:"#1668c4", tagBg:"#eef4fb",
+      subject:"به‌روزرسانی کرایه مسیر دبی", body:"همکار گرامی،\nکرایه پروازهای تهران–دبی برای هفته آینده به‌روزرسانی شده است. لطفاً پیش از صدور بلیط، نرخ‌های جدید را در سیستم بررسی کنید.\nبا احترام" },
+    { from:"مدیر مالی", initial:"مم", time:"دیروز", tag:"مالی", tagColor:"#1f8a5b", tagBg:"#eaf7f0",
+      subject:"تسویه صورت‌حساب دوره‌ای", body:"مهلت تسویه صورت‌حساب دوره جاری تا پایان همین هفته است. مانده بدهی شما ۴۹۰,۰۰۰,۰۰۰ تومان می‌باشد." },
+    { from:"ادمین سایت", initial:"اس", time:"۲ روز پیش", tag:"اطلاعیه", tagColor:"#8a5cf6", tagBg:"#f1ecfe",
+      subject:"افزایش ظرفیت تخصیصی", body:"ظرفیت تخصیص‌یافته به آژانس شما برای مسیر مشهد افزایش یافت. اکنون می‌توانید صندلی بیشتری صادر کنید." },
+    { from:"مدیرعامل", initial:"مع", time:"هفته گذشته", tag:"قدردانی", tagColor:"#e8893a", tagBg:"#fdf1e7",
+      subject:"قدردانی از عملکرد فروش", body:"از تلاش‌های تیم شما برای رشد فروش در سه‌ماهه گذشته صمیمانه سپاسگزاریم. منتظر ادامه همکاری هستیم." },
+  ]; }
+
+  renderVals(){ const v = this._vals(); return (this.state && this.state.lang === "ar" && typeof window !== "undefined" && window.arDeep) ? window.arDeep(v) : v; }
+  _vals(){
+    const tab = this.state.tab;
+    const isEN = this.state.lang === "en";
+    const isAR = this.state.lang === "ar";
+    const titles = isEN
+      ? { dashboard:"Agency Dashboard", seats:"Allocated Seats", webservice:"Web Service", apidocs:"Web Service Documentation", credit:"Credit & Balance", report:"Sales & Reports", inbox:"Inbox & Messages", profile:"Profile & Documents" }
+      : { dashboard:"داشبورد آژانس", seats:"صندلی‌های تخصیصی", webservice:"وب سرویس", apidocs:"مستندات وب‌سرویس", credit:"اعتبار و موجودی", report:"فروش و گزارش‌ها", inbox:"صندوق پیام‌ها", profile:"پروفایل و مدارک" };
+    const subs = isEN
+      ? { dashboard:"Overview of your sales, credit, and seats", seats:"Capacity allocated by demand for licensed flights", webservice:"Request and receive your agency's dedicated API", apidocs:"Integration guide for the agency booking API", credit:"Credit limit, airline invoices, and account activity", report:"Agency sales performance and reports", inbox:"Messages from airline management", profile:"Agency information and registered documents" }
+      : { dashboard:"نمای کلی فروش، اعتبار و صندلی‌های شما", seats:"ظرفیت تخصیص‌یافته بر اساس تقاضا برای پروازهای مجاز", webservice:"درخواست و دریافت وب‌سرویس اختصاصی آژانس شما", apidocs:"راهنمای یکپارچه‌سازی با اینترفیس رزرو آژانس", credit:"سقف اعتبار، فاکتورهای شرکت هواپیمایی و فعالیت حساب", report:"عملکرد فروش و گزارش‌های آژانس", inbox:"پیام‌های مدیریت شرکت هواپیمایی", profile:"اطلاعات آژانس و مدارک ثبت‌شده" };
+
+    const go = (key) => () => this.setState({ tab: key, mobileMenuOpen: false });
+    const navMeta = isEN ? [
+      { key:"dashboard", label:"Dashboard", icon:"dash" },
+      { key:"seats", label:"Allocated Seats", icon:"seat" },
+      { key:"webservice", label:"Web Service", icon:"webservice" },
+      { key:"apidocs", label:"Web Service Docs", icon:"apidocs" },
+      { key:"credit", label:"Credit & Balance", icon:"credit" },
+      { key:"report", label:"Sales & Reports", icon:"report" },
+      { key:"inbox", label:"Inbox & Messages", icon:"inbox", badge:true, badgeNum:"4" },
+      { key:"profile", label:"Profile & Documents", icon:"profile" },
+    ] : [
+      { key:"dashboard", label:"داشبورد", icon:"dash" },
+      { key:"seats", label:"صندلی‌های تخصیصی", icon:"seat" },
+      { key:"webservice", label:"وب سرویس", icon:"webservice" },
+      { key:"apidocs", label:"مستندات وب‌سرویس", icon:"apidocs" },
+      { key:"credit", label:"اعتبار و موجودی", icon:"credit" },
+      { key:"report", label:"فروش و گزارش‌ها", icon:"report" },
+      { key:"inbox", label:"صندوق پیام‌ها", icon:"inbox", badge:true, badgeNum:"4" },
+      { key:"profile", label:"پروفایل و مدارک", icon:"profile" },
+    ];
+    const navItems = navMeta.map((n,i) => ({
+      label:n.label, icon:this.icon(n.icon), go:go(n.key),
+      bg: tab===n.key ? "#eef4fb" : "transparent",
+      color: tab===n.key ? "#1668c4" : "#5a6678",
+      weight: tab===n.key ? "800" : "600",
+      badge: !!n.badge, badgeNum: n.badgeNum || "",
+      drawerWeight: tab===n.key ? "800" : "700",
+      drawerBorder: i===0 ? "none" : "1px solid #eef1f5",
+      showDrawerChevron: tab!==n.key
+    }));
+
+    // KPIs
+    const mi = (h) => this.miniIcon(h);
+    const noMock = isEN;
+    const SETUP = isEN || isAR || !!(this.props.setupMode);
+    const notifsList = SETUP ? [] : [
+      { icon: "✈", title: "New booking", meta: "Tehran → Dubai, ref AG-7741", time: "1 hour ago", bg: "#f6faff" },
+      { icon: "★", title: "Commission credited", meta: "$84 added to your balance", time: "Yesterday", bg: "#fff" }
+    ];
+    const kpis = [
+      { icon:mi('<path d="M3 3v18h18"/><path d="M7 14l3.5-3.5 3 3L20 7"/>'), iconBg:"#eef4fb", iconColor:"#1668c4", value: SETUP?(isEN?"0 Toman":"۰ تومان"):"۳,۸۴۰,۰۰۰,۰۰۰ تومان", label: noMock?"Sales this month":"فروش این ماه", trend: SETUP?"":"+۱۲٪", trendColor:"#1f8a5b", trendBg:"#eaf7f0" },
+      { icon:mi('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>'), iconBg:"#eaf7f0", iconColor:"#1f8a5b", value: SETUP?(isEN?"0 Toman":"۰ تومان"):"۵۱۰,۰۰۰,۰۰۰ تومان", label: noMock?"Credit remaining":"اعتبار باقیمانده", trend: SETUP?"":"۵۱٪", trendColor:"#1668c4", trendBg:"#eef4fb" },
+      { icon:mi('<path d="M5 11V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v6"/><path d="M5 11h11a2 2 0 0 1 2 2v3H5z"/>'), iconBg:"#f1ecfe", iconColor:"#8a5cf6", value: SETUP?(isEN?"0":"۰"):"۸۶", label: noMock?"Seats allocated":"صندلی تخصیص‌یافته", trend: SETUP?"":"+۸", trendColor:"#1f8a5b", trendBg:"#eaf7f0" },
+      { icon:mi('<path d="M9 12l2 2 4-4"/><path d="M12 3l7 3v5.5c0 4.2-2.9 7.4-7 8.5-4.1-1.1-7-4.3-7-8.5V6z"/>'), iconBg:"#fdf1e7", iconColor:"#e8893a", value: SETUP?(isEN?"0":"۰"):"۱۴۲", label: noMock?"Seats sold":"صندلی فروخته‌شده", trend: SETUP?"":"+۲۳", trendColor:"#1f8a5b", trendBg:"#eaf7f0" },
+    ];
+
+    const salesVals = SETUP ? [0,0,0,0,0,0] : [180, 220, 260, 240, 320, 384];
+    const maxS = 400;
+    const salesMonths = SETUP ? ["","","","","",""] : (isEN ? ["Feb","Mar","Apr","May","Jun","Jul"] : (isAR ? ["فبراير","مارس","أبريل","مايو","يونيو","يوليو"] : ["بهمن","اسفند","فروردین","اردیبهشت","خرداد","تیر"]));
+    const salesBars = salesVals.map((v,i) => ({ val: isAR ? String(v).replace(/[0-9]/g, d => "٠١٢٣٤٥٦٧٨٩"[Number(d)]) : this.toFa(v), m:salesMonths[i], h:Math.round(v/maxS*100)+"%" }));
+
+    const _paidSet = this.state.paidInv || [];
+    const _log = this.state.activityLog || [];
+    const _topupTotal = _log.filter(a => a.kind==="topup").reduce((s,a)=>s+a.amt, 0);
+    const _baseLimit = SETUP ? 0 : 100000000, _baseUsed = 0;
+
+    const seatFlights = SETUP ? [] : [
+      { route:"تهران → دبی", flightNo:"EP-821", date:"۲۵ تیر", time:"۰۸:۳۰", demand:"۳۵", alloc:"۳۰", sold:"۱۸", left:"۱۲", pct:"60%" },
+      { route:"مشهد → تهران", flightNo:"W5-112", date:"۲۷ تیر", time:"۱۴:۱۵", demand:"۲۰", alloc:"۲۰", sold:"۱۵", left:"۵", pct:"75%" },
+      { route:"تهران → استانبول", flightNo:"EP-640", date:"۳۰ تیر", time:"۰۶:۴۵", demand:"۴۰", alloc:"۲۵", sold:"۹", left:"۱۶", pct:"36%" },
+      { route:"شیراز → تهران", flightNo:"RV-415", date:"۲ مرداد", time:"۱۹:۰۰", demand:"۱۵", alloc:"۱۱", sold:"۷", left:"۴", pct:"64%" },
+    ];
+
+    const transactions = SETUP ? [] : [
+      { icon:mi('<path d="M12 5v14M5 12h14"/>'), bg:"#eaf7f0", color:"#1f8a5b", title:"افزایش اعتبار توسط مدیریت", date:"۱۰ تیر", amount:"+۳۰۰,۰۰۰,۰۰۰ تومان" },
+      { icon:mi('<path d="M5 12h14"/>'), bg:"#fdecea", color:"#e8553a", title:"پرداخت فاکتور — ۸ صندلی، مسیر دبی", date:"۸ تیر", amount:"−۳۰۴,۰۰۰,۰۰۰ تومان" },
+      { icon:mi('<path d="M5 12h14"/>'), bg:"#fdecea", color:"#e8553a", title:"پرداخت فاکتور — ۵ صندلی، مسیر مشهد", date:"۵ تیر", amount:"−۹۷,۵۰۰,۰۰۰ تومان" },
+      { icon:mi('<path d="M12 5v14M5 12h14"/>'), bg:"#eaf7f0", color:"#1f8a5b", title:"تسویه نقدی", date:"۱ تیر", amount:"+۲۰۰,۰۰۰,۰۰۰ تومان" },
+      { icon:mi('<path d="M5 12h14"/>'), bg:"#fdecea", color:"#e8553a", title:"پرداخت فاکتور — ۳ صندلی، مسیر استانبول", date:"۲۸ خرداد", amount:"−۱۲۶,۰۰۰,۰۰۰ تومان" },
+    ];
+
+    const reportKpis = SETUP ? (isEN ? [
+      { label:"Total sales", value:"0 Toman" },
+      { label:"Tickets issued", value:"0" },
+      { label:"Average fare", value:"0 Toman" },
+      { label:"Refund rate", value:"0%" },
+    ] : [
+      { label:"جمع فروش", value:"۰ تومان" },
+      { label:"بلیط صادرشده", value:"۰" },
+      { label:"میانگین کرایه", value:"۰ تومان" },
+      { label:"نرخ استرداد", value:"۰٪" },
+    ]) : [
+      { label:"جمع فروش", value:"۲۱,۰۰۰,۰۰۰,۰۰۰ تومان" },
+      { label:"بلیط صادرشده", value:"۱۴۲" },
+      { label:"میانگین کرایه", value:"۳۱,۰۰۰,۰۰۰ تومان" },
+      { label:"نرخ استرداد", value:"۳.۲٪" },
+    ];
+    const salesRows = SETUP ? [] : [
+      { name:"رضا احمدی", route:"تهران → دبی", date:"۸ تیر", cls:"اکونومی", amount:"۳۸,۰۰۰,۰۰۰ تومان", amt:38000000 },
+      { name:"مریم کاظمی", route:"مشهد → تهران", date:"۷ تیر", cls:"اکونومی", amount:"۱۹,۵۰۰,۰۰۰ تومان", amt:19500000 },
+      { name:"علی موسوی", route:"تهران → استانبول", date:"۶ تیر", cls:"بیزینس", amount:"۶۴,۰۰۰,۰۰۰ تومان", amt:64000000 },
+      { name:"سارا نوری", route:"شیراز → تهران", date:"۵ تیر", cls:"اکونومی", amount:"۱۶,۵۰۰,۰۰۰ تومان", amt:16500000 },
+      { name:"حسین رضایی", route:"تهران → دبی", date:"۴ تیر", cls:"اکونومی", amount:"۳۸,۰۰۰,۰۰۰ تومان", amt:38000000 },
+      { name:"زهرا عابدی", route:"تهران → مشهد", date:"۳ تیر", cls:"اکونومی", amount:"۱۹,۵۰۰,۰۰۰ تومان", amt:19500000 },
+    ];
+    const _faMoney = (n) => { const v = Math.round(Number(n||0)).toLocaleString("en-US"); return isEN ? (v + " Toman") : (v + " تومان"); };
+    // sales aggregated per flight/route
+    const _pfMap = {};
+    salesRows.forEach(s => { if(!_pfMap[s.route]) _pfMap[s.route] = { route:s.route, count:0, total:0 }; _pfMap[s.route].count++; _pfMap[s.route].total += s.amt; });
+    const perFlightRows = Object.values(_pfMap).sort((a,b)=>b.total-a.total).map(x => ({ route:x.route, count:(isAR ? String(x.count).replace(/[0-9]/g, d => "٠١٢٣٤٥٦٧٨٩"[Number(d)]) : this.toFa(x.count))+(isEN?" tickets":" بلیط"), total:_faMoney(x.total) }));
+
+    const msgs = SETUP ? [] : this.messagesData();
+    const om = this.state.openMsg;
+    const messages = msgs.map((m,i) => ({
+      from:m.from, time:m.time, subject:m.subject,
+      open: () => this.setState({ openMsg:i, replyText:"" }),
+      bg: om===i ? "#f4f8fc" : "#fff",
+      bar: om===i ? "#1668c4" : "transparent"
+    }));
+    const cur = msgs[om] || msgs[0] || { from:"", initial:"", time:"", subject:"", body:"", tag:"", tagColor:"", tagBg:"" };
+    const hasMessages = msgs.length > 0;
+    const inboxNavItem = navMeta.findIndex(n => n.key === "inbox");
+    if (inboxNavItem > -1) { navItems[inboxNavItem].badge = hasMessages; navItems[inboxNavItem].badgeNum = hasMessages ? String(msgs.length) : ""; }
+
+    const profileFields = isEN ? [
+      { label:"CEO", value:"Hossein Mehri" },
+      { label:"License number", value:"1102-4471" },
+      { label:"City", value:"Tehran" },
+      { label:"Phone", value:"021-88452210" },
+      { label:"Email", value:"info@parsiangasht.ir" },
+      { label:"Partnership type", value:"Gold partner agency" },
+    ] : [
+      { label:"مدیرعامل", value:"حسین مهری" },
+      { label:"شماره مجوز", value:"1102-4471" },
+      { label:"شهر", value:"تهران" },
+      { label:"تلفن", value:"021-88452210" },
+      { label:"ایمیل", value:"info@parsiangasht.ir" },
+      { label:"نوع همکاری", value:"آژانس همکار طلایی" },
+    ];
+    const documents = isEN ? [
+      { name:"Type-B license", meta:"PDF · 1.2 MB", status:"Approved", statusColor:"#1f8a5b", statusBg:"#eaf7f0" },
+      { name:"Business permit", meta:"PDF · 800 KB", status:"Approved", statusColor:"#1f8a5b", statusBg:"#eaf7f0" },
+      { name:"Manager's national ID", meta:"Image · 420 KB", status:"Pending", statusColor:"#e8893a", statusBg:"#fdf1e7" },
+    ] : [
+      { name:"مجوز نوع ب", meta:"PDF · ۱٫۲ مگابایت", status:"تأیید شده", statusColor:"#1f8a5b", statusBg:"#eaf7f0" },
+      { name:"جواز کسب", meta:"PDF · ۸۰۰ کیلوبایت", status:"تأیید شده", statusColor:"#1f8a5b", statusBg:"#eaf7f0" },
+      { name:"کارت ملی مدیرعامل", meta:"تصویر · ۴۲۰ کیلوبایت", status:"در حال بررسی", statusColor:"#e8893a", statusBg:"#fdf1e7" },
+    ];
+
+    // invoices issued by the airline (paid via credit → logged to report)
+    const invoices = SETUP ? [] : [
+      { no:"INV-1405-038", desc:"تخصیص ۳۰ صندلی — پرواز EP-821 (تهران → دبی)", date:"۲۰ تیر", due:"۲۷ تیر", amtNum:114000000, amount:"۱۱۴,۰۰۰,۰۰۰ تومان", status:"unpaid" },
+      { no:"INV-1405-035", desc:"تخصیص ۲۰ صندلی — پرواز W5-112 (مشهد → تهران)", date:"۱۵ تیر", due:"۲۲ تیر", amtNum:39000000, amount:"۳۹,۰۰۰,۰۰۰ تومان", status:"overdue" },
+      { no:"INV-1405-031", desc:"تخصیص ۲۵ صندلی — پرواز EP-640 (تهران → استانبول)", date:"۱۰ تیر", due:"۱۷ تیر", amtNum:105000000, amount:"۱۰۵,۰۰۰,۰۰۰ تومان", status:"paid" },
+    ];
+    const invStMeta = noMock
+      ? { unpaid:{label:"Awaiting payment",color:"#e8893a",bg:"#fdf1e7"}, overdue:{label:"Past due",color:"#e8553a",bg:"#fdecea"}, paid:{label:"Paid",color:"#1f8a5b",bg:"#eaf7f0"} }
+      : { unpaid:{label:"در انتظار پرداخت",color:"#e8893a",bg:"#fdf1e7"}, overdue:{label:"سررسید گذشته",color:"#e8553a",bg:"#fdecea"}, paid:{label:"پرداخت‌شده",color:"#1f8a5b",bg:"#eaf7f0"} };
+    const invoiceRows = invoices.map(v => { const isPaidNow = v.status==="paid" || _paidSet.includes(v.no); const m=invStMeta[isPaidNow?"paid":v.status]; return { ...v, stLabel:m.label, stColor:m.color, stBg:m.bg, canPay: !isPaidNow, isPaid: isPaidNow, pay: () => this.payInvoice(v) }; });
+    const invUnpaidCount = invoiceRows.filter(v=>!v.isPaid).length;
+    const unpaidInvoiceRows = invoiceRows.filter(v=>!v.isPaid);
+    // dynamic credit: top-ups raise the limit, credit-paid invoices raise the used amount
+    const _paidTotal = invoices.filter(v => v.status!=="paid" && _paidSet.includes(v.no)).reduce((s,v)=>s+v.amtNum, 0);
+    const _limitN = _baseLimit + _topupTotal;
+    const _usedN = _baseUsed + _paidTotal;
+    const _remN = Math.max(0, _limitN - _usedN);
+    const creditLimit = this.faMoney(_limitN);
+    const creditUsed = this.faMoney(_usedN);
+    const creditRemaining = this.faMoney(_remN);
+    const _pctN = _limitN ? Math.round(_usedN/_limitN*100) : 0;
+    const creditPct = (isAR ? String(_pctN).replace(/[0-9]/g, d => "٠١٢٣٤٥٦٧٨٩"[Number(d)]) : this.toFa(_pctN)) + (isAR ? "٪" : "%");
+    const creditBarW = _pctN + "%";
+    // financial activity report (new entries first, then seed history)
+    const _actIcons = { topup: mi('<path d="M12 5v14M5 12h14"/>'), payment: mi('<path d="M5 12h14"/>') };
+    const activityRows = _log.map(a => ({ title:a.title, meta:a.meta||"", date:a.date, amount:a.amount, color: a.sign>0 ? "#1f8a5b" : "#e8553a", bg: a.sign>0 ? "#eaf7f0" : "#fdecea", icon: _actIcons[a.kind] || _actIcons.payment }))
+      .concat(transactions.map(t => ({ title:t.title, meta:"", date:t.date, amount:t.amount, color:t.color, bg:t.bg, icon:t.icon })));
+    // clickable report cards → detail sub-views
+    const _totalSalesN = salesRows.reduce((s,r)=>s+r.amt, 0);
+    const rv = this.state.reportView || "overview";
+    const setRV = (k) => () => this.setState({ reportView: k });
+
+    // web service (purchase-first: credentials only after approval)
+    const wsStMeta = noMock
+      ? { active:{label:"Approved · Active",color:"#1f8a5b",bg:"#eaf7f0"}, submitted:{label:"Under review",color:"#e8893a",bg:"#fdf1e7"}, review:{label:"Under review",color:"#e8893a",bg:"#fdf1e7"}, referred:{label:"Referred",color:"#7c3aed",bg:"#f2ecfb"}, rejected:{label:"Rejected",color:"#e8553a",bg:"#fdecea"} }
+      : { active:{label:"تأییدشده · فعال",color:"#1f8a5b",bg:"#eaf7f0"}, submitted:{label:"در حال بررسی",color:"#e8893a",bg:"#fdf1e7"}, review:{label:"در حال بررسی",color:"#e8893a",bg:"#fdf1e7"}, referred:{label:"ارجاع‌شده",color:"#7c3aed",bg:"#f2ecfb"}, rejected:{label:"رد شده",color:"#e8553a",bg:"#fdecea"} };
+    const _wsAll = (window.SiteData ? window.SiteData.getWebServiceRequests() : []).filter(r => r.agencyId === "AG-1");
+    const _fmtWs = (n) => { const v = Math.round(Number(n||0)).toLocaleString("en-US"); return isEN ? (v + " Toman") : (v + " تومان"); };
+    const _wsTypeEN = { "جستجو و رزرو پرواز (API)":"Flight search & booking (API)", "استعلام صندلی و اعتبار (API)":"Allocated-seat inquiry (API)", "استعلام اعتبار و فاکتور (API)":"Credit & invoice inquiry (API)", "فید گزارش فروش (API)":"Sales report feed (API)" };
+    const _wsPlanEN = { "شش‌ماهه":"6-month", "یک‌ساله":"1-year", "دوساله":"2-year" };
+    const _wsDateEN = { "امروز":"Today", "دیروز":"Yesterday" };
+    const trWsField = (v, map) => isEN ? (map[v] || v) : v;
+    const trWsDate = (v) => { if (!isEN || !v) return v; return v.replace(/امروز|دیروز/g, (m) => _wsDateEN[m] || m); };
+    const wsReqRows = _wsAll.map(r => { const m=wsStMeta[r.status]||wsStMeta.submitted; return { id:r.id, type:trWsField(r.type,_wsTypeEN), plan:trWsField(r.plan,_wsPlanEN), priceLabel:_fmtWs(r.price), date:trWsDate(r.at), stLabel:m.label, stColor:m.color, stBg:m.bg }; });
+    const _wsActiveRec = _wsAll.find(r => r.status==="active");
+    const wsActive = !!_wsActiveRec;
+    const wsPending = _wsAll.some(r => r.status==="submitted" || r.status==="review" || r.status==="referred");
+    const wsKeyFull = "ws_live_4471_8f2a9c1d7b6e4a05";
+    const wsTypeOptions = noMock
+      ? [ {value:"search",label:"Flight search & booking (API)"}, {value:"seat",label:"Allocated-seat inquiry (API)"}, {value:"credit",label:"Credit & invoice inquiry (API)"}, {value:"report",label:"Sales report feed (API)"} ]
+      : [ {value:"search",label:"جستجو و رزرو پرواز (API)"}, {value:"seat",label:"استعلام صندلی و اعتبار (API)"}, {value:"credit",label:"استعلام اعتبار و فاکتور (API)"}, {value:"report",label:"فید گزارش فروش (API)"} ];
+    const _planDefs = noMock
+      ? [ {v:"m6",label:"6-month",base:26000000}, {v:"y1",label:"1-year",base:48000000}, {v:"y2",label:"2-year",base:84000000} ]
+      : [ {v:"m6",label:"شش‌ماهه",base:26000000}, {v:"y1",label:"یک‌ساله",base:48000000}, {v:"y2",label:"دوساله",base:84000000} ];
+    const wsPlanOptions = _planDefs.map(p => { const on=this.state.wsReqPlan===p.v; return { label:p.label, priceLabel:_fmtWs(p.base), border:on?"var(--accent)":"#e1ebf6", bg:on?"#eaf2fb":"#f6f8fb", onPick:()=>this.setState({wsReqPlan:p.v}) }; });
+    const _curPlan = _planDefs.find(p=>p.v===this.state.wsReqPlan) || _planDefs[1];
+    const wsPriceLabel = _fmtWs(_curPlan.base);
+
+    const purchasedWs = wsReqRows;
+    const purchasedCount = wsReqRows.length;
+    const reportCards = [
+      { key:"sales", label: noMock?"Total sales":"جمع فروش", value: SETUP ? (isEN?"0 Toman":"۰ تومان") : "۲۱,۰۰۰,۰۰۰,۰۰۰ تومان", sub: noMock?"View issued tickets":"مشاهده بلیط‌های صادرشده", color:"#1668c4", bg:"#eef4fb", icon:mi('<path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/>'), onOpen:setRV("sales") },
+      { key:"perflight", label: noMock?"Sales per flight":"فروش هر پرواز", value:(isAR ? String(perFlightRows.length).replace(/[0-9]/g, d => "٠١٢٣٤٥٦٧٨٩"[Number(d)]) : this.toFa(perFlightRows.length))+(noMock?" active routes":" مسیر فعال"), sub: noMock?"Sales broken down by route":"فروش به تفکیک مسیر", color:"#1f8a5b", bg:"#eaf7f0", icon:mi('<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>'), onOpen:setRV("perflight") },
+      { key:"webservice", label: noMock?"Purchased web services":"وب‌سرویس‌های خریداری‌شده", value:(isAR ? String(purchasedCount).replace(/[0-9]/g, d => "٠١٢٣٤٥٦٧٨٩"[Number(d)]) : this.toFa(purchasedCount))+(noMock?" services":" سرویس"), sub: noMock?"Purchased plans":"پلن‌های خریداری‌شده", color:"#7c3aed", bg:"#f2ecfb", icon:mi('<path d="M8 8l-4 4 4 4"/><path d="M16 8l4 4-4 4"/><path d="M13.5 6l-3 12"/>'), onOpen:setRV("webservice") },
+      { key:"invoices", label: noMock?"Unpaid invoices":"فاکتورهای پرداخت‌نشده", value:(isAR ? String(invUnpaidCount).replace(/[0-9]/g, d => "٠١٢٣٤٥٦٧٨٩"[Number(d)]) : this.toFa(invUnpaidCount))+(noMock?" invoices":" فاکتور"), sub: noMock?"Awaiting payment from credit":"در انتظار پرداخت از اعتبار", color:"#e8893a", bg:"#fdf1e7", icon:mi('<path d="M5 3v18l2.5-1.5L10 21l2-1.5L14 21l2.5-1.5L19 21V3l-2.5 1.5L14 3l-2 1.5L10 3 7.5 4.5z"/><path d="M9 8h6M9 12h6"/>'), onOpen:setRV("invoices") },
+    ];
+    const _rvTitles = noMock
+      ? { sales:"Total sales — issued tickets", perflight:"Sales per flight — by route", webservice:"Purchased web services", invoices:"Unpaid invoices" }
+      : { sales:"جمع فروش — بلیط‌های صادرشده", perflight:"فروش هر پرواز — به تفکیک مسیر", webservice:"وب‌سرویس‌های خریداری‌شده", invoices:"فاکتورهای پرداخت‌نشده" };
+    const isMobile = this.state.isMobile;
+    return {
+      isMobile, notMobile: !isMobile,
+      rootCols: isMobile ? "1fr" : "248px 1fr",
+      mainPad: isMobile ? "16px 14px 80px" : "16px 21px 34px",
+      kpiCols: isMobile ? "repeat(2,1fr)" : "repeat(4,1fr)",
+      dashCols: isMobile ? "1fr" : "1.6fr 1fr",
+      creditSummaryCols: isMobile ? "1fr" : "repeat(3,1fr)",
+      wsCols: isMobile ? "1fr" : "1fr 1fr",
+      inboxCols: isMobile ? "1fr" : "1fr 1fr",
+      profileCols: isMobile ? "1fr" : "1fr 1fr",
+      reportCardCols: isMobile ? "repeat(2,1fr)" : "repeat(2,1fr)",
+      mobileMenuOpen: this.state.mobileMenuOpen,
+      agencyName: this.state.agencyName || (isEN?'Persian Travel Agency':'آژانس مسافرتی پارسیان'),
+      toggleMobileMenu: () => this.setState(s => ({ mobileMenuOpen: !s.mobileMenuOpen })),
+      headerH: isMobile ? "58px" : "70px",
+      headerBarBg: isMobile ? "var(--accent,#1668c4)" : "#fff",
+      headerBorderB: isMobile ? "none" : "1px solid #e6eaf0",
+      logoTextColor: isMobile ? "#fff" : "#16202e",
+      logoSquareBg: isMobile ? "#fff" : "var(--accent,#1668c4)",
+      logoIconColor: isMobile ? "var(--accent,#1668c4)" : "#fff",
+      hamburgerColor: isMobile ? "#fff" : "#0d2640",
+      hamburgerDisplay: isMobile ? "flex" : "none",
+      navDisplay: isMobile ? "none" : "flex",
+      mobileIconRowDisplay: isMobile ? "flex" : "none",
+      notifOpen: this.state.notifOpen,
+      toggleNotif: () => this.setState(s => ({ notifOpen: !s.notifOpen })),
+      noNotifsLabel: isEN?"No notifications yet.":"هنوز اعلانی وجود ندارد.",
+      notifs: notifsList, hasNotifs: notifsList.length>0, noNotifs: notifsList.length===0, notifCount: String(notifsList.length),
+      userMenuOpen: this.state.userMenuOpen,
+      toggleUserMenu: () => this.setState(s => ({ userMenuOpen: !s.userMenuOpen })),
+      closeUserMenu: () => this.setState({ userMenuOpen: false }),
+      pageTitle: titles[tab], pageSub: subs[tab],
+      navItems,
+      showWebservice: tab==="webservice",
+      showApiDocs: tab==="apidocs",
+      invoiceRows, invUnpaidCount: this.toFa(invUnpaidCount), hasUnpaid: invUnpaidCount>0,
+      wsReqRows, wsNoRequests: _wsAll.length===0,
+      wsActive, wsInactive: !wsActive, wsPending,
+      wsActivePlan: _wsActiveRec ? (_wsActiveRec.type + " · " + _wsActiveRec.plan) : (isEN ? "Your agency's dedicated API access" : "دسترسی اختصاصی API آژانس شما"),
+      wsKeyVisible: this.state.wsKeyVisible, wsKeyShown: this.state.wsKeyVisible ? wsKeyFull : "•••• •••• •••• ••••",
+      toggleWsKey: () => this.setState(s=>({ wsKeyVisible: !s.wsKeyVisible })),
+      copyWsKey: () => this.toast(isEN?"Web service key copied":"کلید وب‌سرویس کپی شد"),
+      openWsDocs: () => this.setState({ tab: "apidocs" }),
+      wsBaseUrl: "https://api.aseman.ir/agency/v1",
+      topupModalTitle: isEN?"Add Account Credit":"افزایش اعتبار حساب",
+      topupModalDesc: isEN?"Enter the amount to add to your credit. Once confirmed, the credit is added to the agency wallet and the transaction is logged in \"Financial activity report\".":"مبلغ مورد نظر برای افزایش اعتبار را وارد کنید. پس از تأیید، اعتبار به کیف پول آژانس افزوده و تراکنش در «گزارش فعالیت مالی» ثبت می‌شود.",
+      topupAmountLabel: isEN?"Amount (Toman)":"مبلغ (تومان)",
+      topupPlaceholder: isEN?"e.g. 30,000,000":"مثلاً ۳۰۰۰۰۰۰۰",
+      cancelLabel2: isEN?"Cancel":"انصراف",
+      confirmAddCreditLabel: isEN?"Confirm & Add Credit":"تأیید و افزایش اعتبار",
+      inboxTitle: isEN?"Inbox":"صندوق پیام‌ها",
+      b2bPartnerLabel: isEN?"B2B Partner":"همکار B2B",
+      activeCodeLabel: isEN?"● Active · Code 4471":"● فعال · کد ۴۴۷۱",
+      newMessageLabel: isEN?"New message":"پیام جدید",
+      salesTrendTitle: isEN?"Agency sales trend":"روند فروش آژانس",
+      salesTrendSub: isEN?"Last 6 months · Toman":(isAR?"آخر ٦ أشهر · تومان":"۶ ماه اخیر · تومان"),
+      creditRemainingCardLabel: isEN?"Credit remaining":"اعتبار باقیمانده",
+      creditLimitLine: isEN ? ("of "+creditLimit+" limit") : (isAR ? ("من سقف "+creditLimit) : ("از سقف "+creditLimit)),
+      usedLabel: isEN?"Used:":(isAR?"المستخدم:":"مصرف‌شده:"),
+      viewStatementLabel: isEN?"View statement":(isAR?"عرض كشف الحساب":"مشاهده صورت‌حساب"),
+      demandLabel: isEN?"Your demand":"تقاضای شما",
+      seatsInfoBanner: isEN?"Seats allocated by the airline based on your agency's demand, for flights whose operating license has been issued. This capacity is available for you to sell.":"صندلی‌های تخصیص‌یافته توسط ایرلاین بر اساس تقاضای آژانس شما، برای پروازهایی که مجوز پروازی آن‌ها صادر شده است. این ظرفیت برای فروش در اختیار شماست.",
+      wsInfoBanner: isEN?"To use the web service you must first purchase a plan; your request is sent to the admin, and after review and approval, the access key and API documentation are activated and shown.":"برای استفاده از وب‌سرویس ابتدا باید یک پلن خریداری کنید؛ درخواست شما برای ادمین ارسال می‌شود و پس از بررسی و تأیید، کلید دسترسی و مستندات API فعال و نمایش داده می‌شود.",
+      allocatedLabel: isEN?"Allocated":"تخصیص‌یافته",
+      soldLabel: isEN?"Sold":"فروخته‌شده",
+      remainingLabel: isEN?"Remaining":"باقیمانده",
+      flightLicenseLabel: isEN?"Flight license issued":"مجوز پرواز صادر شد",
+      noMessages: !hasMessages, noMessagesLabel: isEN?"No messages yet.":"هنوز پیامی وجود ندارد.",
+      replyPlaceholder: isEN?"Write your reply…":"پاسخ خود را بنویسید…",
+      sendReplyLabel: isEN?"Send reply":"ارسال پاسخ",
+      creditBalanceTitle: isEN?"Credit & Balance":"اعتبار و مانده حساب",
+      addCreditLabel: isEN?"Add Credit":"افزایش اعتبار",
+      creditLimitLabel: isEN?"Credit limit":"سقف اعتبار",
+      creditUsedLabel: isEN?"Used":(isAR?"المستخدم":"مصرف‌شده"),
+      creditRemainingLabel: isEN?"Available balance":"مانده قابل استفاده",
+      invoicesTitle: isEN?"Invoices issued by the airline":"فاکتورهای صادرشده توسط ایرلاین",
+      invoicesPendingLabel: isEN?"invoices pending payment":"فاکتور در انتظار پرداخت",
+      issuedOnLabel: isEN?"Issued":"صدور", dueOnLabel: isEN?"Due":"سررسید",
+      payFromCreditLabel: isEN?"Pay from credit":"پرداخت از اعتبار",
+      paidLabel: isEN?"Paid":"پرداخت‌شده",
+      recentActivityTitle: isEN?"Recent account activity":"گردش حساب اخیر",
+      financialActivityTitle: isEN?"Financial activity report":"گزارش فعالیت مالی",
+      financialActivitySub: isEN?"Invoice payments & credit top-ups":"پرداخت فاکتورها و افزایش اعتبار",
+      wsActiveTitle: isEN?"Active web service connection":"اتصال فعال وب‌سرویس",
+      wsActiveBadge: isEN?"● Active":"● فعال",
+      wsBaseUrlLabel2: isEN?"Base URL":"آدرس پایه (Base URL)",
+      wsApiKeyLabel: isEN?"API Key":"کلید دسترسی (API Key)",
+      wsShowLabel: isEN?"Show":"نمایش", wsCopyLabel: isEN?"Copy":"کپی",
+      wsViewDocsLabel: isEN?"View API Documentation":"مشاهده مستندات API",
+      wsPendingTitle: isEN?"Your purchase request is under review":"درخواست خرید شما در حال بررسی است",
+      wsPendingSub: isEN?"Once approved by the admin and relevant managers, the web service will be activated and the access key shown.":"پس از تأیید توسط ادمین و مدیران مربوطه، وب‌سرویس فعال و کلید دسترسی نمایش داده می‌شود.",
+      wsPendingBadge: isEN?"Awaiting approval":"در انتظار تأیید",
+      wsNewPurchaseTitle: isEN?"Purchase a new web service":"خرید وب‌سرویس جدید",
+      wsNewPurchaseSub: isEN?"Choose and purchase a plan to send the request to the admin.":"پلن مورد نظر را انتخاب و خریداری کنید تا درخواست برای ادمین ارسال شود.",
+      wsTypeLabel: isEN?"Web service type":"نوع وب‌سرویس",
+      wsDurationLabel: isEN?"Subscription duration":"مدت اشتراک",
+      wsNoteLabel: isEN?"Request notes":"توضیحات درخواست",
+      wsNotePlaceholder: isEN?"Describe the intended use and connected system…":"کاربرد مورد نظر و سیستم متصل‌شونده را توضیح دهید…",
+      wsPayableLabel: isEN?"Payable amount":"مبلغ قابل پرداخت",
+      tomanLabel: isEN?"Toman":"تومان",
+      wsSubmitLabel: isEN?"Purchase & submit request":"خرید و ثبت درخواست",
+      wsMyRequestsTitle: isEN?"My purchase requests":"درخواست‌های خرید من",
+      wsNoRequestsLabel: isEN?"You haven't submitted any purchase request yet.":"هنوز درخواست خریدی ثبت نکرده‌اید.",
+      ...this.buildApiDocs(isEN),
+      wsTypeOptions, wsPlanOptions, wsPriceLabel, wsReqType: this.state.wsReqType, wsReqNote: this.state.wsReqNote, wsReqErr: this.state.wsReqErr,
+      onWsReqType:(e)=>this.setState({ wsReqType:e.target.value }), onWsReqNote:(e)=>this.setState({ wsReqNote:e.target.value, wsReqErr:false }),
+      submitWsReq: () => this.submitWsReq(),
+      showDashboard: tab==="dashboard", showSeats: tab==="seats", showCredit: tab==="credit",
+      showReport: tab==="report", showInbox: tab==="inbox", showProfile: tab==="profile",
+      kpis, salesBars,
+      creditLimit, creditUsed, creditRemaining, creditPct, creditBarW,
+      openTopup: () => this.setState({ topupOpen:true, topupAmount:"" }),
+      closeTopup: () => this.setState({ topupOpen:false }),
+      topupOpen: this.state.topupOpen, topupAmount: this.state.topupAmount,
+      onTopupAmount: (e) => this.setState({ topupAmount: e.target.value }),
+      submitTopup: () => this.submitTopup(),
+      stopProp: (e) => { if(e && e.stopPropagation) e.stopPropagation(); },
+      goCredit: () => this.setState({ tab:"credit" }),
+      seatFlights, transactions, reportKpis, salesRows,
+      reportCards, reportOverview: rv==="overview",
+      reportDetail: rv!=="overview", reportDetailTitle: _rvTitles[rv] || "",
+      rvSales: rv==="sales", rvPerFlight: rv==="perflight", rvWebservice: rv==="webservice", rvInvoices: rv==="invoices",
+      backToReport: () => this.setState({ reportView:"overview" }),
+      perFlightRows, activityRows, hasActivity: activityRows.length>0,
+      purchasedWs, purchasedNone: purchasedCount===0,
+      unpaidInvoiceRows, unpaidNone: unpaidInvoiceRows.length===0,
+      exportExcel: () => this.toast(isEN?"Excel export is being prepared…":"در حال آماده‌سازی خروجی اکسل…"),
+      messages,
+      openMsgFrom: cur.from, openMsgInitial: cur.initial, openMsgTime: cur.time,
+      openMsgSubject: cur.subject, openMsgBody: cur.body,
+      openMsgTag: cur.tag, openMsgTagColor: cur.tagColor, openMsgTagBg: cur.tagBg,
+      replyText: this.state.replyText,
+      onReply: (e) => this.setState({ replyText: e.target.value }),
+      sendReply: () => { if(!(this.state.replyText||"").trim()) return; this.setState({ replyText:"" }); this.toast((isEN?"Reply sent to “":"پاسخ برای «") + cur.from + (isEN?"”":"» ارسال شد")); },
+      profileFields, documents,
+      isEN, pageDir: isEN ? "ltr" : "rtl", langLabel: isEN ? "EN" : (this.state.lang === "ar" ? "AR" : "FA"),
+      toggleLang: () => { const nl = this.state.lang === "fa" ? "en" : (this.state.lang === "en" ? "ar" : "fa"); try { localStorage.setItem("blujet_lang", nl); } catch(e) {} this.setState({ lang: nl }); },
+      cmTitleLabel: isEN?"New Message to Management":"پیام جدید به مدیریت",
+      cmRecipientLabel: isEN?"Recipient":"گیرنده", cmRecipientPlaceholder: isEN?"Select recipient…":"انتخاب گیرنده…",
+      cmSubjectLabel: isEN?"Subject":"موضوع", cmSubjectPlaceholder: isEN?"Message subject":"موضوع پیام",
+      cmBodyLabel: isEN?"Message":"متن پیام", cmBodyPlaceholder: isEN?"Write your message…":"متن پیام خود را بنویسید…",
+      cmErrLabel: isEN?"Please fill in the recipient, subject, and message.":"لطفاً گیرنده، موضوع و متن پیام را کامل کنید.",
+      cmSendLabel: isEN?"Send Message":"ارسال پیام", cmCancelLabel: isEN?"Cancel":"انصراف",
+      navFlights: isEN ? "Flights" : "پرواز", navDestinations: isEN ? "Destinations" : "مقاصد پروازی", navLoyalty: isEN ? "Loyalty" : "باشگاه مشتریان", navSupport: isEN ? "Support" : "پشتیبانی",
+      menuTitle: isEN ? "Menu" : "منو",
+      chevronSvg: { __html: isEN
+        ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>'
+        : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>' },
+      hdrNotifications: isEN ? "Notifications" : "اعلان‌ها", lblNewCount: isEN ? `${notifsList.length} new` : `${notifsList.length} جدید`,
+      lblAgencyPanel: isEN ? "Agency panel" : "پنل آژانس", lblTripsBooking: isEN ? "Trips & Booking" : "سفرها و مدیریت رزرو", btnLogout: isEN ? "Log out" : "خروج از حساب",
+      doLogout: () => this.doLogout(), confirmLogout: () => this.confirmLogout(), cancelLogout: () => this.setState({ logoutConfirm: false }),
+      logoutConfirm: this.state.logoutConfirm,
+      hdrLogoutConfirm: isEN ? "Log Out of Your Account" : (isAR ? "تسجيل الخروج من الحساب" : "خروج از حساب کاربری"),
+      subLogoutConfirm: isEN ? "Are you sure you want to log out of your account?" : (isAR ? "هل أنت متأكد أنك تريد تسجيل الخروج من حسابك؟" : "آیا مطمئن هستید که می‌خواهید از حساب خود خارج شوید؟"),
+      profileTitle: isEN ? "Agency profile" : "پروفایل آژانس", accountActiveLabel: isEN ? "● Active account · Member since 2023" : "● حساب فعال · عضو از ۱۴۰۲",
+      documentsTitle: isEN ? "Agency documents" : "مدارک آژانس", uploadDocLabel: isEN ? "Upload new document" : "بارگذاری مدرک جدید",
+      onUploadDoc: (e) => { const f=(e.target.files||[])[0]; if(f) this.toast(isEN?("Document \u201c"+f.name+"\u201d uploaded"):("مدرک «"+f.name+"» بارگذاری شد")); e.target.value=""; },
+      stop: (e) => e.stopPropagation(),
+      composeOpen: this.state.composeOpen,
+      openCompose: () => this.setState({ composeOpen:true, cmRecipient:"", cmSubject:"", cmBody:"", cmErr:false }),
+      closeCompose: () => this.setState({ composeOpen:false }),
+      recipients: ["CEO","Commercial Manager","Finance Manager","Site Admin"],
+      cmRecipient: this.state.cmRecipient, cmSubject: this.state.cmSubject, cmBody: this.state.cmBody, cmErr: this.state.cmErr,
+      onCmRecipient: (e) => this.setState({ cmRecipient:e.target.value, cmErr:false }),
+      onCmSubject: (e) => this.setState({ cmSubject:e.target.value, cmErr:false }),
+      onCmBody: (e) => this.setState({ cmBody:e.target.value, cmErr:false }),
+      sendCompose: () => {
+        const r=this.state.cmRecipient, s=(this.state.cmSubject||"").trim(), b=(this.state.cmBody||"").trim();
+        if(!r||!s||!b){ this.setState({ cmErr:true }); return; }
+        this.setState({ composeOpen:false }); this.toast((isEN?"Message sent to “":"پیام برای «")+r+(isEN?"”":"» ارسال شد"));
+      },
+      toast: this.state.toast, hasToast: !!this.state.toast,
+      footerTagline: isEN ? "Book domestic and international flights online at the best prices with loyalty rewards." : "رزرو آنلاین بلیط پروازهای داخلی و بین‌المللی با بهترین قیمت و خدمات باشگاه مشتریان.",
+      dlAppStore: () => this.toast(isEN ? "App Store download link will be sent to you" : "لینک دانلود از App Store به‌زودی فعال می‌شود"),
+      dlGooglePlay: () => this.toast(isEN ? "Google Play download link will be sent to you" : "لینک دانلود از Google Play به‌زودی فعال می‌شود"),
+      badgeTrust: isEN ? "E-Trust Seal" : "نماد اعتماد الکترونیکی",
+      badgeTravelAssoc: isEN ? "Travel Agents Guild" : "انجمن صنفی دفاتر خدمات مسافرتی",
+      badgeSamandehi: isEN ? "Samandehi" : "ساماندهی",
+      badgeIata: isEN ? "IATA Member" : "عضو IATA",
+      footerColServices: isEN ? "Services" : "خدمات",
+      footerColCompany: isEN ? "Company" : "شرکت",
+      footerBookFlight: isEN ? "Book a Flight" : "رزرو پرواز",
+      footerManageBooking: isEN ? "Manage Booking" : "مدیریت رزرو",
+      footerFlightStatus: isEN ? "Flight Status" : "وضعیت پرواز",
+      footerAbout: isEN ? "About Us" : "درباره ما",
+      footerContact: isEN ? "Contact Us" : "تماس با ما",
+      navTravelInfo: isEN ? "Terms & conditions" : "قوانین و مقررات",
+      footerHelpCenter: isEN ? "Help Center" : "مرکز راهنما",
+      footerFaq: isEN ? "FAQ" : "سوالات متداول",
+      sitePhone: isEN ? "021 - 91000000" : "۰۲۱ - ۹۱۰۰۰۰۰۰",
+      phoneAlign: isEN ? "left" : "right",
+      footerCopyright: isEN ? "© 2026 blujet. All rights reserved." : "© ۱۴۰۵ blujet. تمامی حقوق محفوظ است.",
+    };
+  }
+}
+</script>
+</body>
+</html>

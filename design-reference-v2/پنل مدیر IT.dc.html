@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<template id="__bundler_thumbnail" data-bg-color="#0f1623">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#0f1623"/>
+    <circle cx="600" cy="360" r="150" fill="#3b82f6"/>
+    <text x="600" y="430" font-size="170" text-anchor="middle" fill="#fff" font-family="sans-serif">✈</text>
+    <text x="600" y="600" font-size="74" text-anchor="middle" fill="#fff" font-family="Vazirmatn,sans-serif" font-weight="900">پنل مدیر IT</text>
+  </svg>
+</template>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box;}html,body{margin:0;}</style>
+<script src="./site-data.js"></script>
+</helmet>
+
+<div dir="rtl" style="font-family:Vazirmatn,sans-serif; background:#0f1623; color:#e7ecf3; min-height:100vh; --accent:#3b82f6; display:grid; grid-template-columns:248px 1fr;">
+
+  <!-- SIDEBAR -->
+  <aside style="background:#141d2e; border-left:1px solid #1f2a3d; padding:15px 11px; display:flex; flex-direction:column; gap:4px; position:sticky; top:0; height:100vh;">
+    <div style="display:flex; align-items:center; gap:9px; padding:7px 8px 12px;">
+      <div style="width:38px; height:38px; border-radius:10px; background:var(--accent,#3b82f6); display:flex; align-items:center; justify-content:center; color:#fff;"><svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M21 15.5v-1.6l-7.5-4.6V4.2a1.5 1.5 0 0 0-3 0v5.1L3 13.9v1.6l7.5-2.3v4.4l-2 1.4v1.3l3.5-1 3.5 1v-1.3l-2-1.4v-4.4L21 15.5z"/></svg></div>
+      <div style="line-height:1.3;"><div style="font-weight:900; font-size:15.5px; color:#fff;">blujet</div><div style="font-size:10px; color:#6b7b94;">پنل فناوری اطلاعات</div></div>
+    </div>
+
+    <div style="padding:0 5px 10px;">
+      <label style="display:block; font-size:10px; color:#6b7b94; margin-bottom:6px; padding-right:3px;">نقش این پنل</label>
+      <div style="display:flex; align-items:center; gap:7px; background:#18223a; border:1px solid #2a3a55; border-radius:10px; padding:9px 11px;">
+        <span style="width:8px; height:8px; border-radius:50%; background:var(--accent,#3b82f6); flex:none;"></span>
+        <span style="font-size:12px; font-weight:800; color:#e7ecf3;">مدیر فناوری اطلاعات</span>
+      </div>
+    </div>
+
+    <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="8">
+      <div onClick="{{ n.onClick }}" style="display:flex; align-items:center; gap:10px; padding:11px 11px; border-radius:11px; cursor:pointer; font-size:14px; font-weight:{{ n.weight }}; color:{{ n.color }}; background:{{ n.bg }};">
+        <span style="width:20px; height:20px; display:flex;" dangerouslySetInnerHTML="{{ n.svg }}"></span>
+        <span style="flex:1;">{{ n.label }}</span>
+        <sc-if value="{{ n.badge }}" hint-placeholder-val="{{false}}"><span style="font-size:10px; font-weight:800; color:#fff; background:#f87171; min-width:20px; height:20px; padding:0 5px; border-radius:10px; display:flex; align-items:center; justify-content:center;">{{ n.badgeNum }}</span></sc-if>
+      </div>
+    </sc-for>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main style="padding:18px 21px 34px; min-width:0; zoom:1.12;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; gap:13px; flex-wrap:wrap;">
+      <div><h1 style="font-size:20.5px; font-weight:900; color:#fff; margin:0;">{{ pageTitle }}</h1><div style="font-size:11.5px; color:#6b7b94; margin-top:4px;">{{ pageSub }}</div></div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <div style="height:42px; background:#18223a; border:1px solid #28344c; border-radius:10px; padding:0 11px; display:flex; align-items:center; gap:7px; color:#34d399; font-size:11.5px; font-weight:700;"><span style="width:8px; height:8px; border-radius:50%; background:#34d399;"></span>همه سامانه‌ها سالم</div>
+        <div style="width:42px; height:42px; border-radius:10px; background:#18223a; border:1px solid #28344c; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#9fb0c7;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.5 21a2 2 0 0 1-3 0"/></svg></div>
+      </div>
+    </div>
+
+    <!-- ============ DASHBOARD ============ -->
+    <sc-if value="{{ showDashboard }}" hint-placeholder-val="{{true}}">
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:13px; margin-bottom:18px;">
+        <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+          <div onClick="{{ k.onClick }}" style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:14px; cursor:pointer;" style-hover="border-color:#3b82f6;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+              <span style="width:40px; height:40px; border-radius:11px; background:{{ k.iconBg }}; color:{{ k.iconColor }}; display:flex; align-items:center; justify-content:center;" dangerouslySetInnerHTML="{{ k.svg }}"></span>
+              <span style="font-size:11px; font-weight:700; color:{{ k.trendColor }};">{{ k.trend }}</span>
+            </div>
+            <div style="font-size:22.5px; font-weight:900; color:#fff;">{{ k.value }}</div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:3px;"><div style="font-size:11.5px; color:#6b7b94;">{{ k.label }}</div><span style="font-size:10px; color:var(--accent,#3b82f6); font-weight:700;">{{ k.cta }}</span></div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1.3fr 1fr; gap:15px; align-items:start;">
+        <!-- service health -->
+        <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:15px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+            <h3 style="font-size:14.5px; font-weight:800; color:#fff; margin:0;">سلامت سرویس‌ها</h3>
+            <span onClick="{{ goServices }}" style="font-size:11.5px; color:var(--accent,#3b82f6); font-weight:700; cursor:pointer;">مدیریت سرویس‌ها ←</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:9px;">
+            <sc-for list="{{ healthList }}" as="s" hint-placeholder-count="6">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="width:9px; height:9px; border-radius:50%; background:{{ s.dot }}; flex:none;"></span>
+                <span style="flex:1; font-size:12px; color:#cdd6e3;">{{ s.name }}</span>
+                <span style="font-size:11px; font-family:'Roboto Mono',monospace; color:#6b7b94;">{{ s.uptime }}</span>
+                <span style="font-size:10.5px; font-weight:700; color:{{ s.statusColor }}; background:{{ s.statusBg }}; padding:3px 9px; border-radius:18px;">{{ s.statusLabel }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- resources + events -->
+        <div style="display:flex; flex-direction:column; gap:15px;">
+          <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:15px;">
+            <h3 style="font-size:14.5px; font-weight:800; color:#fff; margin:0 0 16px;">استفاده از منابع سرور</h3>
+            <div style="display:flex; flex-direction:column; gap:11px;">
+              <sc-for list="{{ resourceBars }}" as="r" hint-placeholder-count="4">
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:11.5px; margin-bottom:6px;"><span style="color:#cdd6e3;">{{ r.label }}</span><span style="color:#9fb0c7; font-weight:700;">{{ r.pct }}</span></div>
+                  <div style="height:8px; background:#1f2a3d; border-radius:6px; overflow:hidden;"><div style="width:{{ r.width }}; height:100%; background:{{ r.color }}; border-radius:6px;"></div></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:15px;">
+            <h3 style="font-size:14.5px; font-weight:800; color:#fff; margin:0 0 14px;">رویدادهای اخیر</h3>
+            <sc-if value="{{ eventsEmpty }}" hint-placeholder-val="{{false}}"><div style="text-align:center; padding:14px; color:#6b7b94; font-size:11.5px;">رویدادی ثبت نشده است.</div></sc-if>
+            <div style="display:flex; flex-direction:column; gap:11px;">
+              <sc-for list="{{ events }}" as="e" hint-placeholder-count="4">
+                <div style="display:flex; gap:9px;">
+                  <span style="width:8px; height:8px; border-radius:50%; background:{{ e.color }}; margin-top:6px; flex:none;"></span>
+                  <div style="flex:1;"><div style="font-size:11.5px; color:#cdd6e3; line-height:1.6;">{{ e.text }}</div><div style="font-size:10px; color:#6b7b94; margin-top:2px;">{{ e.time }}</div></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ USERS ============ -->
+    <sc-if value="{{ showUsers }}" hint-placeholder-val="{{false}}">
+      <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:15px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; flex-wrap:wrap; gap:10px;">
+          <div><h3 style="font-size:14.5px; font-weight:800; color:#fff; margin:0;">کاربران و حساب‌های سامانه</h3><div style="font-size:11.5px; color:#6b7b94; margin-top:4px;">مدیریت یوزرها، نقش‌ها و بازنشانی رمز عبور — همه حساب‌ها زیر نظر واحد IT</div></div>
+          <span onClick="{{ toggleAdd }}" style="display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; background:var(--accent,#3b82f6); color:#fff; padding:8px 12px; border-radius:10px; cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>افزودن کاربر</span>
+        </div>
+
+        <sc-if value="{{ addOpen }}" hint-placeholder-val="{{false}}">
+          <div style="border:1px dashed #2a3a55; background:#18223a; border-radius:14px; padding:14px; margin:16px 0 6px;">
+            <div style="font-size:12.5px; font-weight:800; color:#fff; margin-bottom:14px;">ایجاد کارمند جدید</div>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:11px;">
+              <div><div style="font-size:10.5px; color:#9fb0c7; margin-bottom:6px;">نام و نام خانوادگی *</div><input value="{{ nuName }}" onInput="{{ onNuName }}" placeholder="مثلاً رضا کاظمی" style="width:100%; box-sizing:border-box; height:42px; border:1px solid #28344c; border-radius:9px; background:#0f1623; color:#e7ecf3; font-size:12px; padding:0 11px; font-family:inherit; outline:none;" /></div>
+              <div><div style="font-size:10.5px; color:#9fb0c7; margin-bottom:6px;">نام کاربری *</div><input value="{{ nuUsername }}" onInput="{{ onNuUsername }}" placeholder="user.name" dir="ltr" style="width:100%; box-sizing:border-box; height:42px; border:1px solid #28344c; border-radius:9px; background:#0f1623; color:#e7ecf3; font-size:12px; padding:0 11px; text-align:right; font-family:'Roboto Mono',monospace; outline:none;" /></div>
+              <div><div style="font-size:10.5px; color:#9fb0c7; margin-bottom:6px;">سمت / نقش</div><select value="{{ nuRole }}" onChange="{{ onNuRole }}" style="width:100%; box-sizing:border-box; height:42px; border:1px solid #28344c; border-radius:9px; background:#0f1623; color:#e7ecf3; font-size:12px; padding:0 11px; font-family:inherit; outline:none; cursor:pointer;"><sc-for list="{{ nuRoleOptions }}" as="r" hint-placeholder-count="4"><option value="{{ r.v }}">{{ r.v }}</option></sc-for></select></div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:11px; margin-top:11px;">
+              <div><div style="font-size:10.5px; color:#9fb0c7; margin-bottom:6px;">رتبه سازمانی</div><select value="{{ nuRank }}" onChange="{{ onNuRank }}" style="width:100%; box-sizing:border-box; height:42px; border:1px solid #28344c; border-radius:9px; background:#0f1623; color:#e7ecf3; font-size:12px; padding:0 11px; font-family:inherit; outline:none; cursor:pointer;"><sc-for list="{{ nuRankOptions }}" as="r" hint-placeholder-count="3"><option value="{{ r.v }}">{{ r.v }}</option></sc-for></select></div>
+              <div><div style="font-size:10.5px; color:#9fb0c7; margin-bottom:6px;">رمز عبور اولیه *</div><input value="{{ nuPassword }}" onInput="{{ onNuPassword }}" placeholder="حداقل ۶ کاراکتر" dir="ltr" style="width:100%; box-sizing:border-box; height:42px; border:1px solid #28344c; border-radius:9px; background:#0f1623; color:#e7ecf3; font-size:12px; padding:0 11px; text-align:right; font-family:'Roboto Mono',monospace; outline:none;" /></div>
+            </div>
+            <div style="margin-top:11px;">
+              <div style="font-size:10.5px; color:#9fb0c7; margin-bottom:6px;">دسترسی ارجاعات — کاربران، کارمندان و معاونان فقط می‌توانند به مقاصد زیر ارجاع بفرستند</div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <span onClick="{{ pickRefManagers }}" style="font-size:11.5px; font-weight:700; color:{{ refMgrColor }}; background:{{ refMgrBg }}; border:1px solid {{ refMgrBorder }}; padding:8px 13px; border-radius:9px; cursor:pointer;">فقط مدیران بخش‌ها</span>
+                <span onClick="{{ pickRefAll }}" style="font-size:11.5px; font-weight:700; color:{{ refAllColor }}; background:{{ refAllBg }}; border:1px solid {{ refAllBorder }}; padding:8px 13px; border-radius:9px; cursor:pointer;">همه کارمندان</span>
+              </div>
+            </div>
+            <div style="margin-top:14px;">
+              <div style="font-size:10.5px; color:#9fb0c7; margin-bottom:8px;">واحد سازمانی — کارمند زیرمجموعهٔ کدام مدیر است</div>
+              <div style="display:flex; gap:9px; flex-wrap:wrap;">
+                <div onClick="{{ pickDeptCommercial }}" style="flex:1; min-width:110px; border:1px solid {{ nuDeptCommercialBorder }}; background:{{ nuDeptCommercialBg }}; border-radius:10px; padding:11px 13px; cursor:pointer;"><div style="display:flex; align-items:center; gap:8px;"><span style="width:9px; height:9px; border-radius:50%; background:#0891b2;"></span><span style="font-size:12px; font-weight:700; color:#e7ecf3;">واحد بازرگانی</span></div><div style="font-size:10px; color:#6b7b94; margin-top:4px;">زیرمجموعهٔ مدیر بازرگانی</div></div>
+                <div onClick="{{ pickDeptSales }}" style="flex:1; min-width:110px; border:1px solid {{ nuDeptSalesBorder }}; background:{{ nuDeptSalesBg }}; border-radius:10px; padding:11px 13px; cursor:pointer;"><div style="display:flex; align-items:center; gap:8px;"><span style="width:9px; height:9px; border-radius:50%; background:#16a34a;"></span><span style="font-size:12px; font-weight:700; color:#e7ecf3;">واحد فروش</span></div><div style="font-size:10px; color:#6b7b94; margin-top:4px;">زیرمجموعهٔ مدیر بازرگانی</div></div>
+                <div onClick="{{ pickDeptFinance }}" style="flex:1; min-width:110px; border:1px solid {{ nuDeptFinanceBorder }}; background:{{ nuDeptFinanceBg }}; border-radius:10px; padding:11px 13px; cursor:pointer;"><div style="display:flex; align-items:center; gap:8px;"><span style="width:9px; height:9px; border-radius:50%; background:#2563eb;"></span><span style="font-size:12px; font-weight:700; color:#e7ecf3;">واحد مالی</span></div><div style="font-size:10px; color:#6b7b94; margin-top:4px;">زیرمجموعهٔ مدیر مالی</div></div>
+                <div onClick="{{ pickDeptIt }}" style="flex:1; min-width:110px; border:1px solid {{ nuDeptItBorder }}; background:{{ nuDeptItBg }}; border-radius:10px; padding:11px 13px; cursor:pointer;"><div style="display:flex; align-items:center; gap:8px;"><span style="width:9px; height:9px; border-radius:50%; background:#7c3aed;"></span><span style="font-size:12px; font-weight:700; color:#e7ecf3;">واحد IT</span></div><div style="font-size:10px; color:#6b7b94; margin-top:4px;">زیرمجموعهٔ مدیر IT</div></div>
+                <sc-for list="{{ customDeptCards }}" as="cd" hint-placeholder-count="0">
+                  <div onClick="{{ cd.onPick }}" style="flex:1; min-width:110px; border:1px solid {{ cd.border }}; background:{{ cd.bg }}; border-radius:10px; padding:11px 13px; cursor:pointer;"><div style="display:flex; align-items:center; gap:8px;"><span style="width:9px; height:9px; border-radius:50%; background:#f59e0b;"></span><span style="font-size:12px; font-weight:700; color:#e7ecf3;">{{ cd.label }}</span></div><div style="font-size:10px; color:#6b7b94; margin-top:4px;">واحد سفارشی</div></div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ addingDept }}" hint-placeholder-val="{{false}}">
+                <div style="display:flex; gap:8px; margin-top:9px;">
+                  <input value="{{ newDeptName }}" onInput="{{ onNewDeptName }}" placeholder="نام واحد جدید (مثلاً بازاریابی)" style="flex:1; box-sizing:border-box; height:40px; background:#0f1623; border:1px solid #28344c; border-radius:9px; padding:0 11px; color:#e7ecf3; font-size:11.5px; outline:none;" />
+                  <span onClick="{{ submitNewDept }}" style="flex:none; padding:0 14px; height:40px; border-radius:9px; background:var(--accent,#3b82f6); color:#fff; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:700; cursor:pointer;">افزودن</span>
+                  <span onClick="{{ cancelNewDept }}" style="flex:none; padding:0 12px; height:40px; border-radius:9px; border:1px solid #28344c; color:#9fb0c7; display:flex; align-items:center; justify-content:center; font-size:11.5px; cursor:pointer;">انصراف</span>
+                </div>
+              </sc-if>
+              <sc-if value="{{ notAddingDept }}" hint-placeholder-val="{{true}}">
+                <span onClick="{{ openNewDept }}" style="display:inline-flex; align-items:center; gap:5px; margin-top:9px; font-size:11px; font-weight:700; color:var(--accent,#3b82f6); cursor:pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>ایجاد واحد سازمانی جدید</span>
+              </sc-if>
+            </div>
+            <div style="margin-top:16px;">
+              <div style="font-size:10.5px; color:#6b7b94; margin-bottom:10px;">دسترسی‌های واحد — جزییات هر بخش را برای این کارمند انتخاب کنید</div>
+              <div style="display:flex; flex-direction:column; gap:12px;">
+                <sc-for list="{{ newUserPermGroups }}" as="g" hint-placeholder-count="3">
+                  <div>
+                    <div style="font-size:11px; font-weight:800; color:#9fb0c7; margin-bottom:8px; display:flex; align-items:center; gap:6px;"><span style="width:6px; height:6px; border-radius:50%; background:#3b82f6;"></span>{{ g.sectionLabel }}</div>
+                    <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px;">
+                      <sc-for list="{{ g.perms }}" as="p" hint-placeholder-count="2">
+                        <div onClick="{{ p.onToggle }}" style="display:flex; align-items:center; gap:7px; border:1px solid {{ p.border }}; background:{{ p.bg }}; border-radius:9px; padding:8px 10px; cursor:pointer;">
+                          <span style="width:18px; height:18px; border-radius:5px; background:{{ p.boxBg }}; border:1px solid {{ p.boxBorder }}; display:flex; align-items:center; justify-content:center; color:#fff; font-size:10px; flex:none;">{{ p.check }}</span>
+                          <span style="font-size:11.5px; color:#cdd6e3;">{{ p.label }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:16px;">
+              <span onClick="{{ createStaffUser }}" style="font-size:11.5px; font-weight:700; background:var(--accent,#3b82f6); color:#fff; padding:9px 16px; border-radius:9px; cursor:pointer;">ایجاد حساب و اعلان به مدیر</span>
+              <span onClick="{{ toggleAdd }}" style="font-size:11.5px; font-weight:600; border:1px solid #28344c; color:#9fb0c7; padding:9px 13px; border-radius:9px; cursor:pointer;">انصراف</span>
+            </div>
+          </div>
+        </sc-if>
+
+        <div style="margin-top:14px; border:1px solid #1f2a3d; border-radius:12px; overflow:hidden;">
+          <div style="display:grid; grid-template-columns:1.6fr 1.3fr 1.4fr 1fr 0.9fr 1.4fr; background:#18223a; padding:11px 11px; font-size:10.5px; color:#6b7b94; font-weight:700;">
+            <span>کاربر</span><span>نقش</span><span>نام کاربری</span><span>آخرین ورود</span><span>وضعیت</span><span style="text-align:left;">اقدامات</span>
+          </div>
+          <sc-for list="{{ users }}" as="u" hint-placeholder-count="8">
+            <div style="display:grid; grid-template-columns:1.6fr 1.3fr 1.4fr 1fr 0.9fr 1.4fr; align-items:center; padding:11px 11px; border-top:1px solid #1f2a3d;">
+              <div style="display:flex; align-items:center; gap:9px;"><div style="width:34px; height:34px; border-radius:50%; background:{{ u.avatarBg }}; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#fff; flex:none;">{{ u.initials }}</div><span onClick="{{ u.onView }}" style="font-size:12px; font-weight:600; color:#e7ecf3; cursor:pointer; border-bottom:1px dashed #2a3a55;">{{ u.name }}</span></div>
+              <span style="font-size:11.5px; color:#9fb0c7;">{{ u.role }}</span>
+              <span style="font-size:11.5px; font-family:'Roboto Mono',monospace; color:#9fb0c7;" dir="ltr">{{ u.username }}</span>
+              <span style="font-size:11.5px; color:#6b7b94;">{{ u.lastLogin }}</span>
+              <span style="font-size:10.5px; font-weight:700; color:{{ u.statusColor }}; background:{{ u.statusBg }}; padding:3px 8px; border-radius:18px; justify-self:start;">{{ u.statusLabel }}</span>
+              <div style="display:flex; gap:7px; justify-content:flex-start;">
+                <span onClick="{{ u.onView }}" style="font-size:11px; font-weight:700; color:#9fb0c7; border:1px solid #2a3a55; background:#18223a; padding:5px 9px; border-radius:8px; cursor:pointer;">جزئیات</span>
+                <span onClick="{{ u.onReset }}" style="font-size:11px; font-weight:700; color:var(--accent,#3b82f6); border:1px solid #2a3a55; background:#18223a; padding:5px 9px; border-radius:8px; cursor:pointer;">ریست رمز</span>
+                <span onClick="{{ u.onSuspend }}" style="font-size:11px; font-weight:700; color:{{ u.suspendColor }}; border:1px solid #2a3a55; background:#18223a; padding:5px 9px; border-radius:8px; cursor:pointer;">{{ u.suspendLabel }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ SECURITY ============ -->
+    <sc-if value="{{ showSecurity }}" hint-placeholder-val="{{false}}">
+      <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:15px; align-items:start;">
+        <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:15px;">
+          <h3 style="font-size:14.5px; font-weight:800; color:#fff; margin:0 0 4px;">سیاست رمز عبور</h3>
+          <div style="font-size:11.5px; color:#6b7b94; margin-bottom:18px;">قوانین اعمال‌شده روی رمز همه حساب‌های سامانه</div>
+          <div style="display:flex; flex-direction:column; gap:2px;">
+            <sc-for list="{{ securityToggles }}" as="t" hint-placeholder-count="5">
+              <div style="display:flex; align-items:center; gap:11px; padding:11px 0; border-bottom:1px solid #1f2a3d;">
+                <div style="flex:1;"><div style="font-size:12px; font-weight:600; color:#e7ecf3;">{{ t.title }}</div><div style="font-size:10.5px; color:#6b7b94; margin-top:2px;">{{ t.desc }}</div></div>
+                <div onClick="{{ t.onToggle }}" dir="ltr" style="width:44px; height:25px; border-radius:13px; background:{{ t.bg }}; position:relative; cursor:pointer; flex:none;"><span style="position:absolute; top:3px; left:3px; width:19px; height:19px; border-radius:50%; background:#fff; transform:{{ t.knob }}; transition:transform .18s;"></span></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:15px;">
+          <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:15px;">
+            <h3 style="font-size:14.5px; font-weight:800; color:#fff; margin:0 0 14px;">پارامترهای رمز</h3>
+            <div style="display:flex; flex-direction:column; gap:11px;">
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:11.5px; color:#cdd6e3;">حداقل طول رمز</span><span style="font-size:11.5px; font-weight:800; color:#fff; font-family:'Roboto Mono',monospace;">۱۰ کاراکتر</span></div>
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:11.5px; color:#cdd6e3;">انقضای رمز</span><span style="font-size:11.5px; font-weight:800; color:#fff;">هر ۹۰ روز</span></div>
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:11.5px; color:#cdd6e3;">تلاش ناموفق مجاز</span><span style="font-size:11.5px; font-weight:800; color:#fff; font-family:'Roboto Mono',monospace;">۵ بار</span></div>
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:11.5px; color:#cdd6e3;">احراز هویت دومرحله‌ای</span><span style="font-size:11px; font-weight:700; color:#34d399; background:rgba(16,185,129,.14); padding:3px 9px; border-radius:18px;">اجباری برای مدیران</span></div>
+            </div>
+          </div>
+          <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:15px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;"><h3 style="font-size:14.5px; font-weight:800; color:#fff; margin:0;">نشست‌های فعال</h3><span style="font-size:11px; color:#f87171; font-weight:700; cursor:pointer;">خروج همه</span></div>
+          <div style="font-size:11.5px; color:#6b7b94; margin-bottom:14px;">{{ sessionsCountLabel }}</div>
+            <div style="display:flex; flex-direction:column; gap:9px;">
+              <sc-for list="{{ sessions }}" as="ss" hint-placeholder-count="3">
+                <div style="display:flex; align-items:center; gap:9px; font-size:11.5px;"><span style="width:30px; height:30px; border-radius:8px; background:#18223a; display:flex; align-items:center; justify-content:center; color:#9fb0c7; flex:none;" dangerouslySetInnerHTML="{{ ss.svg }}"></span><div style="flex:1;"><span style="color:#e7ecf3; font-weight:600;">{{ ss.who }}</span> <span style="color:#6b7b94;">· {{ ss.dev }}</span></div><span style="color:#6b7b94; font-family:'Roboto Mono',monospace;" dir="ltr">{{ ss.ip }}</span></div>
+              </sc-for>
+              <sc-if value="{{ sessionsEmpty }}" hint-placeholder-val="{{false}}"><div style="text-align:center; padding:14px; color:#6b7b94; font-size:11.5px;">نشست فعالی ثبت نشده است.</div></sc-if>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ SERVICES ============ -->
+    <sc-if value="{{ showServices }}" hint-placeholder-val="{{false}}">
+      <div style="display:flex; align-items:center; gap:11px; margin-bottom:18px; flex-wrap:wrap;">
+        <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:11px 14px; display:flex; align-items:center; gap:9px;"><span style="font-size:20px; font-weight:900; color:#34d399;">{{ servicesUpCount }}</span><span style="font-size:11.5px; color:#6b7b94; line-height:1.4;">سرویس<br>فعال</span></div>
+        <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:11px 14px; display:flex; align-items:center; gap:9px;"><span style="font-size:20px; font-weight:900; color:#fff;">{{ servicesTotal }}</span><span style="font-size:11.5px; color:#6b7b94; line-height:1.4;">کل<br>سرویس‌ها</span></div>
+        <div style="flex:1;"></div>
+        <div style="font-size:11.5px; color:#6b7b94;">روشن/خاموش کردن هر سرویس بلافاصله روی سایت اعمال می‌شود</div>
+      </div>
+
+      <!-- internal services -->
+      <div style="display:flex; align-items:center; gap:8px; margin:6px 0 14px;">
+        <span style="width:30px; height:30px; border-radius:8px; background:rgba(59,130,246,.16); color:#3b82f6; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg></span>
+        <h3 style="font-size:14px; font-weight:800; color:#fff; margin:0;">سرویس‌های داخلی سایت</h3>
+        <span style="font-size:11px; color:#6b7b94;">سرویس‌های بومی پلتفرم blujet</span>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:13px;">
+        <sc-for list="{{ servicesInternal }}" as="s" hint-placeholder-count="8">
+          <div style="background:#141d2e; border:1px solid {{ s.cardBorder }}; border-radius:14px; padding:12px;">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:14px;">
+              <div style="display:flex; align-items:center; gap:9px;"><span style="width:38px; height:38px; border-radius:10px; background:#18223a; color:{{ s.iconColor }}; display:flex; align-items:center; justify-content:center; flex:none;" dangerouslySetInnerHTML="{{ s.svg }}"></span><div style="line-height:1.4;"><div style="font-size:12px; font-weight:700; color:#e7ecf3;">{{ s.name }}</div><div style="font-size:10px; color:#6b7b94; margin-top:2px;">آپ‌تایم {{ s.uptime }}</div></div></div>
+              <div onClick="{{ s.onToggle }}" dir="ltr" style="width:42px; height:24px; border-radius:12px; background:{{ s.toggleBg }}; position:relative; cursor:pointer; flex:none;"><span style="position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; transform:{{ s.knob }}; transition:transform .18s;"></span></div>
+            </div>
+            <span style="font-size:10.5px; font-weight:700; color:{{ s.statusColor }}; background:{{ s.statusBg }}; padding:3px 9px; border-radius:18px;">{{ s.statusLabel }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- external services -->
+      <div style="display:flex; align-items:center; gap:8px; margin:26px 0 14px;">
+        <span style="width:30px; height:30px; border-radius:8px; background:rgba(168,85,247,.16); color:#a855f7; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></span>
+        <h3 style="font-size:14px; font-weight:800; color:#fff; margin:0;">سرویس‌های خارجی (API)</h3>
+        <span style="font-size:11px; color:#6b7b94;">وب‌سرویس‌های شخص ثالث متصل به سامانه</span>
+        <div style="flex:1;"></div>
+        <span onClick="{{ toggleExtAdd }}" style="display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; background:var(--accent,#3b82f6); color:#fff; padding:7px 11px; border-radius:9px; cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>افزودن سرویس خارجی</span>
+      </div>
+
+      <sc-if value="{{ extAddOpen }}" hint-placeholder-val="{{false}}">
+        <div style="border:1px dashed #3a3155; background:#1b1830; border-radius:14px; padding:14px; margin-bottom:16px;">
+          <div style="font-size:12.5px; font-weight:800; color:#fff; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between;">تعریف سرویس خارجی جدید<span onClick="{{ toggleExtAdd }}" style="width:30px; height:30px; border-radius:8px; background:#0f1623; border:1px solid #2e2a45; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#9fb0c7;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></div>
+          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:11px;">
+            <div><div style="font-size:10.5px; color:#6b7b94; margin-bottom:6px;">نام سرویس *</div><input value="{{ newExtName }}" onInput="{{ onNewExtName }}" placeholder="مثلاً: درگاه پرداخت زرین‌پال" style="width:100%; box-sizing:border-box; height:42px; border:1px solid {{ newExtNameBorder }}; border-radius:9px; background:#0f1623; padding:0 10px; color:#e7ecf3; font-size:11.5px; font-family:inherit; outline:none;" /></div>
+            <div><div style="font-size:10.5px; color:#6b7b94; margin-bottom:6px;">نوع سرویس</div><select value="{{ newExtType }}" onChange="{{ onNewExtType }}" style="width:100%; box-sizing:border-box; height:42px; border:1px solid #2e2a45; border-radius:9px; background:#0f1623; color:#cdd6e3; font-size:11.5px; padding:0 10px; font-family:inherit; outline:none; cursor:pointer;"><sc-for list="{{ newExtTypeOptions }}" as="t" hint-placeholder-count="6"><option value="{{ t.v }}">{{ t.l }}</option></sc-for></select></div>
+            <div style="grid-column:span 2;"><div style="font-size:10.5px; color:#6b7b94; margin-bottom:6px;">آدرس Endpoint (API URL) *</div><input value="{{ newExtEndpoint }}" onInput="{{ onNewExtEndpoint }}" placeholder="https://api.provider.com/v1/" dir="ltr" style="width:100%; box-sizing:border-box; height:42px; border:1px solid {{ newExtEndpointBorder }}; border-radius:9px; background:#0f1623; padding:0 10px; color:#e7ecf3; font-size:11.5px; font-family:'Roboto Mono',monospace; outline:none; text-align:right;" /></div>
+            <div><div style="font-size:10.5px; color:#6b7b94; margin-bottom:6px;">متد</div><select value="{{ newExtMethod }}" onChange="{{ onNewExtMethod }}" dir="ltr" style="width:100%; box-sizing:border-box; height:42px; border:1px solid #2e2a45; border-radius:9px; background:#0f1623; color:#cdd6e3; font-size:11.5px; padding:0 10px; font-family:inherit; outline:none; cursor:pointer;"><sc-for list="{{ newExtMethodOptions }}" as="m" hint-placeholder-count="5"><option value="{{ m.v }}">{{ m.l }}</option></sc-for></select></div>
+            <div><div style="font-size:10.5px; color:#6b7b94; margin-bottom:6px;">کلید احراز (API Key) *</div><input value="{{ newExtApiKey }}" onInput="{{ onNewExtApiKey }}" placeholder="sk_live_..." dir="ltr" style="width:100%; box-sizing:border-box; height:42px; border:1px solid {{ newExtApiKeyBorder }}; border-radius:9px; background:#0f1623; padding:0 10px; color:#e7ecf3; font-size:11.5px; font-family:'Roboto Mono',monospace; outline:none; text-align:right;" /></div>
+          </div>
+          <sc-if value="{{ newExtErr }}" hint-placeholder-val="{{false}}"><div style="margin-top:10px; font-size:11px; color:#f87171;">نام سرویس، Endpoint و کلید احراز الزامی است.</div></sc-if>
+          <div style="display:flex; gap:8px; margin-top:16px;">
+            <span onClick="{{ createExtService }}" style="font-size:11.5px; font-weight:700; background:var(--accent,#3b82f6); color:#fff; padding:8px 14px; border-radius:9px; cursor:pointer;">ثبت و اتصال سرویس</span>
+            <span onClick="{{ toggleExtAdd }}" style="font-size:11.5px; font-weight:600; color:#6b7b94; padding:8px 11px; cursor:pointer;">انصراف</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:13px;">
+        <sc-for list="{{ servicesExternal }}" as="s" hint-placeholder-count="4">
+          <div style="background:#141d2e; border:1px solid {{ s.cardBorder }}; border-radius:14px; padding:12px;">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:12px;">
+              <div style="display:flex; align-items:center; gap:9px;"><span style="width:38px; height:38px; border-radius:10px; background:#18223a; color:{{ s.iconColor }}; display:flex; align-items:center; justify-content:center; flex:none;" dangerouslySetInnerHTML="{{ s.svg }}"></span><div style="line-height:1.4;"><div style="font-size:12px; font-weight:700; color:#e7ecf3;">{{ s.name }}</div><div style="font-size:10px; color:#6b7b94; margin-top:2px;">{{ s.provider }}</div></div></div>
+              <div onClick="{{ s.onToggle }}" dir="ltr" style="width:42px; height:24px; border-radius:12px; background:{{ s.toggleBg }}; position:relative; cursor:pointer; flex:none;"><span style="position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; transform:{{ s.knob }}; transition:transform .18s;"></span></div>
+            </div>
+            <div style="font-size:10px; color:#6b7b94; font-family:'Roboto Mono',monospace; background:#0f1623; border:1px solid #1f2a3d; border-radius:7px; padding:5px 7px; margin-bottom:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" dir="ltr">{{ s.endpoint }}</div>
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <span style="font-size:10.5px; font-weight:700; color:{{ s.statusColor }}; background:{{ s.statusBg }}; padding:3px 9px; border-radius:18px;">{{ s.statusLabel }}</span>
+              <span onClick="{{ s.onSettings }}" style="font-size:10.5px; color:var(--accent,#3b82f6); font-weight:700; cursor:pointer;">تنظیمات</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+
+    <!-- ============ PANELS ACCESS ============ -->
+    <sc-if value="{{ showPanels }}" hint-placeholder-val="{{false}}">
+      <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:12px 15px; margin-bottom:16px; display:flex; align-items:center; gap:10px;">
+        <span style="width:36px; height:36px; border-radius:10px; background:rgba(59,130,246,.16); color:#60a5fa; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5.5c0 4.2-2.9 7.4-7 8.5-4.1-1.1-7-4.3-7-8.5V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg></span>
+        <div style="font-size:11.5px; color:#cdd6e3; line-height:1.7;">واحد IT برای پشتیبانی فنی می‌تواند وارد پنل‌های عملیاتی و کارمندان شود. تعیین سطح دسترسی ورود در اختیار <b style="color:#fff;">مدیر عامل</b> است؛ پنل‌های خارج از حوزهٔ واحد IT با قفل مشخص شده‌اند.</div>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:13px;">
+        <sc-for list="{{ panelCards }}" as="p" hint-placeholder-count="6">
+          <div style="background:#141d2e; border:1px solid {{ p.border }}; border-radius:14px; padding:15px; opacity:{{ p.opacity }}; display:flex; flex-direction:column;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+              <span style="width:44px; height:44px; border-radius:12px; background:{{ p.iconBg }}; color:{{ p.iconColor }}; display:flex; align-items:center; justify-content:center;" dangerouslySetInnerHTML="{{ p.svg }}"></span>
+              <span style="display:flex;" dangerouslySetInnerHTML="{{ p.badgeSvg }}"></span>
+            </div>
+            <div style="font-size:13.5px; font-weight:800; color:#fff; margin-bottom:4px;">{{ p.title }}</div>
+            <div style="font-size:11px; color:#6b7b94; line-height:1.6; margin-bottom:11px;">{{ p.desc }}</div>
+            <sc-if value="{{ p.showAccess }}" hint-placeholder-val="{{false}}">
+              <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:12px;">
+                <sc-for list="{{ p.accessList }}" as="a" hint-placeholder-count="3">
+                  <span style="font-size:9.5px; color:#9fb0c7; background:#0f1623; border:1px solid #1f2a3d; padding:3px 8px; border-radius:12px;">{{ a }}</span>
+                </sc-for>
+              </div>
+            </sc-if>
+            <div style="display:flex; align-items:center; padding-top:11px; border-top:1px solid #1f2a3d; margin-top:auto;">
+              <a href="{{ p.href }}" style="text-decoration:none; font-size:11.5px; font-weight:700; color:{{ p.ctaColor }};">{{ p.cta }}</a>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- ============ EMPLOYEE ACCESS (merged into USERS) ============ -->
+    <sc-if value="{{ showUsers }}" hint-placeholder-val="{{false}}">
+      <div style="display:flex; align-items:center; gap:10px; margin:24px 2px 13px;">
+        <span style="width:5px; height:22px; border-radius:3px; background:#f59e0b; flex:none;"></span>
+        <div><h3 style="font-size:14.5px; font-weight:800; color:#fff; margin:0;">دسترسی و سطوح کارمندان</h3><div style="font-size:11px; color:#6b7b94; margin-top:2px;">تعیین سطح دسترسی کارمندان واحدها و مدیریت رمز عبور</div></div>
+      </div>
+      <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:11px 14px; margin-bottom:18px; display:flex; align-items:center; gap:9px;">
+        <span style="width:34px; height:34px; border-radius:9px; background:rgba(245,158,11,.16); color:#f59e0b; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/></svg></span>
+        <div style="font-size:11.5px; color:#cdd6e3; line-height:1.7;">واحد IT فقط دسترسی <b style="color:#fff;">کارمندان</b> واحدها را تعیین می‌کند. دسترسی به پنل‌های مدیریتی توسط <b style="color:#fff;">مدیر عامل</b> و <b style="color:#fff;">مدیر ارشد</b> مدیریت می‌شود.</div>
+      </div>
+      <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; overflow:hidden;">
+        <div style="display:grid; grid-template-columns:1.4fr repeat(5,1fr); background:#18223a; padding:11px 12px; font-size:10.5px; color:#6b7b94; font-weight:700;">
+          <span>نقش</span><span style="text-align:center;">داشبورد</span><span style="text-align:center;">مالی</span><span style="text-align:center;">محتوا</span><span style="text-align:center;">کاربران</span><span style="text-align:center;">تنظیمات</span>
+        </div>
+        <sc-for list="{{ permRows }}" as="p" hint-placeholder-count="6">
+          <div style="display:grid; grid-template-columns:1.4fr repeat(5,1fr); align-items:center; padding:11px 12px; border-top:1px solid #1f2a3d;">
+            <div style="display:flex; align-items:center; gap:8px;"><span style="width:9px; height:9px; border-radius:50%; background:{{ p.dot }}; flex:none;"></span><div><div style="font-size:12px; font-weight:700; color:#e7ecf3;">{{ p.role }}</div><div style="font-size:10px; color:#6b7b94;">{{ p.managedBy }}</div></div></div>
+            <span style="justify-self:center;" dangerouslySetInnerHTML="{{ p.c0 }}"></span>
+            <span style="justify-self:center;" dangerouslySetInnerHTML="{{ p.c1 }}"></span>
+            <span style="justify-self:center;" dangerouslySetInnerHTML="{{ p.c2 }}"></span>
+            <span style="justify-self:center;" dangerouslySetInnerHTML="{{ p.c3 }}"></span>
+            <span style="justify-self:center;" dangerouslySetInnerHTML="{{ p.c4 }}"></span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:18px; align-items:start;">
+        <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:15px;">
+          <h3 style="font-size:13.5px; font-weight:800; color:#fff; margin:0 0 4px;">مدیریت رمز عبور کارمندان</h3>
+          <div style="font-size:10.5px; color:#6b7b94; margin-bottom:13px;">فقط رمز عبور کارمندان واحدها قابل بازنشانی است. رمز مدیران در دسترس واحد IT نیست.</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <sc-for list="{{ pwRoles }}" as="r" hint-placeholder-count="4">
+              <div style="display:flex; align-items:center; gap:10px; border:1px solid #28344c; border-radius:11px; padding:9px 11px;">
+                <span style="width:32px; height:32px; border-radius:9px; background:#18223a; color:{{ r.color }}; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:10.5px; flex:none;">{{ r.initials }}</span>
+                <div style="flex:1;"><div style="font-size:11.5px; font-weight:600; color:#e7ecf3;">{{ r.role }} <span style="font-size:9.5px; color:#6b7b94; font-weight:500;">· {{ r.unit }}</span></div><div style="font-size:10px; color:#6b7b94; font-family:'Roboto Mono',monospace;" dir="ltr">{{ r.user }}</div></div>
+                <span onClick="{{ r.onReset }}" style="font-size:10.5px; font-weight:700; color:{{ r.color }}; border:1px solid #2a3a55; background:#18223a; padding:5px 10px; border-radius:8px; cursor:{{ r.cursor }};">{{ r.action }}</span>
+              </div>
+            </sc-for>
+            <sc-if value="{{ pwEmpty }}" hint-placeholder-val="{{false}}"><div style="padding:16px; text-align:center; color:#6b7b94; font-size:11px;">کارمندی ثبت نشده است.</div></sc-if>
+          </div>
+        </div>
+        <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:15px;">
+          <h3 style="font-size:13.5px; font-weight:800; color:#fff; margin:0 0 14px;">سطح دسترسی واحد IT</h3>
+          <div style="display:flex; flex-direction:column;">
+            <sc-for list="{{ itScope }}" as="s" hint-placeholder-count="5">
+              <div style="display:flex; align-items:center; gap:9px; padding:9px 0; border-bottom:1px solid #1f2a3d;">
+                <span style="width:22px; height:22px; border-radius:6px; background:{{ s.bg }}; color:{{ s.color }}; display:flex; align-items:center; justify-content:center; font-size:11.5px; flex:none;">{{ s.icon }}</span>
+                <span style="flex:1; font-size:11.5px; color:#cdd6e3;">{{ s.label }}</span>
+                <span style="font-size:10.5px; font-weight:700; color:{{ s.color }};">{{ s.status }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ RESERVATION SYSTEM ============ -->
+    <sc-if value="{{ showReservation }}" hint-placeholder-val="{{false}}">
+      <dc-import name="ReservationSystem" role="{{ resRole }}" setup-mode="{{ resSetupMode }}" hint-size="100%,900px"></dc-import>
+    </sc-if>
+
+    <!-- ============ LOGS ============ -->
+    <sc-if value="{{ showLogs }}" hint-placeholder-val="{{false}}">
+      <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:15px;">
+        <h3 style="font-size:14.5px; font-weight:800; color:#fff; margin:0 0 4px;">لاگ‌ها و رویدادهای سامانه</h3>
+        <div style="font-size:11.5px; color:#6b7b94; margin-bottom:16px;">فعالیت‌های ثبت‌شدهٔ کارمندان واحدها — اقدامات و ایجاد حساب‌ها</div>
+        <div style="border:1px solid #1f2a3d; border-radius:12px; overflow:hidden;">
+          <div style="display:grid; grid-template-columns:0.9fr 1.2fr 2.4fr 0.9fr 0.7fr; background:#18223a; padding:10px 11px; font-size:10.5px; color:#6b7b94; font-weight:700;"><span>زمان</span><span>کارمند</span><span>رویداد</span><span>واحد</span><span>سطح</span></div>
+          <sc-for list="{{ logs }}" as="l" hint-placeholder-count="8">
+            <div style="display:grid; grid-template-columns:0.9fr 1.2fr 2.4fr 0.9fr 0.7fr; align-items:center; padding:10px 11px; border-top:1px solid #1f2a3d; font-size:11.5px;">
+              <span style="color:#6b7b94; font-family:'Roboto Mono',monospace;" dir="ltr">{{ l.time }}</span>
+              <span style="color:#cdd6e3; font-weight:600;">{{ l.user }}</span>
+              <span style="color:#9fb0c7;">{{ l.action }}</span>
+              <span style="color:#9fb0c7;">{{ l.unit }}</span>
+              <span style="font-size:10px; font-weight:700; color:{{ l.levelColor }}; background:{{ l.levelBg }}; padding:2px 7px; border-radius:18px; justify-self:start;">{{ l.level }}</span>
+            </div>
+          </sc-for>
+          <sc-if value="{{ logsEmpty }}" hint-placeholder-val="{{false}}"><div style="padding:22px; text-align:center; color:#6b7b94; font-size:12px; border-top:1px solid #1f2a3d;">فعالیتی از کارمندان ثبت نشده است.</div></sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ PASSENGER SURVEY ============ -->
+    <sc-if value="{{ showSurvey }}" hint-placeholder-val="{{false}}">
+      <div style="display:grid; grid-template-columns:1.3fr 1fr; gap:15px; align-items:start;">
+        <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:15px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+            <h3 style="font-size:14.5px; font-weight:800; color:#fff; margin:0;">فعال‌سازی نظرسنجی پس از پرواز</h3>
+            <div onClick="{{ toggleSurveyEnabled }}" dir="ltr" style="width:44px; height:25px; border-radius:13px; background:{{ surveyToggleBg }}; position:relative; cursor:pointer; flex:none;"><span style="position:absolute; top:3px; left:3px; width:19px; height:19px; border-radius:50%; background:#fff; transform:{{ surveyToggleKnob }}; transition:transform .18s;"></span></div>
+          </div>
+          <div style="font-size:11.5px; color:#6b7b94; margin-bottom:18px;">با فعال بودن این گزینه، بعد از هر پرواز تکمیل‌شده، پیامک/ایمیل نظرسنجی برای مسافران ارسال می‌شود.</div>
+
+          <div style="font-size:12.5px; font-weight:800; color:#fff; margin-bottom:10px;">سؤالات نظرسنجی</div>
+          <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
+            <sc-for list="{{ surveyQuestions }}" as="q" hint-placeholder-count="5">
+              <div style="display:flex; align-items:center; gap:10px; border:1px solid #28344c; border-radius:11px; padding:10px 12px;">
+                <span style="width:8px; height:8px; border-radius:50%; background:#3b82f6; flex:none;"></span>
+                <span style="flex:1; font-size:12px; color:#cdd6e3;">{{ q.label }}</span>
+                <span style="display:flex; align-items:center; gap:4px; flex:none; font-size:11px; font-weight:700; color:#fbbf24; background:rgba(251,191,36,.12); padding:4px 9px; border-radius:12px;">★ ۵ ستاره</span>
+                <span onClick="{{ q.onRemove }}" style="color:#6b7b94; cursor:pointer; flex:none;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
+              </div>
+            </sc-for>
+            <sc-if value="{{ surveyNoQuestions }}" hint-placeholder-val="{{false}}"><div style="text-align:center; padding:14px; color:#6b7b94; font-size:11.5px;">سؤالی تعریف نشده است.</div></sc-if>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <input value="{{ newQuestionText }}" onInput="{{ onNewQuestionText }}" placeholder="متن سؤال جدید…" style="flex:1; box-sizing:border-box; height:42px; background:#0f1623; border:1px solid #28344c; border-radius:9px; padding:0 11px; color:#e7ecf3; font-size:12px; font-family:inherit; outline:none;" />
+            <span onClick="{{ addQuestion }}" style="flex:none; display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; background:var(--accent,#3b82f6); color:#fff; padding:0 15px; border-radius:9px; cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>افزودن سؤال</span>
+          </div>
+          <div style="font-size:10.5px; color:#6b7b94; margin-top:8px;">هر سؤال با پاسخ ۵ ستاره‌ای برای مسافران ارسال می‌شود.</div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:15px;">
+          <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:15px;">
+            <h3 style="font-size:13.5px; font-weight:800; color:#fff; margin:0 0 14px;">نتایج جمع‌آوری‌شده</h3>
+            <div style="display:flex; flex-direction:column; gap:11px;">
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:11.5px; color:#cdd6e3;">پروازهای دارای نظرسنجی</span><span style="font-size:12.5px; font-weight:800; color:#fff;">{{ surveyStats.flights }}</span></div>
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:11.5px; color:#cdd6e3;">مجموع پاسخ‌ها</span><span style="font-size:12.5px; font-weight:800; color:#fff;">{{ surveyStats.count }}</span></div>
+              <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:11.5px; color:#cdd6e3;">میانگین امتیاز کلی</span><span style="font-size:12.5px; font-weight:800; color:#fbbf24;">{{ surveyStats.avg }} / ۵</span></div>
+            </div>
+            <div style="margin-top:16px; padding-top:14px; border-top:1px solid #1f2a3d;">
+              <div style="font-size:11.5px; font-weight:800; color:#fff; margin-bottom:10px;">پاسخ‌های اخیر</div>
+              <div style="display:flex; flex-direction:column; gap:9px;">
+                <sc-for list="{{ surveyRecentResponses }}" as="r" hint-placeholder-count="4">
+                  <div style="border:1px solid #1f2a3d; border-radius:11px; padding:10px 12px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                      <span style="font-size:11px; color:#9fb0c7;" dir="ltr">{{ r.flightNo }} · {{ r.route }}</span>
+                      <div style="display:flex; gap:2px;"><sc-for list="{{ r.stars }}" as="st" hint-placeholder-count="5"><span style="color:{{ st.color }}; font-size:13px;">★</span></sc-for></div>
+                    </div>
+                    <sc-if value="{{ r.hasComment }}" hint-placeholder-val="{{false}}"><div style="font-size:10.5px; color:#6b7b94; margin-top:6px; line-height:1.7;">{{ r.comment }}</div></sc-if>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ surveyNoResponses }}" hint-placeholder-val="{{false}}"><div style="text-align:center; padding:14px; color:#6b7b94; font-size:11px;">پاسخی ثبت نشده است.</div></sc-if>
+              </div>
+            </div>
+          </div>
+          <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:15px; display:flex; align-items:flex-start; gap:11px;">
+            <span style="width:34px; height:34px; border-radius:9px; background:rgba(59,130,246,.16); color:#60a5fa; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5.5c0 4.2-2.9 7.4-7 8.5-4.1-1.1-7-4.3-7-8.5V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg></span>
+            <div style="font-size:11.5px; color:#cdd6e3; line-height:1.8;">نتایج و خلاصهٔ هوش مصنوعی این نظرسنجی برای <b style="color:#fff;">رئیس هیئت مدیره</b>، <b style="color:#fff;">مدیر عامل</b> و <b style="color:#fff;">مدیر ارشد</b> در پنل خودشان نمایش داده می‌شود.</div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ BACKUP ============ -->
+    <sc-if value="{{ showBackup }}" hint-placeholder-val="{{false}}">
+      <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:15px; align-items:start;">
+        <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:15px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+            <h3 style="font-size:14.5px; font-weight:800; color:#fff; margin:0;">نسخه‌های پشتیبان</h3>
+            <span style="display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; background:var(--accent,#3b82f6); color:#fff; padding:7px 11px; border-radius:9px; cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>پشتیبان جدید</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:9px;">
+            <sc-for list="{{ backups }}" as="b" hint-placeholder-count="5">
+              <div style="display:flex; align-items:center; gap:11px; border:1px solid #1f2a3d; border-radius:11px; padding:11px 11px;">
+                <span style="width:36px; height:36px; border-radius:9px; background:#18223a; color:{{ b.iconColor }}; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></span>
+                <div style="flex:1; line-height:1.5;"><div style="font-size:12px; font-weight:600; color:#e7ecf3;">{{ b.name }}</div><div style="font-size:10.5px; color:#6b7b94;">{{ b.date }} · {{ b.size }}</div></div>
+                <span style="font-size:10.5px; font-weight:700; color:{{ b.statusColor }}; background:{{ b.statusBg }}; padding:3px 9px; border-radius:18px;">{{ b.status }}</span>
+                <span style="font-size:11px; color:var(--accent,#3b82f6); font-weight:700; cursor:pointer;">بازیابی</span>
+              </div>
+            </sc-for>
+            <sc-if value="{{ backupsEmpty }}" hint-placeholder-val="{{false}}"><div style="text-align:center; padding:16px; color:#6b7b94; font-size:11.5px;">نسخه پشتیبانی ثبت نشده است.</div></sc-if>
+          </div>
+        </div>
+        <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:15px;">
+          <h3 style="font-size:14.5px; font-weight:800; color:#fff; margin:0 0 14px;">زمان‌بندی خودکار</h3>
+          <div style="display:flex; flex-direction:column; gap:11px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:11.5px; color:#cdd6e3;">پشتیبان دیتابیس</span><span style="font-size:11.5px; font-weight:700; color:#34d399;">هر ۶ ساعت</span></div>
+            <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:11.5px; color:#cdd6e3;">پشتیبان فایل‌ها و تصاویر</span><span style="font-size:11.5px; font-weight:700; color:#34d399;">روزانه ۰۳:۰۰</span></div>
+            <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:11.5px; color:#cdd6e3;">نگهداری نسخه‌ها</span><span style="font-size:11.5px; font-weight:700; color:#fff;">۳۰ روز</span></div>
+            <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:11.5px; color:#cdd6e3;">ذخیره‌سازی ابری</span><span style="font-size:11px; font-weight:700; color:#34d399; background:rgba(16,185,129,.14); padding:3px 9px; border-radius:18px;">متصل</span></div>
+          </div>
+          <div style="margin-top:18px; background:#18223a; border:1px solid #28344c; border-radius:11px; padding:11px; font-size:11px; color:#9fb0c7; line-height:1.8;">آخرین پشتیبان‌گیری موفق: <b style="color:#fff;">امروز ۰۹:۰۰</b> — همه نسخه‌ها رمزنگاری‌شده ذخیره می‌شوند.</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ SETTINGS ============ -->
+    <sc-if value="{{ showSettings }}" hint-placeholder-val="{{false}}">
+      <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:15px; max-width:760px; margin-bottom:18px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:11px; margin-bottom:18px;">
+          <div>
+            <h3 style="font-size:14.5px; font-weight:800; color:#fff; margin:0 0 4px;">لوگوی سایت</h3>
+            <div style="font-size:11.5px; color:#6b7b94;">لوگوی برند که در هدر و فوتر تمام صفحات نمایش داده می‌شود</div>
+          </div>
+          <span style="font-size:10px; font-weight:700; color:#34d399; background:rgba(16,185,129,.12); padding:4px 9px; border-radius:18px; white-space:nowrap;">سراسری</span>
+        </div>
+        <div style="display:flex; gap:15px; align-items:stretch; flex-wrap:wrap;">
+          <div style="flex:none; width:210px; background:#0f1623; border:1px solid #1f2a3d; border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:11px; align-items:center; justify-content:center;">
+            <span style="font-size:9.5px; color:#6b7b94; letter-spacing:.04em;">پیش‌نمایش فعلی</span>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div style="width:40px; height:40px; border-radius:11px; background:var(--accent,#3b82f6); display:flex; align-items:center; justify-content:center; color:#fff; font-size:19px;">✈</div>
+              <span style="font-weight:900; font-size:19px; color:#fff;">blujet</span>
+            </div>
+          </div>
+          <div style="flex:1; min-width:280px; display:flex; flex-direction:column; gap:9px;">
+            <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="site-logo" shape="rounded" radius="12" fit="contain" placeholder="لوگوی جدید را اینجا رها کنید یا برای انتخاب کلیک کنید" style="width:100%; height:118px; background:#0f1623; border:1.5px dashed #2a3a55; border-radius:12px; overflow:hidden;" hint-size="100%,118px"></x-import>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <span onClick="{{ resetLogo }}" style="font-size:11.5px; font-weight:700; color:#f87171; border:1px solid rgba(248,113,113,.4); padding:7px 11px; border-radius:9px; cursor:pointer;">حذف لوگو</span>
+              <span style="font-size:10.5px; color:#6b7b94; line-height:1.7;">فرمت PNG شفاف یا SVG — حداکثر ۱ مگابایت — نسبت پیشنهادی افقی</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:15px; max-width:760px;">
+        <h3 style="font-size:14.5px; font-weight:800; color:#fff; margin:0 0 4px;">تنظیمات کلی سامانه</h3>
+        <div style="font-size:11.5px; color:#6b7b94; margin-bottom:14px;">پیکربندی سراسری سایت — تغییرات روی کل سرویس اعمال می‌شود</div>
+        <div style="display:flex; flex-direction:column;">
+          <sc-for list="{{ settingsToggles }}" as="t" hint-placeholder-count="5">
+            <div style="display:flex; align-items:center; gap:11px; padding:12px 0; border-bottom:1px solid #1f2a3d;">
+              <span style="width:38px; height:38px; border-radius:10px; background:#18223a; color:{{ t.iconColor }}; display:flex; align-items:center; justify-content:center; flex:none;" dangerouslySetInnerHTML="{{ t.svg }}"></span>
+              <div style="flex:1;"><div style="font-size:12px; font-weight:600; color:#e7ecf3;">{{ t.title }}</div><div style="font-size:10.5px; color:#6b7b94; margin-top:2px;">{{ t.desc }}</div></div>
+              <div onClick="{{ t.onToggle }}" dir="ltr" style="width:44px; height:25px; border-radius:13px; background:{{ t.bg }}; position:relative; cursor:pointer; flex:none;"><span style="position:absolute; top:3px; left:3px; width:19px; height:19px; border-radius:50%; background:#fff; transform:{{ t.knob }}; transition:transform .18s;"></span></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+  </main>
+
+  <!-- USER DETAIL MODAL -->
+  <sc-if value="{{ viewOpen }}" hint-placeholder-val="{{false}}">
+    <div onClick="{{ closeView }}" style="position:fixed; inset:0; background:rgba(7,12,20,.7); z-index:200; display:flex; align-items:center; justify-content:center; padding:16px;">
+      <div onClick="{{ stop }}" style="background:#141d2e; border:1px solid #28344c; border-radius:16px; width:540px; max-width:100%; max-height:88vh; overflow:auto; box-shadow:0 30px 70px -20px rgba(0,0,0,.7);">
+        <div style="padding:16px 18px; border-bottom:1px solid #1f2a3d; display:flex; align-items:center; gap:11px;">
+          <div style="width:54px; height:54px; border-radius:50%; background:{{ viewUser.avatarBg }}; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; color:#fff; flex:none;">{{ viewUser.initials }}</div>
+          <div style="flex:1;"><div style="font-size:16px; font-weight:800; color:#fff;">{{ viewUser.name }}</div><div style="font-size:11.5px; color:#9fb0c7; margin-top:3px;">{{ viewUser.role }} · <span style="font-family:'Roboto Mono',monospace;" dir="ltr">{{ viewUser.username }}</span></div></div>
+          <span style="font-size:10.5px; font-weight:700; color:{{ viewUser.statusColor }}; background:{{ viewUser.statusBg }}; padding:4px 10px; border-radius:18px;">{{ viewUser.statusLabel }}</span>
+        </div>
+        <div style="padding:15px 18px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:11px; margin-bottom:22px;">
+            <div style="background:#18223a; border:1px solid #28344c; border-radius:11px; padding:11px 12px;"><div style="font-size:10px; color:#6b7b94; margin-bottom:5px;">آخرین ورود</div><div style="font-size:12px; font-weight:700; color:#e7ecf3;">{{ viewUser.lastLogin }}</div></div>
+            <div style="background:#18223a; border:1px solid #28344c; border-radius:11px; padding:11px 12px;"><div style="font-size:10px; color:#6b7b94; margin-bottom:5px;">ایمیل</div><div style="font-size:11.5px; font-weight:700; color:#e7ecf3; font-family:'Roboto Mono',monospace;" dir="ltr">{{ viewUser.email }}</div></div>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <div style="font-size:11.5px; font-weight:800; color:#fff;">دسترسی‌های فعال <span style="font-size:10.5px; color:#6b7b94; font-weight:600;">({{ viewUser.permCount }})</span></div>
+            <span style="font-size:10.5px; color:#6b7b94;">برای حذف، کلید هر دسترسی را خاموش کنید</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:7px;">
+            <sc-for list="{{ viewUser.perms }}" as="p" hint-placeholder-count="4">
+              <div style="display:flex; align-items:center; gap:9px; border:1px solid #244736; background:rgba(16,185,129,.05); border-radius:10px; padding:9px 11px;">
+                <span style="width:22px; height:22px; border-radius:6px; background:rgba(16,185,129,.14); color:#34d399; display:flex; align-items:center; justify-content:center; font-size:11.5px; flex:none;">✓</span>
+                <span style="flex:1; font-size:11.5px; color:#cdd6e3;">{{ p.label }}</span>
+                <span style="font-size:10.5px; font-weight:700; color:#34d399;">مجاز</span>
+                <div onClick="{{ p.onToggle }}" dir="ltr" style="width:40px; height:23px; border-radius:12px; background:var(--accent,#3b82f6); position:relative; cursor:pointer; flex:none;"><span style="position:absolute; top:3px; left:3px; width:17px; height:17px; border-radius:50%; background:#fff; transform:translateX(17px);"></span></div>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ viewUser.hasAvailable }}" hint-placeholder-val="{{true}}">
+            <div style="margin-top:20px; padding-top:13px; border-top:1px solid #1f2a3d;">
+              <div style="font-size:11.5px; font-weight:800; color:#fff; margin-bottom:4px;">افزودن دسترسی</div>
+              <div style="font-size:10.5px; color:#6b7b94; margin-bottom:12px;">از میان تمام دسترسی‌های سایت انتخاب کنید تا به فهرست بالا افزوده شود</div>
+              <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:7px;">
+                <sc-for list="{{ viewUser.available }}" as="a" hint-placeholder-count="6">
+                  <div onClick="{{ a.onAdd }}" style="display:flex; align-items:center; gap:8px; border:1px dashed #2a3a55; background:#0f1623; border-radius:10px; padding:9px 11px; cursor:pointer;" style-hover="border-color:#3b82f6;">
+                    <span style="width:22px; height:22px; border-radius:6px; background:rgba(59,130,246,.16); color:var(--accent,#3b82f6); display:flex; align-items:center; justify-content:center; font-size:12.5px; flex:none;">+</span>
+                    <span style="flex:1; font-size:11.5px; color:#9fb0c7;">{{ a.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+        <div style="padding:0 21px 20px; display:flex; gap:8px;">
+          <span onClick="{{ viewUser.onReset }}" style="flex:1; text-align:center; font-size:12px; font-weight:800; background:var(--accent,#3b82f6); color:#fff; padding:10px; border-radius:11px; cursor:pointer;">بازنشانی رمز عبور</span>
+          <span onClick="{{ closeView }}" style="font-size:12px; font-weight:600; border:1px solid #28344c; color:#9fb0c7; padding:10px 15px; border-radius:11px; cursor:pointer;">بستن</span>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- CONFIRM / REJECT NOTIFICATION -->
+  <sc-if value="{{ confirmOpen }}" hint-placeholder-val="{{false}}">
+    <div onClick="{{ onConfirmNo }}" style="position:fixed; inset:0; background:rgba(7,12,20,.62); backdrop-filter:blur(2px); z-index:230; display:flex; align-items:flex-start; justify-content:center; padding-top:79px;">
+      <div onClick="{{ stop }}" style="background:#141d2e; border:1px solid #2a3a55; border-top:3px solid {{ confirmAccent }}; border-radius:16px; width:450px; max-width:92%; overflow:hidden; box-shadow:0 34px 80px -20px rgba(0,0,0,.8);">
+        <div style="padding:15px 18px 14px;">
+          <span style="display:inline-block; font-size:10px; font-weight:800; letter-spacing:.4px; color:{{ confirmAccent }}; background:{{ confirmIconBg }}; padding:4px 10px; border-radius:18px; margin-bottom:18px;">{{ confirmData.section }}</span>
+          <div style="display:flex; align-items:flex-start; gap:12px;">
+            <span style="width:50px; height:50px; border-radius:14px; background:{{ confirmIconBg }}; color:{{ confirmAccent }}; display:flex; align-items:center; justify-content:center; flex:none;" dangerouslySetInnerHTML="{{ confirmIcon }}"></span>
+            <div style="flex:1;"><div style="font-size:15.5px; font-weight:800; color:#fff; line-height:1.4;">{{ confirmData.title }}</div><div style="font-size:11.5px; color:#9fb0c7; line-height:1.9; margin-top:7px;">{{ confirmData.msg }}</div></div>
+          </div>
+        </div>
+        <div style="padding:12px 18px; background:#0f1623; border-top:1px solid #1f2a3d; display:flex; gap:9px; justify-content:flex-end; align-items:center;">
+          <span onClick="{{ onConfirmNo }}" style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; border:1px solid #2a3a55; color:#9fb0c7; padding:9px 14px; border-radius:11px; cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>رد درخواست</span>
+          <span onClick="{{ onConfirmYes }}" style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:800; background:{{ confirmAccent }}; color:#fff; padding:9px 15px; border-radius:11px; cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>{{ confirmData.label }}</span>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ACTION RESULT NOTIFICATION -->
+  <sc-if value="{{ notifOpen }}" hint-placeholder-val="{{false}}">
+    <div style="position:fixed; top:22px; left:50%; transform:translateX(-50%); z-index:240; display:flex; align-items:center; gap:9px; background:{{ notifBg }}; border:1px solid {{ notifBorder }}; border-radius:13px; padding:11px 14px; box-shadow:0 20px 50px -16px rgba(0,0,0,.7);">
+      <span style="width:26px; height:26px; border-radius:7px; background:{{ notifIconBg }}; color:{{ notifColor }}; display:flex; align-items:center; justify-content:center; flex:none;" dangerouslySetInnerHTML="{{ notifIcon }}"></span>
+      <span style="font-size:12px; font-weight:700; color:{{ notifColor }};">{{ notifMsg }}</span>
+    </div>
+  </sc-if>
+
+  <!-- SAVE CHANGES BAR -->
+  <sc-if value="{{ dirty }}" hint-placeholder-val="{{false}}">
+    <div style="position:fixed; bottom:22px; left:50%; transform:translateX(-50%); z-index:180; display:flex; align-items:center; gap:13px; background:#18223a; border:1px solid #3b82f6; border-radius:14px; padding:10px 11px 10px 15px; box-shadow:0 20px 50px -16px rgba(0,0,0,.7);">
+      <span style="width:34px; height:34px; border-radius:9px; background:rgba(245,158,11,.16); color:#f59e0b; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>
+      <div style="line-height:1.4;"><div style="font-size:12px; font-weight:800; color:#fff;">تغییرات ذخیره‌نشده</div><div style="font-size:10.5px; color:#9fb0c7;">برای اعمال روی سایت ذخیره کنید</div></div>
+      <span onClick="{{ discardAll }}" style="font-size:11.5px; font-weight:600; color:#9fb0c7; padding:7px 11px; cursor:pointer;">بازگردانی</span>
+      <span onClick="{{ saveAll }}" style="font-size:12px; font-weight:800; background:var(--accent,#3b82f6); color:#fff; padding:9px 15px; border-radius:10px; cursor:pointer;">ذخیره تغییرات</span>
+    </div>
+  </sc-if>
+
+  <!-- SAVED TOAST -->
+  <sc-if value="{{ savedToast }}" hint-placeholder-val="{{false}}">
+    <div style="position:fixed; bottom:22px; left:50%; transform:translateX(-50%); z-index:181; display:flex; align-items:center; gap:9px; background:#143527; border:1px solid #1f8a5b; border-radius:13px; padding:11px 14px; box-shadow:0 20px 50px -16px rgba(0,0,0,.7);">
+      <span style="width:28px; height:28px; border-radius:8px; background:rgba(16,185,129,.2); color:#34d399; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+      <span style="font-size:12px; font-weight:700; color:#d6f5e6;">تغییرات با موفقیت در سایت اعمال شد</span>
+    </div>
+  </sc-if>
+
+  <!-- GENERIC EDIT MODAL -->
+  <sc-if value="{{ editOpen }}" hint-placeholder-val="{{false}}">
+    <div onClick="{{ closeEdit }}" style="position:fixed; inset:0; background:rgba(7,12,20,.7); z-index:210; display:flex; align-items:center; justify-content:center; padding:16px;">
+      <div onClick="{{ stop }}" style="background:#141d2e; border:1px solid #28344c; border-radius:16px; width:480px; max-width:100%; max-height:88vh; overflow:auto; box-shadow:0 30px 70px -20px rgba(0,0,0,.7);">
+        <div style="padding:15px 18px 7px;"><div style="font-size:15.5px; font-weight:800; color:#fff;">{{ edit.title }}</div><div style="font-size:11.5px; color:#6b7b94; margin-top:3px;">{{ edit.subtitle }}</div></div>
+        <div style="padding:11px 18px 3px;">
+          <sc-if value="{{ edit.hasImage }}" hint-placeholder-val="{{false}}">
+            <div style="margin-bottom:14px;"><div style="font-size:10.5px; color:#6b7b94; margin-bottom:6px;">تصویر</div><div style="height:104px; border-radius:11px; overflow:hidden; border:1.5px dashed #aebfd6; background:#eef3fa;"><x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{ edit.imageId }}" shape="rect" placeholder="بکشید و رها کنید" style="display:block; width:100%; height:100%; color:#4a5a73;" hint-size="100%,100%"></x-import></div></div>
+          </sc-if>
+          <div style="display:flex; flex-direction:column; gap:11px;">
+            <sc-for list="{{ edit.fields }}" as="f" hint-placeholder-count="3">
+              <div><div style="font-size:10.5px; color:#6b7b94; margin-bottom:6px;">{{ f.label }}</div><div data-edit-field="{{ f.key }}" style="min-height:44px; border:1px solid #2a3a55; border-radius:9px; background:#0f1623; display:flex; align-items:center; padding:8px 11px; color:#e7ecf3; font-size:12px; font-family:{{ f.font }};" dir="{{ f.dir }}" contenteditable="true">{{ f.value }}</div></div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="padding:12px 18px 16px; display:flex; gap:8px;">
+          <span onClick="{{ saveEdit }}" style="flex:1; text-align:center; font-size:12.5px; font-weight:800; background:var(--accent,#3b82f6); color:#fff; padding:10px; border-radius:11px; cursor:pointer;">ذخیره تغییرات</span>
+          <span onClick="{{ closeEdit }}" style="font-size:12.5px; font-weight:600; border:1px solid #28344c; color:#9fb0c7; padding:10px 15px; border-radius:11px; cursor:pointer;">انصراف</span>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- EXTERNAL SERVICE SETTINGS MODAL -->
+  <sc-if value="{{ svcSetOpen }}" hint-placeholder-val="{{false}}">
+    <div onClick="{{ closeSvcSet }}" style="position:fixed; inset:0; background:rgba(7,12,20,.7); z-index:210; display:flex; align-items:center; justify-content:center; padding:16px;">
+      <div onClick="{{ stop }}" style="background:#141d2e; border:1px solid #28344c; border-radius:16px; width:560px; max-width:100%; max-height:88vh; overflow:auto; box-shadow:0 30px 70px -20px rgba(0,0,0,.7);">
+        <div style="padding:15px 18px; border-bottom:1px solid #1f2a3d; display:flex; align-items:center; gap:11px;">
+          <span style="width:46px; height:46px; border-radius:12px; background:#18223a; color:{{ svcSet.iconColor }}; display:flex; align-items:center; justify-content:center; flex:none;" dangerouslySetInnerHTML="{{ svcSet.svg }}"></span>
+          <div style="flex:1;"><div style="font-size:15.5px; font-weight:800; color:#fff;">{{ svcSet.name }}</div><div style="font-size:11px; color:#6b7b94; margin-top:2px;">{{ svcSet.provider }}</div></div>
+          <span style="font-size:10.5px; font-weight:700; color:{{ svcSet.statusColor }}; background:{{ svcSet.statusBg }}; padding:4px 10px; border-radius:18px;">{{ svcSet.statusLabel }}</span>
+          <span onClick="{{ closeSvcSet }}" style="width:34px; height:34px; border-radius:9px; background:#18223a; border:1px solid #28344c; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#9fb0c7; flex:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
+        </div>
+        <div style="padding:15px 18px;">
+          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:11px;">
+            <div style="grid-column:span 2;"><div style="font-size:10.5px; color:#6b7b94; margin-bottom:6px;">آدرس Endpoint (API URL)</div><div style="min-height:42px; border:1px solid #2a3a55; border-radius:9px; background:#0f1623; display:flex; align-items:center; padding:0 10px; color:#cdd6e3; font-size:11.5px; font-family:'Roboto Mono',monospace;" dir="ltr" contenteditable="true">{{ svcSet.endpoint }}</div></div>
+            <div><div style="font-size:10.5px; color:#6b7b94; margin-bottom:6px;">متد</div><select value="{{ svcSet.method }}" onChange="{{ svcSet.onMethod }}" dir="ltr" style="width:100%; box-sizing:border-box; height:42px; border:1px solid #2a3a55; border-radius:9px; background:#0f1623; color:#cdd6e3; font-size:11.5px; padding:0 10px; font-family:inherit; outline:none; cursor:pointer;"><sc-for list="{{ svcSet.methodOptions }}" as="m" hint-placeholder-count="5"><option value="{{ m.v }}">{{ m.l }}</option></sc-for></select></div>
+            <div><div style="font-size:10.5px; color:#6b7b94; margin-bottom:6px;">مهلت پاسخ (Timeout)</div><div style="height:42px; border:1px solid #2a3a55; border-radius:9px; background:#0f1623; display:flex; align-items:center; padding:0 10px; color:#cdd6e3; font-size:11.5px; font-family:'Roboto Mono',monospace;" dir="ltr" contenteditable="true">30s</div></div>
+            <div style="grid-column:span 2;"><div style="font-size:10.5px; color:#6b7b94; margin-bottom:6px;">کلید احراز (API Key)</div><div style="height:42px; border:1px solid #2a3a55; border-radius:9px; background:#0f1623; display:flex; align-items:center; justify-content:space-between; padding:0 10px; color:#9fb0c7; font-size:11.5px; font-family:'Roboto Mono',monospace;" dir="ltr">sk_live_••••••••••••3f9a<span style="color:var(--accent,#3b82f6); cursor:pointer;">نمایش</span></div></div>
+          </div>
+          <div style="margin-top:18px; display:flex; flex-direction:column; gap:2px;">
+            <div style="display:flex; align-items:center; gap:11px; padding:10px 0; border-top:1px solid #1f2a3d;">
+              <div style="flex:1;"><div style="font-size:11.5px; font-weight:600; color:#e7ecf3;">وضعیت سرویس</div><div style="font-size:10.5px; color:#6b7b94; margin-top:2px;">فعال یا غیرفعال بودن اتصال در سایت</div></div>
+              <div onClick="{{ svcSet.onToggle }}" dir="ltr" style="width:44px; height:25px; border-radius:13px; background:{{ svcSet.toggleBg }}; position:relative; cursor:pointer; flex:none;"><span style="position:absolute; top:3px; left:3px; width:19px; height:19px; border-radius:50%; background:#fff; transform:{{ svcSet.knob }}; transition:transform .18s;"></span></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:11px; padding:10px 0; border-top:1px solid #1f2a3d;">
+              <div style="flex:1;"><div style="font-size:11.5px; font-weight:600; color:#e7ecf3;">حالت آزمایشی (Sandbox)</div><div style="font-size:10.5px; color:#6b7b94; margin-top:2px;">ارسال درخواست به محیط تست سرویس</div></div>
+              <div dir="ltr" style="width:44px; height:25px; border-radius:13px; background:#28344c; position:relative; cursor:pointer; flex:none;"><span style="position:absolute; top:3px; left:3px; width:19px; height:19px; border-radius:50%; background:#fff;"></span></div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:0 21px 20px;">
+          <sc-if value="{{ svcSet.testShow }}" hint-placeholder-val="{{false}}">
+            <div style="display:flex; align-items:center; gap:8px; background:{{ svcSet.testBg }}; border:1px solid {{ svcSet.testBorder }}; border-radius:11px; padding:10px 12px; margin-bottom:14px;">
+              <span style="width:24px; height:24px; border-radius:7px; background:{{ svcSet.testIconBg }}; color:{{ svcSet.testColor }}; display:flex; align-items:center; justify-content:center; flex:none;" dangerouslySetInnerHTML="{{ svcSet.testIcon }}"></span>
+              <span style="flex:1; font-size:11.5px; color:{{ svcSet.testColor }}; font-weight:600;">{{ svcSet.testMsg }}</span>
+              <span style="font-size:10px; color:#6b7b94; font-family:'Roboto Mono',monospace;" dir="ltr">{{ svcSet.testMeta }}</span>
+            </div>
+          </sc-if>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <span onClick="{{ closeSvcSet }}" style="flex:1; text-align:center; font-size:12.5px; font-weight:800; background:var(--accent,#3b82f6); color:#fff; padding:10px; border-radius:11px; cursor:pointer;">ذخیره تنظیمات</span>
+            <span onClick="{{ svcSet.onTest }}" style="font-size:12.5px; font-weight:700; border:1px solid #3b82f6; color:var(--accent,#3b82f6); padding:10px 12px; border-radius:11px; cursor:pointer;">{{ svcSet.testBtnLabel }}</span>
+            <span style="font-size:12px; font-weight:700; color:#f87171; padding:10px 11px; cursor:pointer;">حذف سرویس</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- RESET PASSWORD MODAL -->
+  <sc-if value="{{ resetOpen }}" hint-placeholder-val="{{false}}">
+    <div onClick="{{ closeReset }}" style="position:fixed; inset:0; background:rgba(7,12,20,.7); z-index:200; display:flex; align-items:center; justify-content:center; padding:16px;">
+      <div style="background:#141d2e; border:1px solid #28344c; border-radius:16px; width:420px; max-width:100%; padding:18px; box-shadow:0 30px 70px -20px rgba(0,0,0,.7);">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:18px;"><span style="width:46px; height:46px; border-radius:12px; background:rgba(59,130,246,.16); color:#3b82f6; display:flex; align-items:center; justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span><div><div style="font-size:14.5px; font-weight:800; color:#fff;">بازنشانی رمز عبور</div><div style="font-size:11.5px; color:#6b7b94; margin-top:2px;">{{ resetName }}</div></div></div>
+        <div style="background:#18223a; border:1px solid #28344c; border-radius:12px; padding:12px; margin-bottom:16px;">
+          <div style="font-size:10.5px; color:#6b7b94; margin-bottom:8px;">رمز موقت تولیدشده</div>
+          <div style="display:flex; align-items:center; justify-content:space-between;"><span style="font-size:15.5px; font-weight:800; color:#34d399; font-family:'Roboto Mono',monospace; letter-spacing:1px;" dir="ltr">Asx-7K29-tQ</span><span style="font-size:11px; color:var(--accent,#3b82f6); font-weight:700; cursor:pointer;">کپی</span></div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px;">
+          <div style="display:flex; align-items:center; gap:7px; font-size:11.5px; color:#cdd6e3;"><span style="width:18px; height:18px; border-radius:5px; background:var(--accent,#3b82f6); display:flex; align-items:center; justify-content:center; color:#fff; font-size:10px;">✓</span>ارسال رمز موقت با پیامک</div>
+          <div style="display:flex; align-items:center; gap:7px; font-size:11.5px; color:#cdd6e3;"><span style="width:18px; height:18px; border-radius:5px; background:var(--accent,#3b82f6); display:flex; align-items:center; justify-content:center; color:#fff; font-size:10px;">✓</span>اجبار به تغییر رمز در ورود بعدی</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <span onClick="{{ closeReset }}" style="flex:1; text-align:center; font-size:12.5px; font-weight:800; background:var(--accent,#3b82f6); color:#fff; padding:10px; border-radius:11px; cursor:pointer;">تأیید و بازنشانی</span>
+          <span onClick="{{ closeReset }}" style="font-size:12.5px; font-weight:600; border:1px solid #28344c; color:#9fb0c7; padding:10px 14px; border-radius:11px; cursor:pointer;">انصراف</span>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;setupMode&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;حالت حساب&quot;}}">
+class Component extends DCLogic {
+  state = {
+    tab: "dashboard",
+    addOpen: false,
+    nuName: "", nuUsername: "", nuRole: "کارشناس فروش", nuDept: "commercial", nuRank: "کارشناس", nuPassword: "",
+    customDepts: [], addingDept: false, newDeptName: "",
+    resetUser: null,
+    services: { search:true, payment:true, api:true, sms:true, email:true, club:true, charter:true, refund:false, checkin:true, cdn:true, dest:true, mobile:true, ext_zarinpal:true, ext_amadeus:true, ext_kavenegar:true, ext_neshan:false },
+    security: { reqUpper:true, reqNumber:true, reqSymbol:true, block:true, twofa:true },
+    settings: { maintenance:false, registration:true, charterSale:true, apiPublic:false, sandbox:false },
+    socials: { instagram:true, telegram:true, whatsapp:true, linkedin:false, x:true },
+    extAddOpen: false,
+    extraServices: [], extMethods: {},
+    newExtName: "", newExtType: "payment", newExtEndpoint: "", newExtMethod: "POST", newExtApiKey: "", newExtErr: false,
+    newQuestionText: "",
+    viewUserName: null,
+    viewStaffId: null,
+    staffStatus: {},
+    userAccess: {},
+    editModal: null,
+    svcSettingsId: null,
+    svcTest: null,
+    dirty: false,
+    savedToast: false,
+    confirm: null,
+    notif: null,
+    newPerms: {}
+  };
+
+  ic(p) { return { __html: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>' }; }
+  ic18(p) { return { __html: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>' }; }
+
+  toFa(n) { return String(n).replace(/[0-9]/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]); }
+  createStaffUser() {
+    const name = (this.state.nuName || "").trim();
+    const username = (this.state.nuUsername || "").trim();
+    const role = (this.state.nuRole || "کارشناس").trim();
+    const dept = this.state.nuDept || "commercial";
+    const rank = (this.state.nuRank || "کارشناس").trim();
+    const password = (this.state.nuPassword || "").trim();
+    if (!name || !username) { this.setState({ notif: { msg: "نام و نام کاربری الزامی است", tone: "reject" } }); setTimeout(() => this.setState({ notif: null }), 2400); return; }
+    if (password.length < 6) { this.setState({ notif: { msg: "رمز عبور باید حداقل ۶ کاراکتر باشد", tone: "reject" } }); setTimeout(() => this.setState({ notif: null }), 2600); return; }
+    const np = this.state.newPerms || {};
+    const permissions = Object.keys(np).filter(k => np[k]);
+    if (permissions.indexOf("dashboard") < 0) permissions.unshift("dashboard");
+    if (permissions.indexOf("cartable") < 0) permissions.push("cartable");
+    if (window.SiteData) {
+      window.SiteData.addStaff({ id: "ST-" + Date.now(), name, username, password, role, rank, dept, permissions, createdBy: "مدیر IT", at: "هم‌اکنون", jy: 1405, jm: 4, jd: 12, isNew: true });
+    }
+    const deptLabel = dept === "finance" ? "مدیر مالی" : dept === "it" ? "مدیر IT" : dept === "sales" ? "مدیر بازرگانی (واحد فروش)" : "مدیر بازرگانی";
+    this.setState({ addOpen: false, nuName: "", nuUsername: "", nuRole: "کارشناس فروش", nuDept: "commercial", nuRank: "کارشناس", nuPassword: "",
+      notif: { msg: "کارمند «" + name + "» ایجاد و اعلان برای " + deptLabel + " ارسال شد", tone: "ok" } });
+    setTimeout(() => this.setState({ notif: null }), 2800);
+  }
+
+  _confTone(c) {
+    const t = c && c.tone;
+    if (t === "danger") return { c:"#f87171", bg:"rgba(248,113,113,.14)" };
+    if (t === "success") return { c:"#34d399", bg:"rgba(16,185,129,.14)" };
+    if (t === "warn") return { c:"#f59e0b", bg:"rgba(245,158,11,.14)" };
+    return { c:"#3b82f6", bg:"rgba(59,130,246,.14)" };
+  }
+
+  componentDidMount() {
+    this._sdh = () => this.forceUpdate();
+    window.addEventListener("sitedata:change", this._sdh);
+    window.addEventListener("storage", this._sdh);
+    if (window.SiteData) {
+      const d = window.SiteData.getAll();
+      this.setState(s => ({ services: Object.assign({}, s.services, d.services || {}), socials: Object.assign({}, s.socials, d.socials || {}) }));
+    }
+  }
+  componentWillUnmount() { window.removeEventListener("sitedata:change", this._sdh); window.removeEventListener("storage", this._sdh); }
+
+  renderVals() {
+    const tab = this.state.tab;
+    const SETUP = !!(this.props.setupMode);
+    const SD = (typeof window !== "undefined" && window.SiteData) ? window.SiteData.getAll() : null;
+    const go = (k) => () => this.setState({ tab: k });
+    const openEdit = (payload) => () => this.setState({ editModal: payload });
+
+    const ICON = {
+      dashboard: '<path d="M3 3v18h18"/><path d="M7 14l3.5-3.5 3 3L20 7"/>',
+      users: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5a3.2 3.2 0 0 1 0 6.4"/><path d="M18 14.5c1.9.6 3.4 2.4 3.4 4.5"/>',
+      security: '<path d="M12 3l7 3v5.5c0 4.2-2.9 7.4-7 8.5-4.1-1.1-7-4.3-7-8.5V6l7-3z"/><rect x="9.5" y="11" width="5" height="4" rx="1"/><path d="M10.5 11v-1.2a1.5 1.5 0 0 1 3 0V11"/>',
+      services: '<rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/><path d="M7 7h.01M7 17h.01"/>',
+      panels: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/>',
+      logs: '<path d="M4 6h16M4 12h16M4 18h10"/>',
+      survey: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+      backup: '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
+      settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+      content: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 4v5"/>',
+      perms: '<rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/><circle cx="12" cy="16" r="1.4"/>'
+    };
+    const navDefs = [
+      { key:"dashboard", label:"داشبورد فنی", icon:ICON.dashboard },
+      { key:"users", label:"کاربران و دسترسی‌ها", icon:ICON.users },
+      { key:"security", label:"رمزها و امنیت", icon:ICON.security },
+      { key:"services", label:"سرویس‌های سایت", icon:ICON.services },
+      { key:"reservation", label:"سامانه رزرواسیون", icon:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 10h20M8 4v16"/>' },
+      { key:"panels", label:"دسترسی به پنل‌ها", icon:ICON.panels },
+      { key:"logs", label:"لاگ و رویدادها", icon:ICON.logs, badge:true, badgeNum:"۳" },
+      { key:"survey", label:"نظرسنجی مسافران", icon:ICON.survey },
+      { key:"backup", label:"پشتیبان‌گیری", icon:ICON.backup },
+      { key:"settings", label:"تنظیمات سامانه", icon:ICON.settings }
+    ];
+    const navItems = navDefs.map(n => ({
+      key:n.key, label:n.label, svg:{ __html: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+n.icon+'</svg>' },
+      onClick: go(n.key),
+      bg: tab===n.key ? "rgba(59,130,246,.14)" : "transparent",
+      color: tab===n.key ? "#fff" : "#9fb0c7",
+      weight: tab===n.key ? "800" : "600",
+      badge: !!n.badge && tab!==n.key, badgeNum: n.badgeNum || ""
+    }));
+
+    const meta = {
+      dashboard: ["داشبورد فنی", "نمای کلی سلامت زیرساخت و سرویس‌های blujet"],
+      users: ["کاربران و دسترسی‌ها", "حساب‌ها، نقش‌ها، رمز عبور و سطح دسترسی کارمندان واحدها — یکپارچه"],
+      security: ["رمزها و امنیت", "سیاست‌های رمز عبور و کنترل دسترسی"],
+      services: ["سرویس‌های سایت", "وضعیت و کنترل تمام سرویس‌های فعال در سایت"],
+      content: ["مدیریت محتوای سایت", "بنر، مقاصد، مسیرها، شبکه‌های اجتماعی، اپلیکیشن، تماس و فرصت‌های شغلی"],
+      perms: ["دسترسی کارمندان", "تعیین سطح دسترسی کارمندان واحدها و مدیریت رمز عبور"],
+      reservation: ["سامانه رزرواسیون پرواز", "جستجو و رزرو، مدیریت PNRها، صدور بلیط و دسترسی API آژانس‌ها"],
+      panels: ["دسترسی به پنل‌ها", "ورود به پنل‌های عملیاتی تحت مدیریت واحد IT"],
+      logs: ["لاگ و رویدادها", "رصد فعالیت‌ها و رخدادهای سامانه"],
+      survey: ["نظرسنجی مسافران", "ایجاد و پیکربندی نظرسنجی رضایت پس از پرواز — نتایج نزد مدیران ارشد"],
+      backup: ["پشتیبان‌گیری", "نسخه‌های پشتیبان و زمان‌بندی خودکار"],
+      settings: ["تنظیمات سامانه", "پیکربندی سراسری سرویس"]
+    };
+
+    // ---- services ----
+    const svcDefs = [
+      { id:"search", name:"موتور جستجوی پرواز", icon:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/>', color:"#3b82f6", uptime:"۹۹٫۹۹٪" },
+      { id:"payment", name:"درگاه پرداخت بانکی", icon:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>', color:"#34d399", uptime:"۹۹٫۹۵٪" },
+      { id:"api", name:"وب‌سرویس API آژانس‌ها", icon:'<path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3"/>', color:"#a855f7", uptime:"۹۹٫۹۰٪" },
+      { id:"sms", name:"سامانه پیامک (SMS)", icon:'<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4L3 21l1.1-3.3A8.4 8.4 0 1 1 21 11.5z"/>', color:"#f59e0b", uptime:"۹۹٫۸۰٪" },
+      { id:"email", name:"سرویس ایمیل", icon:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>', color:"#60a5fa", uptime:"۹۹٫۹۹٪" },
+      { id:"club", name:"باشگاه مشتریان", icon:'<path d="M12 4l2.3 4.7 5.2.8-3.7 3.7.9 5.1-4.7-2.5-4.7 2.5.9-5.1L4.5 9.5l5.2-.8z"/>', color:"#fbbf24", uptime:"۱۰۰٪" },
+      { id:"charter", name:"فروش چارتر", icon:'<path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/>', color:"#34d399", uptime:"۹۹٫۷۰٪" },
+      { id:"refund", name:"استرداد آنلاین", icon:'<path d="M9 14l-4-4 4-4"/><path d="M5 10h9a5 5 0 0 1 0 10h-3"/>', color:"#f87171", uptime:"۹۸٫۲۰٪" },
+      { id:"checkin", name:"چک‌این آنلاین", icon:'<path d="M9 12l2 2 4-4"/><rect x="3" y="4" width="18" height="16" rx="2"/>', color:"#60a5fa", uptime:"۹۹٫۶۰٪" },
+      { id:"cdn", name:"CDN و تصاویر", icon:'<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.6"/><path d="M21 16l-5-5L5 19"/>', color:"#a855f7", uptime:"۱۰۰٪" },
+      { id:"dest", name:"نقشه و مقاصد", icon:'<path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2"/>', color:"#34d399", uptime:"۹۹٫۹۹٪" },
+      { id:"mobile", name:"اپلیکیشن موبایل (API)", icon:'<rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 18h2"/>', color:"#3b82f6", uptime:"۹۹٫۸۵٪" }
+    ];
+    const svc = this.state.services;
+    const toggleSvc = (id) => () => this.setState(s => ({ services: { ...s.services, [id]: !s.services[id] }, dirty:true }));
+    const askSvc = (d) => () => { const on = this.state.services[d.id];
+      this.setState({ confirm: {
+        section: "سرویس‌های سایت",
+        icon: '<rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/><path d="M7 7h.01M7 17h.01"/>',
+        title: on ? "غیرفعال‌سازی سرویس" : "فعال‌سازی سرویس",
+        msg: "آیا سرویس «"+d.name+"» روی سایت "+(on?"غیرفعال":"فعال")+" شود؟ این دستور بلافاصله روی سایت اعمال می‌شود.",
+        label: on ? "غیرفعال کن" : "فعال کن", tone: on ? "danger" : "accent",
+        okMsg: "سرویس «"+d.name+"» "+(on?"غیرفعال":"فعال")+" شد و روی سایت اعمال گردید.",
+        action: () => this.setState(s => ({ services: { ...s.services, [d.id]: !s.services[d.id] }, dirty:true }))
+      } });
+    };
+    const mkCard = (d) => {
+      const on = svc[d.id];
+      return {
+        id:d.id, name:d.name, uptime:d.uptime, iconColor:d.color, provider:d.provider, endpoint:d.endpoint,
+        svg:this.ic18(d.icon),
+        onToggle: askSvc(d),
+        onSettings: () => this.setState({ svcSettingsId: d.id }),
+        toggleBg: on ? "var(--accent,#3b82f6)" : "#28344c",
+        knob: on ? "translateX(18px)" : "translateX(0)",
+        cardBorder: on ? "#1f2a3d" : "#3a2530",
+        statusLabel: on ? "فعال" : "غیرفعال",
+        statusColor: on ? "#34d399" : "#f87171",
+        statusBg: on ? "rgba(16,185,129,.14)" : "rgba(248,113,113,.14)"
+      };
+    };
+    const servicesInternal = svcDefs.map(mkCard);
+    const EXT_TYPES = [
+      { v:"payment", l:"پرداخت" }, { v:"sms", l:"پیامک" }, { v:"maps", l:"نقشه و مسیریابی" },
+      { v:"gds", l:"رزرواسیون (GDS)" }, { v:"email", l:"ایمیل" }, { v:"other", l:"دیگر" }
+    ];
+    const EXT_TYPE_ICON = {
+      payment:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>', sms:'<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4L3 21l1.1-3.3A8.4 8.4 0 1 1 21 11.5z"/>',
+      maps:'<path d="M9 4l6 2 6-2v14l-6 2-6-2-6 2V6z"/><path d="M9 4v14M15 6v14"/>', gds:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/>',
+      email:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>', other:'<path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3"/>'
+    };
+    const EXT_TYPE_COLOR = { payment:"#34d399", sms:"#f59e0b", maps:"#a855f7", gds:"#3b82f6", email:"#60a5fa", other:"#9fb0c7" };
+    const EXT_METHODS = ["GET","POST","PUT","PATCH","DELETE"];
+    const newExtTypeOptions = EXT_TYPES.map(t => ({ v:t.v, l:t.l }));
+    const newExtMethodOptions = EXT_METHODS.map(m => ({ v:m, l:m }));
+    const createExtService = () => {
+      const name = (this.state.newExtName || "").trim();
+      const endpoint = (this.state.newExtEndpoint || "").trim();
+      const apiKey = (this.state.newExtApiKey || "").trim();
+      if (!name || !endpoint || !apiKey) { this.setState({ newExtErr: true }); return; }
+      const typeDef = EXT_TYPES.find(t => t.v === this.state.newExtType) || EXT_TYPES[0];
+      const id = "ext_custom_" + Date.now();
+      const rec = { id, name, provider: typeDef.l, endpoint, method: this.state.newExtMethod || "POST", icon: EXT_TYPE_ICON[typeDef.v], color: EXT_TYPE_COLOR[typeDef.v] };
+      this.setState(s => ({
+        extraServices: (s.extraServices || []).concat([rec]),
+        services: Object.assign({}, s.services, { [id]: true }),
+        extAddOpen: false, newExtName: "", newExtType: "payment", newExtEndpoint: "", newExtMethod: "POST", newExtApiKey: "", newExtErr: false,
+        notif: { msg: "سرویس «" + name + "» ثبت و متصل شد ✓", tone: "ok" }
+      }));
+      setTimeout(() => this.setState({ notif: null }), 2400);
+    };
+    const extDefs = [
+      { id:"ext_zarinpal", name:"درگاه پرداخت زرین‌پال", provider:"زرین‌پال", endpoint:"https://api.zarinpal.com/pg/v4", method:"POST", icon:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>', color:"#34d399" },
+      { id:"ext_amadeus", name:"موتور رزرواسیون آمادئوس", provider:"Amadeus GDS", endpoint:"https://api.amadeus.com/v2/shopping", method:"GET", icon:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/>', color:"#3b82f6" },
+      { id:"ext_kavenegar", name:"سرویس پیامک کاوه‌نگار", provider:"Kavenegar", endpoint:"https://api.kavenegar.com/v1/sms", method:"POST", icon:'<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4L3 21l1.1-3.3A8.4 8.4 0 1 1 21 11.5z"/>', color:"#f59e0b" },
+      { id:"ext_neshan", name:"نقشه و مسیریابی نشان", provider:"Neshan Maps", endpoint:"https://api.neshan.org/v4/direction", method:"GET", icon:'<path d="M9 4l6 2 6-2v14l-6 2-6-2-6 2V6z"/><path d="M9 4v14M15 6v14"/>', color:"#a855f7" }
+    ].concat(this.state.extraServices || []);
+    const servicesExternal = extDefs.map(mkCard);
+    const servicesList = servicesInternal;
+    const servicesUpCount = this.fa(svcDefs.filter(d => svc[d.id]).length);
+    const servicesTotal = this.fa(svcDefs.length);
+
+    const healthList = svcDefs.slice(0,6).map(d => {
+      const on = svc[d.id];
+      return { name:d.name, uptime:d.uptime, dot: on ? "#34d399" : "#f87171",
+        statusLabel: on ? "سالم" : "قطع", statusColor: on ? "#34d399" : "#f87171",
+        statusBg: on ? "rgba(16,185,129,.14)" : "rgba(248,113,113,.14)" };
+    });
+
+    // ---- kpis ----
+    const upN = svcDefs.filter(d => svc[d.id]).length;
+    const kpis = [
+      { svg:this.ic('<rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/><path d="M7 7h.01M7 17h.01"/>'), iconBg:"rgba(59,130,246,.16)", iconColor:"#3b82f6", value: this.fa(upN)+"/"+this.fa(svcDefs.length), label:"سرویس فعال", trend:"پایدار", trendColor:"#34d399", onClick:go("services"), cta:"مدیریت ←" },
+      { svg:this.ic('<path d="M22 12A10 10 0 1 1 12 2"/><path d="M12 7v5l3 2"/>'), iconBg:"rgba(16,185,129,.16)", iconColor:"#34d399", value: SETUP ? "۰٪" : "۹۹٫۹۸٪", label:"آپ‌تایم ۳۰ روز", trend: SETUP ? "۰" : "+۰٫۰۲", trendColor:"#34d399", onClick:go("logs"), cta:"لاگ‌ها ←" },
+      { svg:this.ic('<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5a3.2 3.2 0 0 1 0 6.4"/>'), iconBg:"rgba(147,51,234,.16)", iconColor:"#a855f7", value: SETUP ? "۰" : "۴۸", label:"کاربر فعال سامانه", trend: SETUP ? "۰" : "+۳", trendColor:"#34d399", onClick:go("users"), cta:"کاربران ←" },
+      { svg:this.ic('<path d="M12 3l7 3v5.5c0 4.2-2.9 7.4-7 8.5-4.1-1.1-7-4.3-7-8.5V6l7-3z"/><path d="M12 9v3M12 15h.01"/>'), iconBg:"rgba(245,158,11,.16)", iconColor:"#f59e0b", value: SETUP ? "۰" : "۳", label:"هشدار امنیتی باز", trend: SETUP ? "بدون هشدار" : "نیازمند بررسی", trendColor: SETUP ? "#34d399" : "#f59e0b", onClick:go("security"), cta:"بررسی ←" }
+    ];
+
+    const resourceBars = SETUP ? [
+      { label:"پردازنده (CPU)", pct:"۰٪", width:"0%", color:"#3b82f6" },
+      { label:"حافظه (RAM)", pct:"۰٪", width:"0%", color:"#a855f7" },
+      { label:"دیسک", pct:"۰٪", width:"0%", color:"#34d399" },
+      { label:"پهنای باند", pct:"۰٪", width:"0%", color:"#f59e0b" }
+    ] : [
+      { label:"پردازنده (CPU)", pct:"۳۴٪", width:"34%", color:"#3b82f6" },
+      { label:"حافظه (RAM)", pct:"۶۲٪", width:"62%", color:"#a855f7" },
+      { label:"دیسک", pct:"۴۸٪", width:"48%", color:"#34d399" },
+      { label:"پهنای باند", pct:"۲۷٪", width:"27%", color:"#f59e0b" }
+    ];
+    const events = SETUP ? [] : [
+      { color:"#34d399", text:"پشتیبان‌گیری خودکار دیتابیس با موفقیت انجام شد", time:"امروز ۰۹:۰۰" },
+      { color:"#f59e0b", text:"سرویس استرداد آنلاین در حالت تعمیر قرار گرفت", time:"امروز ۰۸:۱۲" },
+      { color:"#3b82f6", text:"رمز عبور کاربر «رضا فولادی» بازنشانی شد", time:"دیروز ۱۷:۴۰" },
+      { color:"#f87171", text:"۲ تلاش ناموفق ورود از IP ناشناس مسدود شد", time:"دیروز ۱۴:۰۵" }
+    ];
+    const eventsEmpty = events.length === 0;
+
+    // ---- users ----
+    const userDefs = [
+      { initials:"عص", name:"مهندس علی صدر", role:"مدیر IT", username:"itadmin", email:"itadmin@aseman.ir", lastLogin:"هم‌اکنون", status:"active", avatarBg:"linear-gradient(135deg,#3b82f6,#9333ea)", self:true },
+      { initials:"مر", name:"محمد رحیمی", role:"مدیر عامل", username:"ceo.rahimi", email:"ceo@aseman.ir", lastLogin:"۱۰ دقیقه پیش", status:"active", avatarBg:"#7c3aed" },
+      { initials:"زک", name:"زهرا کریمی", role:"مدیر مالی", username:"finance", email:"finance@aseman.ir", lastLogin:"۱ ساعت پیش", status:"active", avatarBg:"#2563eb" },
+      { initials:"نع", name:"نیما عباسی", role:"مدیر بازرگانی", username:"comm", email:"commercial@aseman.ir", lastLogin:"دیروز", status:"active", avatarBg:"#0891b2" },
+      { initials:"سن", name:"سارا نوری", role:"ادمین سایت", username:"site.admin", email:"siteadmin@aseman.ir", lastLogin:"۲ ساعت پیش", status:"active", avatarBg:"#059669" },
+      { initials:"حم", name:"حسین مهری", role:"آژانس blujet", username:"agency.parsian", email:"parsian@agency.ir", lastLogin:"۳ روز پیش", status:"active", avatarBg:"#b45309" },
+      { initials:"می", name:"مریم یوسفی", role:"کارشناس پشتیبانی", username:"support.yousefi", email:"support@aseman.ir", lastLogin:"۵ ساعت پیش", status:"active", avatarBg:"#be185d" },
+      { initials:"رف", name:"رضا فولادی", role:"کارشناس محتوا", username:"content.fooladi", email:"content@aseman.ir", lastLogin:"۱ هفته پیش", status:"suspended", avatarBg:"#52606d" }
+    ];
+    const accessLabels = [
+      ["dashboard","داشبورد و گزارش‌های کلی"], ["reports","گزارش‌ها و تراکنش‌های مالی"],
+      ["content","محتوا و بلاگ"], ["media","مدیریت تصاویر و رسانه"],
+      ["users","مدیریت کاربران"], ["services","سرویس‌ها و API"],
+      ["settings","تنظیمات سامانه"], ["agencies","مدیریت آژانس‌ها"],
+      ["charter","فروش و مدیریت چارتر"], ["refund","استرداد و عودت وجه"],
+      ["loyalty","باشگاه مشتریان"], ["pricing","نرخ‌گذاری و تخفیف‌ها"],
+      ["tickets","کارتابل و تیکت‌ها"], ["support","پشتیبانی و پاسخگویی"]
+    ];
+    const roleAccess = {
+      "مدیر IT": ["dashboard","reports","content","users","services","settings"],
+      "مدیر عامل": ["dashboard","reports","content","users","services","settings"],
+      "مدیر مالی": ["dashboard","reports"],
+      "مدیر بازرگانی": ["dashboard","users"],
+      "ادمین سایت": ["dashboard","content","settings"],
+      "آژانس blujet": ["dashboard"],
+      "کارشناس پشتیبانی": ["dashboard","users"],
+      "کارشناس محتوا": ["dashboard","content"]
+    };
+    const getAccess = (name, role) => this.state.userAccess[name] || roleAccess[role] || ["dashboard"];
+    const setAccess = (name, arr) => this.setState(s => ({ userAccess: { ...s.userAccess, [name]: arr }, dirty:true }));
+    const _staffAll = SETUP ? [] : (window.SiteData ? window.SiteData.getStaff() : []);
+    const _staffAvatar = { commercial: "#0891b2", finance: "#2563eb", it: "#7c3aed" };
+    const _staffStatus = this.state.staffStatus || {};
+    const _staffUsers = _staffAll.map(s => {
+      const suspended = _staffStatus[s.id] === "suspended";
+      return {
+        initials: (s.name || "").trim().split(/\s+/).map(w => w[0]).slice(0,2).join(""),
+        name: s.name, role: (s.role || "کارشناس") + " · " + (s.dept === "finance" ? "واحد مالی" : s.dept === "it" ? "واحد IT" : "واحد بازرگانی"),
+        username: s.username, lastLogin: s.at || "—", avatarBg: _staffAvatar[s.dept] || "#0891b2",
+        statusLabel: suspended ? "معلق" : "فعال",
+        statusColor: suspended ? "#f87171" : "#34d399",
+        statusBg: suspended ? "rgba(248,113,113,.14)" : "rgba(16,185,129,.14)",
+        onView: () => this.setState({ viewStaffId: s.id }),
+        onReset: () => this.setState({ resetUser: s.name }),
+        onSuspend: () => {
+          const next = suspended ? "active" : "suspended";
+          this.setState(st => ({ staffStatus: Object.assign({}, st.staffStatus, { [s.id]: next }) }));
+          if (window.SiteData) window.SiteData.addStaffReport({ id: "SR-" + Date.now(), staffId: s.id, staffName: s.name, dept: s.dept, category: "account", catLabel: "حساب کاربری", action: (next === "suspended" ? "تعلیق" : "فعال‌سازی") + " حساب توسط مدیر IT", detail: "وضعیت حساب کاربری «" + s.name + "» به «" + (next === "suspended" ? "معلق" : "فعال") + "» تغییر یافت.", at: "هم‌اکنون", jy: 1405, jm: 4, jd: 12 });
+        },
+        suspendLabel: suspended ? "فعال‌سازی" : "تعلیق",
+        suspendColor: suspended ? "#34d399" : "#f87171"
+      };
+    });
+    // Users list shows ONLY employees (کارمندان). Managers are not listed here.
+    const users = _staffUsers;
+    const _unusedUserDefs = userDefs.map(u => ({
+      initials:u.initials, name:u.name, role:u.role, username:u.username, lastLogin:u.lastLogin, avatarBg:u.avatarBg,
+      statusLabel: u.status==="active" ? "فعال" : "معلق",
+      statusColor: u.status==="active" ? "#34d399" : "#f87171",
+      statusBg: u.status==="active" ? "rgba(16,185,129,.14)" : "rgba(248,113,113,.14)",
+      onView: () => this.setState({ viewUserName: u.name }),
+      onReset: () => this.setState({ resetUser: u.name }),
+      onSuspend: () => {},
+      suspendLabel: u.status==="active" ? "تعلیق" : "فعال‌سازی",
+      suspendColor: u.status==="active" ? "#f87171" : "#34d399"
+    }));
+    const vuDef = userDefs.find(u => u.name === this.state.viewUserName);
+    let viewUser = { perms:[] };
+    if (vuDef) {
+      const has = getAccess(vuDef.name, vuDef.role);
+      const grantedDefs = accessLabels.filter(([k]) => has.indexOf(k) >= 0);
+      const availDefs = accessLabels.filter(([k]) => has.indexOf(k) < 0);
+      const perms = grantedDefs.map(([k,label]) => ({ label,
+          onToggle: () => { setAccess(vuDef.name, has.filter(x=>x!==k)); } }));
+      const available = availDefs.map(([k,label]) => ({ label,
+          onAdd: () => { setAccess(vuDef.name, has.concat([k])); } }));
+      viewUser = {
+        initials:vuDef.initials, name:vuDef.name, role:vuDef.role, username:vuDef.username, email:vuDef.email,
+        lastLogin:vuDef.lastLogin, avatarBg:vuDef.avatarBg,
+        statusLabel: vuDef.status==="active" ? "فعال" : "معلق",
+        statusColor: vuDef.status==="active" ? "#34d399" : "#f87171",
+        statusBg: vuDef.status==="active" ? "rgba(16,185,129,.14)" : "rgba(248,113,113,.14)",
+        perms, available, hasAvailable: available.length > 0, permCount: this.fa(perms.length),
+        onReset: () => this.setState({ viewUserName:null, resetUser: vuDef.name })
+      };
+    }
+    // ---- staff detail modal (view an employee) ----
+    const _vsId = this.state.viewStaffId;
+    const _vsRec = _vsId ? _staffAll.find(s => s.id === _vsId) : null;
+    if (_vsRec) {
+      const _permLabels = { dashboard:"داشبورد", agencies:"مدیریت آژانس‌ها", flights:"مدیریت پروازها", pricing:"نرخ‌گذاری", reports:"گزارش‌ها", finance:"امور مالی", refund:"استرداد بلیط", cartable:"کارتابل", users:"مدیریت کاربران", services:"سرویس‌های سایت", security:"رمزها و امنیت", logs:"لاگ و رویدادها" };
+      const _vsSusp = _staffStatus[_vsRec.id] === "suspended";
+      viewUser = {
+        initials: (_vsRec.name||"").trim().split(/\s+/).map(w=>w[0]).slice(0,2).join(""),
+        name: _vsRec.name, role: (_vsRec.role||"کارشناس") + " · " + (_vsRec.rank||"کارشناس"),
+        username: _vsRec.username, email: (_vsRec.dept==="finance"?"واحد مالی":_vsRec.dept==="it"?"واحد فناوری اطلاعات":"واحد بازرگانی"),
+        lastLogin: _vsRec.at || "—", avatarBg: _staffAvatar[_vsRec.dept] || "#0891b2",
+        statusLabel: _vsSusp ? "معلق" : "فعال", statusColor: _vsSusp ? "#f87171" : "#34d399",
+        statusBg: _vsSusp ? "rgba(248,113,113,.14)" : "rgba(16,185,129,.14)",
+        perms: (_vsRec.permissions || []).map(k => ({ label: (window.SiteData ? window.SiteData.permLabel(k) : k), onToggle: () => {} })),
+        available: [], hasAvailable: false, permCount: this.fa((_vsRec.permissions||[]).length),
+        onReset: () => this.setState({ viewStaffId:null, resetUser: _vsRec.name })
+      };
+    }
+
+    // ---- security toggles ----
+    const sec = this.state.security;
+    const toggleSec = (id) => () => this.setState(s => ({ security: { ...s.security, [id]: !s.security[id] }, dirty:true }));
+    const secDefs = [
+      { id:"reqUpper", title:"الزام حروف بزرگ", desc:"رمز باید حداقل یک حرف بزرگ داشته باشد" },
+      { id:"reqNumber", title:"الزام عدد", desc:"رمز باید حداقل یک عدد داشته باشد" },
+      { id:"reqSymbol", title:"الزام کاراکتر ویژه", desc:"رمز باید شامل نماد (@#$...) باشد" },
+      { id:"block", title:"قفل پس از تلاش ناموفق", desc:"قفل حساب پس از ۵ ورود نادرست" },
+      { id:"twofa", title:"احراز دومرحله‌ای مدیران", desc:"کد یک‌بارمصرف برای ورود مدیران" }
+    ];
+    const mkToggle = (defs, stateObj, toggler) => defs.map(d => {
+      const on = stateObj[d.id];
+      return { id:d.id, title:d.title, desc:d.desc, iconColor:d.iconColor||"#9fb0c7", svg:d.icon?this.ic18(d.icon):{__html:""},
+        onToggle: toggler(d.id), bg: on ? "var(--accent,#3b82f6)" : "#28344c", knob: on ? "translateX(19px)" : "translateX(0)" };
+    });
+    const securityToggles = mkToggle(secDefs, sec, toggleSec);
+
+    const sessions = SETUP ? [] : [
+      { who:"محمد رحیمی", dev:"کروم · مک", ip:"۸۹٫۳۲.۱۱.۴", svg:this.ic18('<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 20h8"/>') },
+      { who:"سارا نوری", dev:"سافاری · آیفون", ip:"۹۱٫۹۸.۲۲.۷", svg:this.ic18('<rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 18h2"/>') },
+      { who:"زهرا کریمی", dev:"فایرفاکس · ویندوز", ip:"۸۵٫۱۵.۹.۲۰", svg:this.ic18('<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 20h8"/>') }
+    ];
+    const sessionsEmpty = sessions.length === 0;
+    const sessionsCountLabel = SETUP ? "۰ کاربر هم‌اکنون وارد سامانه هستند" : "۴۸ کاربر هم‌اکنون وارد سامانه هستند";
+
+    // ---- panels access ----
+    const lockOk = { __html: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>' };
+    const lockNo = { __html: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7b94" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>' };
+    const panelCards = [
+      { title:"پنل کارمند", desc:"کارتابل، تیکت‌ها و وظایف کارمندان واحدها", href:"پنل کارمند.dc.html", iconBg:"rgba(96,165,250,.16)", iconColor:"#60a5fa", icon:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/>', cta:"ورود به پنل ←", allowed:true, access:["کارتابل","تیکت‌ها","وظایف","پیام‌ها"] },
+      { title:"پنل ادمین سایت", desc:"محتوا، بلاگ، تصاویر و تنظیمات سایت", href:"پنل ادمین سایت.dc.html", iconBg:"rgba(59,130,246,.16)", iconColor:"#3b82f6", icon:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>', cta:"ورود به پنل ←", allowed:true, access:["داشبورد","محتوا و بلاگ","تصاویر و رسانه","تنظیمات سایت"] },
+      { title:"پنل باشگاه مشتریان", desc:"امتیازها، سطوح وفاداری و کمپین‌ها", href:"باشگاه مشتریان.dc.html", iconBg:"rgba(251,191,36,.16)", iconColor:"#fbbf24", icon:'<path d="M12 4l2.3 4.7 5.2.8-3.7 3.7.9 5.1-4.7-2.5-4.7 2.5.9-5.1L4.5 9.5l5.2-.8z"/>', cta:"ورود به پنل ←", allowed:true, access:["امتیازها","سطوح وفاداری","کمپین‌ها"] },
+      { title:"پنل مدیر مالی", desc:"تراکنش‌ها، تسویه و گزارش‌های مالی", href:"پنل مدیر مالی.dc.html", iconBg:"rgba(16,185,129,.16)", iconColor:"#34d399", icon:'<path d="M3 3v18h18"/><path d="M7 14l3.5-3.5 3 3L20 7"/>', cta:"ورود به پنل ←", allowed:true, access:["داشبورد","گزارش‌های مالی","تراکنش‌ها","تسویه آژانس","استرداد"] },
+      { title:"پنل مدیر بازرگانی", desc:"آژانس‌ها، نرخ‌گذاری و فروش", href:"پنل مدیر بازرگانی.dc.html", iconBg:"rgba(147,51,234,.16)", iconColor:"#a855f7", icon:'<path d="M3 21h18"/><path d="M6 21V5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v16"/><path d="M19 21V10a1 1 0 0 0-1-1h-3"/>', cta:"ورود به پنل ←", allowed:true, access:["داشبورد","مدیریت آژانس‌ها","نرخ‌گذاری","چارتر","تخفیف‌ها"] },
+      { title:"پنل مدیر عامل", desc:"خارج از حوزه دسترسی واحد IT", href:"#", iconBg:"#18223a", iconColor:"#6b7b94", icon:'<path d="M3 21h18"/><path d="M6 21V8l6-4 6 4v13"/><path d="M10 21v-6h4v6"/>', cta:"بدون دسترسی", allowed:false },
+      { title:"پنل مدیر ارشد", desc:"خارج از حوزه دسترسی واحد IT", href:"#", iconBg:"#18223a", iconColor:"#6b7b94", icon:'<path d="M3 21h18"/><path d="M6 21V5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v16"/>', cta:"بدون دسترسی", allowed:false },
+      { title:"پنل رئیس هیئت مدیره", desc:"خارج از حوزه دسترسی واحد IT", href:"#", iconBg:"#18223a", iconColor:"#6b7b94", icon:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>', cta:"بدون دسترسی", allowed:false }
+    ].map(p => ({
+      title:p.title, desc:p.desc, href:p.href, iconBg:p.iconBg, iconColor:p.iconColor,
+      accessList: p.access || [], showAccess: !!p.access,
+      svg:{ __html: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+p.icon+'</svg>' },
+      badgeSvg: p.allowed ? lockOk : lockNo,
+      border: p.allowed ? "#1f2a3d" : "#241f2b",
+      cursor: p.allowed ? "pointer" : "not-allowed",
+      opacity: p.allowed ? "1" : "0.55",
+      cta:p.cta, ctaColor: p.allowed ? "var(--accent,#3b82f6)" : "#6b7b94"
+    }));
+
+    // ---- logs (employee-only activity) ----
+    const lvl = { info:{c:"#60a5fa",b:"rgba(59,130,246,.14)",l:"info"}, warn:{c:"#f59e0b",b:"rgba(245,158,11,.14)",l:"warn"}, error:{c:"#f87171",b:"rgba(248,113,113,.14)",l:"error"} };
+    const _unitLabelLog = { commercial: "بازرگانی", finance: "مالی", it: "IT" };
+    const _staffReports = SETUP ? [] : (window.SiteData ? window.SiteData.getStaffReports() : []);
+    const _staffList = SETUP ? [] : (window.SiteData ? window.SiteData.getStaff() : []);
+    const _byId = {}; _staffList.forEach(s => { _byId[s.id] = s; });
+    // employee action logs (derived from each employee's recorded activity)
+    const _actionLogs = _staffReports.map((r, i) => {
+      const st = _byId[r.staffId];
+      const unit = _unitLabelLog[st ? st.dept : r.dept] || "";
+      return { time: (r.at || "—").replace(/^.*·\s*/, "").trim() || "—", user: r.staffName, action: (r.catLabel ? (r.catLabel + " — ") : "") + r.action, unit: unit, ip: "10.0.0." + (20 + (i % 40)), level: "info" };
+    });
+    // employee account-creation logs
+    const _accountLogs = _staffList.map((s, i) => ({ time: s.at || "—", user: "مدیر IT", action: "ایجاد حساب کارمند «" + s.name + "» — واحد " + (_unitLabelLog[s.dept] || s.dept), unit: _unitLabelLog[s.dept] || s.dept, ip: "10.0.0.4", level: "info" }));
+    const logDefs = _actionLogs.concat(_accountLogs);
+    const logsEmpty = logDefs.length === 0;
+    const logs = logDefs.map(l => { const m = lvl[l.level] || lvl.info; return { time:l.time, user:l.user, action:l.action, unit:l.unit, ip:l.ip, level:m.l, levelColor:m.c, levelBg:m.b }; });
+
+    // ---- backups ----
+    const backups = SETUP ? [] : [
+      { name:"پشتیبان کامل دیتابیس", date:"امروز ۰۹:۰۰", size:"۲٫۴ گیگ", status:"موفق", statusColor:"#34d399", statusBg:"rgba(16,185,129,.14)", iconColor:"#34d399" },
+      { name:"پشتیبان فایل‌ها و تصاویر", date:"امروز ۰۳:۰۰", size:"۸٫۱ گیگ", status:"موفق", statusColor:"#34d399", statusBg:"rgba(16,185,129,.14)", iconColor:"#3b82f6" },
+      { name:"پشتیبان کامل دیتابیس", date:"دیروز ۰۹:۰۰", size:"۲٫۳ گیگ", status:"موفق", statusColor:"#34d399", statusBg:"rgba(16,185,129,.14)", iconColor:"#34d399" },
+      { name:"پشتیبان پیکربندی سرور", date:"دیروز ۰۳:۰۰", size:"۱۴ مگ", status:"موفق", statusColor:"#34d399", statusBg:"rgba(16,185,129,.14)", iconColor:"#a855f7" },
+      { name:"پشتیبان کامل دیتابیس", date:"۲ روز پیش", size:"۲٫۳ گیگ", status:"موفق", statusColor:"#34d399", statusBg:"rgba(16,185,129,.14)", iconColor:"#34d399" }
+    ];
+    const backupsEmpty = backups.length === 0;
+
+    // ---- passenger survey (created/configured here by IT) ----
+    const surveyCfg = window.SiteData ? window.SiteData.getSurveySettings() : { enabled: true, title: "نظرسنجی رضایت مسافران", questions: [] };
+    const toggleSurveyEnabled = () => { if (window.SiteData) window.SiteData.saveSurveySettings({ enabled: !surveyCfg.enabled }); this.forceUpdate(); };
+    const removeQuestion = (id) => () => { if (window.SiteData) window.SiteData.saveSurveySettings({ questions: surveyCfg.questions.filter(q => q.id !== id) }); this.forceUpdate(); };
+    const addQuestion = () => {
+      const label = (this.state.newQuestionText || "").trim();
+      if (!label) return;
+      const q = { id: "q_" + Date.now(), label };
+      if (window.SiteData) window.SiteData.saveSurveySettings({ questions: surveyCfg.questions.concat([q]) });
+      this.setState({ newQuestionText: "" });
+    };
+    const surveyQuestions = surveyCfg.questions.map(q => ({ id: q.id, label: q.label, onRemove: removeQuestion(q.id) }));
+    const _svyFlights = window.SiteData ? window.SiteData.getSurveyFlights() : [];
+    const _svyResponses = (window.SiteData ? window.SiteData.getSurveyResponses() : []).slice(0, 8);
+    const surveyRecentResponses = _svyResponses.map(r => ({
+      flightNo: r.flightNo, route: r.route,
+      stars: [1, 2, 3, 4, 5].map(n => ({ color: n <= r.rating ? "#fbbf24" : "#3a4a63" })),
+      comment: r.comment || "", hasComment: !!r.comment
+    }));
+    const surveyNoResponses = surveyRecentResponses.length === 0;
+    const surveyStats = {
+      count: this.fa(_svyFlights.reduce((a, f) => a + f.count, 0)),
+      flights: this.fa(_svyFlights.length),
+      avg: _svyFlights.length ? (_svyFlights.reduce((a, f) => a + f.avg * f.count, 0) / Math.max(1, _svyFlights.reduce((a, f) => a + f.count, 0))).toFixed(1).replace(".", "٫").replace(/[0-9.]/g, d => (d === "." ? "٫" : "۰۱۲۳۴۵۶۷۸۹"[d])) : "۰"
+    };
+
+    // ---- settings ----
+    const st = this.state.settings;
+    const toggleSet = (id) => () => this.setState(s => ({ settings: { ...s.settings, [id]: !s.settings[id] }, dirty:true }));
+    const setDefs = [
+      { id:"maintenance", title:"حالت تعمیر و نگهداری", desc:"نمایش صفحه «در دست تعمیر» به کاربران", icon:'<path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 1 5.4-5.4z"/>', iconColor:"#f59e0b" },
+      { id:"registration", title:"ثبت‌نام کاربران جدید", desc:"امکان ساخت حساب کاربری در سایت", icon:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6"/><path d="M17 11v6M14 14h6"/>', iconColor:"#34d399" },
+      { id:"charterSale", title:"فروش بلیط چارتر", desc:"فعال بودن خرید بلیط‌های چارتری", icon:'<path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/>', iconColor:"#3b82f6" },
+      { id:"apiPublic", title:"دسترسی عمومی API", desc:"باز بودن وب‌سرویس برای همه آژانس‌ها", icon:'<path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3"/>', iconColor:"#a855f7" },
+      { id:"sandbox", title:"حالت آزمایشی (Sandbox)", desc:"اجرای پرداخت‌ها در محیط تست", icon:'<path d="M9 3v6l-5 9a2 2 0 0 0 1.8 3h12.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M8 3h8"/>', iconColor:"#f59e0b" }
+    ];
+    const settingsToggles = mkToggle(setDefs, st, toggleSet);
+
+    // ---- external service settings modal ----
+    const ssDef = extDefs.find(d => d.id === this.state.svcSettingsId);
+    let svcSet = {};
+    if (ssDef) { const on = svc[ssDef.id];
+      const tst = this.state.svcTest;
+      const testMeta = { idle:{}, testing:{}, ok:{} };
+      const curMethod = this.state.extMethods[ssDef.id] || ssDef.method || "POST";
+      svcSet = { name:ssDef.name, provider:ssDef.provider, endpoint:ssDef.endpoint, iconColor:ssDef.color, svg:this.ic18(ssDef.icon),
+        statusLabel: on ? "فعال" : "غیرفعال", statusColor: on ? "#34d399" : "#f87171", statusBg: on ? "rgba(16,185,129,.14)" : "rgba(248,113,113,.14)",
+        onToggle: toggleSvc(ssDef.id), toggleBg: on ? "var(--accent,#3b82f6)" : "#28344c", knob: on ? "translateX(19px)" : "translateX(0)",
+        method: curMethod, methodOptions: EXT_METHODS.map(m => ({ v:m, l:m })),
+        onMethod: (e) => this.setState(s => ({ extMethods: Object.assign({}, s.extMethods, { [ssDef.id]: e.target.value }) })),
+        testShow: !!tst,
+        testBtnLabel: tst==="testing" ? "در حال تست…" : "تست اتصال",
+        onTest: () => {
+          this.setState({ svcTest: "testing" });
+          setTimeout(() => { if (this.state.svcSettingsId === ssDef.id) this.setState({ svcTest: "ok" }); }, 1100);
+        }
+      };
+      if (tst === "testing") { svcSet.testBg="rgba(59,130,246,.08)"; svcSet.testBorder="#28344c"; svcSet.testIconBg="rgba(59,130,246,.16)"; svcSet.testColor="#60a5fa";
+        svcSet.testIcon={ __html:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9"/></svg>' };
+        svcSet.testMsg="در حال برقراری اتصال با سرویس…"; svcSet.testMeta=""; }
+      else if (tst === "ok") { svcSet.testBg="rgba(16,185,129,.08)"; svcSet.testBorder="#244736"; svcSet.testIconBg="rgba(16,185,129,.16)"; svcSet.testColor="#34d399";
+        svcSet.testIcon={ __html:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>' };
+        svcSet.testMsg="اتصال موفق — پاسخ استاندارد دریافت شد"; svcSet.testMeta="200 OK · 142ms"; }
+    }
+    const onAddDest = openEdit({ title:"افزودن مقصد جدید", subtitle:"کارت مقصد محبوب جدید در صفحه اصلی", hasImage:true, imageId:"edit-new-dest",
+      fields:[ {label:"نام شهر/مقصد", value:"", dir:"rtl", font:"Vazirmatn"}, {label:"قیمت پایه (تومان)", value:"", dir:"rtl", font:"'Roboto Mono',monospace"} ] });
+    const onAddRoute = openEdit({ title:"افزودن مسیر جدید", subtitle:"مسیر پرتردد زیر باکس جستجو",
+      fields:[ {label:"مبدأ", value:"", dir:"rtl", font:"Vazirmatn"}, {label:"مقصد", value:"", dir:"rtl", font:"Vazirmatn"}, {label:"قیمت پایه (تومان)", value:"", dir:"rtl", font:"'Roboto Mono',monospace"} ] });
+    const onAddSocial = openEdit({ title:"افزودن شبکهٔ اجتماعی", subtitle:"لینک جدید برای فوتر سایت",
+      fields:[ {label:"نام شبکه", value:"", dir:"rtl", font:"Vazirmatn"}, {label:"آدرس (URL)", value:"", dir:"ltr", font:"'Roboto Mono',monospace"} ] });
+    const onAddApp = openEdit({ title:"افزودن لینک اپلیکیشن", subtitle:"فروشگاه جدید برای دانلود اپ",
+      fields:[ {label:"نام فروشگاه", value:"", dir:"rtl", font:"Vazirmatn"}, {label:"آدرس دانلود (URL)", value:"", dir:"ltr", font:"'Roboto Mono',monospace"} ] });
+    const onEditContact = openEdit({ title:"ویرایش تماس پشتیبانی", subtitle:"شماره تلفن و ایمیل نمایش‌داده‌شده در سایت", target:"contact",
+      fields:[ {label:"شماره تلفن", key:"phone", value:(SD&&SD.contact?SD.contact.phone:"۰۲۱-۹۱۰۰۰۰۰۰"), dir:"ltr", font:"'Roboto Mono',monospace"}, {label:"ایمیل پشتیبانی", key:"email", value:(SD&&SD.contact?SD.contact.email:"support@aseman.ir"), dir:"ltr", font:"'Roboto Mono',monospace"} ] });
+    const onEditBanner = openEdit({ title:"ویرایش بنر اصلی", subtitle:"تصویر و متن بنر صفحه اصلی", hasImage:true, imageId:"edit-it-banner", target:"banner",
+      fields:[ {label:"عنوان بنر", key:"title", value:(SD&&SD.banner?SD.banner.title:"پرواز بعدی‌ات را با blujet رزرو کن"), dir:"rtl", font:"Vazirmatn"}, {label:"زیرعنوان", key:"subtitle", value:(SD&&SD.banner?SD.banner.subtitle:"بیش از ۲۰۰ مقصد با بهترین قیمت"), dir:"rtl", font:"Vazirmatn"}, {label:"متن دکمه", key:"button", value:(SD&&SD.banner?SD.banner.button:"مشاهده پیشنهادهای ویژه"), dir:"rtl", font:"Vazirmatn"} ] });
+
+    // ---- new user permission checkboxes (granular, grouped by section) ----
+    const np = this.state.newPerms;
+    const toggleNp = (id) => () => this.setState(s => ({ newPerms: { ...s.newPerms, [id]: !s.newPerms[id] } }));
+    const _catalog = window.SiteData ? window.SiteData.getPermCatalog(this.state.nuDept) : [];
+    const newUserPermGroups = _catalog.map(g => ({
+      sectionLabel: g.sectionLabel,
+      perms: g.perms.map(pd => { const on = !!np[pd.key];
+        return { label: pd.label, onToggle: toggleNp(pd.key),
+          bg: on ? "rgba(59,130,246,.12)" : "#0f1623", border: on ? "#3b82f6" : "#28344c",
+          boxBg: on ? "var(--accent,#3b82f6)" : "transparent", boxBorder: on ? "var(--accent,#3b82f6)" : "#3a4a63",
+          check: on ? "✓" : "" }; })
+    }));
+
+    // ---- site content ----
+    const destRaw = [
+      { slotId:"it-dest-1", city:"استانبول", price:"۴٬۲۰۰٬۰۰۰" },
+      { slotId:"it-dest-2", city:"دبی", price:"۳٬۸۰۰٬۰۰۰" },
+      { slotId:"it-dest-3", city:"کیش", price:"۱٬۹۰۰٬۰۰۰" },
+      { slotId:"it-dest-4", city:"مشهد", price:"۱٬۶۰۰٬۰۰۰" }
+    ];
+    const destItems = destRaw.map(d => ({ slotId:d.slotId, city:d.city, price:d.price,
+      onEdit: openEdit({ title:"ویرایش مقصد", subtitle:"مشخصات کارت مقصد محبوب", hasImage:true, imageId:"edit-"+d.slotId,
+        fields:[ {label:"نام شهر/مقصد", value:d.city, dir:"rtl", font:"Vazirmatn"}, {label:"قیمت پایه (تومان)", value:d.price, dir:"rtl", font:"'Roboto Mono',monospace"} ] }) }));
+    const routeRaw = [
+      { from:"تهران", to:"مشهد", price:"۱٬۶۰۰٬۰۰۰" },
+      { from:"تهران", to:"استانبول", price:"۴٬۲۰۰٬۰۰۰" },
+      { from:"تهران", to:"دبی", price:"۳٬۸۰۰٬۰۰۰" },
+      { from:"مشهد", to:"کیش", price:"۲٬۱۰۰٬۰۰۰" },
+      { from:"شیراز", to:"تهران", price:"۱٬۴۵۰٬۰۰۰" }
+    ];
+    const routeItems = routeRaw.map(r => ({ from:r.from, to:r.to, price:r.price,
+      onEdit: openEdit({ title:"ویرایش مسیر", subtitle:"مسیر پرتردد پیشنهادی",
+        fields:[ {label:"مبدأ", value:r.from, dir:"rtl", font:"Vazirmatn"}, {label:"مقصد", value:r.to, dir:"rtl", font:"Vazirmatn"}, {label:"قیمت پایه (تومان)", value:r.price, dir:"rtl", font:"'Roboto Mono',monospace"} ] }) }));
+    const soc = this.state.socials;
+    const toggleSoc = (id) => () => this.setState(s => ({ socials: { ...s.socials, [id]: !s.socials[id] }, dirty:true }));
+    const socDefs = [
+      { id:"instagram", name:"اینستاگرام", url:"instagram.com/aseman.air", color:"#e1306c", icon:'<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/>' },
+      { id:"telegram", name:"تلگرام", url:"t.me/aseman_air", color:"#229ed9", icon:'<path d="M21 4L3 11l5 2 2 6 3-4 5 4z"/>' },
+      { id:"whatsapp", name:"واتساپ", url:"wa.me/982191000000", color:"#25d366", icon:'<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4L3 21l1.1-3.3A8.4 8.4 0 1 1 21 11.5z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5"/>' },
+      { id:"linkedin", name:"لینکدین", url:"linkedin.com/company/aseman", color:"#0a66c2", icon:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 10v7M7 7v.01M11 17v-4a2 2 0 0 1 4 0v4"/>' },
+      { id:"x", name:"ایکس (توییتر)", url:"x.com/aseman_air", color:"#e7ecf3", icon:'<path d="M4 4l16 16M20 4L4 20"/>' }
+    ];
+    const socialLinks = socDefs.map(d => { const on = soc[d.id]; return {
+      name:d.name, url:d.url, color:d.color, svg:this.ic18(d.icon), onToggle:toggleSoc(d.id),
+      onEdit: openEdit({ title:"ویرایش شبکهٔ اجتماعی", subtitle:d.name,
+        fields:[ {label:"نام شبکه", value:d.name, dir:"rtl", font:"Vazirmatn"}, {label:"آدرس (URL)", value:d.url, dir:"ltr", font:"'Roboto Mono',monospace"} ] }),
+      bg: on ? "var(--accent,#3b82f6)" : "#28344c", knob: on ? "translateX(17px)" : "translateX(0)" }; });
+    const appLinks = [
+      { name:"گوگل‌پلی", url:"play.google.com/store/apps/aseman", icon:'<path d="M5 3l14 9-14 9z"/>' },
+      { name:"اپ‌استور", url:"apps.apple.com/app/aseman", icon:'<path d="M16 3a4 4 0 0 1-3 4M12 7c-4 0-7 3-7 8a8 8 0 0 0 14 5"/>' },
+      { name:"کافه‌بازار", url:"cafebazaar.ir/app/ir.aseman", icon:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9l6 6M15 9l-6 6"/>' },
+      { name:"سیب‌اپ", url:"sibapp.com/applications/aseman", icon:'<circle cx="12" cy="13" r="7"/><path d="M12 6c0-2 1-3 3-3"/>' }
+    ].map(a => ({ name:a.name, url:a.url, svg:this.ic18(a.icon),
+      onEdit: openEdit({ title:"ویرایش لینک اپلیکیشن", subtitle:a.name,
+        fields:[ {label:"نام فروشگاه", value:a.name, dir:"rtl", font:"Vazirmatn"}, {label:"آدرس دانلود (URL)", value:a.url, dir:"ltr", font:"'Roboto Mono',monospace"} ] }) }));
+    const jobItems = [
+      { slotId:"it-job-1", title:"کارشناس پشتیبانی پرواز", dept:"عملیات", city:"تهران", type:"تمام‌وقت", typeColor:"#34d399", typeBg:"rgba(16,185,129,.14)" },
+      { slotId:"it-job-2", title:"توسعه‌دهنده فرانت‌اند", dept:"فناوری اطلاعات", city:"تهران", type:"دورکاری", typeColor:"#60a5fa", typeBg:"rgba(59,130,246,.14)" },
+      { slotId:"it-job-3", title:"کارشناس دیجیتال مارکتینگ", dept:"بازاریابی", city:"تهران", type:"پاره‌وقت", typeColor:"#f59e0b", typeBg:"rgba(245,158,11,.14)" }
+    ].map(j => ({ slotId:j.slotId, title:j.title, dept:j.dept, city:j.city, type:j.type, typeColor:j.typeColor, typeBg:j.typeBg,
+      onEdit: openEdit({ title:"ویرایش فرصت شغلی", subtitle:j.title, hasImage:true, imageId:"edit-"+j.slotId,
+        fields:[ {label:"عنوان شغل", value:j.title, dir:"rtl", font:"Vazirmatn"}, {label:"واحد", value:j.dept, dir:"rtl", font:"Vazirmatn"}, {label:"شهر", value:j.city, dir:"rtl", font:"Vazirmatn"}, {label:"نوع همکاری", value:j.type, dir:"rtl", font:"Vazirmatn"} ] }) }));
+
+    // ---- permissions matrix ----
+    const yes = { __html: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>' };
+    const no = { __html: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a5872" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>' };
+    const permDefs = [
+      { role:"مدیر مالی", managedBy:"تحت مدیریت IT", dot:"#34d399", caps:[1,1,0,0,0] },
+      { role:"مدیر بازرگانی", managedBy:"تحت مدیریت IT", dot:"#34d399", caps:[1,0,0,1,0] },
+      { role:"ادمین سایت", managedBy:"تحت مدیریت IT", dot:"#34d399", caps:[1,0,1,0,1] },
+      { role:"آژانس", managedBy:"تحت مدیریت IT", dot:"#34d399", caps:[1,0,0,0,0] },
+      { role:"مدیر ارشد", managedBy:"فقط رئیس هیئت مدیره", dot:"#f59e0b", caps:[1,1,1,1,1] },
+      { role:"رئیس هیئت مدیره", managedBy:"بالاترین سطح", dot:"#f87171", caps:[1,1,1,1,1] }
+    ];
+    const permRows = permDefs.map(p => ({ role:p.role, managedBy:p.managedBy, dot:p.dot,
+      c0:p.caps[0]?yes:no, c1:p.caps[1]?yes:no, c2:p.caps[2]?yes:no, c3:p.caps[3]?yes:no, c4:p.caps[4]?yes:no }));
+    const _pwStaff = SETUP ? [] : (window.SiteData ? window.SiteData.getStaff() : []);
+    const _unitLbl = { commercial: "واحد بازرگانی", finance: "واحد مالی" };
+    const pwRoles = _pwStaff.map(s => ({ role: s.name, user: s.username, unit: _unitLbl[s.dept] || s.dept,
+      initials: (s.name||"").trim().split(/\s+/).map(w=>w[0]).slice(0,2).join(""),
+      action: "بازنشانی رمز", color: "var(--accent,#3b82f6)", cursor: "pointer",
+      onReset: () => this.setState({ resetUser: s.name }) }));
+    const pwEmpty = pwRoles.length === 0;
+    const itScope = [
+      { label:"مدیریت کاربران و حساب‌ها", status:"مجاز", icon:"✓", color:"#34d399", bg:"rgba(16,185,129,.14)" },
+      { label:"بازنشانی و مدیریت رمز عبور", status:"مجاز", icon:"✓", color:"#34d399", bg:"rgba(16,185,129,.14)" },
+      { label:"تعیین دسترسی نقش‌ها", status:"مجاز", icon:"✓", color:"#34d399", bg:"rgba(16,185,129,.14)" },
+      { label:"دسترسی به پنل مدیر ارشد", status:"غیرمجاز", icon:"✕", color:"#f87171", bg:"rgba(248,113,113,.14)" },
+      { label:"دسترسی به پنل رئیس هیئت مدیره", status:"غیرمجاز", icon:"✕", color:"#f87171", bg:"rgba(248,113,113,.14)" }
+    ];
+
+    return {
+      navItems,
+      pageTitle: meta[tab][0], pageSub: meta[tab][1],
+      showDashboard: tab==="dashboard", showUsers: tab==="users", showSecurity: tab==="security",
+      showServices: tab==="services", showPanels: tab==="panels", showLogs: tab==="logs",
+      showReservation: tab==="reservation", resRole: "super", resSetupMode: SETUP,
+      showBackup: tab==="backup", showSettings: tab==="settings", showSurvey: tab==="survey",
+      surveyEnabled: surveyCfg.enabled, toggleSurveyEnabled, surveyTitle: surveyCfg.title,
+      surveyToggleBg: surveyCfg.enabled ? "var(--accent,#3b82f6)" : "#28344c", surveyToggleKnob: surveyCfg.enabled ? "translateX(19px)" : "translateX(0)",
+      surveyQuestions, surveyNoQuestions: surveyQuestions.length === 0,
+      newQuestionText: this.state.newQuestionText, onNewQuestionText: (e) => this.setState({ newQuestionText: e.target.value }), addQuestion,
+      surveyStats, surveyRecentResponses, surveyNoResponses,
+      showContent: tab==="content", showPerms: tab==="perms",
+      extAddOpen: this.state.extAddOpen, toggleExtAdd: () => this.setState(s => ({ extAddOpen: !s.extAddOpen })),
+      newExtName: this.state.newExtName, onNewExtName: (e) => this.setState({ newExtName: e.target.value, newExtErr:false }),
+      newExtType: this.state.newExtType, onNewExtType: (e) => this.setState({ newExtType: e.target.value }), newExtTypeOptions,
+      newExtEndpoint: this.state.newExtEndpoint, onNewExtEndpoint: (e) => this.setState({ newExtEndpoint: e.target.value, newExtErr:false }),
+      newExtMethod: this.state.newExtMethod, onNewExtMethod: (e) => this.setState({ newExtMethod: e.target.value }), newExtMethodOptions,
+      newExtApiKey: this.state.newExtApiKey, onNewExtApiKey: (e) => this.setState({ newExtApiKey: e.target.value, newExtErr:false }),
+      newExtErr: this.state.newExtErr, createExtService,
+      newExtNameBorder: (this.state.newExtErr && !(this.state.newExtName||"").trim()) ? "#f87171" : "#2e2a45",
+      newExtEndpointBorder: (this.state.newExtErr && !(this.state.newExtEndpoint||"").trim()) ? "#f87171" : "#2e2a45",
+      newExtApiKeyBorder: (this.state.newExtErr && !(this.state.newExtApiKey||"").trim()) ? "#f87171" : "#2e2a45",
+      servicesInternal, servicesExternal, newUserPermGroups, onEditContact, onEditBanner,
+      resetLogo: () => { const el = document.getElementById("site-logo"); if (el) { try { el.clear ? el.clear() : el.removeAttribute("src"); } catch(e){} const btn = el.shadowRoot && el.shadowRoot.querySelector('[data-act="clear"]'); if (btn) btn.click(); } },
+      editOpen: !!this.state.editModal, edit: this.state.editModal || { fields:[] }, closeEdit: () => this.setState({ editModal:null }), saveEdit: () => {
+        const em = this.state.editModal;
+        if (em && em.target && window.SiteData) {
+          const patch = {};
+          document.querySelectorAll("[data-edit-field]").forEach(n => { const k = n.getAttribute("data-edit-field"); if (k) patch[k] = n.textContent.trim(); });
+          if (Object.keys(patch).length) window.SiteData.save({ [em.target]: patch });
+        }
+        this.setState({ editModal:null, dirty:true });
+      },
+      dirty: this.state.dirty,
+      confirmOpen: !!this.state.confirm,
+      confirmData: this.state.confirm || {},
+      confirmAccent: this._confTone(this.state.confirm).c,
+      confirmIconBg: this._confTone(this.state.confirm).bg,
+      confirmIcon: { __html: '<svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + ((this.state.confirm && this.state.confirm.icon) || '<path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>') + '</svg>' },
+      onConfirmYes: () => { const c = this.state.confirm; if (c && c.action) c.action(); this.setState({ confirm:null, notif:{ msg:(c&&c.okMsg)||"دستور با موفقیت اجرا شد", tone:"ok" } }); setTimeout(() => this.setState({ notif:null }), 2800); },
+      onConfirmNo: () => { this.setState({ confirm:null, notif:{ msg:"دستور لغو شد", tone:"reject" } }); setTimeout(() => this.setState({ notif:null }), 2200); },
+      notifOpen: !!this.state.notif,
+      notifMsg: this.state.notif ? this.state.notif.msg : "",
+      notifOk: this.state.notif ? this.state.notif.tone === "ok" : true,
+      notifColor: (this.state.notif && this.state.notif.tone === "reject") ? "#f0b9b9" : "#d6f5e6",
+      notifBg: (this.state.notif && this.state.notif.tone === "reject") ? "#3a2530" : "#143527",
+      notifBorder: (this.state.notif && this.state.notif.tone === "reject") ? "#7c3a3a" : "#1f8a5b",
+      notifIconBg: (this.state.notif && this.state.notif.tone === "reject") ? "rgba(248,113,113,.2)" : "rgba(16,185,129,.2)",
+      notifIcon: (this.state.notif && this.state.notif.tone === "reject")
+        ? { __html: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>' }
+        : { __html: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>' },
+      saveAll: () => { if (window.SiteData) window.SiteData.save({ services: this.state.services, socials: this.state.socials }); this.setState({ dirty:false, savedToast:true }); setTimeout(() => this.setState({ savedToast:false }), 2600); },
+      discardAll: () => this.setState({ dirty:false }),
+      savedToast: this.state.savedToast,
+      svcSetOpen: !!ssDef, svcSet, closeSvcSet: () => this.setState({ svcSettingsId:null, svcTest:null }),
+      onAddDest, onAddRoute, onAddSocial, onAddApp,
+      viewOpen: !!viewUser.name, viewUser, closeView: () => this.setState({ viewUserName:null, viewStaffId:null }), stop: (e) => { if(e && e.stopPropagation) e.stopPropagation(); },
+      destItems, routeItems, socialLinks, appLinks, jobItems,
+      permRows, pwRoles, pwEmpty, itScope,
+      goServices: go("services"),
+      kpis, resourceBars, events, eventsEmpty, healthList,
+      servicesList, servicesUpCount, servicesTotal,
+      users, addOpen: this.state.addOpen, toggleAdd: () => this.setState(s => ({ addOpen: !s.addOpen })),
+      nuName: this.state.nuName, onNuName: (e) => this.setState({ nuName: e.target.value }),
+      nuUsername: this.state.nuUsername, onNuUsername: (e) => this.setState({ nuUsername: e.target.value }),
+      nuRole: this.state.nuRole, onNuRole: (e) => this.setState({ nuRole: e.target.value }),
+      nuRank: this.state.nuRank, onNuRank: (e) => this.setState({ nuRank: e.target.value }),
+      nuRankOptions: ["کارآموز","کارشناس","کارشناس ارشد","سرپرست واحد","معاون"].map(r => ({ v: r })),
+      pickRefManagers: () => this.setState({ nuRefTarget: "managers" }),
+      pickRefAll: () => this.setState({ nuRefTarget: "all" }),
+      refMgrColor: (this.state.nuRefTarget || "managers") === "managers" ? "#fff" : "#9fb0c7",
+      refMgrBg: (this.state.nuRefTarget || "managers") === "managers" ? "var(--accent,#3b82f6)" : "transparent",
+      refMgrBorder: (this.state.nuRefTarget || "managers") === "managers" ? "var(--accent,#3b82f6)" : "#28344c",
+      refAllColor: this.state.nuRefTarget === "all" ? "#fff" : "#9fb0c7",
+      refAllBg: this.state.nuRefTarget === "all" ? "var(--accent,#3b82f6)" : "transparent",
+      refAllBorder: this.state.nuRefTarget === "all" ? "var(--accent,#3b82f6)" : "#28344c",
+      nuPassword: this.state.nuPassword, onNuPassword: (e) => this.setState({ nuPassword: e.target.value }),
+      nuDept: this.state.nuDept, onNuDept: (e) => this.setState({ nuDept: e.target.value }),
+      nuDeptCommercial: this.state.nuDept === "commercial", nuDeptFinance: this.state.nuDept === "finance",
+      nuDeptCommercialBorder: this.state.nuDept === "commercial" ? "#0891b2" : "#28344c",
+      nuDeptCommercialBg: this.state.nuDept === "commercial" ? "rgba(8,145,178,.12)" : "#0f1623",
+      nuDeptFinanceBorder: this.state.nuDept === "finance" ? "#2563eb" : "#28344c",
+      nuDeptFinanceBg: this.state.nuDept === "finance" ? "rgba(37,99,235,.12)" : "#0f1623",
+      nuDeptItBorder: this.state.nuDept === "it" ? "#7c3aed" : "#28344c",
+      nuDeptItBg: this.state.nuDept === "it" ? "rgba(124,58,237,.12)" : "#0f1623",
+      pickDeptIt: () => this.setState({ nuDept: "it", nuRole: "کارشناس پشتیبانی فنی" }),
+      customDeptCards: (this.state.customDepts || []).map(d => ({
+        label: d.label,
+        onPick: () => this.setState({ nuDept: d.id, nuRole: "کارشناس " + d.label }),
+        border: this.state.nuDept === d.id ? "#f59e0b" : "#28344c",
+        bg: this.state.nuDept === d.id ? "rgba(245,158,11,.12)" : "#0f1623"
+      })),
+      addingDept: this.state.addingDept, notAddingDept: !this.state.addingDept,
+      newDeptName: this.state.newDeptName || "", onNewDeptName: (e) => this.setState({ newDeptName: e.target.value }),
+      openNewDept: () => this.setState({ addingDept: true, newDeptName: "" }),
+      cancelNewDept: () => this.setState({ addingDept: false, newDeptName: "" }),
+      submitNewDept: () => {
+        const name = (this.state.newDeptName || "").trim();
+        if (!name) return;
+        const id = "custom_" + Date.now();
+        this.setState(s => ({ customDepts: [...(s.customDepts||[]), { id, label: name }], addingDept: false, newDeptName: "", nuDept: id, nuRole: "کارشناس " + name }));
+        this.setState({ notif: { msg: "واحد سازمانی «" + name + "» ایجاد شد", tone: "ok" } });
+        setTimeout(() => this.setState({ notif: null }), 2400);
+      },
+      nuDeptSalesBorder: this.state.nuDept === "sales" ? "#16a34a" : "#28344c",
+      nuDeptSalesBg: this.state.nuDept === "sales" ? "rgba(22,163,74,.12)" : "#0f1623",
+      pickDeptSales: () => this.setState({ nuDept: "sales", nuRole: "کارشناس فروش بلیط" }),
+      pickDeptCommercial: () => this.setState({ nuDept: "commercial", nuRole: "کارشناس بازرگانی" }), pickDeptFinance: () => this.setState({ nuDept: "finance", nuRole: "کارشناس حسابداری" }),
+      nuRoleOptions: (this.state.nuDept === "finance"
+        ? ["کارشناس حسابداری","کارشناس تسویه","کارشناس استرداد","کارشناس مالی"]
+        : this.state.nuDept === "it"
+        ? ["کارشناس پشتیبانی فنی","کارشناس شبکه","کارشناس امنیت","کارشناس نرم‌افزار"]
+        : this.state.nuDept === "commercial"
+        ? ["کارشناس بازرگانی","کارشناس نرخ‌گذاری","کارشناس آژانس","کارشناس قراردادها"]
+        : this.state.nuDept === "sales"
+        ? ["کارشناس فروش بلیط","کارشناس فروش تلفنی","کارشناس فروش حضوری","کارشناس رزرواسیون"]
+        : (() => { const cd = (this.state.customDepts||[]).find(d => d.id === this.state.nuDept); const label = cd ? cd.label : "واحد"; return ["کارشناس " + label, "کارشناس ارشد " + label, "سرپرست " + label]; })()).map(r => ({ v: r })),
+      createStaffUser: () => this.createStaffUser(),
+      securityToggles, sessions, sessionsEmpty, sessionsCountLabel,
+      panelCards, logs, logsEmpty, backups, backupsEmpty, settingsToggles,
+      resetOpen: !!this.state.resetUser, resetName: this.state.resetUser || "",
+      closeReset: () => this.setState({ resetUser: null })
+    };
+  }
+
+  fa(n) { return String(n).replace(/[0-9]/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]); }
+}
+</script>
+</body>
+</html>

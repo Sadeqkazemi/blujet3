@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box;}html,body{margin:0;}a{color:#1668c4;}a:hover{color:#0d4f9e;}</style>
+</helmet>
+
+<div dir="rtl" style="font-family:Vazirmatn,sans-serif; background:#f6f8fb; color:#16202e; min-height:100vh; --accent:#1668c4;">
+
+  <!-- HEADER -->
+  <header style="position:sticky; top:0; z-index:50;">
+    <div style="background:#fff; border-bottom:1px solid #e6eaf0; box-shadow:0 2px 12px -8px rgba(13,38,102,.25);">
+      <div style="max-width:1180px; margin:0 auto; padding:0 26px; height:70px; display:flex; align-items:center; justify-content:space-between;">
+        <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:9px; text-decoration:none; color:#16202e;">
+          <div style="width:38px; height:38px; border-radius:10px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px;">✈</div>
+          <span style="font-weight:900; font-size:18px; letter-spacing:-.5px;">blujet</span>
+        </a>
+        <nav style="display:flex; gap:30px; font-size:15.5px; color:#3b4554; font-weight:600; height:100%; align-items:center;">
+          <a href="صفحه اصلی.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">پرواز</a>
+          <a href="مقاصد.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">مقاصد پروازی</a>
+          <a href="باشگاه مشتریان.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">باشگاه مشتریان</a>
+          <a href="وضعیت پرواز.dc.html" style="cursor:pointer; text-decoration:none; color:var(--accent,#1668c4);">وضعیت پرواز</a>
+          <a href="پشتیبانی.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">پشتیبانی</a>
+        </nav>
+        <a href="ورود و ثبتنام.dc.html" style="text-decoration:none; background:var(--accent,#1668c4); color:#fff; padding:10px 20px; border-radius:10px; font-size:13px; font-weight:800;">ورود / ثبت‌نام</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section style="background:linear-gradient(135deg,#0d2640,#16406e); color:#fff; padding:34px 22px 62px;">
+    <div style="max-width:780px; margin:0 auto; text-align:center;">
+      <div style="display:inline-flex; align-items:center; gap:7px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); border-radius:20px; padding:6px 14px; font-size:11.5px; font-weight:700; color:#aac4e2; margin-bottom:14px;">🛫 لحظه‌به‌لحظه</div>
+      <h1 style="font-size:27px; font-weight:900; margin:0 0 8px;">وضعیت پرواز</h1>
+      <p style="font-size:13px; color:#aac4e2; margin:0;">آخرین وضعیت زمان‌بندی، تأخیر و گیت پرواز خود را با شماره پرواز یا مسیر و تاریخ بررسی کنید.</p>
+    </div>
+  </section>
+
+  <!-- SEARCH / RESULT -->
+  <section style="max-width:1040px; margin:-38px auto 56px; padding:0 26px; position:relative;">
+    <div style="background:#fff; border:1px solid #eef1f5; border-radius:20px; padding:14px; box-shadow:0 18px 50px -28px rgba(13,38,102,.5);">
+      <div style="display:flex; gap:6px; background:#f1f5fa; border-radius:12px; padding:4px; margin-bottom:20px; width:max-content;">
+        <span onClick="{{ setByNumber }}" style="padding:10px 20px; border-radius:9px; font-size:13px; font-weight:{{ numW }}; color:{{ numC }}; background:{{ numBg }}; cursor:pointer;">بر اساس شماره پرواز</span>
+        <span onClick="{{ setByRoute }}" style="padding:10px 20px; border-radius:9px; font-size:13px; font-weight:{{ rtW }}; color:{{ rtC }}; background:{{ rtBg }}; cursor:pointer;">بر اساس مسیر</span>
+      </div>
+
+      <sc-if value="{{ byNumber }}" hint-placeholder-val="{{true}}">
+        <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:12px; align-items:end; padding:10px;">
+          <div><div style="font-size:12px; color:#8a96a6; margin-bottom:8px; font-weight:600;">شماره پرواز</div><input value="{{ flightNo }}" onInput="{{ onFlightNo }}" placeholder="بطور مثال EP-521" dir="rtl" style="width:100%; box-sizing:border-box; height:56px; border:1.5px solid #e2e7ee; border-radius:12px; background:#fafbfd; padding:0 15px; font-family:'Roboto Mono',monospace; font-size:15px; font-weight:700; color:#16202e; outline:none; text-align:right;" style-focus="border-color:var(--accent,#1668c4); background:#fff;" /></div>
+          <div style="position:relative;">
+            <div style="font-size:12px; color:#8a96a6; margin-bottom:8px; font-weight:600;">تاریخ پرواز</div>
+            <div onClick="{{ toggleCal }}" style="width:100%; box-sizing:border-box; height:56px; border:1.5px solid #e2e7ee; border-radius:12px; background:#fafbfd; padding:0 15px; font-size:14px; font-weight:700; color:{{ dateColor }}; display:flex; align-items:center; justify-content:space-between; cursor:pointer;">
+              <span>{{ dateDisplay }}</span>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8a96a6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+            </div>
+            <sc-if value="{{ calOpen }}" hint-placeholder-val="{{false}}">
+              <div style="position:absolute; top:100%; margin-top:8px; right:0; width:280px; background:#fff; border:1px solid #eef1f5; border-radius:14px; box-shadow:0 18px 40px -20px rgba(13,38,102,.4); padding:14px; z-index:30;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                  <span onClick="{{ prevMonth }}" style="cursor:pointer; width:26px; height:26px; display:flex; align-items:center; justify-content:center; border-radius:8px; color:#5a6678;">‹</span>
+                  <span style="font-size:13px; font-weight:800; color:#16202e;">{{ calMonthLabel }}</span>
+                  <span onClick="{{ nextMonth }}" style="cursor:pointer; width:26px; height:26px; display:flex; align-items:center; justify-content:center; border-radius:8px; color:#5a6678;">›</span>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:6px;">
+                  <sc-for list="{{ weekDays }}" as="wd" hint-placeholder-count="7"><div style="text-align:center; font-size:10px; color:#9aa4b2; font-weight:700;">{{ wd }}</div></sc-for>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:4px;">
+                  <sc-for list="{{ calCells }}" as="c" hint-placeholder-count="35">
+                    <div onClick="{{ c.onPick }}" style="text-align:center; height:32px; display:flex; align-items:center; justify-content:center; border-radius:8px; font-size:12px; font-weight:600; cursor:{{ c.cursor }}; color:{{ c.color }}; background:{{ c.bg }};">{{ c.label }}</div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+          <div onClick="{{ doSearch }}" style="height:56px; padding:0 30px; border-radius:12px; background:var(--accent,#1668c4); color:#fff; display:flex; align-items:center; justify-content:center; gap:8px; font-size:14px; font-weight:800; cursor:pointer; white-space:nowrap;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>جستجو</div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ byRoute }}" hint-placeholder-val="{{false}}">
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:12px; align-items:end; padding:10px;">
+          <div><div style="font-size:12px; color:#8a96a6; margin-bottom:8px; font-weight:600;">مبدأ</div><input value="{{ fromCity }}" onInput="{{ onFromCity }}" placeholder="تهران" style="width:100%; box-sizing:border-box; height:56px; border:1.5px solid #e2e7ee; border-radius:12px; background:#fafbfd; padding:0 15px; font-size:14px; font-weight:700; color:#16202e; outline:none; text-align:right;" /></div>
+          <div><div style="font-size:12px; color:#8a96a6; margin-bottom:8px; font-weight:600;">مقصد</div><input value="{{ toCity }}" onInput="{{ onToCity }}" placeholder="دبی" style="width:100%; box-sizing:border-box; height:56px; border:1.5px solid #e2e7ee; border-radius:12px; background:#fafbfd; padding:0 15px; font-size:14px; font-weight:700; color:#16202e; outline:none; text-align:right;" /></div>
+          <div style="position:relative;">
+            <div style="font-size:12px; color:#8a96a6; margin-bottom:8px; font-weight:600;">تاریخ</div>
+            <div onClick="{{ toggleCal }}" style="width:100%; box-sizing:border-box; height:56px; border:1.5px solid #e2e7ee; border-radius:12px; background:#fafbfd; padding:0 15px; font-size:14px; font-weight:700; color:{{ dateColor }}; display:flex; align-items:center; justify-content:space-between; cursor:pointer;">
+              <span>{{ dateDisplay }}</span>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8a96a6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+            </div>
+            <sc-if value="{{ calOpen }}" hint-placeholder-val="{{false}}">
+              <div style="position:absolute; top:100%; margin-top:8px; right:0; width:280px; background:#fff; border:1px solid #eef1f5; border-radius:14px; box-shadow:0 18px 40px -20px rgba(13,38,102,.4); padding:14px; z-index:30;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                  <span onClick="{{ prevMonth }}" style="cursor:pointer; width:26px; height:26px; display:flex; align-items:center; justify-content:center; border-radius:8px; color:#5a6678;">‹</span>
+                  <span style="font-size:13px; font-weight:800; color:#16202e;">{{ calMonthLabel }}</span>
+                  <span onClick="{{ nextMonth }}" style="cursor:pointer; width:26px; height:26px; display:flex; align-items:center; justify-content:center; border-radius:8px; color:#5a6678;">›</span>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:6px;">
+                  <sc-for list="{{ weekDays }}" as="wd" hint-placeholder-count="7"><div style="text-align:center; font-size:10px; color:#9aa4b2; font-weight:700;">{{ wd }}</div></sc-for>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:4px;">
+                  <sc-for list="{{ calCells }}" as="c" hint-placeholder-count="35">
+                    <div onClick="{{ c.onPick }}" style="text-align:center; height:32px; display:flex; align-items:center; justify-content:center; border-radius:8px; font-size:12px; font-weight:600; cursor:{{ c.cursor }}; color:{{ c.color }}; background:{{ c.bg }};">{{ c.label }}</div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+          <div onClick="{{ doSearch }}" style="height:56px; padding:0 30px; border-radius:12px; background:var(--accent,#1668c4); color:#fff; display:flex; align-items:center; justify-content:center; gap:8px; font-size:14px; font-weight:800; cursor:pointer; white-space:nowrap;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>جستجو</div>
+        </div>
+      </sc-if>
+    </div>
+
+    <!-- RESULT -->
+    <sc-if value="{{ showResult }}" hint-placeholder-val="{{false}}">
+      <div style="margin-top:20px; background:#fff; border:1px solid #eef1f5; border-radius:20px; overflow:hidden; box-shadow:0 18px 50px -28px rgba(13,38,102,.5);">
+        <div style="background:linear-gradient(135deg,#0d2640,#16406e); color:#fff; padding:18px 26px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+          <div style="display:flex; align-items:center; gap:11px;"><div style="width:38px; height:38px; border-radius:10px; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-size:16px;">✈</div><div><div style="font-size:15px; font-weight:800;">{{ rAirline }}</div><div style="font-size:11px; color:#aac4e2;" dir="ltr">{{ rFlightNo }} · {{ rDate }}</div></div></div>
+          <span style="font-size:12px; font-weight:800; color:{{ rStColor }}; background:{{ rStBg }}; padding:7px 16px; border-radius:16px;">{{ rStLabel }}</span>
+        </div>
+        <div style="padding:32px 28px 26px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:18px;">
+            <div style="text-align:center;"><div style="font-size:34px; font-weight:900; color:#16202e;" dir="ltr">{{ rDepCode }}</div><div style="font-size:13px; color:#8a96a6; margin-top:4px;">{{ rDepCity }}</div><div style="font-size:18px; font-weight:800; color:var(--accent,#1668c4); margin-top:10px;">{{ rDepTime }}</div><div style="font-size:11px; color:#9aa4b2; margin-top:3px;">ترمینال {{ rDepTerminal }}</div></div>
+            <div style="flex:1; min-width:120px; display:flex; flex-direction:column; align-items:center; position:relative; padding:0 8px;">
+              <div style="font-size:11.5px; color:#8a96a6; margin-bottom:10px;">{{ rDuration }}</div>
+              <div style="width:100%; height:2px; background:#e6eaf0; position:relative;">
+                <div style="position:absolute; top:0; right:0; height:100%; width:{{ rProgress }}; background:var(--accent,#1668c4);"></div>
+                <span style="position:absolute; top:50%; transform:translate(50%,-50%); right:{{ rProgress }}; font-size:17px; color:var(--accent,#1668c4); background:#fff;">✈</span>
+              </div>
+              <div style="font-size:10.5px; color:#9aa4b2; margin-top:10px;">{{ rDistanceLabel }}</div>
+            </div>
+            <div style="text-align:center;"><div style="font-size:34px; font-weight:900; color:#16202e;" dir="ltr">{{ rArrCode }}</div><div style="font-size:13px; color:#8a96a6; margin-top:4px;">{{ rArrCity }}</div><div style="font-size:18px; font-weight:800; color:var(--accent,#1668c4); margin-top:10px;">{{ rArrTime }}</div><div style="font-size:11px; color:#9aa4b2; margin-top:3px;">ترمینال {{ rArrTerminal }}</div></div>
+          </div>
+          <div style="border-top:1.5px dashed #e2e7ee; margin-top:28px; padding-top:20px; display:grid; grid-template-columns:repeat(4,1fr); gap:13px;">
+            <div><div style="font-size:11px; color:#9aa4b2;">هواپیما</div><div style="font-size:13.5px; font-weight:700; margin-top:5px;">{{ rAircraft }}</div></div>
+            <div><div style="font-size:11px; color:#9aa4b2;">گیت</div><div style="font-size:13.5px; font-weight:700; margin-top:5px;">{{ rGate }}</div></div>
+            <div><div style="font-size:11px; color:#9aa4b2;">تحویل بار</div><div style="font-size:13.5px; font-weight:700; margin-top:5px;">{{ rBelt }}</div></div>
+            <div><div style="font-size:11px; color:#9aa4b2;">تأخیر</div><div style="font-size:13.5px; font-weight:700; margin-top:5px; color:{{ rDelayColor }};">{{ rDelayLabel }}</div></div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ showNotFound }}" hint-placeholder-val="{{false}}">
+      <div style="margin-top:18px; background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:44px 24px; text-align:center; box-shadow:0 18px 50px -28px rgba(13,38,102,.5);">
+        <div style="width:64px; height:64px; border-radius:50%; background:#f6f8fb; color:#8a96a6; display:flex; align-items:center; justify-content:center; font-size:26px; margin:0 auto 16px;">🔍</div>
+        <div style="font-size:15px; font-weight:800; color:#16202e; margin-bottom:6px;">پروازی یافت نشد</div>
+        <div style="font-size:12px; color:#8a96a6; line-height:1.9;">اطلاعات وارد‌شده با هیچ پروازی مطابقت ندارد. شماره پرواز یا مسیر و تاریخ را بررسی کنید.</div>
+      </div>
+    </sc-if>
+
+    <!-- HELPFUL LINKS -->
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:13px; margin-top:22px;">
+      <a href="پشتیبانی.dc.html" style="text-decoration:none; background:#fff; border:1px solid #eef1f5; border-radius:14px; padding:16px; display:flex; align-items:center; gap:12px;" style-hover="border-color:#dbe7f6; box-shadow:0 14px 30px -20px rgba(13,38,102,.3);">
+        <span style="width:42px; height:42px; flex:none; border-radius:11px; background:#eef4fb; color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4L3 21l1.1-3.3A8.4 8.4 0 1 1 21 11.5z"/></svg></span>
+        <div><div style="font-size:12.5px; font-weight:800; color:#16202e;">اطلاع‌رسانی تأخیر</div><div style="font-size:10.5px; color:#8a96a6; margin-top:2px;">فعال‌سازی پیامک تغییر وضعیت پرواز</div></div>
+      </a>
+      <a href="مدیریت رزرو.dc.html" style="text-decoration:none; background:#fff; border:1px solid #eef1f5; border-radius:14px; padding:16px; display:flex; align-items:center; gap:12px;" style-hover="border-color:#dbe7f6; box-shadow:0 14px 30px -20px rgba(13,38,102,.3);">
+        <span style="width:42px; height:42px; flex:none; border-radius:11px; background:#eef4fb; color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M8 4v16"/></svg></span>
+        <div><div style="font-size:12.5px; font-weight:800; color:#16202e;">مدیریت رزرو</div><div style="font-size:10.5px; color:#8a96a6; margin-top:2px;">تغییر صندلی، دانلود بلیط یا استرداد</div></div>
+      </a>
+      <a href="پشتیبانی.dc.html" style="text-decoration:none; background:#fff; border:1px solid #eef1f5; border-radius:14px; padding:16px; display:flex; align-items:center; gap:12px;" style-hover="border-color:#dbe7f6; box-shadow:0 14px 30px -20px rgba(13,38,102,.3);">
+        <span style="width:42px; height:42px; flex:none; border-radius:11px; background:#eef4fb; color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg></span>
+        <div><div style="font-size:12.5px; font-weight:800; color:#16202e;">پشتیبانی ۲۴ ساعته</div><div style="font-size:10.5px; color:#8a96a6; margin-top:2px;">در صورت هرگونه سؤال با ما تماس بگیرید</div></div>
+      </a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer style="background:#0d2640; color:#aebfd4;">
+    <div style="max-width:1180px; margin:0 auto; padding:39px 26px 20px; display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr; gap:33px;">
+      <div>
+        <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:9px; margin-bottom:16px; text-decoration:none;"><div style="width:36px; height:36px; border-radius:10px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:16px;">✈</div><span style="font-weight:900; font-size:18px; color:#fff;">blujet</span></a>
+        <p style="font-size:13.5px; line-height:1.85; margin:0 0 20px; max-width:300px;">رزرو آنلاین بلیط پروازهای داخلی و بین‌المللی با بهترین قیمت و خدمات باشگاه مشتریان.</p>
+        <div style="display:grid; grid-template-columns:repeat(2, 66px); gap:10px;">
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">نماد اعتماد الکترونیکی</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">انجمن صنفی دفاتر خدمات مسافرتی</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">ساماندهی</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">عضو IATA</span>
+        </div>
+      </div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">خدمات</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="نتایج پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">رزرو پرواز</a><a href="مدیریت رزرو.dc.html" style="color:#aebfd4; text-decoration:none;">مدیریت رزرو</a><a href="وضعیت پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">وضعیت پرواز</a><a href="باشگاه مشتریان.dc.html" style="color:#aebfd4; text-decoration:none;">باشگاه مشتریان</a></div></div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">شرکت</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="درباره ما.dc.html" style="color:#aebfd4; text-decoration:none;">درباره ما</a><a href="تماس با ما.dc.html" style="color:#aebfd4; text-decoration:none;">تماس با ما</a><a href="قوانین و مقررات.dc.html" style="color:#aebfd4; text-decoration:none;">قوانین و مقررات</a></div></div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">پشتیبانی</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">مرکز راهنما</a><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">سوالات متداول</a><span dir="ltr" style="text-align:right;" data-site-phone>۰۲۱ — ۹۱۰۰۰۰۰۰</span></div></div>
+    </div>
+    <div style="border-top:1px solid #ffffff12;"><div style="max-width:1180px; margin:0 auto; padding:15px 26px; display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:#7d92ad;"><span>© ۱۴۰۵ blujet. تمامی حقوق محفوظ است.</span></div></div>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { mode: "number", flightNo: "", fromCity: "", toCity: "", searchDate: "", searched: false, calOpen: false, calMonthIdx: 3, calSelectedDay: null };
+  toFa(n) { return String(n).replace(/[0-9]/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]); }
+  MONTHS = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
+  MONTH_DAYS = [31,31,31,31,31,31,30,30,30,30,30,29];
+
+  renderVals() {
+    const DB = {
+      "EP-821": { airline: "blujet", depCode: "THR", depCity: "تهران — مهرآباد", arrCode: "DXB", arrCity: "دبی", depTime: "۰۸:۳۰", arrTime: "۱۰:۴۵", duration: "۲ ساعت و ۱۵ دقیقه", aircraft: "ایرباس A320", gate: "B۱۲", belt: "۴", depTerminal: "۲", arrTerminal: "۱", status: "onTime", progress: 62 },
+      "IR-655": { airline: "ایران‌ایر", depCode: "THR", depCity: "تهران — مهرآباد", arrCode: "IST", arrCity: "استانبول", depTime: "۲۰:۰۰", arrTime: "۲۲:۲۰", duration: "۳ ساعت و ۱۵ دقیقه", aircraft: "بوئینگ ۷۳۷", gate: "A۷", belt: "۲", depTerminal: "۱", arrTerminal: "۳", status: "delayed", delayMin: 40, progress: 18 },
+      "W5-112": { airline: "ماهان", depCode: "MHD", depCity: "مشهد", arrCode: "THR", arrCity: "تهران — مهرآباد", depTime: "۱۳:۱۰", arrTime: "۱۴:۴۰", duration: "۱ ساعت و ۳۰ دقیقه", aircraft: "ایرباس A340", gate: "C۳", belt: "۱", depTerminal: "۱", arrTerminal: "۲", status: "landed", progress: 100 }
+    };
+    const STATUS_META = {
+      onTime: { label: "به‌موقع", color: "#1f8a5b", bg: "#eaf7f0" },
+      delayed: { label: "با تأخیر", color: "#b06a00", bg: "#fdf3e6" },
+      landed: { label: "فرود آمده", color: "#5a6678", bg: "#f1f3f6" },
+      cancelled: { label: "لغو شده", color: "#c03d3d", bg: "#fdeeee" }
+    };
+    const mode = this.state.mode;
+    const key = (this.state.flightNo || "").trim().toUpperCase();
+    const found = this.state.searched ? DB[key] : null;
+    const sm = found ? (STATUS_META[found.status] || STATUS_META.onTime) : null;
+
+    return {
+      byNumber: mode === "number", byRoute: mode === "route",
+      setByNumber: () => this.setState({ mode: "number", searched: false }),
+      setByRoute: () => this.setState({ mode: "route", searched: false }),
+      numW: mode === "number" ? "800" : "600", numC: mode === "number" ? "#fff" : "#5a6678", numBg: mode === "number" ? "var(--accent,#1668c4)" : "transparent",
+      rtW: mode === "route" ? "800" : "600", rtC: mode === "route" ? "#fff" : "#5a6678", rtBg: mode === "route" ? "var(--accent,#1668c4)" : "transparent",
+      flightNo: this.state.flightNo, onFlightNo: (e) => this.setState({ flightNo: e.target.value, searched: false }),
+      fromCity: this.state.fromCity, onFromCity: (e) => this.setState({ fromCity: e.target.value, searched: false }),
+      toCity: this.state.toCity, onToCity: (e) => this.setState({ toCity: e.target.value, searched: false }),
+      searchDate: this.state.searchDate, onSearchDate: (e) => this.setState({ searchDate: e.target.value, searched: false }),
+      doSearch: () => this.setState({ searched: true, calOpen: false }),
+
+      dateDisplay: this.state.searchDate || "انتخاب تاریخ",
+      dateColor: this.state.searchDate ? "#16202e" : "#9aa4b2",
+      calOpen: this.state.calOpen,
+      toggleCal: () => this.setState(s => ({ calOpen: !s.calOpen })),
+      calMonthLabel: this.MONTHS[this.state.calMonthIdx] + " ۱۴۰۵",
+      prevMonth: (e) => { e.stopPropagation(); this.setState(s => ({ calMonthIdx: (s.calMonthIdx + 11) % 12 })); },
+      nextMonth: (e) => { e.stopPropagation(); this.setState(s => ({ calMonthIdx: (s.calMonthIdx + 1) % 12 })); },
+      weekDays: ["ش","ی","د","س","چ","پ","ج"],
+      calCells: (() => {
+        const dim = this.MONTH_DAYS[this.state.calMonthIdx];
+        const offset = (this.state.calMonthIdx * 2) % 7;
+        const cells = [];
+        for (let i = 0; i < offset; i++) cells.push({ label: "", cursor: "default", color: "#fff", bg: "#fff", onPick: () => {} });
+        for (let d = 1; d <= dim; d++) {
+          const selected = this.state.calMonthIdx === this.state.calMonthIdx && this.state.calSelectedDay === d && this.state.searchDate === (this.toFa(d) + " " + this.MONTHS[this.state.calMonthIdx] + " ۱۴۰۵");
+          cells.push({
+            label: this.toFa(d), cursor: "pointer",
+            color: selected ? "#fff" : "#16202e", bg: selected ? "var(--accent,#1668c4)" : "transparent",
+            onPick: () => this.setState({ searchDate: this.toFa(d) + " " + this.MONTHS[this.state.calMonthIdx] + " ۱۴۰۵", calSelectedDay: d, calOpen: false, searched: false })
+          });
+        }
+        return cells;
+      })(),
+
+      showResult: !!found, showNotFound: this.state.searched && !found,
+      rAirline: found ? found.airline : "", rFlightNo: key, rDate: this.state.searchDate || "امروز",
+      rStLabel: sm ? sm.label : "", rStColor: sm ? sm.color : "", rStBg: sm ? sm.bg : "",
+      rDepCode: found ? found.depCode : "", rDepCity: found ? found.depCity : "", rDepTime: found ? found.depTime : "", rDepTerminal: found ? found.depTerminal : "",
+      rArrCode: found ? found.arrCode : "", rArrCity: found ? found.arrCity : "", rArrTime: found ? found.arrTime : "", rArrTerminal: found ? found.arrTerminal : "",
+      rDuration: found ? found.duration : "", rProgress: found ? found.progress + "%" : "0%",
+      rDistanceLabel: found && found.status === "landed" ? "پرواز به مقصد رسیده است" : (found ? "پرواز در مسیر" : ""),
+      rAircraft: found ? found.aircraft : "", rGate: found ? found.gate : "", rBelt: found ? found.belt : "",
+      rDelayLabel: found ? (found.status === "delayed" ? this.toFa(found.delayMin) + " دقیقه" : "بدون تأخیر") : "",
+      rDelayColor: found && found.status === "delayed" ? "#b06a00" : "#1f8a5b"
+    };
+  }
+}
+</script>
+</body>
+</html>

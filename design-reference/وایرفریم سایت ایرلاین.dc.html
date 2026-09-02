@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  body{ margin:0; }
+</style>
+</helmet>
+
+<div dir="rtl" style="width:max-content; min-width:100%; min-height:100vh; box-sizing:border-box; padding:33px; background:#e7e5df; font-family:Vazirmatn, sans-serif; --accent:#2c5f9e;">
+
+  <!-- ====== BOARD TITLE ====== -->
+  <div style="max-width:980px; margin-bottom:8px;">
+    <div style="font-family:'Roboto Mono',monospace; font-size:11px; color:#9c9a92; letter-spacing:3px;">WIREFRAME · v1 · RTL</div>
+    <h1 style="font-size:29px; font-weight:800; color:#2a2a2a; margin:8px 0 10px;">وایرفریم سایت ایرلاین «blujet»</h1>
+    <p style="color:#6b6b6b; font-size:13.5px; line-height:1.9; margin:0; text-wrap:pretty;">ساختار و جریان کاربری ۸ صفحه‌ی اصلی — از جستجوی پرواز و انتخاب بلیط تا پرداخت، باشگاه مشتریان و پروفایل. این یک طرح کم‌جزئیات برای بررسی چیدمان و مسیر کاربر است، نه طراحی نهایی.</p>
+    <div style="display:flex; gap:15px; flex-wrap:wrap; margin-top:18px; align-items:center;">
+      <div style="display:flex; align-items:center; gap:7px; font-size:11px; color:#777;"><span style="width:22px;height:22px;border:1.5px solid #cfcfcf;background:#f3f3f3;border-radius:5px;display:inline-block;"></span> صندلی موجود</div>
+      <div style="display:flex; align-items:center; gap:7px; font-size:11px; color:#777;"><span style="width:22px;height:22px;border:1.5px solid var(--accent,#2c5f9e);background:var(--accent,#2c5f9e);border-radius:5px;display:inline-block;"></span> انتخاب‌شده</div>
+      <div style="display:flex; align-items:center; gap:7px; font-size:11px; color:#777;"><span style="width:22px;height:22px;border:1.5px solid #b9b9b9;background:#cfcfcf;border-radius:5px;display:inline-block;"></span> رزروشده</div>
+      <div style="display:flex; align-items:center; gap:7px; font-size:11px; color:#777;"><span style="width:22px;height:14px;background:repeating-linear-gradient(45deg,#efefef,#efefef 5px,#e3e3e3 5px,#e3e3e3 10px);border:1px dashed #c2c2c2;display:inline-block;"></span> جای تصویر / عکس</div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- GROUP A — AUTH -->
+  <!-- ============================================================= -->
+  <div style="display:flex; align-items:center; gap:10px; margin:44px 0 18px;">
+    <span style="font-family:'Roboto Mono',monospace; font-size:11.5px; color:#fff; background:#3a3a3a; padding:3px 9px; border-radius:5px;">A</span>
+    <span style="font-size:15.5px; font-weight:700; color:#444;">ورود به حساب کاربری</span>
+    <span style="flex:1; height:1.5px; background:#cfcdc7;"></span>
+  </div>
+
+  <div style="display:flex; gap:33px; align-items:flex-start;">
+
+    <!-- 07 LOGIN -->
+    <div style="flex:none; width:840px;">
+      <div style="font:600 13px Vazirmatn; color:#6b6b6b; margin-bottom:10px; display:flex; gap:7px; align-items:center;"><span style="font-family:'Roboto Mono',monospace;">07</span> ورود (لاگین)</div>
+      <div style="background:#fff; border-radius:2px; box-shadow:0 1px 3px rgba(0,0,0,.08); overflow:hidden; display:flex; min-height:520px;">
+        <!-- visual side -->
+        <div style="flex:1; background:repeating-linear-gradient(45deg,#eef1f5,#eef1f5 12px,#e6eaf0 12px,#e6eaf0 24px); display:flex; align-items:center; justify-content:center; color:#9aa3b0; font-family:'Roboto Mono',monospace; font-size:11.5px; border-left:1.5px solid #e8e8e8;">تصویر برند / blujet</div>
+        <!-- form side -->
+        <div style="width:380px; padding:28px 25px; display:flex; flex-direction:column; justify-content:center;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:26px;">
+            <div style="width:36px;height:36px;border-radius:9px;background:var(--accent,#2c5f9e);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;">✈</div>
+            <span style="font-weight:800; font-size:17px; color:#222;">blujet</span>
+          </div>
+          <h3 style="font-size:20px; font-weight:700; color:#2a2a2a; margin:0 0 6px;">ورود به حساب</h3>
+          <p style="font-size:11.5px; color:#8a8a8a; margin:0 0 24px;">برای ادامه وارد حساب کاربری خود شوید</p>
+          <div style="font-size:11px; color:#8a8a8a; margin-bottom:6px;">موبایل یا ایمیل</div>
+          <div style="height:46px; border:1.5px solid #d7d7d7; border-radius:8px; background:#fafafa; display:flex; align-items:center; padding:0 10px; color:#b3b3b3; font-size:12.5px; margin-bottom:16px;">۰۹۱۲ — — —</div>
+          <div style="font-size:11px; color:#8a8a8a; margin-bottom:6px;">رمز عبور</div>
+          <div style="height:46px; border:1.5px solid #d7d7d7; border-radius:8px; background:#fafafa; display:flex; align-items:center; justify-content:space-between; padding:0 10px; color:#b3b3b3; font-size:12.5px; margin-bottom:10px;"><span>••••••••</span><span style="font-size:11px;">نمایش</span></div>
+          <div style="text-align:left; font-size:11px; color:var(--accent,#2c5f9e); margin-bottom:20px;">فراموشی رمز عبور؟</div>
+          <div style="height:48px; border-radius:8px; background:var(--accent,#2c5f9e); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13.5px; font-weight:600;">ورود</div>
+          <div style="display:flex; align-items:center; gap:10px; margin:18px 0; color:#bbb; font-size:11px;"><span style="flex:1;height:1px;background:#e6e6e6;"></span>یا<span style="flex:1;height:1px;background:#e6e6e6;"></span></div>
+          <div style="height:48px; border-radius:8px; border:1.5px solid #d7d7d7; color:#555; display:flex; align-items:center; justify-content:center; font-size:12.5px;">ورود با کد یکبارمصرف (OTP)</div>
+          <p style="text-align:center; font-size:11.5px; color:#777; margin:22px 0 0;">حساب ندارید؟ <span style="color:var(--accent,#2c5f9e); font-weight:600;">ثبت‌نام کنید</span></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 06 REGISTER -->
+    <div style="flex:none; width:560px;">
+      <div style="font:600 13px Vazirmatn; color:#6b6b6b; margin-bottom:10px; display:flex; gap:7px; align-items:center;"><span style="font-family:'Roboto Mono',monospace;">06</span> ثبت‌نام</div>
+      <div style="background:#fff; border-radius:2px; box-shadow:0 1px 3px rgba(0,0,0,.08); overflow:hidden; padding:28px 28px; min-height:520px;">
+        <h3 style="font-size:20px; font-weight:700; color:#2a2a2a; margin:0 0 6px;">ساخت حساب جدید</h3>
+        <p style="font-size:11.5px; color:#8a8a8a; margin:0 0 26px;">عضو باشگاه مشتریان شوید و امتیاز بگیرید</p>
+        <div style="display:flex; gap:11px;">
+          <div style="flex:1;"><div style="font-size:11px;color:#8a8a8a;margin-bottom:6px;">نام</div><div style="height:46px;border:1.5px solid #d7d7d7;border-radius:8px;background:#fafafa;"></div></div>
+          <div style="flex:1;"><div style="font-size:11px;color:#8a8a8a;margin-bottom:6px;">نام خانوادگی</div><div style="height:46px;border:1.5px solid #d7d7d7;border-radius:8px;background:#fafafa;"></div></div>
+        </div>
+        <div style="margin-top:14px;"><div style="font-size:11px;color:#8a8a8a;margin-bottom:6px;">شماره موبایل</div><div style="height:46px;border:1.5px solid #d7d7d7;border-radius:8px;background:#fafafa;"></div></div>
+        <div style="margin-top:14px;"><div style="font-size:11px;color:#8a8a8a;margin-bottom:6px;">ایمیل</div><div style="height:46px;border:1.5px solid #d7d7d7;border-radius:8px;background:#fafafa;"></div></div>
+        <div style="display:flex; gap:11px; margin-top:14px;">
+          <div style="flex:1;"><div style="font-size:11px;color:#8a8a8a;margin-bottom:6px;">رمز عبور</div><div style="height:46px;border:1.5px solid #d7d7d7;border-radius:8px;background:#fafafa;"></div></div>
+          <div style="flex:1;"><div style="font-size:11px;color:#8a8a8a;margin-bottom:6px;">تکرار رمز</div><div style="height:46px;border:1.5px solid #d7d7d7;border-radius:8px;background:#fafafa;"></div></div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; margin-top:20px; font-size:11.5px; color:#777;"><span style="width:18px;height:18px;border:1.5px solid #c9c9c9;border-radius:4px;display:inline-block;"></span> قوانین و مقررات را می‌پذیرم</div>
+        <div style="height:48px; border-radius:8px; background:var(--accent,#2c5f9e); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13.5px; font-weight:600; margin-top:22px;">ایجاد حساب</div>
+        <p style="text-align:center; font-size:11.5px; color:#777; margin:20px 0 0;">قبلاً ثبت‌نام کرده‌اید؟ <span style="color:var(--accent,#2c5f9e); font-weight:600;">ورود</span></p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- GROUP B — BOOKING FLOW -->
+  <!-- ============================================================= -->
+  <div style="display:flex; align-items:center; gap:10px; margin:52px 0 18px;">
+    <span style="font-family:'Roboto Mono',monospace; font-size:11.5px; color:#fff; background:#3a3a3a; padding:3px 9px; border-radius:5px;">B</span>
+    <span style="font-size:15.5px; font-weight:700; color:#444;">جریان جستجو و رزرو پرواز</span>
+    <span style="flex:1; height:1.5px; background:#cfcdc7;"></span>
+  </div>
+
+  <div style="display:flex; gap:33px; align-items:flex-start;">
+
+    <!-- 01 HOME + SEARCH (desktop) -->
+    <div style="flex:none; width:1180px;">
+      <div style="font:600 13px Vazirmatn; color:#6b6b6b; margin-bottom:10px; display:flex; gap:7px; align-items:center;"><span style="font-family:'Roboto Mono',monospace;">01</span> صفحه اصلی و جستجوی پرواز</div>
+      <div style="background:#fff; border-radius:2px; box-shadow:0 1px 3px rgba(0,0,0,.08); overflow:hidden;">
+        <!-- header -->
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:11px 20px; border-bottom:1.5px solid #ececec;">
+          <div style="display:flex; align-items:center; gap:8px;"><div style="width:32px;height:32px;border-radius:8px;background:var(--accent,#2c5f9e);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15.5px;">✈</div><span style="font-weight:800;font-size:15.5px;color:#222;">blujet</span></div>
+          <div style="display:flex; gap:20px; color:#666; font-size:12.5px;"><span>پروازها</span><span>باشگاه مشتریان</span><span>راهنما</span><span>پشتیبانی</span></div>
+          <div style="display:flex; gap:8px; align-items:center;"><span style="font-size:11.5px;color:#888;">FA ▾</span><span style="padding:7px 11px;border:1.5px solid var(--accent,#2c5f9e);color:var(--accent,#2c5f9e);border-radius:7px;font-size:11.5px;">ورود</span><span style="padding:7px 11px;background:var(--accent,#2c5f9e);color:#fff;border-radius:7px;font-size:11.5px;">ثبت‌نام</span></div>
+        </div>
+        <!-- hero + search -->
+        <div style="position:relative; padding:33px 25px 44px; background:repeating-linear-gradient(45deg,#eef1f5,#eef1f5 14px,#e7ebf1 14px,#e7ebf1 28px);">
+          <div style="position:absolute; top:18px; right:36px; font-family:'Roboto Mono',monospace; font-size:11px; color:#9aa3b0;">[ تصویر هیرو — blujet / مقصد ]</div>
+          <h2 style="font-size:27px; font-weight:800; color:#2c3540; margin:18px 0 6px;">سفرت رو رزرو کن</h2>
+          <p style="font-size:13.5px; color:#5c6675; margin:0 0 26px;">صدها مسیر داخلی و خارجی، با بهترین قیمت</p>
+          <!-- search card -->
+          <div style="background:#fff; border-radius:14px; box-shadow:0 6px 24px rgba(0,0,0,.10); padding:15px;">
+            <div style="display:flex; gap:7px; margin-bottom:18px;">
+              <span style="padding:7px 11px; background:var(--accent,#2c5f9e); color:#fff; border-radius:18px; font-size:11.5px;">رفت و برگشت</span>
+              <span style="padding:7px 11px; border:1.5px solid #e0e0e0; color:#666; border-radius:18px; font-size:11.5px;">یک‌طرفه</span>
+              <span style="padding:7px 11px; border:1.5px solid #e0e0e0; color:#666; border-radius:18px; font-size:11.5px;">چندمسیره</span>
+            </div>
+            <div style="display:flex; gap:11px; align-items:flex-end;">
+              <div style="flex:1.4;"><div style="font-size:11px;color:#8a8a8a;margin-bottom:6px;">مبدا</div><div style="height:52px;border:1.5px solid #d7d7d7;border-radius:10px;background:#fafafa;display:flex;align-items:center;padding:0 11px;color:#3a3a3a;font-size:13.5px;">تهران <span style="color:#aaa;margin-right:6px;">(THR)</span></div></div>
+              <div style="width:44px; height:52px; display:flex; align-items:center; justify-content:center; color:#aaa; font-size:16px; border:1.5px solid #ededed; border-radius:10px;">⇄</div>
+              <div style="flex:1.4;"><div style="font-size:11px;color:#8a8a8a;margin-bottom:6px;">مقصد</div><div style="height:52px;border:1.5px solid #d7d7d7;border-radius:10px;background:#fafafa;display:flex;align-items:center;padding:0 11px;color:#3a3a3a;font-size:13.5px;">دبی <span style="color:#aaa;margin-right:6px;">(DXB)</span></div></div>
+              <div style="flex:1;"><div style="font-size:11px;color:#8a8a8a;margin-bottom:6px;">تاریخ رفت</div><div style="height:52px;border:1.5px solid #d7d7d7;border-radius:10px;background:#fafafa;display:flex;align-items:center;padding:0 11px;color:#3a3a3a;font-size:12.5px;">۱۲ تیر ۱۴۰۵</div></div>
+              <div style="flex:1;"><div style="font-size:11px;color:#8a8a8a;margin-bottom:6px;">تاریخ برگشت</div><div style="height:52px;border:1.5px solid #d7d7d7;border-radius:10px;background:#fafafa;display:flex;align-items:center;padding:0 11px;color:#3a3a3a;font-size:12.5px;">۱۹ تیر ۱۴۰۵</div></div>
+              <div style="flex:1;"><div style="font-size:11px;color:#8a8a8a;margin-bottom:6px;">مسافران / کلاس</div><div style="height:52px;border:1.5px solid #d7d7d7;border-radius:10px;background:#fafafa;display:flex;align-items:center;padding:0 11px;color:#3a3a3a;font-size:12.5px;">۱ بزرگسال · اکونومی</div></div>
+              <div style="width:130px; height:52px; border-radius:10px; background:var(--accent,#2c5f9e); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13.5px; font-weight:600;">جستجو</div>
+            </div>
+          </div>
+        </div>
+        <!-- offers -->
+        <div style="padding:21px 25px 28px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;"><h4 style="font-size:16px; font-weight:700; color:#2a2a2a; margin:0;">پیشنهادهای ویژه</h4><span style="font-size:11.5px;color:var(--accent,#2c5f9e);">مشاهده همه</span></div>
+          <div style="display:flex; gap:15px;">
+            <div style="flex:1; border:1.5px solid #ececec; border-radius:12px; overflow:hidden;"><div style="height:120px; background:repeating-linear-gradient(45deg,#eef1f5,#eef1f5 10px,#e6eaf0 10px,#e6eaf0 20px);display:flex;align-items:center;justify-content:center;color:#9aa3b0;font-family:'Roboto Mono',monospace;font-size:11px;">مقصد</div><div style="padding:11px;"><div style="font-weight:700;color:#333;font-size:13.5px;">استانبول</div><div style="font-size:11.5px;color:#999;margin-top:4px;">از ۴٬۲۰۰٬۰۰۰ تومان</div></div></div>
+            <div style="flex:1; border:1.5px solid #ececec; border-radius:12px; overflow:hidden;"><div style="height:120px; background:repeating-linear-gradient(45deg,#eef1f5,#eef1f5 10px,#e6eaf0 10px,#e6eaf0 20px);display:flex;align-items:center;justify-content:center;color:#9aa3b0;font-family:'Roboto Mono',monospace;font-size:11px;">مقصد</div><div style="padding:11px;"><div style="font-weight:700;color:#333;font-size:13.5px;">دبی</div><div style="font-size:11.5px;color:#999;margin-top:4px;">از ۳٬۸۰۰٬۰۰۰ تومان</div></div></div>
+            <div style="flex:1; border:1.5px solid #ececec; border-radius:12px; overflow:hidden;"><div style="height:120px; background:repeating-linear-gradient(45deg,#eef1f5,#eef1f5 10px,#e6eaf0 10px,#e6eaf0 20px);display:flex;align-items:center;justify-content:center;color:#9aa3b0;font-family:'Roboto Mono',monospace;font-size:11px;">مقصد</div><div style="padding:11px;"><div style="font-weight:700;color:#333;font-size:13.5px;">مشهد</div><div style="font-size:11.5px;color:#999;margin-top:4px;">از ۱٬۶۰۰٬۰۰۰ تومان</div></div></div>
+            <div style="flex:1; border:1.5px solid #ececec; border-radius:12px; overflow:hidden;"><div style="height:120px; background:repeating-linear-gradient(45deg,#eef1f5,#eef1f5 10px,#e6eaf0 10px,#e6eaf0 20px);display:flex;align-items:center;justify-content:center;color:#9aa3b0;font-family:'Roboto Mono',monospace;font-size:11px;">مقصد</div><div style="padding:11px;"><div style="font-weight:700;color:#333;font-size:13.5px;">کیش</div><div style="font-size:11.5px;color:#999;margin-top:4px;">از ۲٬۱۰۰٬۰۰۰ تومان</div></div></div>
+          </div>
+        </div>
+      </div>
+      <sc-if value="{{showAnnotations}}" hint-placeholder-val="{{true}}">
+        <div style="display:flex; align-items:flex-start; gap:7px; margin-top:12px; max-width:560px;"><span style="width:4px; align-self:stretch; background:var(--accent,#2c5f9e); border-radius:2px;"></span><p style="margin:0; font-size:11.5px; color:#7a7a7a; line-height:1.7;">جستجو قلب صفحه‌ی اصلی است: مبدا/مقصد قابل جابه‌جایی (⇄)، انتخاب تاریخ رفت‌وبرگشت و تعداد مسافر. در موبایل فیلدها زیر هم می‌چینند (فریم کناری).</p></div>
+      </sc-if>
+    </div>
+
+    <!-- 01b HOME (mobile) -->
+    <div style="flex:none; width:330px;">
+      <div style="font:600 13px Vazirmatn; color:#6b6b6b; margin-bottom:10px; display:flex; gap:7px; align-items:center;"><span style="font-family:'Roboto Mono',monospace;">01·M</span> نسخه موبایل</div>
+      <div style="width:300px; border:11px solid #2b2b2b; border-radius:36px; background:#fff; overflow:hidden; box-shadow:0 6px 22px rgba(0,0,0,.14);">
+        <div style="height:26px; background:#2b2b2b; display:flex; align-items:center; justify-content:center;"><span style="width:90px;height:7px;background:#444;border-radius:5px;"></span></div>
+        <div style="padding:11px 11px 15px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;"><div style="display:flex;align-items:center;gap:6px;"><div style="width:26px;height:26px;border-radius:7px;background:var(--accent,#2c5f9e);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12.5px;">✈</div><span style="font-weight:800;font-size:13.5px;color:#222;">blujet</span></div><span style="font-size:16px;color:#888;">☰</span></div>
+          <div style="height:90px; border-radius:10px; background:repeating-linear-gradient(45deg,#eef1f5,#eef1f5 10px,#e6eaf0 10px,#e6eaf0 20px); display:flex; align-items:center; justify-content:center; color:#9aa3b0; font-family:'Roboto Mono',monospace; font-size:10px; margin-bottom:16px;">هیرو</div>
+          <div style="display:flex; gap:5px; margin-bottom:12px;"><span style="padding:5px 10px;background:var(--accent,#2c5f9e);color:#fff;border-radius:14px;font-size:10px;">رفت‌وبرگشت</span><span style="padding:5px 10px;border:1.5px solid #e0e0e0;color:#777;border-radius:14px;font-size:10px;">یک‌طرفه</span></div>
+          <div style="height:46px;border:1.5px solid #d7d7d7;border-radius:9px;background:#fafafa;display:flex;align-items:center;padding:0 10px;color:#3a3a3a;font-size:11.5px;margin-bottom:8px;">تهران (THR)</div>
+          <div style="height:46px;border:1.5px solid #d7d7d7;border-radius:9px;background:#fafafa;display:flex;align-items:center;padding:0 10px;color:#3a3a3a;font-size:11.5px;margin-bottom:8px;">دبی (DXB)</div>
+          <div style="display:flex; gap:7px; margin-bottom:8px;"><div style="flex:1;height:46px;border:1.5px solid #d7d7d7;border-radius:9px;background:#fafafa;display:flex;align-items:center;padding:0 8px;color:#3a3a3a;font-size:11px;">۱۲ تیر</div><div style="flex:1;height:46px;border:1.5px solid #d7d7d7;border-radius:9px;background:#fafafa;display:flex;align-items:center;padding:0 8px;color:#3a3a3a;font-size:11px;">۱۹ تیر</div></div>
+          <div style="height:46px;border:1.5px solid #d7d7d7;border-radius:9px;background:#fafafa;display:flex;align-items:center;padding:0 10px;color:#3a3a3a;font-size:11.5px;margin-bottom:14px;">۱ مسافر · اکونومی</div>
+          <div style="height:48px;border-radius:10px;background:var(--accent,#2c5f9e);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:600;">جستجوی پرواز</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 02 RESULTS -->
+    <div style="flex:none; width:1180px;">
+      <div style="font:600 13px Vazirmatn; color:#6b6b6b; margin-bottom:10px; display:flex; gap:7px; align-items:center;"><span style="font-family:'Roboto Mono',monospace;">02</span> نتایج پرواز</div>
+      <div style="background:#fff; border-radius:2px; box-shadow:0 1px 3px rgba(0,0,0,.08); overflow:hidden;">
+        <!-- summary bar -->
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 20px; background:#f6f7f9; border-bottom:1.5px solid #ececec;">
+          <div style="display:flex; align-items:center; gap:11px; color:#333; font-size:13.5px;"><span style="font-weight:700;">تهران ← دبی</span><span style="color:#999;font-size:11.5px;">۱۲ تیر · ۱ مسافر · اکونومی</span></div>
+          <span style="padding:7px 11px; border:1.5px solid var(--accent,#2c5f9e); color:var(--accent,#2c5f9e); border-radius:8px; font-size:11.5px;">ویرایش جستجو</span>
+        </div>
+        <div style="display:flex;">
+          <!-- filters -->
+          <div style="width:260px; padding:16px; border-left:1.5px solid #ececec;">
+            <div style="font-weight:700; color:#333; font-size:13.5px; margin-bottom:18px;">فیلترها</div>
+            <div style="font-size:11.5px; color:#666; margin-bottom:8px;">محدوده قیمت</div>
+            <div style="height:6px; background:#ececec; border-radius:3px; position:relative; margin:14px 0 24px;"><span style="position:absolute; right:10%; left:30%; top:0; bottom:0; background:var(--accent,#2c5f9e); border-radius:3px;"></span><span style="position:absolute; right:10%; top:-5px; width:16px; height:16px; background:#fff; border:2px solid var(--accent,#2c5f9e); border-radius:50%;"></span><span style="position:absolute; left:30%; top:-5px; width:16px; height:16px; background:#fff; border:2px solid var(--accent,#2c5f9e); border-radius:50%;"></span></div>
+            <div style="font-size:11.5px; color:#666; margin-bottom:10px;">زمان پرواز</div>
+            <div style="display:flex; gap:7px; flex-wrap:wrap; margin-bottom:22px;"><span style="padding:5px 10px;border:1.5px solid #e0e0e0;border-radius:16px;font-size:11px;color:#777;">صبح</span><span style="padding:5px 10px;border:1.5px solid var(--accent,#2c5f9e);background:#eef3f9;border-radius:16px;font-size:11px;color:var(--accent,#2c5f9e);">ظهر</span><span style="padding:5px 10px;border:1.5px solid #e0e0e0;border-radius:16px;font-size:11px;color:#777;">شب</span></div>
+            <div style="font-size:11.5px; color:#666; margin-bottom:10px;">تعداد توقف</div>
+            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:22px; font-size:11.5px; color:#555;"><div style="display:flex;align-items:center;gap:7px;"><span style="width:17px;height:17px;border:1.5px solid var(--accent,#2c5f9e);background:var(--accent,#2c5f9e);border-radius:4px;"></span> بدون توقف</div><div style="display:flex;align-items:center;gap:7px;"><span style="width:17px;height:17px;border:1.5px solid #c9c9c9;border-radius:4px;"></span> ۱ توقف</div></div>
+            <div style="font-size:11.5px; color:#666; margin-bottom:10px;">شرکت هواپیمایی</div>
+            <div style="display:flex; flex-direction:column; gap:8px; font-size:11.5px; color:#555;"><div style="display:flex;align-items:center;gap:7px;"><span style="width:17px;height:17px;border:1.5px solid #c9c9c9;border-radius:4px;"></span> blujet</div><div style="display:flex;align-items:center;gap:7px;"><span style="width:17px;height:17px;border:1.5px solid #c9c9c9;border-radius:4px;"></span> ماهان</div><div style="display:flex;align-items:center;gap:7px;"><span style="width:17px;height:17px;border:1.5px solid #c9c9c9;border-radius:4px;"></span> ایران‌ایر</div></div>
+          </div>
+          <!-- list -->
+          <div style="flex:1; padding:16px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;"><span style="font-size:12.5px; color:#666;">۲۴ پرواز یافت شد</span><span style="font-size:11.5px; color:#666;">مرتب‌سازی: <span style="color:var(--accent,#2c5f9e);">ارزان‌ترین ▾</span></span></div>
+            <!-- flight card x3 -->
+            <div style="border:1.5px solid #ececec; border-radius:12px; padding:12px 14px; margin-bottom:14px; display:flex; align-items:center; gap:18px;">
+              <div style="width:54px;height:54px;border-radius:10px;background:#f0f2f5;display:flex;align-items:center;justify-content:center;color:#aab;font-family:'Roboto Mono',monospace;font-size:9px;">لوگو</div>
+              <div style="display:flex; align-items:center; gap:15px; flex:1;"><div style="text-align:center;"><div style="font-size:17px;font-weight:700;color:#2a2a2a;">۰۸:۳۰</div><div style="font-size:11px;color:#999;">تهران</div></div><div style="flex:1; text-align:center;"><div style="font-size:11px;color:#999;">۲ ساعت ۱۵ دقیقه</div><div style="display:flex;align-items:center;gap:5px;justify-content:center;margin:5px 0;"><span style="flex:1;height:1.5px;background:#ddd;"></span><span style="color:#bbb;font-size:11.5px;">✈</span><span style="flex:1;height:1.5px;background:#ddd;"></span></div><div style="font-size:10px;color:#aaa;">بدون توقف</div></div><div style="text-align:center;"><div style="font-size:17px;font-weight:700;color:#2a2a2a;">۱۰:۴۵</div><div style="font-size:11px;color:#999;">دبی</div></div></div>
+              <div style="text-align:center;"><div style="font-size:16px;font-weight:800;color:var(--accent,#2c5f9e);">۳٬۸۰۰٬۰۰۰</div><div style="font-size:10px;color:#999;margin-bottom:8px;">تومان</div><div style="padding:7px 15px;background:var(--accent,#2c5f9e);color:#fff;border-radius:8px;font-size:11.5px;font-weight:600;">انتخاب</div></div>
+            </div>
+            <div style="border:1.5px solid #ececec; border-radius:12px; padding:12px 14px; margin-bottom:14px; display:flex; align-items:center; gap:18px;">
+              <div style="width:54px;height:54px;border-radius:10px;background:#f0f2f5;display:flex;align-items:center;justify-content:center;color:#aab;font-family:'Roboto Mono',monospace;font-size:9px;">لوگو</div>
+              <div style="display:flex; align-items:center; gap:15px; flex:1;"><div style="text-align:center;"><div style="font-size:17px;font-weight:700;color:#2a2a2a;">۱۳:۱۰</div><div style="font-size:11px;color:#999;">تهران</div></div><div style="flex:1; text-align:center;"><div style="font-size:11px;color:#999;">۳ ساعت ۴۰ دقیقه</div><div style="display:flex;align-items:center;gap:5px;justify-content:center;margin:5px 0;"><span style="flex:1;height:1.5px;background:#ddd;"></span><span style="color:#bbb;font-size:11.5px;">✈</span><span style="flex:1;height:1.5px;background:#ddd;"></span></div><div style="font-size:10px;color:#aaa;">۱ توقف · استانبول</div></div><div style="text-align:center;"><div style="font-size:17px;font-weight:700;color:#2a2a2a;">۱۶:۵۰</div><div style="font-size:11px;color:#999;">دبی</div></div></div>
+              <div style="text-align:center;"><div style="font-size:16px;font-weight:800;color:var(--accent,#2c5f9e);">۴٬۲۵۰٬۰۰۰</div><div style="font-size:10px;color:#999;margin-bottom:8px;">تومان</div><div style="padding:7px 15px;background:var(--accent,#2c5f9e);color:#fff;border-radius:8px;font-size:11.5px;font-weight:600;">انتخاب</div></div>
+            </div>
+            <div style="border:1.5px solid #ececec; border-radius:12px; padding:12px 14px; display:flex; align-items:center; gap:18px;">
+              <div style="width:54px;height:54px;border-radius:10px;background:#f0f2f5;display:flex;align-items:center;justify-content:center;color:#aab;font-family:'Roboto Mono',monospace;font-size:9px;">لوگو</div>
+              <div style="display:flex; align-items:center; gap:15px; flex:1;"><div style="text-align:center;"><div style="font-size:17px;font-weight:700;color:#2a2a2a;">۲۰:۰۰</div><div style="font-size:11px;color:#999;">تهران</div></div><div style="flex:1; text-align:center;"><div style="font-size:11px;color:#999;">۲ ساعت ۲۰ دقیقه</div><div style="display:flex;align-items:center;gap:5px;justify-content:center;margin:5px 0;"><span style="flex:1;height:1.5px;background:#ddd;"></span><span style="color:#bbb;font-size:11.5px;">✈</span><span style="flex:1;height:1.5px;background:#ddd;"></span></div><div style="font-size:10px;color:#aaa;">بدون توقف</div></div><div style="text-align:center;"><div style="font-size:17px;font-weight:700;color:#2a2a2a;">۲۲:۲۰</div><div style="font-size:11px;color:#999;">دبی</div></div></div>
+              <div style="text-align:center;"><div style="font-size:16px;font-weight:800;color:var(--accent,#2c5f9e);">۴٬۱۰۰٬۰۰۰</div><div style="font-size:10px;color:#999;margin-bottom:8px;">تومان</div><div style="padding:7px 15px;background:var(--accent,#2c5f9e);color:#fff;border-radius:8px;font-size:11.5px;font-weight:600;">انتخاب</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <sc-if value="{{showAnnotations}}" hint-placeholder-val="{{true}}">
+        <div style="display:flex; align-items:flex-start; gap:7px; margin-top:12px; max-width:560px;"><span style="width:4px; align-self:stretch; background:var(--accent,#2c5f9e); border-radius:2px;"></span><p style="margin:0; font-size:11.5px; color:#7a7a7a; line-height:1.7;">فیلتر کنار (راست) + لیست کارت‌های پرواز. هر کارت ساعت رفت/رسید، مدت، توقف و قیمت را نشان می‌دهد؛ دکمه «انتخاب» به مرحله‌ی بعد می‌برد.</p></div>
+      </sc-if>
+    </div>
+
+    <!-- 03 SEAT / TICKET -->
+    <div style="flex:none; width:1180px;">
+      <div style="font:600 13px Vazirmatn; color:#6b6b6b; margin-bottom:10px; display:flex; gap:7px; align-items:center;"><span style="font-family:'Roboto Mono',monospace;">03</span> انتخاب صندلی و بلیط</div>
+      <div style="background:#fff; border-radius:2px; box-shadow:0 1px 3px rgba(0,0,0,.08); overflow:hidden;">
+        <!-- stepper -->
+        <div style="display:flex; align-items:center; gap:7px; padding:12px 20px; border-bottom:1.5px solid #ececec; font-size:11.5px;">
+          <span style="display:flex;align-items:center;gap:6px;color:#2a2a2a;"><span style="width:24px;height:24px;border-radius:50%;background:var(--accent,#2c5f9e);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;">✓</span>انتخاب پرواز</span>
+          <span style="flex:none;width:34px;height:1.5px;background:#ddd;"></span>
+          <span style="display:flex;align-items:center;gap:6px;color:var(--accent,#2c5f9e);font-weight:700;"><span style="width:24px;height:24px;border-radius:50%;border:2px solid var(--accent,#2c5f9e);color:var(--accent,#2c5f9e);display:flex;align-items:center;justify-content:center;font-size:11px;">۲</span>مسافران و صندلی</span>
+          <span style="flex:none;width:34px;height:1.5px;background:#ddd;"></span>
+          <span style="display:flex;align-items:center;gap:6px;color:#aaa;"><span style="width:24px;height:24px;border-radius:50%;border:2px solid #ddd;display:flex;align-items:center;justify-content:center;font-size:11px;">۳</span>پرداخت</span>
+        </div>
+        <div style="display:flex;">
+          <!-- seat map -->
+          <div style="flex:1; padding:20px; border-left:1.5px solid #ececec;">
+            <div style="font-weight:700; color:#333; font-size:13.5px; margin-bottom:6px;">نقشه صندلی — بوئینگ ۷۳۷</div>
+            <p style="font-size:11px; color:#999; margin:0 0 22px;">صندلی موردنظر خود را انتخاب کنید</p>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:7px;">
+              <div style="width:160px; height:40px; border:1.5px dashed #d7d7d7; border-radius:58px 60px 14px 14px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; color:#bbb; font-size:11px;">جلوی هواپیما</div>
+              <sc-for list="{{seatRows}}" as="row" hint-placeholder-count="8">
+                <div style="display:flex; gap:7px; align-items:center;">
+                  <span style="width:18px; text-align:center; font-family:'Roboto Mono',monospace; font-size:10px; color:#bbb;">{{ row }}</span>
+                  <sc-for list="{{seatCols}}" as="col" hint-placeholder-count="7">
+                    <sc-if value="{{ col.aisle }}" hint-placeholder-val="{{false}}"><span style="width:18px;"></span></sc-if>
+                    <sc-if value="{{ col.seat }}" hint-placeholder-val="{{true}}"><span style="width:30px; height:30px; border-radius:7px 7px 4px 4px; border:1.5px solid #cfcfcf; background:#f3f3f3;"></span></sc-if>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <!-- summary / fare -->
+          <div style="width:420px; padding:20px;">
+            <div style="font-weight:700; color:#333; font-size:13.5px; margin-bottom:16px;">نوع نرخ</div>
+            <div style="border:2px solid var(--accent,#2c5f9e); background:#f3f7fc; border-radius:12px; padding:11px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;"><div><div style="font-weight:700;color:#2a2a2a;font-size:13.5px;">اکونومی استاندارد</div><div style="font-size:11px;color:#888;margin-top:4px;">۲۰ کیلو بار · قابل استرداد</div></div><div style="color:var(--accent,#2c5f9e);font-weight:800;">۳٬۸۰۰٬۰۰۰</div></div>
+            <div style="border:1.5px solid #ececec; border-radius:12px; padding:11px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center;"><div><div style="font-weight:700;color:#2a2a2a;font-size:13.5px;">بیزنس</div><div style="font-size:11px;color:#888;margin-top:4px;">۴۰ کیلو بار · لانژ فرودگاه</div></div><div style="color:#666;font-weight:800;">۷٬۲۰۰٬۰۰۰</div></div>
+            <div style="font-weight:700; color:#333; font-size:13.5px; margin-bottom:14px;">خدمات اضافه</div>
+            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:24px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; border:1.5px solid #ececec; border-radius:10px; padding:10px 11px; font-size:11.5px; color:#555;"><span style="display:flex;align-items:center;gap:7px;"><span style="width:17px;height:17px;border:1.5px solid #c9c9c9;border-radius:4px;"></span> بار اضافه (۱۰ کیلو)</span><span style="color:#888;">+ ۴۰۰٬۰۰۰</span></div>
+              <div style="display:flex; align-items:center; justify-content:space-between; border:1.5px solid #ececec; border-radius:10px; padding:10px 11px; font-size:11.5px; color:#555;"><span style="display:flex;align-items:center;gap:7px;"><span style="width:17px;height:17px;border:1.5px solid #c9c9c9;border-radius:4px;"></span> وعده غذایی</span><span style="color:#888;">+ ۱۵۰٬۰۰۰</span></div>
+              <div style="display:flex; align-items:center; justify-content:space-between; border:1.5px solid #ececec; border-radius:10px; padding:10px 11px; font-size:11.5px; color:#555;"><span style="display:flex;align-items:center;gap:7px;"><span style="width:17px;height:17px;border:1.5px solid #c9c9c9;border-radius:4px;"></span> بیمه سفر</span><span style="color:#888;">+ ۹۰٬۰۰۰</span></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding-top:13px; border-top:1.5px solid #ececec; margin-bottom:18px;"><span style="color:#666;font-size:12.5px;">جمع کل</span><span style="font-size:18px;font-weight:800;color:#2a2a2a;">۳٬۸۰۰٬۰۰۰ <span style="font-size:11px;color:#999;font-weight:400;">تومان</span></span></div>
+            <div style="height:50px; border-radius:10px; background:var(--accent,#2c5f9e); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13.5px; font-weight:600;">ادامه به پرداخت</div>
+          </div>
+        </div>
+      </div>
+      <sc-if value="{{showAnnotations}}" hint-placeholder-val="{{true}}">
+        <div style="display:flex; align-items:flex-start; gap:7px; margin-top:12px; max-width:560px;"><span style="width:4px; align-self:stretch; background:var(--accent,#2c5f9e); border-radius:2px;"></span><p style="margin:0; font-size:11.5px; color:#7a7a7a; line-height:1.7;">نقشه‌ی صندلی تعاملی + انتخاب نوع نرخ و خدمات افزوده. خلاصه‌ی قیمت همیشه دیده می‌شود و با هر انتخاب به‌روز می‌شود.</p></div>
+      </sc-if>
+    </div>
+
+    <!-- 04 PAYMENT -->
+    <div style="flex:none; width:1080px;">
+      <div style="font:600 13px Vazirmatn; color:#6b6b6b; margin-bottom:10px; display:flex; gap:7px; align-items:center;"><span style="font-family:'Roboto Mono',monospace;">04</span> پرداخت و خرید</div>
+      <div style="background:#fff; border-radius:2px; box-shadow:0 1px 3px rgba(0,0,0,.08); overflow:hidden; display:flex;">
+        <!-- form -->
+        <div style="flex:1; padding:21px;">
+          <h3 style="font-size:17px; font-weight:700; color:#2a2a2a; margin:0 0 20px;">اطلاعات مسافر</h3>
+          <div style="display:flex; gap:11px; margin-bottom:14px;"><div style="flex:1;"><div style="font-size:11px;color:#8a8a8a;margin-bottom:6px;">نام</div><div style="height:46px;border:1.5px solid #d7d7d7;border-radius:8px;background:#fafafa;"></div></div><div style="flex:1;"><div style="font-size:11px;color:#8a8a8a;margin-bottom:6px;">نام خانوادگی</div><div style="height:46px;border:1.5px solid #d7d7d7;border-radius:8px;background:#fafafa;"></div></div></div>
+          <div style="display:flex; gap:11px; margin-bottom:28px;"><div style="flex:1;"><div style="font-size:11px;color:#8a8a8a;margin-bottom:6px;">کد ملی / شماره گذرنامه</div><div style="height:46px;border:1.5px solid #d7d7d7;border-radius:8px;background:#fafafa;"></div></div><div style="flex:1;"><div style="font-size:11px;color:#8a8a8a;margin-bottom:6px;">موبایل</div><div style="height:46px;border:1.5px solid #d7d7d7;border-radius:8px;background:#fafafa;"></div></div></div>
+          <h3 style="font-size:17px; font-weight:700; color:#2a2a2a; margin:0 0 16px;">روش پرداخت</h3>
+          <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:24px;">
+            <div style="display:flex; align-items:center; gap:10px; border:2px solid var(--accent,#2c5f9e); background:#f3f7fc; border-radius:10px; padding:11px 11px;"><span style="width:18px;height:18px;border-radius:50%;border:2px solid var(--accent,#2c5f9e);display:flex;align-items:center;justify-content:center;"><span style="width:9px;height:9px;border-radius:50%;background:var(--accent,#2c5f9e);"></span></span><span style="color:#2a2a2a;font-size:12.5px;font-weight:600;">درگاه پرداخت اینترنتی</span></div>
+            <div style="display:flex; align-items:center; gap:10px; border:1.5px solid #ececec; border-radius:10px; padding:11px 11px;"><span style="width:18px;height:18px;border-radius:50%;border:2px solid #ccc;"></span><span style="color:#555;font-size:12.5px;">کیف پول blujet</span></div>
+            <div style="display:flex; align-items:center; gap:10px; border:1.5px solid #ececec; border-radius:10px; padding:11px 11px;"><span style="width:18px;height:18px;border-radius:50%;border:2px solid #ccc;"></span><span style="color:#555;font-size:12.5px;">پرداخت با امتیاز باشگاه</span></div>
+          </div>
+          <div style="display:flex; gap:8px;"><div style="flex:1; height:46px; border:1.5px solid #d7d7d7; border-radius:8px; background:#fafafa; display:flex; align-items:center; padding:0 10px; color:#b3b3b3; font-size:11.5px;">کد تخفیف</div><div style="padding:0 18px; height:46px; border:1.5px solid var(--accent,#2c5f9e); color:var(--accent,#2c5f9e); border-radius:8px; display:flex; align-items:center; font-size:12.5px;">اعمال</div></div>
+        </div>
+        <!-- order summary -->
+        <div style="width:360px; padding:21px; background:#f6f7f9; border-right:1.5px solid #ececec;">
+          <h4 style="font-size:14.5px; font-weight:700; color:#2a2a2a; margin:0 0 18px;">خلاصه سفارش</h4>
+          <div style="background:#fff; border-radius:10px; padding:11px; margin-bottom:16px;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><span style="font-weight:700; color:#333; font-size:12.5px;">تهران ← دبی</span><span style="font-size:11px;color:#999;">۱۲ تیر</span></div><div style="font-size:11px; color:#999;">۰۸:۳۰ - ۱۰:۴۵ · بدون توقف · اکونومی</div></div>
+          <div style="display:flex; flex-direction:column; gap:8px; font-size:11.5px; color:#666; margin-bottom:16px;"><div style="display:flex;justify-content:space-between;"><span>بلیط (۱ مسافر)</span><span>۳٬۸۰۰٬۰۰۰</span></div><div style="display:flex;justify-content:space-between;"><span>مالیات و عوارض</span><span>۳۲۰٬۰۰۰</span></div><div style="display:flex;justify-content:space-between;color:#1f8a5b;"><span>کش‌بک قابل دریافت</span><span>+ ۱۹۰٬۰۰۰ امتیاز</span></div></div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding-top:13px; border-top:1.5px solid #e2e2e2; margin-bottom:22px;"><span style="color:#333; font-weight:600;">مبلغ قابل پرداخت</span><span style="font-size:17px; font-weight:800; color:#2a2a2a;">۴٬۱۲۰٬۰۰۰</span></div>
+          <div style="height:52px; border-radius:10px; background:var(--accent,#2c5f9e); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13.5px; font-weight:700;">پرداخت نهایی</div>
+          <p style="text-align:center; font-size:10px; color:#999; margin:14px 0 0;">🔒 پرداخت امن از طریق درگاه بانکی</p>
+        </div>
+      </div>
+      <sc-if value="{{showAnnotations}}" hint-placeholder-val="{{true}}">
+        <div style="display:flex; align-items:flex-start; gap:7px; margin-top:12px; max-width:560px;"><span style="width:4px; align-self:stretch; background:var(--accent,#2c5f9e); border-radius:2px;"></span><p style="margin:0; font-size:11.5px; color:#7a7a7a; line-height:1.7;">فرم سمت راست، خلاصه‌ی سفارش چسبان سمت چپ. سه روش پرداخت شامل امتیاز باشگاه؛ کش‌بک قابل دریافت همین‌جا نمایش داده می‌شود.</p></div>
+      </sc-if>
+    </div>
+
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- GROUP C — ACCOUNT & LOYALTY -->
+  <!-- ============================================================= -->
+  <div style="display:flex; align-items:center; gap:10px; margin:52px 0 18px;">
+    <span style="font-family:'Roboto Mono',monospace; font-size:11.5px; color:#fff; background:#3a3a3a; padding:3px 9px; border-radius:5px;">C</span>
+    <span style="font-size:15.5px; font-weight:700; color:#444;">حساب کاربری و باشگاه مشتریان</span>
+    <span style="flex:1; height:1.5px; background:#cfcdc7;"></span>
+  </div>
+
+  <div style="display:flex; gap:33px; align-items:flex-start;">
+
+    <!-- 05 LOYALTY -->
+    <div style="flex:none; width:1180px;">
+      <div style="font:600 13px Vazirmatn; color:#6b6b6b; margin-bottom:10px; display:flex; gap:7px; align-items:center;"><span style="font-family:'Roboto Mono',monospace;">05</span> باشگاه مشتریان</div>
+      <div style="background:#fff; border-radius:2px; box-shadow:0 1px 3px rgba(0,0,0,.08); overflow:hidden;">
+        <!-- member hero -->
+        <div style="padding:20px 22px; background:var(--accent,#2c5f9e); color:#fff; display:flex; align-items:center; justify-content:space-between;">
+          <div><div style="font-size:11.5px; opacity:.85;">عضو طلایی</div><div style="font-size:21.5px; font-weight:800; margin-top:4px;">سلام، نگار رضایی 👋</div><div style="font-size:11.5px; opacity:.85; margin-top:6px;">کد عضویت: AS-۸۸۴۲۱</div></div>
+          <div style="display:flex; gap:11px;"><div style="background:rgba(255,255,255,.15); border-radius:12px; padding:11px 15px; text-align:center;"><div style="font-size:21.5px; font-weight:800;">۱۲٬۴۵۰</div><div style="font-size:11px; opacity:.85;">امتیاز</div></div><div style="background:rgba(255,255,255,.15); border-radius:12px; padding:11px 15px; text-align:center;"><div style="font-size:21.5px; font-weight:800;">۸۹۰٬۰۰۰</div><div style="font-size:11px; opacity:.85;">کش‌بک (تومان)</div></div></div>
+        </div>
+        <div style="padding:20px 22px;">
+          <!-- progress to next tier -->
+          <div style="border:1.5px solid #ececec; border-radius:12px; padding:12px 14px; margin-bottom:24px;"><div style="display:flex; justify-content:space-between; font-size:11.5px; color:#666; margin-bottom:10px;"><span>سطح طلایی</span><span>۲٬۵۵۰ امتیاز تا سطح پلاتین</span></div><div style="height:8px; background:#ececec; border-radius:4px;"><span style="display:block; width:72%; height:100%; background:var(--accent,#2c5f9e); border-radius:4px;"></span></div></div>
+          <!-- quick services -->
+          <div style="display:flex; gap:13px; margin-bottom:28px;">
+            <div style="flex:1; border:1.5px solid #ececec; border-radius:12px; padding:14px;"><div style="font-size:20px; margin-bottom:8px;">🎁</div><div style="font-weight:700; color:#333; font-size:13.5px;">تبدیل امتیاز</div><div style="font-size:11px; color:#999; margin-top:4px;">امتیاز را به بلیط یا تخفیف تبدیل کنید</div></div>
+            <div style="flex:1; border:1.5px solid #ececec; border-radius:12px; padding:14px;"><div style="font-size:20px; margin-bottom:8px;">💳</div><div style="font-weight:700; color:#333; font-size:13.5px;">کش‌بک من</div><div style="font-size:11px; color:#999; margin-top:4px;">برداشت به کیف پول یا خرید بعدی</div></div>
+            <div style="flex:1; border:1.5px solid #ececec; border-radius:12px; padding:14px;"><div style="font-size:20px; margin-bottom:8px;">🚗</div><div style="font-weight:700; color:#333; font-size:13.5px;">درخواست خودرو</div><div style="font-size:11px; color:#999; margin-top:4px;">رزرو ترانسفر فرودگاهی در مقصد</div></div>
+          </div>
+          <!-- purchase history -->
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;"><h4 style="font-size:14.5px; font-weight:700; color:#2a2a2a; margin:0;">خریدهای قبلی</h4><span style="font-size:11.5px; color:var(--accent,#2c5f9e);">مشاهده همه</span></div>
+          <div style="border:1.5px solid #ececec; border-radius:12px; overflow:hidden;">
+            <div style="display:flex; padding:10px 12px; background:#f6f7f9; font-size:11px; color:#999;"><span style="flex:2;">مسیر</span><span style="flex:1;">تاریخ</span><span style="flex:1;">مبلغ</span><span style="flex:1;">امتیاز</span><span style="flex:1;">وضعیت</span></div>
+            <div style="display:flex; padding:11px 12px; border-top:1.5px solid #f0f0f0; font-size:11.5px; color:#444; align-items:center;"><span style="flex:2;">تهران ← دبی</span><span style="flex:1; color:#999;">۲ خرداد</span><span style="flex:1;">۳٬۸۰۰٬۰۰۰</span><span style="flex:1; color:#1f8a5b;">+۱۹۰</span><span style="flex:1;"><span style="background:#e8f5ee; color:#1f8a5b; padding:2px 8px; border-radius:12px; font-size:10px;">انجام‌شده</span></span></div>
+            <div style="display:flex; padding:11px 12px; border-top:1.5px solid #f0f0f0; font-size:11.5px; color:#444; align-items:center;"><span style="flex:2;">مشهد ← تهران</span><span style="flex:1; color:#999;">۱۸ اردیبهشت</span><span style="flex:1;">۱٬۶۰۰٬۰۰۰</span><span style="flex:1; color:#1f8a5b;">+۸۰</span><span style="flex:1;"><span style="background:#e8f5ee; color:#1f8a5b; padding:2px 8px; border-radius:12px; font-size:10px;">انجام‌شده</span></span></div>
+            <div style="display:flex; padding:11px 12px; border-top:1.5px solid #f0f0f0; font-size:11.5px; color:#444; align-items:center;"><span style="flex:2;">تهران ← استانبول</span><span style="flex:1; color:#999;">۵ تیر</span><span style="flex:1;">۴٬۲۰۰٬۰۰۰</span><span style="flex:1; color:#999;">—</span><span style="flex:1;"><span style="background:#fff3e0; color:#c77700; padding:2px 8px; border-radius:12px; font-size:10px;">پیش‌رو</span></span></div>
+          </div>
+        </div>
+      </div>
+      <sc-if value="{{showAnnotations}}" hint-placeholder-val="{{true}}">
+        <div style="display:flex; align-items:flex-start; gap:7px; margin-top:12px; max-width:560px;"><span style="width:4px; align-self:stretch; background:var(--accent,#2c5f9e); border-radius:2px;"></span><p style="margin:0; font-size:11.5px; color:#7a7a7a; line-height:1.7;">باشگاه شامل خواسته‌های شما: امتیاز، کش‌بک، خریدهای قبلی و «درخواست خودرو» (ترانسفر فرودگاهی). نوار پیشرفت سطح عضویت بالای صفحه.</p></div>
+      </sc-if>
+    </div>
+
+    <!-- 08 PROFILE -->
+    <div style="flex:none; width:1000px;">
+      <div style="font:600 13px Vazirmatn; color:#6b6b6b; margin-bottom:10px; display:flex; gap:7px; align-items:center;"><span style="font-family:'Roboto Mono',monospace;">08</span> پروفایل کاربر</div>
+      <div style="background:#fff; border-radius:2px; box-shadow:0 1px 3px rgba(0,0,0,.08); overflow:hidden; display:flex;">
+        <!-- side menu -->
+        <div style="width:240px; padding:20px 0; border-left:1.5px solid #ececec;">
+          <div style="display:flex; align-items:center; gap:10px; padding:0 20px 18px;"><div style="width:46px; height:46px; border-radius:50%; background:#eef1f5; display:flex; align-items:center; justify-content:center; color:#9aa3b0; font-size:12.5px;">ن.ر</div><div><div style="font-weight:700; color:#333; font-size:12.5px;">نگار رضایی</div><div style="font-size:11px; color:#999;">عضو طلایی</div></div></div>
+          <div style="display:flex; flex-direction:column; font-size:12.5px;">
+            <span style="padding:10px 16px; background:#f3f7fc; color:var(--accent,#2c5f9e); font-weight:600; border-right:3px solid var(--accent,#2c5f9e);">پروفایل من</span>
+            <span style="padding:10px 16px; color:#555;">سفرهای من</span>
+            <span style="padding:10px 16px; color:#555;">امتیاز و کش‌بک</span>
+            <span style="padding:10px 16px; color:#555;">روش‌های پرداخت</span>
+            <span style="padding:10px 16px; color:#555;">تنظیمات</span>
+            <span style="padding:10px 16px; color:#c0392b;">خروج از حساب</span>
+          </div>
+        </div>
+        <!-- content -->
+        <div style="flex:1; padding:21px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;"><h3 style="font-size:17px; font-weight:700; color:#2a2a2a; margin:0;">اطلاعات شخصی</h3><span style="padding:7px 12px; border:1.5px solid var(--accent,#2c5f9e); color:var(--accent,#2c5f9e); border-radius:8px; font-size:11.5px;">ویرایش</span></div>
+          <div style="display:flex; gap:13px; margin-bottom:16px;"><div style="flex:1;"><div style="font-size:11px;color:#8a8a8a;margin-bottom:6px;">نام و نام خانوادگی</div><div style="height:46px;border:1.5px solid #e6e6e6;border-radius:8px;background:#fafafa;display:flex;align-items:center;padding:0 10px;color:#444;font-size:12.5px;">نگار رضایی</div></div><div style="flex:1;"><div style="font-size:11px;color:#8a8a8a;margin-bottom:6px;">تاریخ تولد</div><div style="height:46px;border:1.5px solid #e6e6e6;border-radius:8px;background:#fafafa;display:flex;align-items:center;padding:0 10px;color:#444;font-size:12.5px;">۱۳۷۰/۰۵/۱۲</div></div></div>
+          <div style="display:flex; gap:13px; margin-bottom:16px;"><div style="flex:1;"><div style="font-size:11px;color:#8a8a8a;margin-bottom:6px;">ایمیل</div><div style="height:46px;border:1.5px solid #e6e6e6;border-radius:8px;background:#fafafa;display:flex;align-items:center;padding:0 10px;color:#444;font-size:12.5px;" dir="ltr">negar@email.com</div></div><div style="flex:1;"><div style="font-size:11px;color:#8a8a8a;margin-bottom:6px;">موبایل</div><div style="height:46px;border:1.5px solid #e6e6e6;border-radius:8px;background:#fafafa;display:flex;align-items:center;padding:0 10px;color:#444;font-size:12.5px;">۰۹۱۲۳۴۵۶۷۸۹</div></div></div>
+          <div style="display:flex; gap:13px; margin-bottom:30px;"><div style="flex:1;"><div style="font-size:11px;color:#8a8a8a;margin-bottom:6px;">ملیت</div><div style="height:46px;border:1.5px solid #e6e6e6;border-radius:8px;background:#fafafa;display:flex;align-items:center;padding:0 10px;color:#444;font-size:12.5px;">ایران</div></div><div style="flex:1;"><div style="font-size:11px;color:#8a8a8a;margin-bottom:6px;">شماره گذرنامه</div><div style="height:46px;border:1.5px solid #e6e6e6;border-radius:8px;background:#fafafa;display:flex;align-items:center;padding:0 10px;color:#444;font-size:12.5px;" dir="ltr">K۱۲۳۴۵۶۷۸</div></div></div>
+          <h3 style="font-size:15.5px; font-weight:700; color:#2a2a2a; margin:0 0 16px;">سفرهای پیش‌رو</h3>
+          <div style="border:1.5px solid #ececec; border-radius:12px; padding:11px 12px; display:flex; align-items:center; justify-content:space-between;"><div style="display:flex; align-items:center; gap:13px;"><div style="width:42px;height:42px;border-radius:10px;background:#eef1f5;display:flex;align-items:center;justify-content:center;color:#9aa3b0;">✈</div><div><div style="font-weight:700; color:#333; font-size:12.5px;">تهران ← استانبول</div><div style="font-size:11px; color:#999; margin-top:3px;">۵ تیر ۱۴۰۵ · ۰۹:۳۰ · بلیط AS-۸۸۴۲۱</div></div></div><span style="padding:6px 11px; background:#f3f7fc; color:var(--accent,#2c5f9e); border-radius:8px; font-size:11.5px;">جزئیات بلیط</span></div>
+        </div>
+      </div>
+      <sc-if value="{{showAnnotations}}" hint-placeholder-val="{{true}}">
+        <div style="display:flex; align-items:flex-start; gap:7px; margin-top:12px; max-width:560px;"><span style="width:4px; align-self:stretch; background:var(--accent,#2c5f9e); border-radius:2px;"></span><p style="margin:0; font-size:11.5px; color:#7a7a7a; line-height:1.7;">منوی کناری حساب + اطلاعات شخصی قابل ویرایش و سفرهای پیش‌رو. از همین‌جا به سفرها، امتیاز و روش‌های پرداخت دسترسی هست.</p></div>
+      </sc-if>
+    </div>
+
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showAnnotations&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const seatCols = [
+      { seat: true }, { seat: true }, { seat: true },
+      { aisle: true },
+      { seat: true }, { seat: true }, { seat: true }
+    ];
+    return {
+      showAnnotations: this.props.showAnnotations ?? true,
+      seatRows: [1, 2, 3, 4, 5, 6, 7, 8],
+      seatCols: seatCols
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /backend
+    schedule:
+      interval: monthly
+    groups:
+      backend-production:
+        dependency-type: production
+      backend-development:
+        dependency-type: development
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: monthly
+    groups:
+      frontend-production:
+        dependency-type: production
+      frontend-development:
+        dependency-type: development
+
+  - package-ecosystem: pip
+    directory: /ml-service
+    schedule:
+      interval: monthly
+    groups:
+      ml-service:
+        patterns:
+          - "*"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      github-actions:
+        patterns:
+          - "*"

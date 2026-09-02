@@ -1,0 +1,15 @@
+export type TabKey =
+  | 'profile'
+  | 'account-info'
+  | 'trips'
+  | 'wallet'
+  | 'loans'
+  | 'club'
+  | 'price-locks'
+  | 'passengers'
+  | 'refunds'
+  | 'tickets'
+  | 'security'
+  | 'banks'
+  | 'referral'
+  | 'identity';

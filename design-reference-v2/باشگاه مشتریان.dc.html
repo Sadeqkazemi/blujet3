@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box;}html,body{margin:0;}summary::-webkit-details-marker{display:none;}summary{list-style:none;}#saman-input::placeholder{color:#fff;opacity:.85;}</style>
+<script>document.addEventListener("click",function(e){document.querySelectorAll("details[open]").forEach(function(d){if(!d.contains(e.target))d.removeAttribute("open");});});</script>
+<script src="./site-data.js"></script>
+</helmet>
+
+<div dir="{{ pageDir }}" style="font-family:{{ fontFam }}; background:#f4f7fb; color:#16202e; min-height:100vh; --accent:#1668c4;">
+
+  <!-- HEADER -->
+  <header style="position:sticky; top:0; z-index:50;">
+    <div style="background:{{ headerBarBg }}; border-bottom:{{ headerBorderB }}; box-shadow:0 2px 12px -8px rgba(13,38,102,.25);"><div style="max-width:1320px; margin:0 auto; padding:0 26px; height:{{ headerH }}; display:flex; align-items:center; justify-content:space-between;">
+      <span onClick="{{ toggleMobileMenu }}" style="display:{{ hamburgerDisplay }}; width:38px; height:38px; align-items:center; justify-content:center; border-radius:10px; cursor:pointer; flex:none; font-size:17px; color:{{ hamburgerColor }};">☰</span>
+      <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:9px; text-decoration:none; color:inherit;"><div style="width:38px; height:38px; border-radius:10px; background:{{ logoSquareBg }}; display:flex; align-items:center; justify-content:center; color:{{ logoIconColor }}; font-size:18px;">✈</div><span style="font-weight:900; font-size:18px; letter-spacing:-.5px; color:{{ logoTextColor }};">blujet</span></a>
+      <nav style="display:{{ navDisplay }}; gap:30px; font-size:15.5px; color:#3b4554; font-weight:600; height:100%; align-items:center;"><a href="صفحه اصلی.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">{{ navFlights }}</a><a href="مقاصد.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">{{ navDestinations }}</a><span style="color:var(--accent,#1668c4); height:100%; display:flex; align-items:center; border-bottom:3px solid var(--accent,#1668c4); cursor:pointer;">{{ navLoyalty }}</span><a href="پشتیبانی.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">{{ navSupport }}</a></nav>
+      <div style="display:{{ navDisplay }}; align-items:center; gap:10px;">
+        <div style="position:relative;">
+          <span onClick="{{ toggleLang }}" style="display:flex; align-items:center; gap:6px; cursor:pointer; color:#5a6678; border:1.5px solid #e2e7ee; border-radius:20px; padding:6px 12px; font-size:12.5px; font-weight:700;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 4 5.7 4 9s-1.5 6.5-4 9c-2.5-2.5-4-5.7-4-9s1.5-6.5 4-9z"/></svg>{{ langLabel }}</span>
+          <sc-if value="{{ langOpen }}" hint-placeholder-val="{{false}}">
+            <div onClick="{{ toggleLang }}" style="position:fixed; inset:0; z-index:120;"></div>
+            <div style="position:absolute; top:44px; left:0; width:150px; background:#fff; border:1px solid #e6eaf0; border-radius:14px; box-shadow:0 20px 50px -16px rgba(13,38,64,.35); z-index:130; overflow:hidden; padding:6px;">
+              <div onClick="{{ setLangEn }}" style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:9px 11px; border-radius:9px; font-size:12.5px; font-weight:600; color:#16202e; cursor:pointer;">English<span style="color:var(--accent,#1668c4); font-weight:900;">{{ enCheck }}</span></div>
+              <div onClick="{{ setLangFa }}" style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:9px 11px; border-radius:9px; font-size:12.5px; font-weight:600; color:#16202e; cursor:pointer;">FA<span style="color:var(--accent,#1668c4); font-weight:900;">{{ faCheck }}</span></div>
+                <div onClick="{{ setLangAr }}" style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:9px 11px; border-radius:9px; font-size:12.5px; font-weight:600; color:#16202e; cursor:pointer;">العربية<span style="color:var(--accent,#1668c4); font-weight:900;">{{ arCheck }}</span></div>
+            </div>
+          </sc-if>
+        </div>
+        <div style="position:relative;">
+        <div onClick="{{ toggleNotif }}" style="width:42px; height:42px; border-radius:50%; background:#f3f5f8; display:flex; align-items:center; justify-content:center; color:#5a6678; font-size:15.5px; position:relative; cursor:pointer;">🔔<span style="position:absolute; top:5px; left:8px; min-width:16px; height:16px; padding:0 3px; box-sizing:border-box; border-radius:8px; background:#e5484d; border:1.5px solid #fff; color:#fff; font-size:9px; font-weight:800; display:flex; align-items:center; justify-content:center; line-height:1;">2</span></div>
+        <sc-if value="{{ notifOpen }}" hint-placeholder-val="{{false}}">
+          <div onClick="{{ toggleNotif }}" style="position:fixed; inset:0; z-index:120;"></div>
+          <div style="position:absolute; top:52px; left:0; width:340px; background:#fff; border:1px solid #e6eaf0; border-radius:14px; box-shadow:0 20px 50px -16px rgba(13,38,64,.35); z-index:130; overflow:hidden;">
+            <div style="padding:11px 12px; border-bottom:1px solid #eef1f5; display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; font-weight:800; color:#0d2640;">Notifications</span><span style="font-size:10px; font-weight:700; color:var(--accent,#1668c4); background:#eef4fb; padding:2px 7px; border-radius:12px;">2 new</span></div>
+            <sc-for list="{{ notifs }}" as="n" hint-placeholder-count="3">
+              <div style="display:flex; gap:9px; padding:11px 12px; border-bottom:1px solid #f4f6fa; background:{{ n.bg }};">
+                <span style="width:34px; height:34px; border-radius:10px; background:#f3f5f8; display:flex; align-items:center; justify-content:center; font-size:14.5px; flex:none;">{{ n.icon }}</span>
+                <div style="min-width:0;"><div style="font-size:11.5px; font-weight:700; color:#16202e;">{{ n.title }}</div><div style="font-size:11px; color:#6b7787; margin-top:2px; line-height:1.7;">{{ n.body }}</div><div style="font-size:9.5px; color:#9aa4b2; margin-top:4px;">{{ n.time }}</div></div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+      <div style="position:relative;">
+        <div onClick="{{ toggleUserMenu }}" style="display:flex; align-items:center; gap:8px; background:#fff; border:1px solid #e6eaf0; padding:4px 10px 4px 7px; border-radius:28px; cursor:pointer;"><div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,var(--accent,#1668c4),#0d3b66); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:11.5px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-5.33 0-9 2.69-9 6v2h18v-2c0-3.31-3.67-6-9-6z"/></svg></div><div style="line-height:1.35; text-align:right;"><div style="font-size:12px; font-weight:700; color:#16202e;">{{ userDisplayName }}</div></div><span style="font-size:8px; color:#9aa4b2; margin-right:2px;">▼</span></div>
+        <sc-if value="{{ userMenuOpen }}" hint-placeholder-val="{{false}}">
+          <div onClick="{{ toggleUserMenu }}" style="position:fixed; inset:0; z-index:120;"></div>
+          <div style="position:absolute; top:54px; left:0; width:320px; background:#fff; border:1px solid #e6eaf0; border-radius:16px; box-shadow:0 20px 50px -16px rgba(13,38,64,.35); z-index:130; overflow:hidden;">
+            <div style="padding:15px; background:linear-gradient(135deg,#0d2640,#16406e); color:#fff;">
+              <div style="display:flex; align-items:center; gap:10px;"><div style="width:46px; height:46px; border-radius:50%; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13.5px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-5.33 0-9 2.69-9 6v2h18v-2c0-3.31-3.67-6-9-6z"/></svg></div><div style="line-height:1.5;"><div style="font-size:13.5px; font-weight:800;">{{ userDisplayName }}</div></div></div>
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-top:14px; background:rgba(255,255,255,.1); border-radius:10px; padding:7px 11px;"><span style="font-size:11px; color:#aac4e2;">{{ clubPointsLabel }}</span><span style="font-size:12.5px; font-weight:800;">{{ clubPointsValue }}</span></div>
+            </div>
+            <div style="padding:5px;">
+              <a href="پنل کاربر.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.125em;"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-5.33 0-9 2.69-9 6v2h18v-2c0-3.31-3.67-6-9-6z"/></svg></span>{{ profileLabel }}</a>
+              <a href="مدیریت رزرو.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);">🧳</span>{{ tripsLabel }}</a>
+              <a href="مدیریت رزرو.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);">↺</span>{{ refundsLabel }}</a>
+              <a href="باشگاه مشتریان.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);">★</span>{{ navLoyalty }}</a>
+              <a href="ورود و ثبتنام.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#e5484d; font-weight:600; text-decoration:none;"><span>↩</span>{{ signOutLabel }}</a>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+      </div>
+      <div style="display:{{ mobileIconRowDisplay }}; align-items:center; gap:6px;">
+        <span onClick="{{ scrollToTop }}" style="width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; cursor:pointer;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg></span>
+        <span onClick="{{ toggleLang }}" style="width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; cursor:pointer;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 4 5.7 4 9s-1.5 6.5-4 9c-2.5-2.5-4-5.7-4-9s1.5-6.5 4-9z"/></svg></span>
+        <div style="position:relative;">
+          <span onClick="{{ toggleUserMenu }}" style="width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; cursor:pointer; font-size:16px;"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.125em;"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-5.33 0-9 2.69-9 6v2h18v-2c0-3.31-3.67-6-9-6z"/></svg></span>
+          <sc-if value="{{ userMenuOpen }}" hint-placeholder-val="{{false}}">
+            <div onClick="{{ toggleUserMenu }}" style="position:fixed; inset:0; z-index:120;"></div>
+            <div style="position:absolute; top:46px; left:0; right:auto; width:280px; max-width:80vw; background:#fff; border:1px solid #e6eaf0; border-radius:16px; box-shadow:0 20px 50px -16px rgba(13,38,64,.35); z-index:130; overflow:hidden;">
+              <div style="padding:15px; background:linear-gradient(135deg,#0d2640,#16406e); color:#fff;">
+                <div style="display:flex; align-items:center; gap:10px;"><div style="width:42px; height:42px; border-radius:50%; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12.5px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-5.33 0-9 2.69-9 6v2h18v-2c0-3.31-3.67-6-9-6z"/></svg></div><div style="line-height:1.5;"><div style="font-size:13px; font-weight:800;">{{ userDisplayName }}</div></div></div>
+              </div>
+              <div style="padding:5px;">
+                <a href="پنل کاربر.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.125em;"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-5.33 0-9 2.69-9 6v2h18v-2c0-3.31-3.67-6-9-6z"/></svg></span>{{ profileLabel }}</a>
+                <a href="مدیریت رزرو.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);">🧳</span>{{ tripsLabel }}</a>
+                <a href="باشگاه مشتریان.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);">★</span>{{ navLoyalty }}</a>
+                <a href="ورود و ثبتنام.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#e5484d; font-weight:600; text-decoration:none;"><span>↩</span>{{ signOutLabel }}</a>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div></div>
+  <sc-if value="{{ mobileMenuOpen }}" hint-placeholder-val="{{false}}">
+    <div style="position:fixed; inset:0; background:#fff; z-index:210; display:flex; flex-direction:column; overflow-y:auto;">
+      <div style="display:flex; align-items:center; justify-content:center; position:relative; padding:26px 20px 18px;">
+        <span style="font-size:22px; font-weight:800; color:#16202e;">{{ menuTitle }}</span>
+        <span onClick="{{ toggleMobileMenu }}" style="position:absolute; right:20px; top:22px; width:34px; height:34px; display:flex; align-items:center; justify-content:center; font-size:24px; color:#16202e; cursor:pointer;">×</span>
+      </div>
+      <div style="padding:4px 24px 0; display:flex; flex-direction:column;">
+        <a href="صفحه اصلی.dc.html" style="padding:20px 0; text-decoration:none; color:#16202e; font-size:17px; font-weight:700;">{{ navFlights }}</a>
+        <a href="مقاصد.dc.html" style="padding:20px 0; text-decoration:none; color:#16202e; font-size:17px; font-weight:700; border-top:1px solid #eef1f5;">{{ navDestinations }}</a>
+        <a href="باشگاه مشتریان.dc.html" style="padding:20px 0; text-decoration:none; color:#16202e; font-size:17px; font-weight:700; border-top:1px solid #eef1f5;">{{ navLoyalty }}</a>
+        <a href="پشتیبانی.dc.html" style="padding:20px 0; text-decoration:none; color:#16202e; font-size:17px; font-weight:700; border-top:1px solid #eef1f5; border-bottom:1px solid #eef1f5;">{{ navSupport }}</a>
+      </div>
+      <div style="margin-top:auto; padding:14px 24px 32px; display:flex; flex-direction:column; gap:6px;">
+        <a href="پنل کاربر.dc.html" style="display:flex; align-items:center; gap:8px; padding:10px 0; text-decoration:none; color:#16202e; font-size:14px; font-weight:700;"><span style="color:var(--accent,#1668c4);"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-0.125em;"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-5.33 0-9 2.69-9 6v2h18v-2c0-3.31-3.67-6-9-6z"/></svg></span>{{ profileLabel }}</a>
+        <a href="مدیریت رزرو.dc.html" style="display:flex; align-items:center; gap:8px; padding:10px 0; text-decoration:none; color:#16202e; font-size:14px; font-weight:700;"><span style="color:var(--accent,#1668c4);">🧳</span>{{ tripsLabel }}</a>
+        <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:8px; padding:10px 0; text-decoration:none; color:#e5484d; font-size:14px; font-weight:700;"><span>↩</span>{{ signOutLabel }}</a>
+      </div>
+    </div>
+  </sc-if>
+  </header>
+
+  <!-- HERO -->
+  <section style="background:linear-gradient(150deg,#0d2640,var(--accent,#1668c4)); color:#fff; padding:41px 22px 37px; text-align:center;">
+    <div style="max-width:760px; margin:0 auto;">
+      <div style="display:inline-block; background:#ffffff22; border:1px solid #ffffff44; padding:6px 12px; border-radius:28px; font-size:11.5px; font-weight:700; margin-bottom:20px;">{{ heroBadge }}</div>
+      <h1 style="font-size:38px; font-weight:900; margin:0 0 16px; letter-spacing:-.8px;">{{ heroTitle }}</h1>
+      <p style="font-size:15.5px; color:#d6e4f7; margin:0 0 28px; line-height:1.85;">{{ heroDesc }}</p>
+      <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;"><span onClick="{{ openJoin }}" style="background:#fff; color:var(--accent,#1668c4); padding:11px 24px; border-radius:12px; font-size:13.5px; font-weight:800; cursor:pointer;">{{ joinFreeLabel }}</span><a href="پنل کاربر.dc.html?tab=club" style="text-decoration:none; background:#ffffff22; border:1px solid #ffffff55; color:#fff; padding:11px 21px; border-radius:12px; font-size:13.5px; font-weight:700;">{{ myAccountLabel }}</a></div>
+    </div>
+  </section>
+
+  <!-- STATS STRIP -->
+  <section style="max-width:1320px; margin:-30px auto 0; padding:0 26px; position:relative;">
+    <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; box-shadow:0 18px 40px -22px rgba(13,38,102,.3); display:grid; grid-template-columns:{{ statsCols }};">
+      <sc-for list="{{ stats }}" as="s" hint-placeholder-count="4">
+        <div style="padding:16px; text-align:center; border-left:1px solid #f2f4f7;"><div style="font-size:25px; font-weight:900; color:var(--accent,#1668c4);">{{ s.value }}</div><div style="font-size:11.5px; color:#6b7585; margin-top:4px;">{{ s.label }}</div></div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- TIERS -->
+  <section style="max-width:1320px; margin:0 auto; padding:37px 22px 14px;">
+    <div style="text-align:center; margin-bottom:34px;"><h2 style="font-size:27px; font-weight:900; color:#0d2640; margin:0 0 10px;">{{ tiersHeading }}</h2><p style="font-size:13.5px; color:#6b7585; margin:0;">{{ tiersSub }}</p></div>
+    <div style="display:grid; grid-template-columns:{{ tiersCols }}; gap:22px; align-items:start;">
+      <sc-for list="{{ tierCards }}" as="t" hint-placeholder-count="3">
+        <div style="background:#fff; border-radius:20px; overflow:hidden; border:2px solid {{ t.border }}; position:relative; box-shadow:{{ t.shadow }}; margin-top:{{ t.mt }};">
+          <sc-if value="{{ t.popular }}" hint-placeholder-val="{{false}}">
+            <div style="position:absolute; top:14px; left:50%; transform:translateX(-50%); background:#fff; color:{{ t.accent }}; font-size:10.5px; font-weight:800; padding:5px 14px; border-radius:20px; box-shadow:0 6px 16px rgba(13,38,102,.18); z-index:2; white-space:nowrap;">{{ mostPopularLabel }}</div>
+          </sc-if>
+          <div style="background:{{ t.head }}; color:#fff; padding:34px 20px 24px; text-align:center;">
+            <div style="width:58px; height:58px; border-radius:50%; background:rgba(255,255,255,.2); display:flex; align-items:center; justify-content:center; margin:0 auto 12px;"><span dangerouslySetInnerHTML="{{ t.icon }}" style="display:flex;"></span></div>
+            <div style="font-size:19px; font-weight:900;">{{ t.name }}</div>
+            <div style="display:inline-block; margin-top:9px; background:rgba(255,255,255,.18); padding:5px 14px; border-radius:16px; font-size:11px; font-weight:700;">{{ t.range }}</div>
+          </div>
+          <div style="padding:8px 20px 18px;">
+            <sc-for list="{{ t.perks }}" as="pk" hint-placeholder-count="4">
+              <div style="display:flex; align-items:center; gap:11px; padding:11px 0; border-bottom:1px solid #f4f6fa;">
+                <span style="width:30px; height:30px; border-radius:9px; background:{{ t.iconBg }}; color:{{ t.accent }}; display:flex; align-items:center; justify-content:center; flex:none;" dangerouslySetInnerHTML="{{ pk.icon }}"></span>
+                <span style="font-size:12.5px; color:#3b4554; font-weight:600;">{{ pk.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- MEMBERSHIP CARD ISSUANCE -->
+  <section style="max-width:1320px; margin:0 auto; padding:28px 22px 14px;">
+    <div style="background:linear-gradient(135deg,#0d2640,#16406e); border:1px solid #1668c4; border-radius:18px; padding:24px; position:relative; overflow:hidden;">
+      <div style="position:absolute; top:-70px; left:-50px; width:220px; height:220px; border-radius:50%; background:#ffffff0d;"></div>
+      <div style="position:relative; text-align:center; margin-bottom:28px;">
+        <div style="display:inline-block; background:#ffffff1a; color:#aac4e2; padding:5px 11px; border-radius:20px; font-size:11.5px; font-weight:800; margin-bottom:12px;">{{ cardBadge }}</div>
+        <h2 style="font-size:21.5px; font-weight:900; color:#fff; margin:0 0 10px;">{{ cardHeading }}</h2>
+        <p style="font-size:13px; color:#aac4e2; margin:0; line-height:1.8; max-width:680px; margin-right:auto; margin-left:auto;">{{ cardIntroPre }} <b style="color:#fff;">{{ cardThresholdPoints }}</b>{{ cardIntroPost }}</p>
+      </div>
+      <div style="position:relative; display:grid; grid-template-columns:{{ cols2 }}; gap:11px;">
+        <div style="text-align:center; background:#ffffff12; border:1px solid #ffffff1f; border-radius:15px; padding:18px 13px;"><div style="width:46px; height:46px; border-radius:50%; background:#fff; color:#0d2640; font-weight:900; font-size:16px; display:flex; align-items:center; justify-content:center; margin:0 auto 13px;">{{ num1 }}</div><div style="font-size:13.5px; font-weight:800; color:#fff; margin-bottom:6px;">{{ step1Title }}</div><div style="font-size:11.5px; color:#aac4e2; line-height:1.7;">{{ step1Desc }}</div></div>
+        <div style="text-align:center; background:#ffffff12; border:1px solid #ffffff1f; border-radius:15px; padding:18px 13px;"><div style="width:46px; height:46px; border-radius:50%; background:#fff; color:#0d2640; font-weight:900; font-size:16px; display:flex; align-items:center; justify-content:center; margin:0 auto 13px;">{{ num2 }}</div><div style="font-size:13.5px; font-weight:800; color:#fff; margin-bottom:6px;">{{ step2Title }}</div><div style="font-size:11.5px; color:#aac4e2; line-height:1.7;">{{ step2Desc }}</div></div>
+        <div style="text-align:center; background:#ffffff12; border:1px solid #ffffff1f; border-radius:15px; padding:18px 13px;"><div style="width:46px; height:46px; border-radius:50%; background:#fff; color:#0d2640; font-weight:900; font-size:16px; display:flex; align-items:center; justify-content:center; margin:0 auto 13px;">{{ num3 }}</div><div style="font-size:13.5px; font-weight:800; color:#fff; margin-bottom:6px;">{{ step3Title }}</div><div style="font-size:11.5px; color:#aac4e2; line-height:1.7;">{{ step3Desc }}</div></div>
+        <div style="text-align:center; background:#e8c65a22; border:1px solid #e8c65a55; border-radius:15px; padding:18px 13px;"><div style="width:46px; height:46px; border-radius:50%; background:#e8c65a; color:#0d2640; font-weight:900; font-size:16px; display:flex; align-items:center; justify-content:center; margin:0 auto 13px;">{{ num4 }}</div><div style="font-size:13.5px; font-weight:800; color:#fff; margin-bottom:6px;">{{ step4Title }}</div><div style="font-size:11.5px; color:#dfeaf7; line-height:1.7;">{{ step4Desc }}</div></div>
+      </div>
+      <div style="position:relative; display:flex; gap:10px; flex-wrap:wrap; margin-top:18px;">
+        <div style="flex:1; min-width:200px; display:flex; align-items:center; gap:9px; border:1.5px solid #ffffff26; border-radius:13px; padding:11px 13px;"><span style="width:13px; height:13px; border-radius:50%; background:#c8cfd9; flex:none;"></span><span style="font-size:12.5px; font-weight:800; color:#fff;">{{ silverCardLabel }}</span><span style="margin-right:auto; font-size:11.5px; color:#aac4e2; font-weight:600;">{{ silverRange }}</span></div>
+        <div style="flex:1; min-width:200px; display:flex; align-items:center; gap:9px; border:1.5px solid #e8c65a55; border-radius:13px; padding:11px 13px;"><span style="width:13px; height:13px; border-radius:50%; background:#e8c65a; flex:none;"></span><span style="font-size:12.5px; font-weight:800; color:#fff;">{{ goldCardLabel }}</span><span style="margin-right:auto; font-size:11.5px; color:#aac4e2; font-weight:600;">{{ goldRange }}</span></div>
+        <div style="flex:1; min-width:200px; display:flex; align-items:center; gap:9px; border:1.5px solid #ffffff26; border-radius:13px; padding:11px 13px;"><span style="width:13px; height:13px; border-radius:50%; background:#7fb2f0; flex:none;"></span><span style="font-size:12.5px; font-weight:800; color:#fff;">{{ platCardLabel }}</span><span style="margin-right:auto; font-size:11.5px; color:#aac4e2; font-weight:600;">{{ platRange }}</span></div>
+      </div>
+      <div style="position:relative; text-align:center; margin-top:22px;">
+        <span onClick="{{ requestCard }}" style="display:inline-flex; align-items:center; gap:8px; background:#fff; color:#0d2640; padding:13px 28px; border-radius:12px; font-size:13.5px; font-weight:800; cursor:pointer;">{{ requestCardLabel }}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW TO EARN -->
+  <section style="max-width:1320px; margin:0 auto; padding:14px 22px 14px;">
+    <div style="background:#fff; border:1px solid #eef1f5; border-radius:18px; padding:24px;">
+      <h2 style="font-size:21.5px; font-weight:900; color:#0d2640; margin:0 0 26px; text-align:center;">{{ earnHeading }}</h2>
+      <div style="display:grid; grid-template-columns:{{ cols2 }}; gap:16px;">
+        <sc-for list="{{ earn }}" as="e" hint-placeholder-count="4">
+          <div style="text-align:center;"><div style="width:60px; height:60px; border-radius:16px; background:#eef4fb; color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; margin:0 auto 14px;" dangerouslySetInnerHTML="{{ e.icon }}"></div><div style="font-size:13.5px; font-weight:800; margin-bottom:6px;">{{ e.title }}</div><div style="font-size:11.5px; color:#6b7585; line-height:1.7;">{{ e.desc }}</div></div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <!-- SAMAN BANK BANNER -->
+  <section style="max-width:1320px; margin:0 auto; padding:14px 22px;">
+    <div style="background:linear-gradient(120deg,#0f3d3a,#146b5e 60%,#1c8a72); border-radius:20px; padding:{{ samanPad }}; display:flex; align-items:center; justify-content:space-between; gap:22px; flex-wrap:wrap; flex-direction:{{ samanDir }}; position:relative; overflow:hidden;">
+      <div style="position:absolute; left:-40px; top:-40px; width:180px; height:180px; border-radius:50%; background:rgba(255,255,255,.06);"></div>
+      <div style="display:flex; align-items:center; gap:18px; position:relative; z-index:1; flex-direction:{{ samanDir }}; text-align:{{ samanAlign }}; flex:1 1 420px; min-width:300px;">
+        <div style="width:58px; height:58px; border-radius:15px; background:#fff; color:#146b5e; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:13px; flex:none;">{{ samanChip }}</div>
+        <div style="min-width:0;">
+          <div style="font-size:18.5px; font-weight:900; color:#fff; white-space:nowrap;">{{ samanHeading }}</div>
+          <div style="font-size:12.5px; color:#bfe6da; margin-top:8px; max-width:380px; line-height:1.8;">{{ samanSub }}</div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; position:relative; z-index:1; flex:1 1 340px; width:{{ samanFormW }};">
+        <input id="saman-input" value="{{ samanNumber }}" onInput="{{ onSamanNumber }}" placeholder="{{ samanPlaceholder }}" style="flex:1; min-width:200px; background:rgba(255,255,255,.12); border:1.5px solid rgba(255,255,255,.35); border-radius:12px; padding:15px 16px; font-size:13.5px; color:#fff; font-family:inherit; text-align:center;"/>
+        <span onClick="{{ submitSaman }}" style="background:#fff; color:#146b5e; padding:15px 28px; border-radius:12px; font-size:13.5px; font-weight:800; cursor:pointer; white-space:nowrap;">{{ samanSubmitLabel }}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- SPECIAL SERVICES -->
+  <section style="max-width:1320px; margin:0 auto; padding:28px 22px 16px;">
+    <h2 style="font-size:21.5px; font-weight:900; color:#0d2640; margin:0 0 22px;">{{ servicesHeading }}</h2>
+    <sc-if value="{{ isMobile }}" hint-placeholder-val="{{false}}">
+      <div style="display:flex; justify-content:space-around; gap:14px; padding:4px 2px 8px;">
+        <sc-for list="{{ memberServices }}" as="sv" hint-placeholder-count="3">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:9px; flex:none; width:78px;">
+            <div style="width:58px; height:58px; border-radius:16px; background:{{ sv.grad }}; color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:{{ sv.shadow }};" dangerouslySetInnerHTML="{{ sv.icon }}"></div>
+            <div style="font-size:11.5px; font-weight:700; color:#16202e; text-align:center; line-height:1.4;">{{ sv.title }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ notMobile }}" hint-placeholder-val="{{true}}">
+      <div style="display:grid; grid-template-columns:{{ tiersCols }}; gap:18px;">
+        <sc-for list="{{ memberServices }}" as="sv" hint-placeholder-count="3">
+          <div style="background:#fff; border:1px solid #eef1f5; border-radius:18px; padding:22px; position:relative; overflow:hidden;">
+            <div style="position:absolute; top:-30px; left:-30px; width:110px; height:110px; border-radius:50%; background:{{ sv.blob }};"></div>
+            <div style="position:relative; width:58px; height:58px; border-radius:16px; background:{{ sv.grad }}; color:#fff; display:flex; align-items:center; justify-content:center; margin-bottom:18px; box-shadow:{{ sv.shadow }};" dangerouslySetInnerHTML="{{ sv.icon }}"></div>
+            <div style="position:relative; font-size:15.5px; font-weight:800; margin-bottom:8px; color:#16202e;">{{ sv.title }}</div>
+            <div style="position:relative; font-size:12px; color:#6b7585; line-height:1.8;">{{ sv.desc }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+  </section>
+
+  <!-- CTA -->
+  <section style="max-width:1320px; margin:0 auto; padding:16px 22px 41px;">
+    <div style="background:linear-gradient(135deg,#caa53a,#9a7d22); color:#fff; border-radius:20px; padding:29px; text-align:center;">
+      <h2 style="font-size:25px; font-weight:900; margin:0 0 12px;">{{ ctaHeading }}</h2>
+      <p style="font-size:13.5px; color:#fff; opacity:.92; margin:0 0 24px;">{{ ctaDesc }}</p>
+      <span onClick="{{ openJoin }}" style="display:inline-block; background:#fff; color:#9a7d22; padding:11px 28px; border-radius:12px; font-size:14.5px; font-weight:800; cursor:pointer;">{{ ctaButton }}</span>
+    </div>
+  </section>
+
+  <footer style="background:#0d2640; color:#aebfd4; margin-top:0;">
+    <sc-if value="{{ notMobile }}" hint-placeholder-val="{{true}}">
+    <div style="max-width:1320px; margin:0 auto; padding:39px 26px 20px; display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr; gap:33px;">
+      <div>
+        <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:9px; margin-bottom:16px; text-decoration:none;"><div style="width:36px; height:36px; border-radius:10px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:16px;">✈</div><span style="font-weight:900; font-size:18px; color:#fff;">blujet</span></a>
+        <p style="font-size:13.5px; line-height:1.85; margin:0 0 20px; max-width:300px;">{{ footerAbout }}</p>
+        <div style="display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:16px;">
+          <span onClick="{{ dlAppStore }}" style="display:flex; align-items:center; gap:7px; background:#ffffff14; border:1px solid #ffffff1f; color:#fff; padding:8px 14px; border-radius:10px; font-size:11.5px; font-weight:700; cursor:pointer; white-space:nowrap;"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 12.5c-.03-2.36 1.93-3.5 2.02-3.55-1.1-1.6-2.8-1.82-3.4-1.85-1.44-.15-2.83.85-3.56.85-.74 0-1.87-.83-3.08-.8-1.58.02-3.05.92-3.86 2.34-1.66 2.88-.42 7.13 1.2 9.46.79 1.13 1.72 2.4 2.95 2.36 1.18-.05 1.63-.76 3.06-.76 1.42 0 1.83.76 3.08.73 1.28-.02 2.08-1.15 2.86-2.29.9-1.3 1.27-2.57 1.29-2.64-.03-.01-2.47-.95-2.5-3.76-.02-2.35 1.92-3.48 2-3.53-1.1-1.62-2.8-1.8-3.4-1.83M14.65 4.87c.66-.8 1.1-1.9.98-3.02-.95.04-2.1.63-2.78 1.43-.61.7-1.15 1.85-1 2.93 1.06.08 2.14-.53 2.8-1.34"/></svg>App Store</span>
+          <span onClick="{{ dlGooglePlay }}" style="display:flex; align-items:center; gap:7px; background:#ffffff14; border:1px solid #ffffff1f; color:#fff; padding:8px 14px; border-radius:10px; font-size:11.5px; font-weight:700; cursor:pointer; white-space:nowrap;"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3.6 2.3c-.35.2-.6.6-.6 1.1v17.2c0 .5.25.9.6 1.1l9.6-9.7L3.6 2.3zm12.5 8.7 2.5-1.4c.7-.4.7-1.4 0-1.8l-2.6-1.5-2.7 2.8 2.8 2.9zm-2.9-2 2.7-2.8L5.1 1.7l8.1 7.3zm0 2.1-8.1 8.2 10.9-6.3-2.8-1.9z"/></svg>Google Play</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">{{ badgeTrust }}</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">{{ badgeGuild }}</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">{{ badgeSamandehi }}</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">{{ badgeIata }}</span>
+        </div>
+      </div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">{{ footerServicesHeading }}</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="نتایج پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerBookFlight }}</a><a href="مدیریت رزرو.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerManageBooking }}</a><a href="وضعیت پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerFlightStatus }}</a><a href="باشگاه مشتریان.dc.html" style="color:#aebfd4; text-decoration:none;">{{ navLoyalty }}</a></div></div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">{{ footerCompanyHeading }}</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="درباره ما.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerAboutUs }}</a><a href="تماس با ما.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerContactUs }}</a><a href="قوانین و مقررات.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerTerms }}</a></div></div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">{{ navSupport }}</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerHelpCenter }}</a><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerFaq }}</a><span dir="ltr" style="text-align:right; unicode-bidi:isolate;" data-site-phone>021 - 91000000</span></div></div>
+    </div>
+    <div style="border-top:1px solid #ffffff12;"><div style="max-width:1320px; margin:0 auto; padding:15px 26px; display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:#7d92ad;"><span>{{ copyrightLine }}</span></div></div>
+    </sc-if>
+
+    <sc-if value="{{ isMobile }}" hint-placeholder-val="{{false}}">
+    <div style="padding:34px 24px 6px; text-align:center;">
+      <div style="display:flex; align-items:center; justify-content:center; gap:9px; margin-bottom:14px;"><div style="width:34px; height:34px; border-radius:10px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:15px;">✈</div><span style="font-weight:900; font-size:17px; color:#fff;">blujet</span></div>
+      <p style="font-size:12.5px; line-height:1.8; margin:0 auto 16px; max-width:270px; color:#aebfd4;">{{ footerAbout }}</p>
+      <div style="display:flex; align-items:center; justify-content:center; gap:7px; flex-wrap:wrap;">
+        <span style="width:44px; height:44px; border-radius:11px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:7px; color:#9fb2c9; line-height:1.3; padding:4px;">{{ badgeTrust }}</span>
+        <span style="width:44px; height:44px; border-radius:11px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:7px; color:#9fb2c9; line-height:1.3; padding:4px;">{{ badgeGuild }}</span>
+        <span style="width:44px; height:44px; border-radius:11px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:7px; color:#9fb2c9; line-height:1.3; padding:4px;">{{ badgeSamandehi }}</span>
+        <span style="width:44px; height:44px; border-radius:11px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:7px; color:#9fb2c9; line-height:1.3; padding:4px;">{{ badgeIata }}</span>
+      </div>
+    </div>
+    <div style="margin-top:22px; border-top:1px solid #ffffff14;">
+      <details><summary style="display:flex; align-items:center; justify-content:space-between; padding:15px 24px; font-size:13.5px; font-weight:700; color:#fff; border-bottom:1px solid #ffffff14;">{{ footerServicesHeading }}<span class="chev" style="color:#7d92ad; font-size:12px; transition:transform .2s;">⌄</span></summary>
+        <div style="padding:14px 24px 18px; display:flex; flex-direction:column; align-items:flex-start; gap:13px; font-size:13px; border-bottom:1px solid #ffffff14;"><a href="نتایج پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerBookFlight }}</a><a href="مدیریت رزرو.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerManageBooking }}</a><a href="وضعیت پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerFlightStatus }}</a><a href="باشگاه مشتریان.dc.html" style="color:#aebfd4; text-decoration:none;">{{ navLoyalty }}</a></div>
+      </details>
+      <details><summary style="display:flex; align-items:center; justify-content:space-between; padding:15px 24px; font-size:13.5px; font-weight:700; color:#fff; border-bottom:1px solid #ffffff14;">{{ footerCompanyHeading }}<span class="chev" style="color:#7d92ad; font-size:12px; transition:transform .2s;">⌄</span></summary>
+        <div style="padding:14px 24px 18px; display:flex; flex-direction:column; align-items:flex-start; gap:13px; font-size:13px; border-bottom:1px solid #ffffff14;"><a href="درباره ما.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerAboutUs }}</a><a href="تماس با ما.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerContactUs }}</a><a href="قوانین و مقررات.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerTerms }}</a></div>
+      </details>
+      <details><summary style="display:flex; align-items:center; justify-content:space-between; padding:15px 24px; font-size:13.5px; font-weight:700; color:#fff; border-bottom:1px solid #ffffff14;">{{ navSupport }}<span class="chev" style="color:#7d92ad; font-size:12px; transition:transform .2s;">⌄</span></summary>
+        <div style="padding:14px 24px 18px; display:flex; flex-direction:column; align-items:flex-start; gap:13px; font-size:13px; border-bottom:1px solid #ffffff14;"><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerHelpCenter }}</a><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerFaq }}</a><span dir="ltr" data-site-phone>021 — 91000000</span></div>
+      </details>
+    </div>
+    <div style="padding:16px 24px; text-align:center; font-size:11px; color:#7d92ad;">{{ copyrightLine }}</div>
+    </sc-if>
+  </footer>  <!-- JOIN MODAL -->
+  <sc-if value="{{ joinOpen }}" hint-placeholder-val="{{false}}">
+    <div onClick="{{ closeJoin }}" style="position:fixed; inset:0; background:rgba(7,12,22,.6); z-index:200; display:flex; align-items:center; justify-content:center; padding:20px;">
+      <div onClick="{{ stop }}" style="background:#fff; border-radius:18px; width:460px; max-width:100%; overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#0d2640,#16406e); color:#fff; padding:18px 20px; display:flex; align-items:center; justify-content:space-between;">
+          <div><div style="font-size:15.5px; font-weight:900;">{{ joinTitle }}</div><div style="font-size:11.5px; color:#aac4e2; margin-top:3px;">{{ joinSubtitle }}</div></div>
+          <span onClick="{{ closeJoin }}" style="width:32px; height:32px; border-radius:9px; background:rgba(255,255,255,.14); color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px;">×</span>
+        </div>
+        <sc-if value="{{ joinDone }}" hint-placeholder-val="{{false}}">
+          <div style="padding:30px 22px; text-align:center;">
+            <div style="width:64px; height:64px; border-radius:50%; background:#eef9f1; color:#1f8a5b; display:flex; align-items:center; justify-content:center; font-size:27px; margin:0 auto 14px;">✓</div>
+            <div style="font-size:16px; font-weight:900; margin-bottom:6px; color:#0d2640;">{{ joinSuccessTitle }}</div>
+            <div style="font-size:12px; color:#8a96a6; line-height:1.9;">{{ joinSuccessBodyPre }} {{ joinName }}{{ joinSuccessBodyPost }}</div>
+            <a href="صفحه اصلی.dc.html" style="display:inline-block; margin-top:18px; background:var(--accent,#1668c4); color:#fff; padding:11px 24px; border-radius:11px; font-size:12.5px; font-weight:800; text-decoration:none;">{{ viewAccountLabel }}</a>
+          </div>
+        </sc-if>
+        <sc-if value="{{ joinForm }}" hint-placeholder-val="{{true}}">
+          <div style="padding:20px 20px 22px; display:flex; flex-direction:column; gap:12px;">
+            <div><div style="font-size:11.5px; color:#8a96a6; font-weight:600; margin-bottom:7px;">{{ fullNameLabel }}</div><input value="{{ jName }}" onInput="{{ onJName }}" placeholder="{{ fullNamePlaceholder }}" style="width:100%; height:46px; border:1.5px solid #e2e7ee; border-radius:11px; background:#fafbfd; padding:0 12px; font-family:inherit; font-size:12.5px; outline:none; box-sizing:border-box;" /></div>
+            <div style="display:flex; gap:11px;">
+              <div style="flex:1;"><div style="font-size:11.5px; color:#8a96a6; font-weight:600; margin-bottom:7px;">{{ emailLabel }}</div><input value="{{ jEmail }}" onInput="{{ onJEmail }}" placeholder="email@example.com" dir="ltr" style="width:100%; height:46px; border:1.5px solid #e2e7ee; border-radius:11px; background:#fafbfd; padding:0 12px; font-family:inherit; font-size:12.5px; outline:none; text-align:right; box-sizing:border-box;" /></div>
+              <div style="flex:1;"><div style="font-size:11.5px; color:#8a96a6; font-weight:600; margin-bottom:7px;">{{ mobileLabel }}</div><input value="{{ jPhone }}" onInput="{{ onJPhone }}" placeholder="{{ mobilePlaceholder }}" dir="ltr" style="width:100%; height:46px; border:1.5px solid #e2e7ee; border-radius:11px; background:#fafbfd; padding:0 12px; font-family:inherit; font-size:12.5px; outline:none; text-align:right; box-sizing:border-box;" /></div>
+            </div>
+            <div><div style="font-size:11.5px; color:#8a96a6; font-weight:600; margin-bottom:7px;">{{ idLabel }}</div><input value="{{ jNid }}" onInput="{{ onJNid }}" placeholder="{{ idPlaceholder }}" dir="ltr" style="width:100%; height:46px; border:1.5px solid #e2e7ee; border-radius:11px; background:#fafbfd; padding:0 12px; font-family:inherit; font-size:12.5px; outline:none; text-align:right; box-sizing:border-box;" /></div>
+            <div onClick="{{ submitJoin }}" style="height:50px; border-radius:12px; background:{{ joinBtnBg }}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13.5px; font-weight:800; cursor:{{ joinBtnCursor }}; margin-top:4px;">{{ confirmMembershipLabel }}</div>
+            <div style="font-size:10.5px; color:#9aa4b2; text-align:center; line-height:1.7;">{{ termsNote }}</div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- TOAST -->
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div dir="{{ pageDir }}" style="position:fixed; inset:0; z-index:9000; background:rgba(8,22,40,.6); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; padding:24px;"><div style="width:420px; max-width:100%; background:#fff; border-radius:22px; box-shadow:0 50px 120px -30px rgba(4,16,34,.7); padding:40px 32px 30px; text-align:center; position:relative; overflow:hidden;"><div style="position:absolute; top:0; left:0; right:0; height:5px; background:linear-gradient(90deg,var(--accent,#1668c4),#5ea3e8);"></div><div style="width:96px; height:96px; border-radius:50%; background:#e8f0fb; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;"><span style="width:56px; height:56px; border-radius:50%; background:var(--accent,#1668c4); color:#fff; display:flex; align-items:center; justify-content:center; font-size:26px; box-shadow:0 10px 24px -8px rgba(22,104,196,.55);">✓</span></div><div style="font-size:16.5px; font-weight:900; color:#16202e; line-height:2;">{{ toast }}</div><div style="margin-top:10px; font-size:11px; color:#9aa7b8; font-weight:600;">{{ toastAutoCloseNote }}</div></div></div>
+  </sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;setupMode&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;حالت حساب&quot;}}">
+class Component extends DCLogic {
+  state = { joinOpen: false, jName: "", jEmail: "", jPhone: "", jNid: "", joinDone: false, toast: "", notifOpen: false, userMenuOpen: false, langOpen: false, samanNumber: "", isMobile: (typeof window !== "undefined" && window.innerWidth < 768), mobileMenuOpen: false, lang: (typeof localStorage !== "undefined" && localStorage.getItem('blujet_lang')) || 'fa' };
+  componentDidMount() {
+    this._mq = window.matchMedia("(max-width:767px)");
+    this._mqHandler = (e) => this.setState({ isMobile: e.matches });
+    if (this._mq.addEventListener) this._mq.addEventListener("change", this._mqHandler); else this._mq.addListener(this._mqHandler);
+  }
+  componentWillUnmount() {
+    if (this._mq) { if (this._mq.removeEventListener) this._mq.removeEventListener("change", this._mqHandler); else this._mq.removeListener(this._mqHandler); }
+  }
+  toast(t){ this.setState({ toast: t }); clearTimeout(this._toastT); this._toastT = setTimeout(() => this.setState({ toast: "" }), 2800); }
+  submitJoin = () => {
+    const isEN = this.state.lang === "en";
+    const { jName, jEmail } = this.state;
+    if (!jName.trim() || !jEmail.trim()) { this.toast(isEN ? "Please enter your name and email" : "لطفاً نام و ایمیل خود را وارد کنید"); return; }
+    try {
+      if (window.SiteData && window.SiteData.addClubMember) {
+        const fa = (n) => String(n).replace(/[0-9]/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
+        window.SiteData.addClubMember({
+          id: "CM-" + fa(Date.now().toString().slice(-4)),
+          name: jName.trim(), email: jEmail.trim(), phone: this.state.jPhone,
+          nationalId: this.state.jNid, birth: "", joinDate: "۱۴۰۵/۰۴/۱۱",
+          points: 0, used: 0, level: "silver", cardStatus: "none"
+        });
+      }
+    } catch (e) {}
+    this.setState({ joinDone: true });
+    this.toast(isEN ? "Your loyalty club membership is confirmed ✓" : "عضویت شما در باشگاه مشتریان ثبت شد ✓");
+  };
+  renderVals(){ const v = this._vals(); return (this.state && this.state.lang === "ar" && typeof window !== "undefined" && window.arDeep) ? window.arDeep(v) : v; }
+  _vals() {
+    const isEN = this.state.lang === "en";
+    const canSubmit = this.state.jName.trim() && this.state.jEmail.trim();
+    const isMobile = this.state.isMobile;
+    const ic = {
+      medal: '<svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4l3 5 3-5"/><circle cx="12" cy="15" r="6"/><path d="M12 12.5l1 2 2.2.3-1.6 1.5.4 2.2-2-1-2 1 .4-2.2L8.8 14.8l2.2-.3z"/></svg>',
+      crown: '<svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14l3 5-10 12L2 9z"/><path d="M2 9h20M9 4L6 9l6 12 6-12-3-5"/></svg>',
+      percent: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5L5 19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>',
+      star: '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.8-6.2 3.8 1.6-7L2 9.2l7.1-.6z"/></svg>',
+      headset: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13v-1a8 8 0 0 1 16 0v1"/><rect x="2.5" y="13" width="5" height="7" rx="2"/><rect x="16.5" y="13" width="5" height="7" rx="2"/><path d="M20 20a4 4 0 0 1-4 3h-2"/></svg>',
+      tag: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 12.4 12.6 20.4a2 2 0 0 1-2.8 0l-6.2-6.2a2 2 0 0 1 0-2.8l8-8H18a2.6 2.6 0 0 1 2.6 2.6z"/><circle cx="7.5" cy="7.5" r="1.3" fill="currentColor" stroke="none"/></svg>',
+      seat: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5v10a2 2 0 0 0 2 2h9"/><path d="M6 9h8a2 2 0 0 1 2 2v4.5"/><path d="M4.5 19.5h4M15.5 19.5h4"/><path d="M6 15.5v2M18 15.5v2"/></svg>',
+      shield: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 8.5l3-3 2.5 2 2.5-2 3 3"/><path d="M4 8.5v3c0 4.5 3.4 7 8 9 4.6-2 8-4.5 8-9v-3"/><path d="M9.5 13.5l2 2 3.5-4"/></svg>',
+      car: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15.5V11l2-4.5h12l2 4.5v4.5"/><path d="M4 15.5h16"/><path d="M7 15.5v2M17 15.5v2"/><circle cx="7.5" cy="15.5" r="1.3"/><circle cx="16.5" cy="15.5" r="1.3"/><path d="M6.5 11h11"/></svg>',
+      gift: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="4" rx="1"/><rect x="4" y="13" width="16" height="8" rx="1"/><path d="M12 9v12"/><path d="M12 9c-1-3-6-3-6-.5S9 9 12 9zm0 0c1-3 6-3 6-.5S15 9 12 9z"/></svg>',
+      sofa: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3"/><rect x="3" y="11" width="18" height="6" rx="2"/><path d="M4 17v3M20 17v3"/></svg>',
+      user: '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-5.33 0-9 2.69-9 6v2h18v-2c0-3.31-3.67-6-9-6z"/></svg>'
+    };
+    const h = (s) => ({ __html: s });
+    const tierCards = [
+      { name: isEN ? "Silver" : "نقره‌ای", icon: h(ic.medal), range: isEN ? "0–5,000 points" : "۰ تا ۵٬۰۰۰ امتیاز", border: "#e6eaf0", head: "linear-gradient(135deg,#9aa7b8,#6f7d90)", accent: "#6f7d90", iconBg: "#f2f4f7", shadow: "none", mt: "20px", popular: false,
+        perks: [ { icon: h(ic.percent), label: isEN ? "2% cashback per purchase" : "۲٪ کش‌بک در هر خرید" }, { icon: h(ic.star), label: isEN ? "Base point accrual" : "جمع‌آوری امتیاز پایه" }, { icon: h(ic.headset), label: isEN ? "Member support" : "پشتیبانی اعضا" }, { icon: h(ic.tag), label: isEN ? "Seasonal offers" : "پیشنهادهای فصلی" } ] },
+      { name: isEN ? "Gold" : "طلایی", icon: h(ic.medal), range: isEN ? "5,000–15,000 points" : "۵٬۰۰۰ تا ۱۵٬۰۰۰ امتیاز", border: "#caa53a", head: "linear-gradient(135deg,#caa53a,#9a7d22)", accent: "#9a7d22", iconBg: "#fff7e6", shadow: "0 24px 48px -22px rgba(202,165,58,.4)", mt: "0", popular: true,
+        perks: [ { icon: h(ic.percent), label: isEN ? "5% cashback per purchase" : "۵٪ کش‌بک در هر خرید" }, { icon: h(ic.seat), label: isEN ? "Free upgrade to Business" : "ارتقای رایگان به بیزنس" }, { icon: h(ic.shield), label: isEN ? "Dedicated airport reception" : "پذیرش اختصاصی فرودگاه" }, { icon: h(ic.car), label: isEN ? "Discounted car requests" : "درخواست خودرو با تخفیف" } ] },
+      { name: isEN ? "Platinum" : "پلاتین", icon: h(ic.crown), range: isEN ? "Above 15,000 points" : "بالای ۱۵٬۰۰۰ امتیاز", border: "#1668c4", head: "linear-gradient(135deg,#1668c4,#0d2640)", accent: "#1668c4", iconBg: "#eef4fb", shadow: "none", mt: "20px", popular: false,
+        perks: [ { icon: h(ic.gift), label: isEN ? "7% cashback + special gifts" : "۷٪ کش‌بک + هدایای ویژه" }, { icon: h(ic.seat), label: isEN ? "Guaranteed seat upgrade" : "ارتقای تضمینی صندلی" }, { icon: h(ic.sofa), label: isEN ? "Exclusive airport lounge" : "لانژ اختصاصی فرودگاه" }, { icon: h(ic.user), label: isEN ? "Dedicated travel manager" : "مدیر سفر اختصاصی" } ] }
+    ];
+    const earnIc = {
+      fly: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15l-7 3-9-4 2-2 3 1 4-5 3 1-2 3 3 1z"/><path d="M5 21h14"/></svg>',
+      cashback: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6"/><circle cx="9.3" cy="9.3" r=".7" fill="currentColor"/><circle cx="14.7" cy="14.7" r=".7" fill="currentColor"/></svg>',
+      refer: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3.2"/><path d="M2 20c0-3.3 2.7-5 6-5s6 1.7 6 5"/><circle cx="17" cy="9" r="2.6"/><path d="M15 15c3 0 6 1.4 6 5"/></svg>',
+      missions: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>'
+    };
+    return {
+      pageDir: isEN ? "ltr" : "rtl", fontFam: isEN ? "Inter, sans-serif" : "Vazirmatn, sans-serif",
+      notifOpen: this.state.notifOpen,
+      toggleNotif: () => this.setState(s => ({ notifOpen: !s.notifOpen })),
+      isMobile, mobileMenuOpen: this.state.mobileMenuOpen,
+      toggleMobileMenu: () => this.setState(s => ({ mobileMenuOpen: !s.mobileMenuOpen })),
+      navDisplay: isMobile ? "none" : "flex",
+      hamburgerDisplay: isMobile ? "flex" : "none",
+      notMobile: !isMobile,
+      headerBarBg: isMobile ? "var(--accent,#1668c4)" : "#fff",
+      headerBorderB: isMobile ? "none" : "1px solid #e6eaf0",
+      headerH: isMobile ? "62px" : "70px",
+      logoTextColor: isMobile ? "#fff" : "#16202e",
+      logoSquareBg: isMobile ? "#fff" : "var(--accent,#1668c4)",
+      logoIconColor: isMobile ? "var(--accent,#1668c4)" : "#fff",
+      hamburgerColor: isMobile ? "#fff" : "#0d2640",
+      mobileIconRowDisplay: isMobile ? "flex" : "none",
+      menuTitle: isEN ? "Menu" : "منو",
+      navFlights: isEN ? "Flights" : "پرواز", navDestinations: isEN ? "Destinations" : "مقاصد پروازی",
+      navLoyalty: isEN ? "Loyalty Club" : "باشگاه مشتریان", navSupport: isEN ? "Support" : "پشتیبانی",
+      langLabel: isEN ? "EN" : (this.state.lang === "ar" ? "AR" : "FA"), langOpen: this.state.langOpen,
+      toggleLang: () => this.setState(s => ({ langOpen: !s.langOpen, notifOpen: false, userMenuOpen: false })),
+      enCheck: isEN ? "✓" : "", faCheck: (!isEN && this.state.lang !== "ar") ? "✓" : "", arCheck: this.state.lang === "ar" ? "✓" : "", setLangAr: () => { try { localStorage.setItem("blujet_lang","ar"); } catch(e){} this.setState({ lang:"ar", langOpen:false }); },
+      setLangEn: () => { try { localStorage.setItem("blujet_lang", "en"); } catch(e) {} this.setState({ lang: "en", langOpen: false }); },
+      setLangFa: () => { try { localStorage.setItem("blujet_lang", "fa"); } catch(e) {} this.setState({ lang: "fa", langOpen: false }); },
+      userMenuOpen: this.state.userMenuOpen,
+      toggleUserMenu: () => this.setState(s => ({ userMenuOpen: !s.userMenuOpen })),
+      userDisplayName: isEN ? "Negar Rezaei" : "نگار رضایی",
+      clubPointsLabel: isEN ? "Club Points" : "امتیاز باشگاه", clubPointsValue: this.props.setupMode ? (isEN ? "0" : "۰") : (isEN ? "12,450" : "۱۲٬۴۵۰"),
+      profileLabel: isEN ? "View Profile" : "مشاهده پروفایل",
+      tripsLabel: isEN ? "Trips & Booking Management" : "سفرها و مدیریت رزرو",
+      refundsLabel: isEN ? "Refunds" : "استرداد",
+      signOutLabel: isEN ? "Sign Out" : "خروج از حساب",
+      scrollToTop: () => window.scrollTo({ top: 0, behavior: "smooth" }),
+      footerCols: isMobile ? "1fr" : "1.6fr 1fr 1fr 1fr",
+      samanPad: isMobile ? "34px 20px" : "56px 34px",
+      samanDir: "row",
+      samanAlign: isMobile ? "center" : (isEN ? "left" : "right"),
+      samanFormW: isMobile ? "100%" : "auto",
+      statsCols: isMobile ? "repeat(2,1fr)" : "repeat(4,1fr)",
+      tiersCols: isMobile ? "1fr" : "repeat(3,1fr)",
+      cols2: isMobile ? "repeat(2,1fr)" : "repeat(4,1fr)",
+      notifs: this.props.setupMode ? [] : [
+        { icon: "✈", title: "Trip reminder", body: "Your Tehran → Dubai flight is tomorrow. Online check-in is open.", time: "1 hour ago", bg: "#f6faff" },
+        { icon: "★", title: "Loyalty points", body: "450 points from your last purchase were added to your account.", time: "Yesterday", bg: "#fff" },
+        { icon: "🏷", title: "Discount code", body: "Code BLUE20 is active for domestic flights until the end of the week.", time: "2 days ago", bg: "#fff" }
+      ],
+      toast: this.state.toast, hasToast: !!this.state.toast,
+      toastAutoCloseNote: isEN ? "This message closes automatically" : "این پیام به‌صورت خودکار بسته می‌شود",
+      joinOpen: this.state.joinOpen,
+      joinDone: this.state.joinDone,
+      joinForm: !this.state.joinDone,
+      joinName: this.state.jName,
+      openJoin: () => this.setState({ joinOpen: true, joinDone: false }),
+      requestCard: () => { this.toast(isEN ? "Card issuance request submitted ✓" : "درخواست صدور کارت ثبت شد ✓"); setTimeout(() => { window.location.href = "پنل کاربر.dc.html?tab=club"; }, 900); },
+      dlAppStore: () => this.toast(isEN ? "The App Store download link will be sent to you shortly" : "لینک دانلود از App Store به‌زودی فعال می‌شود"),
+      dlGooglePlay: () => this.toast(isEN ? "The Google Play download link will be sent to you shortly" : "لینک دانلود از Google Play به‌زودی فعال می‌شود"),
+      samanNumber: this.state.samanNumber, onSamanNumber: (e) => this.setState({ samanNumber: e.target.value }),
+      samanPlaceholder: isEN ? "Saman Bank customer number" : "شماره مشتری بانک سامان",
+      samanSubmitLabel: isEN ? "Submit Customer Number" : "ثبت شماره مشتری",
+      submitSaman: () => { if (!this.state.samanNumber.trim()) { this.toast(isEN ? "Please enter your customer number" : "لطفاً شماره مشتری را وارد کنید"); return; } this.toast(isEN ? "Saman Bank customer number submitted ✓" : "شماره مشتری بانک سامان ثبت شد ✓"); this.setState({ samanNumber: "" }); },
+      samanChip: isEN ? "Saman" : "سامان",
+      samanHeading: isEN ? "Buy tickets in installments with your Saman Bank card" : "خرید اقساطی بلیط با کارت بانک سامان",
+      samanSub: isEN ? "No fees, up to 12 months of installments on flight ticket purchases" : "بدون کارمزد، تا ۱۲ ماه اقساط روی خرید بلیط پرواز",
+      closeJoin: () => this.setState({ joinOpen: false }),
+      stop: (e) => { if (e && e.stopPropagation) e.stopPropagation(); },
+      jName: this.state.jName, onJName: (e) => this.setState({ jName: e.target.value }),
+      jEmail: this.state.jEmail, onJEmail: (e) => this.setState({ jEmail: e.target.value }),
+      jPhone: this.state.jPhone, onJPhone: (e) => this.setState({ jPhone: e.target.value }),
+      jNid: this.state.jNid, onJNid: (e) => this.setState({ jNid: e.target.value }),
+      submitJoin: this.submitJoin,
+      joinBtnBg: canSubmit ? "var(--accent,#1668c4)" : "#aab8c8",
+      joinBtnCursor: canSubmit ? "pointer" : "not-allowed",
+      heroBadge: isEN ? "blujet Loyalty Club" : "باشگاه مشتریان blujet",
+      heroTitle: isEN ? "Every flight, one step closer to more rewards" : "هر پرواز، یک قدم به مزایای بیشتر",
+      heroDesc: isEN ? "Earn points on every trip, get cashback, and enjoy exclusive perks like free upgrades, priority airport service, and car requests." : "با هر سفر امتیاز جمع کنید، کش‌بک بگیرید و از خدمات اختصاصی مثل ارتقای رایگان، پذیرش ویژه‌ی فرودگاه و درخواست خودرو بهره‌مند شوید.",
+      joinFreeLabel: isEN ? "Join for Free" : "عضویت رایگان", myAccountLabel: isEN ? "My Account" : "حساب من",
+      stats: [
+        { value: isEN ? "5%" : "۵٪", label: isEN ? "Cashback per purchase" : "کش‌بک در هر خرید" },
+        { value: isEN ? "200+" : "۲۰۰+", label: isEN ? "Flight destinations" : "مقصد پروازی" },
+        { value: isEN ? "3" : "۳", label: isEN ? "Membership tiers" : "سطح عضویت" },
+        { value: isEN ? "24/7" : "۲۴/۷", label: isEN ? "Member support" : "پشتیبانی اعضا" }
+      ],
+      tiersHeading: isEN ? "Membership Tiers" : "سطوح عضویت",
+      tiersSub: isEN ? "The more you fly, the higher your tier and the greater your rewards." : "هر چه بیشتر پرواز کنید، به سطح بالاتر و مزایای بیشتر می‌رسید.",
+      mostPopularLabel: isEN ? "Most Popular" : "پرکاربردترین",
+      tierCards,
+      cardBadge: isEN ? "blujet Card Issuance" : "صدور کارت بلوجت",
+      cardHeading: isEN ? "Reach the point threshold, get your card" : "با رسیدن به حد امتیاز، کارت بگیرید",
+      cardIntroPre: isEN ? "Once you reach" : "به محض رسیدن به آستانه‌ی",
+      cardThresholdPoints: isEN ? "5,000 points" : "۵٬۰۰۰ امتیاز",
+      cardIntroPost: isEN ? ", you become eligible for a membership card. Your request is sent to the site admin and then referred to the Board Chair or Senior Manager for approval; once approved, the card is issued to the traveler." : "، واجد شرایط دریافت کارت عضویت می‌شوید. درخواست شما برای ادمین سایت ارسال و سپس برای تأیید به رئیس هیئت مدیره یا مدیر ارشد ارجاع می‌شود؛ پس از تأیید، کارت برای مسافر صادر می‌گردد.",
+      num1: isEN ? "1" : "۱", num2: isEN ? "2" : "۲", num3: isEN ? "3" : "۳", num4: isEN ? "4" : "۴",
+      step1Title: isEN ? "Earn Points" : "کسب امتیاز", step1Desc: isEN ? "Collect points on every flight until you reach 5,000." : "با هر پرواز امتیاز جمع کنید تا به حد ۵٬۰۰۰ برسید.",
+      step2Title: isEN ? "Submit Request" : "ارسال درخواست", step2Desc: isEN ? "Your card request is sent to the site admin." : "درخواست صدور کارت برای ادمین سایت ارسال می‌شود.",
+      step3Title: isEN ? "Referred for Approval" : "ارجاع برای تأیید", step3Desc: isEN ? "The admin refers the request to the Board Chair or Senior Manager." : "ادمین درخواست را به رئیس هیئت مدیره یا مدیر ارشد ارجاع می‌دهد.",
+      step4Title: isEN ? "Card Issued" : "صدور کارت", step4Desc: isEN ? "Once approved, the membership card is issued to the traveler." : "پس از تأیید، کارت عضویت برای مسافر صادر می‌شود.",
+      silverCardLabel: isEN ? "Silver Card" : "کارت نقره‌ای", silverRange: isEN ? "0–5,000 points" : "۰ تا ۵٬۰۰۰ امتیاز",
+      goldCardLabel: isEN ? "Gold Card" : "کارت طلایی", goldRange: isEN ? "5,000–15,000 points" : "۵٬۰۰۰ تا ۱۵٬۰۰۰ امتیاز",
+      platCardLabel: isEN ? "Platinum Card" : "کارت پلاتین", platRange: isEN ? "Above 15,000 points" : "بالای ۱۵٬۰۰۰ امتیاز",
+      requestCardLabel: isEN ? "Request Card Issuance" : "درخواست صدور کارت",
+      earnHeading: isEN ? "How do I earn points?" : "چطور امتیاز بگیرم؟",
+      earn: [
+        { icon: h(earnIc.fly), title: isEN ? "Fly" : "پرواز کنید", desc: isEN ? "Earn points with every ticket purchase." : "به ازای هر خرید بلیط امتیاز بگیرید." },
+        { icon: h(earnIc.cashback), title: isEN ? "Get Cashback" : "کش‌بک بگیرید", desc: isEN ? "A portion of your payment returns to your wallet." : "بخشی از مبلغ به کیف پول برمی‌گردد." },
+        { icon: h(earnIc.refer), title: isEN ? "Refer Friends" : "معرفی دوستان", desc: isEN ? "Invite friends and earn bonus points." : "با دعوت دوستان امتیاز هدیه بگیرید." },
+        { icon: h(earnIc.missions), title: isEN ? "Missions" : "ماموریت‌ها", desc: isEN ? "Complete missions to earn more points." : "با تکمیل ماموریت‌ها امتیاز جمع کنید." }
+      ],
+      servicesHeading: isEN ? "Exclusive Member Services" : "خدمات ویژه‌ی اعضا",
+      memberServices: [
+        { title: isEN ? "Car Request" : "درخواست خودرو", desc: isEN ? "Book airport-to-destination car service at a special member discount." : "رزرو خودرو فرودگاه تا مقصد با تخفیف ویژه اعضا.", grad: "linear-gradient(135deg,#1668c4,#0d2640)", blob: "#1668c40f", shadow: "0 14px 26px -14px rgba(22,104,196,.45)", icon: h(ic.car.replace('width="15" height="15"','width="28" height="28"')) },
+        { title: isEN ? "Seat Upgrade" : "ارتقای صندلی", desc: isEN ? "Free or discounted upgrade to Business class." : "ارتقای رایگان یا تخفیف‌دار به کلاس بیزنس.", grad: "linear-gradient(135deg,#e8c65a,#9a7d22)", blob: "#caa53a12", shadow: "0 14px 26px -14px rgba(202,165,58,.5)", icon: h(ic.seat.replace('width="15" height="15"','width="28" height="28"')) },
+        { title: isEN ? "Priority Reception" : "پذیرش ویژه", desc: isEN ? "Fast check-in and dedicated reception with no queues." : "چک‌این سریع و پذیرش اختصاصی بدون صف.", grad: "linear-gradient(135deg,#2ea36b,#155c3c)", blob: "#1f8a5b12", shadow: "0 14px 26px -14px rgba(31,138,91,.45)", icon: h(ic.shield.replace('width="15" height="15"','width="28" height="28"')) }
+      ],
+      ctaHeading: isEN ? "Become a Gold Member Today" : "همین حالا عضو طلایی شوید",
+      ctaDesc: isEN ? "Membership is free — earn points and cashback from your very first flight." : "عضویت رایگان است و از اولین پرواز، امتیاز و کش‌بک دریافت می‌کنید.",
+      ctaButton: isEN ? "Join the Club" : "ثبت‌نام در باشگاه",
+      footerAbout: isEN ? "Book domestic and international flights online at the best prices, with loyalty club benefits." : "رزرو آنلاین بلیط پروازهای داخلی و بین‌المللی با بهترین قیمت و خدمات باشگاه مشتریان.",
+      badgeTrust: isEN ? "e-Trust Seal" : "نماد اعتماد الکترونیکی",
+      badgeGuild: isEN ? "Travel Agencies Guild" : "انجمن صنفی دفاتر خدمات مسافرتی",
+      badgeSamandehi: isEN ? "Samandehi Registered" : "ساماندهی",
+      badgeIata: isEN ? "IATA Member" : "عضو IATA",
+      footerServicesHeading: isEN ? "Services" : "خدمات",
+      footerCompanyHeading: isEN ? "Company" : "شرکت",
+      footerBookFlight: isEN ? "Book a Flight" : "رزرو پرواز",
+      footerManageBooking: isEN ? "Manage Booking" : "مدیریت رزرو",
+      footerFlightStatus: isEN ? "Flight Status" : "وضعیت پرواز",
+      footerAboutUs: isEN ? "About Us" : "درباره ما",
+      footerContactUs: isEN ? "Contact Us" : "تماس با ما",
+      footerTerms: isEN ? "Terms & Conditions" : "قوانین و مقررات",
+      footerHelpCenter: isEN ? "Help Center" : "مرکز راهنما",
+      footerFaq: isEN ? "FAQ" : "سوالات متداول",
+      copyrightLine: isEN ? "© 2026 blujet. All rights reserved." : "© ۱۴۰۵ blujet. تمامی حقوق محفوظ است.",
+      joinTitle: isEN ? "Join the Loyalty Club" : "عضویت در باشگاه مشتریان",
+      joinSubtitle: isEN ? "Membership is free — start earning points from your first flight." : "عضویت رایگان است و از اولین پرواز امتیاز می‌گیرید.",
+      joinSuccessTitle: isEN ? "Your membership is confirmed" : "عضویت شما ثبت شد",
+      joinSuccessBodyPre: isEN ? "Welcome to the blujet Loyalty Club," : "به باشگاه مشتریان blujet خوش آمدید،",
+      joinSuccessBodyPost: isEN ? "! Your account is now active at Silver tier, and you'll start earning points from your first flight." : "! حساب شما با سطح نقره‌ای فعال شد و از اولین پرواز امتیاز جمع می‌کنید.",
+      viewAccountLabel: isEN ? "View My Account" : "مشاهدهٔ حساب من",
+      fullNameLabel: isEN ? "Full Name" : "نام و نام خانوادگی",
+      fullNamePlaceholder: isEN ? "e.g. Negar Rezaei" : "مثلاً نگار رضایی",
+      emailLabel: isEN ? "Email" : "ایمیل",
+      mobileLabel: isEN ? "Mobile Number" : "شماره موبایل",
+      mobilePlaceholder: isEN ? "0912 000 0000" : "۰۹۱۲۰۰۰۰۰۰۰",
+      idLabel: isEN ? "Passport Number" : "کد ملی",
+      idPlaceholder: isEN ? "e.g. A1234567" : "۰۰۱۲۳۴۵۶۷۸",
+      confirmMembershipLabel: isEN ? "Confirm Free Membership" : "ثبت عضویت رایگان",
+      termsNote: isEN ? "By signing up, you agree to the blujet Loyalty Club terms and conditions." : "با ثبت‌نام، قوانین و مقررات باشگاه مشتریان blujet را می‌پذیرید."
+    };
+  }
+}
+</script>
+</body>
+</html>

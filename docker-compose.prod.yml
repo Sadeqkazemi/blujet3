@@ -1,0 +1,186 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: blujet
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: blujet
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U blujet']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Internal only — never published to the host (CLAUDE.md deployment rules).
+    expose:
+      - '5432'
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    expose:
+      - '6379'
+
+  pss-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: blujet_pss
+      POSTGRES_PASSWORD: ${PSS_POSTGRES_PASSWORD}
+      POSTGRES_DB: blujet_pss
+    volumes:
+      - pss_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U blujet_pss -d blujet_pss']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    expose:
+      - '5432'
+
+  pss-service:
+    build: ./pss-service
+    restart: unless-stopped
+    depends_on:
+      pss-db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3100
+      PSS_DATABASE_URL: postgresql://blujet_pss:${PSS_POSTGRES_PASSWORD}@pss-db:5432/blujet_pss?schema=public
+      PSS_INTERNAL_TOKEN: ${PSS_INTERNAL_TOKEN}
+      SENTRY_DSN: ${PSS_SENTRY_DSN:-}
+    expose:
+      - '3100'
+    healthcheck:
+      test: ['CMD', 'node', '-e', "require('http').get('http://localhost:3100/health', r => process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  ml-service:
+    build: ./ml-service
+    restart: unless-stopped
+    environment:
+      INTERNAL_TOKEN: ${ML_SERVICE_INTERNAL_TOKEN}
+      LOG_LEVEL: info
+    # Internal only — reachable exclusively by the backend, never the
+    # internet or the frontend (CLAUDE.md ML Service Rules).
+    expose:
+      - '8000'
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      pss-service:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://blujet:${POSTGRES_PASSWORD}@db:5432/blujet?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      ML_SERVICE_URL: http://ml-service:8000
+      ML_SERVICE_INTERNAL_TOKEN: ${ML_SERVICE_INTERNAL_TOKEN}
+      # Production is fail-closed. Kavenegar is configured through the IT
+      # panel; a real PSP adapter must replace `disabled` before ticket sales.
+      SMS_PROVIDER: kavenegar
+      PAYMENT_GATEWAY: ${PAYMENT_GATEWAY:-disabled}
+      AUTH_SANDBOX_ENABLED: ${AUTH_SANDBOX_ENABLED:-false}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      CORS_ORIGINS: http://${SERVER_IP}
+      API_RATE_LIMIT_MAX: ${API_RATE_LIMIT_MAX:-300}
+      API_RATE_LIMIT_WINDOW_MS: ${API_RATE_LIMIT_WINDOW_MS:-60000}
+      API_REQUEST_TIMEOUT_MS: ${API_REQUEST_TIMEOUT_MS:-30000}
+      API_MAX_BODY_BYTES: ${API_MAX_BODY_BYTES:-10485760}
+      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-1}
+      HTTPS_ENABLED: ${HTTPS_ENABLED:-false}
+      PII_ENCRYPTION_KEY: ${PII_ENCRYPTION_KEY}
+      # The client is wired now, but authoritative sales remain on the
+      # existing booking engine until the later owner-approved cutover slice.
+      PSS_INTEGRATION_ENABLED: ${PSS_INTEGRATION_ENABLED:-false}
+      PSS_SERVICE_URL: http://pss-service:3100
+      PSS_INTERNAL_TOKEN: ${PSS_INTERNAL_TOKEN}
+      PSS_REQUEST_TIMEOUT_MS: ${PSS_REQUEST_TIMEOUT_MS:-3000}
+      SEED_ON_START: ${SEED_ON_START:-false}
+      FINANCE_HOLO_VERIFY_URL: ${FINANCE_HOLO_VERIFY_URL:-}
+      FINANCE_HOLO_SYNC_URL: ${FINANCE_HOLO_SYNC_URL:-}
+      FINANCE_SEPIDAR_VERIFY_URL: ${FINANCE_SEPIDAR_VERIFY_URL:-}
+      FINANCE_SEPIDAR_SYNC_URL: ${FINANCE_SEPIDAR_SYNC_URL:-}
+      FINANCE_HESABFA_VERIFY_URL: ${FINANCE_HESABFA_VERIFY_URL:-}
+      FINANCE_HESABFA_SYNC_URL: ${FINANCE_HESABFA_SYNC_URL:-}
+      FINANCE_RAHKARAN_VERIFY_URL: ${FINANCE_RAHKARAN_VERIFY_URL:-}
+      FINANCE_RAHKARAN_SYNC_URL: ${FINANCE_RAHKARAN_SYNC_URL:-}
+      FINANCE_PARMIS_VERIFY_URL: ${FINANCE_PARMIS_VERIFY_URL:-}
+      FINANCE_PARMIS_SYNC_URL: ${FINANCE_PARMIS_SYNC_URL:-}
+      # Temporary UAT switch. Keep false for real operation. When true, the
+      # owner may issue an audited 15-minute preview token for an existing
+      # active USER or AGENCY account.
+      SANDBOX_SUPER_ADMIN_TENANT_ACCESS: ${SANDBOX_SUPER_ADMIN_TENANT_ACCESS:-false}
+      # Frontend and backend share one origin behind the frontend's nginx
+      # proxy (port 80) — no TLS yet on a bare IP, so a Secure cookie would
+      # be silently dropped by the browser. Flip to "true" once a real
+      # domain + HTTPS is in front of this (see docs/DEPLOY_IP.md).
+      COOKIE_SECURE: 'false'
+    # No published port here — Phase 2 (traffic hardening): the backend is
+    # reachable ONLY through the frontend's nginx proxy on :80. Publishing
+    # :3000 directly meant anyone could bypass nginx (and its future
+    # rate-limiting/WAF layer) and hit the API straight from the internet.
+    # For Swagger/health debugging from the host, use
+    # `docker compose -f docker-compose.prod.yml exec backend curl localhost:3000/health`
+    # or a temporary `docker compose port backend 3000` instead of a
+    # permanent published port.
+    expose:
+      - '3000'
+    volumes:
+      - backend_uploads:/app/uploads
+      - backend_backups:/app/backups
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Empty/relative — the frontend's nginx proxies API routes on the
+        # same origin, so it never needs to know the server's IP at build
+        # time (see frontend/nginx.conf).
+        VITE_API_URL: ''
+        VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
+        VITE_SANDBOX_AUTH: ${VITE_SANDBOX_AUTH:-false}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - '80:80'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  db_data:
+  pss_db_data:
+  backend_uploads:
+  backend_backups:

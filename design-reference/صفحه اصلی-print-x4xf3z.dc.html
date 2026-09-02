@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style data-omelette-print-defaults>
+@media print {
+  @page { margin: 0.5in; }
+  h1, h2, h3, h4, h5, h6 { break-after: avoid; }
+  figure, table, pre, blockquote, img, svg, tr, [class~="card" i] { break-inside: avoid; }
+  img, svg { max-width: 100%; }
+  p { orphans: 3; widows: 3; }
+}
+</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<template id="__bundler_thumbnail" data-bg-color="#0d2640">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#0d2640"/>
+    <circle cx="600" cy="360" r="150" fill="#1668c4"/>
+    <text x="600" y="430" font-size="170" text-anchor="middle" fill="#fff" font-family="sans-serif">✈</text>
+    <text x="600" y="600" font-size="90" text-anchor="middle" fill="#fff" font-family="Vazirmatn,sans-serif" font-weight="900">bluejet</text>
+  </svg>
+</template>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+</style>
+<script src="./site-data.js"></script>
+</helmet>
+
+<div dir="rtl" style="font-family:Vazirmatn,sans-serif; font-size:14.5px; background:#f6f8fb; color:#16202e; min-height:100vh; --accent:#1668c4;">
+
+  <!-- ============ HEADER ============ -->
+  <header style="position:sticky; top:0; z-index:50;">
+    <!-- main bar -->
+    <div style="background:#fff; border-bottom:1px solid #e6eaf0; box-shadow:0 2px 12px -8px rgba(13,38,102,.25);">
+      <div style="max-width:1180px; margin:0 auto; padding:0 26px; height:86px; display:flex; align-items:center; justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <div style="width:38px; height:38px; border-radius:10px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px;">✈</div>
+          <span style="font-weight:900; font-size:18px; letter-spacing:-.5px;">bluejet</span>
+        </div>
+        <nav style="display:flex; gap:30px; font-size:14.5px; color:#3b4554; font-weight:600; height:100%; align-items:center;">
+          <span style="color:var(--accent,#1668c4); height:100%; display:flex; align-items:center; border-bottom:3px solid var(--accent,#1668c4); cursor:pointer;">پرواز</span>
+          <a href="مقاصد.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">مقاصد پروازی</a>
+          <a href="باشگاه مشتریان.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">باشگاه مشتریان</a>
+          <a href="قوانین و مقررات.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">اطلاعات سفر</a>
+          <a href="پشتیبانی.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">پشتیبانی</a>
+        </nav>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <sc-if value="{{notLoggedIn}}" hint-placeholder-val="{{true}}">
+            <a href="ورود و ثبتنام.dc.html" style="display:flex; align-items:center; gap:7px; padding:7px 15px; border:1.5px solid #d5e1f0; color:#0d2640; border-radius:10px; font-size:12.5px; font-weight:700; cursor:pointer; text-decoration:none;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>ورود / ثبت‌نام</a>
+            <a href="باشگاه مشتریان.dc.html" style="padding:8px 18px; background:var(--accent,#1668c4); color:#fff; border-radius:10px; font-size:12.5px; font-weight:700; cursor:pointer; text-decoration:none;">عضویت باشگاه</a>
+          </sc-if>
+          <sc-if value="{{loggedIn}}" hint-placeholder-val="{{false}}">
+            <div style="display:flex; align-items:center; gap:6px; background:#eef4fb; border:1px solid #dce8f7; padding:7px 11px; border-radius:24px;"><span style="color:#caa53a; font-size:12.5px;">★</span><span style="font-size:11.5px; font-weight:800; color:var(--accent,#1668c4);">۱۲٬۴۵۰</span><span style="font-size:11px; color:#7a8696;">امتیاز</span></div>
+            <div style="width:42px; height:42px; border-radius:50%; background:#f3f5f8; display:flex; align-items:center; justify-content:center; color:#5a6678; font-size:15.5px; position:relative; cursor:pointer;">🔔<span style="position:absolute; top:9px; left:12px; width:8px; height:8px; border-radius:50%; background:#e5484d; border:1.5px solid #fff;"></span></div>
+            <div style="position:relative;">
+              <div onClick="{{ toggleUserMenu }}" style="display:flex; align-items:center; gap:8px; background:#fff; border:1px solid #e6eaf0; padding:4px 10px 4px 7px; border-radius:30px; cursor:pointer;"><div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,var(--accent,#1668c4),#0d3b66); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:11.5px;">نر</div><div style="line-height:1.35; text-align:right;"><div style="font-size:12px; font-weight:700; color:#16202e;">نگار رضایی</div><div style="font-size:10px; color:#caa53a; font-weight:700;">★ عضو طلایی</div></div><span style="font-size:8px; color:#9aa4b2; margin-right:2px;">▼</span></div>
+              <sc-if value="{{ userMenuOpen }}" hint-placeholder-val="{{false}}">
+                <div onClick="{{ toggleUserMenu }}" style="position:fixed; inset:0; z-index:120;"></div>
+                <div style="position:absolute; top:54px; left:0; width:320px; background:#fff; border:1px solid #e6eaf0; border-radius:16px; box-shadow:0 20px 50px -16px rgba(13,38,64,.35); z-index:130; overflow:hidden;">
+                  <div style="padding:15px; background:linear-gradient(135deg,#0d2640,#16406e); color:#fff;">
+                    <div style="display:flex; align-items:center; gap:10px;"><div style="width:46px; height:46px; border-radius:50%; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13.5px;">نر</div><div style="line-height:1.5;"><div style="font-size:13.5px; font-weight:800;">نگار رضایی</div><div style="font-size:10.5px; color:#caa53a; font-weight:700;">★ عضو طلایی</div></div></div>
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-top:14px; background:rgba(255,255,255,.1); border-radius:10px; padding:7px 11px;"><span style="font-size:11px; color:#aac4e2;">امتیاز باشگاه</span><span style="font-size:12.5px; font-weight:800;">۱۲٬۴۵۰</span></div>
+                  </div>
+                  <div style="padding:5px;">
+                    <a href="مدیریت رزرو.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);">🧳</span>سفرها و مدیریت رزرو</a>
+                    <a href="باشگاه مشتریان.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);">★</span>باشگاه مشتریان</a>
+                    <a href="ورود و ثبتنام.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#e5484d; font-weight:600; text-decoration:none;"><span>↩</span>خروج از حساب</a>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ HERO + SEARCH ============ -->
+  <section style="background:#f6f8fb;">
+    <!-- FULL-WIDTH BANNER -->
+    <div style="position:relative; height:500px; overflow:hidden;">
+      <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="hero-bg" shape="rect" placeholder="عکس پس‌زمینه‌ی بنر را اینجا رها کنید" style="position:absolute; inset:0; width:100%; height:100%;" hint-size="100%,100%"></x-import>
+      <div style="position:absolute; inset:0; background:linear-gradient(110deg,rgba(11,33,56,.8) 0%,rgba(11,33,56,.45) 50%,rgba(11,33,56,.1) 100%);"></div>
+      <div style="position:absolute; inset:0; z-index:2;">
+        <div style="max-width:1180px; margin:0 auto; padding:0 26px; height:100%; display:flex; flex-direction:column; justify-content:center;">
+          <div style="max-width:600px;">
+            <div style="display:inline-flex; align-items:center; gap:7px; background:#ffffffe6; border:1px solid #fff; padding:6px 11px; border-radius:30px; font-size:11.5px; color:#0d3b66; font-weight:600; margin-bottom:20px;"><span style="width:7px; height:7px; border-radius:50%; background:#1f8a5b;"></span> در هر پرواز تا ۵٪ کش‌بک بگیرید</div>
+            <h1 id="hero-title" style="font-size:41.5px; line-height:1.18; font-weight:900; margin:0 0 16px; letter-spacing:-1px; color:#fff; text-wrap:balance; text-shadow:0 2px 18px rgba(11,33,56,.55);">پرواز بعدی‌ات را با bluejet رزرو کن</h1>
+            <p id="hero-sub" style="font-size:16px; line-height:1.75; color:#eaf1fb; margin:0 0 24px; max-width:500px; text-wrap:pretty; text-shadow:0 1px 10px rgba(11,33,56,.55);">بیش از ۲۰۰ مقصد داخلی و بین‌المللی، با بهترین قیمت، پشتیبانی شبانه‌روزی و امتیاز در هر سفر.</p>
+            <a id="hero-btn" href="#offers" onClick="{{ scrollToOffers }}" style="display:inline-flex; align-items:center; gap:7px; background:#ffffff; color:#0d2640; padding:11px 23px; border-radius:11px; font-size:13.5px; font-weight:800; text-decoration:none; box-shadow:0 12px 28px -14px rgba(11,33,56,.5);"><span id="hero-btn-label">مشاهده پیشنهادهای ویژه</span> <span style="font-size:15.5px;">←</span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEARCH CARD overlapping banner bottom (contained) -->
+    <div style="max-width:1180px; margin:0 auto; padding:0 26px 38px; position:relative;">
+      <div style="background:#fff; border-radius:18px; box-shadow:0 34px 74px -26px rgba(13,38,102,.45); border:1px solid #eef1f5; margin-top:-72px; overflow:visible; position:relative; z-index:30;">
+        <div style="padding:13px 16px 16px;">
+        <!-- small segmented domestic/intl tabs -->
+        <div style="display:flex; align-items:center; margin-bottom:18px; gap:10px; flex-wrap:wrap;">
+          <div style="display:inline-flex; background:#eef1f5; border-radius:11px; padding:3px;">
+            <sc-for list="{{services}}" as="s" hint-placeholder-count="2">
+              <span onClick="{{ s.onClick }}" style="display:flex; align-items:center; gap:6px; padding:7px 13px; border-radius:8px; font-size:12.5px; cursor:pointer; color:{{ s.color }}; font-weight:{{ s.weight }}; background:{{ s.bg }}; box-shadow:{{ s.shadow }};"><span dangerouslySetInnerHTML="{{ s.svg }}" style="display:flex;"></span>{{ s.label }}</span>
+            </sc-for>
+            <span onClick="{{ toggleAdv }}" style="display:flex; align-items:center; gap:6px; padding:7px 13px; border-radius:8px; font-size:12.5px; cursor:pointer; color:{{ advColor }}; font-weight:{{ advWeight }}; background:{{ advBg }}; box-shadow:{{ advShadow }};">جستجوی پیشرفته<span style="font-size:12.5px; transform:{{ advArrow }};">‹</span></span>
+          </div>
+        </div>
+        <sc-if value="{{ advOpen }}" hint-placeholder-val="{{false}}">
+          <div style="background:#f6f8fb; border:1px solid #e6eaf0; border-radius:14px; padding:16px; margin-bottom:18px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+              <div>
+                <div style="font-size:11.5px; color:#8a96a6; font-weight:700; margin-bottom:10px;">کلاس پروازی</div>
+                <div style="display:inline-flex; background:#eef1f5; border-radius:10px; padding:3px; gap:2px; flex-wrap:wrap;">
+                  <sc-for list="{{ advClassOpts }}" as="c" hint-placeholder-count="3"><span onClick="{{ c.onClick }}" style="padding:7px 16px; border-radius:7px; font-size:12px; cursor:pointer; color:{{ c.color }}; font-weight:{{ c.weight }}; background:{{ c.bg }}; box-shadow:{{ c.shadow }};">{{ c.label }}</span></sc-for>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:11.5px; color:#8a96a6; font-weight:700; margin-bottom:10px;">تعداد توقف</div>
+                <div style="display:inline-flex; background:#eef1f5; border-radius:10px; padding:3px; gap:2px; flex-wrap:wrap;">
+                  <sc-for list="{{ advStopOpts }}" as="s" hint-placeholder-count="3"><span onClick="{{ s.onClick }}" style="padding:7px 15px; border-radius:7px; font-size:12px; cursor:pointer; color:{{ s.color }}; font-weight:{{ s.weight }}; background:{{ s.bg }}; box-shadow:{{ s.shadow }};">{{ s.label }}</span></sc-for>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:18px; padding-top:13px; border-top:1px solid #e6eaf0; display:flex; align-items:center; justify-content:space-between; gap:13px; flex-wrap:wrap;">
+              <span onClick="{{ toggleFlex }}" style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12.5px; color:#16202e; font-weight:600;">
+                <span dir="ltr" style="width:44px; height:25px; border-radius:13px; background:{{ flexBg }}; position:relative; flex:none; transition:background .18s;"><span style="position:absolute; top:3px; left:3px; width:19px; height:19px; border-radius:50%; background:#fff; transform:{{ flexKnob }}; transition:transform .18s; box-shadow:0 1px 3px rgba(0,0,0,.25);"></span></span>
+                تاریخ‌های انعطاف‌پذیر (±۳ روز)
+              </span>
+              <a href="نتایج پرواز.dc.html" style="display:inline-flex; align-items:center; gap:7px; height:46px; padding:0 18px; border:1.5px solid var(--accent,#1668c4); border-radius:11px; background:#eef4fb; color:var(--accent,#1668c4); font-size:12.5px; font-weight:800; text-decoration:none;">جستجوی سفر چندمسیره <span style="font-size:15.5px;">+</span></a>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- FLIGHT SEARCH -->
+        <sc-if value="{{isFlight}}" hint-placeholder-val="{{true}}">
+        <!-- trip type radios -->
+        <div style="display:flex; gap:25px; margin-bottom:20px;">
+          <sc-if value="{{tabRound}}" hint-placeholder-val="{{true}}"><span onClick="{{selRound}}" style="display:flex; align-items:center; gap:7px; cursor:pointer; color:#16202e; font-weight:700; font-size:13px;"><span style="width:20px; height:20px; border-radius:50%; border:2px solid var(--accent,#1668c4); display:flex; align-items:center; justify-content:center;"><span style="width:10px; height:10px; border-radius:50%; background:var(--accent,#1668c4);"></span></span>رفت و برگشت</span></sc-if>
+          <sc-if value="{{notTabRound}}" hint-placeholder-val="{{false}}"><span onClick="{{selRound}}" style="display:flex; align-items:center; gap:7px; cursor:pointer; color:#5a6678; font-weight:500; font-size:13px;"><span style="width:20px; height:20px; border-radius:50%; border:2px solid #c5cedb;"></span>رفت و برگشت</span></sc-if>
+
+          <sc-if value="{{tabOne}}" hint-placeholder-val="{{false}}"><span onClick="{{selOne}}" style="display:flex; align-items:center; gap:7px; cursor:pointer; color:#16202e; font-weight:700; font-size:13px;"><span style="width:20px; height:20px; border-radius:50%; border:2px solid var(--accent,#1668c4); display:flex; align-items:center; justify-content:center;"><span style="width:10px; height:10px; border-radius:50%; background:var(--accent,#1668c4);"></span></span>یک‌طرفه</span></sc-if>
+          <sc-if value="{{notTabOne}}" hint-placeholder-val="{{true}}"><span onClick="{{selOne}}" style="display:flex; align-items:center; gap:7px; cursor:pointer; color:#5a6678; font-weight:500; font-size:13px;"><span style="width:20px; height:20px; border-radius:50%; border:2px solid #c5cedb;"></span>یک‌طرفه</span></sc-if>
+
+          <sc-if value="{{tabMulti}}" hint-placeholder-val="{{false}}"><span onClick="{{selMulti}}" style="display:flex; align-items:center; gap:7px; cursor:pointer; color:#16202e; font-weight:700; font-size:13px;"><span style="width:20px; height:20px; border-radius:50%; border:2px solid var(--accent,#1668c4); display:flex; align-items:center; justify-content:center;"><span style="width:10px; height:10px; border-radius:50%; background:var(--accent,#1668c4);"></span></span>چندمسیره</span></sc-if>
+          <sc-if value="{{notTabMulti}}" hint-placeholder-val="{{true}}"><span onClick="{{selMulti}}" style="display:flex; align-items:center; gap:7px; cursor:pointer; color:#5a6678; font-weight:500; font-size:13px;"><span style="width:20px; height:20px; border-radius:50%; border:2px solid #c5cedb;"></span>چندمسیره</span></sc-if>
+        </div>
+        <!-- fields -->
+        <div style="display:flex; align-items:stretch; position:relative; border:1.5px solid #e3e9f1; border-radius:14px; background:#fff;">
+          <!-- origin -->
+          <div style="flex:1.5; min-width:165px; padding:5px 20px 5px 13px; display:flex; flex-direction:column; justify-content:center;">
+            <div style="display:flex; align-items:center; gap:6px; font-size:11px; color:#9aa4b2; font-weight:600; margin-bottom:3px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg>مبدا</div>
+            <div style="margin-bottom:2px;"><sc-if value="{{notSwapped}}" hint-placeholder-val="{{true}}"><span style="font-size:14.5px; font-weight:800; color:#16202e;">تهران</span> <span style="font-size:11.5px; color:#9aa4b2; font-weight:600;">THR</span></sc-if><sc-if value="{{swapped}}" hint-placeholder-val="{{false}}"><span style="font-size:14.5px; font-weight:800; color:#16202e;">دبی</span> <span style="font-size:11.5px; color:#9aa4b2; font-weight:600;">DXB</span></sc-if></div>
+            <div style="font-size:10.5px; color:#aeb6c2;">فرودگاه مهرآباد / امام</div>
+          </div>
+          <div onClick="{{setSwap}}" style="align-self:center; width:40px; height:40px; flex:none; border-radius:50%; background:#fff; border:1.5px solid #e3e9f1; display:flex; align-items:center; justify-content:center; color:var(--accent,#1668c4); font-size:15.5px; cursor:pointer; z-index:3; margin:0 -20px; box-shadow:0 3px 10px rgba(13,38,102,.12);">⇄</div>
+          <!-- dest -->
+          <div style="flex:1.5; min-width:165px; padding:5px 20px; display:flex; flex-direction:column; justify-content:center; border-right:1px solid #eef1f5;">
+            <div style="display:flex; align-items:center; gap:6px; font-size:11px; color:#9aa4b2; font-weight:600; margin-bottom:3px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg>مقصد</div>
+            <div style="margin-bottom:2px;"><sc-if value="{{notSwapped}}" hint-placeholder-val="{{true}}"><span style="font-size:14.5px; font-weight:800; color:#16202e;">دبی</span> <span style="font-size:11.5px; color:#9aa4b2; font-weight:600;">DXB</span></sc-if><sc-if value="{{swapped}}" hint-placeholder-val="{{false}}"><span style="font-size:14.5px; font-weight:800; color:#16202e;">تهران</span> <span style="font-size:11.5px; color:#9aa4b2; font-weight:600;">THR</span></sc-if></div>
+            <div style="font-size:10.5px; color:#aeb6c2;">فرودگاه بین‌المللی</div>
+          </div>
+          <!-- depart date -->
+          <div style="flex:1.1; min-width:120px; border-right:1px solid #eef1f5;">
+            <div onClick="{{openCalDep}}" style="cursor:pointer; padding:5px 13px; display:flex; flex-direction:column; justify-content:center; height:100%;">
+              <div style="display:flex; align-items:center; gap:6px; font-size:11px; color:#9aa4b2; font-weight:600; margin-bottom:3px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>تاریخ رفت</div>
+              <div style="font-size:13.5px; font-weight:800; color:#16202e;">{{ depLabel }}</div>
+              <div style="font-size:10.5px; color:#aeb6c2; margin-top:1px;">{{ depWd }}</div>
+            </div>
+            <sc-if value="{{calOpen}}" hint-placeholder-val="{{false}}">
+              <div onClick="{{closeCal}}" style="position:fixed; inset:0; z-index:44;"></div>
+              <div style="position:absolute; top:88px; left:0; right:0; margin:0 auto; width:{{ calWidth }}; max-width:94vw; background:#fff; border:1px solid #e6eaf0; border-radius:18px; box-shadow:0 24px 56px -14px rgba(13,38,102,.34); padding:18px 20px; z-index:50;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+                  <span style="padding:7px 15px; border:1.5px solid var(--accent,#1668c4); border-radius:22px; color:var(--accent,#1668c4); font-size:11.5px; font-weight:700; cursor:pointer;">تاریخ امروز</span>
+                  <span style="padding:7px 15px; border:1.5px solid #e3e9f1; border-radius:22px; color:#5a6678; font-size:11.5px; font-weight:600; cursor:pointer;">تقویم میلادی</span>
+                  <span onClick="{{toggleOneWay}}" style="margin-right:auto; display:flex; align-items:center; gap:6px; font-size:11.5px; color:#5a6678; cursor:pointer;">
+                    <sc-if value="{{oneWayChecked}}" hint-placeholder-val="{{false}}"><span style="width:18px; height:18px; background:var(--accent,#1668c4); border:1.5px solid var(--accent,#1668c4); border-radius:5px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:11px;">✓</span></sc-if>
+                    <sc-if value="{{notOneWayChecked}}" hint-placeholder-val="{{true}}"><span style="width:18px; height:18px; border:1.5px solid #ccd3dd; border-radius:5px;"></span></sc-if>
+                    یک‌طرفه
+                  </span>
+                </div>
+                <div style="background:#eef4fb; border-radius:12px; padding:11px 15px; margin-bottom:16px; display:flex; align-items:center; justify-content:center; position:relative;">
+                  <span style="font-size:13.5px; font-weight:800; color:#0d2640;">{{ calBarText }}</span>
+                  <span style="position:absolute; right:18px; color:var(--accent,#1668c4); font-size:15.5px; cursor:pointer;">←</span>
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:13px;">
+                  <span onClick="{{ prevMonth }}" style="flex:none; width:36px; height:36px; border:1.5px solid #e6eaf0; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--accent,#1668c4); font-size:14.5px; cursor:pointer; margin-top:2px; opacity:{{ prevDim }};">›</span>
+                  <sc-for list="{{ calMonths }}" as="m" hint-placeholder-count="2">
+                    <div style="flex:1;">
+                      <div style="text-align:center; font-size:13.5px; font-weight:800; color:#0d2640; margin-bottom:14px;">{{ m.name }}</div>
+                      <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:2px; margin-bottom:6px;">
+                        <sc-for list="{{ calWeekHead }}" as="w" hint-placeholder-count="7"><span style="text-align:center; font-size:10px; color:#9aa4b2; font-weight:700;">{{ w.label }}</span></sc-for>
+                      </div>
+                      <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:2px;">
+                        <sc-for list="{{ m.cells }}" as="c" hint-placeholder-count="35">
+                          <sc-if value="{{ c.blank }}" hint-placeholder-val="{{false}}"><span></span></sc-if>
+                          <sc-if value="{{ c.label }}" hint-placeholder-val="{{true}}"><span onClick="{{ c.onClick }}" style="height:40px; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:{{ c.weight }}; color:{{ c.color }}; background:{{ c.bg }}; border:{{ c.bd }}; border-radius:{{ c.radius }}; cursor:pointer;">{{ c.label }}</span></sc-if>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-for>
+                  <span onClick="{{ nextMonth }}" style="flex:none; width:36px; height:36px; border:1.5px solid #e6eaf0; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--accent,#1668c4); font-size:14.5px; cursor:pointer; margin-top:2px; opacity:{{ nextDim }};">‹</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:16px; margin-top:18px; padding-top:11px; border-top:1px solid #f2f4f7; font-size:12px;">
+                  <span style="color:#5a6678;">رفت: <b style="color:#0d2640;">{{ depLabel }}</b></span>
+                  <sc-if value="{{isRoundtrip}}" hint-placeholder-val="{{true}}"><span style="color:#5a6678;">برگشت: <b style="color:#0d2640;">{{ retLabel }}</b></span></sc-if>
+                  <span onClick="{{closeCal}}" style="margin-right:auto; padding:9px 25px; background:var(--accent,#1668c4); color:#fff; border-radius:10px; font-size:12.5px; font-weight:700; cursor:pointer;">تأیید</span>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+          <!-- return date -->
+          <sc-if value="{{isRoundtrip}}" hint-placeholder-val="{{true}}">
+            <div style="flex:1.1; min-width:120px; border-right:1px solid #eef1f5;">
+              <div onClick="{{openCalRet}}" style="cursor:pointer; padding:5px 13px; display:flex; flex-direction:column; justify-content:center; height:100%;">
+                <div style="display:flex; align-items:center; gap:6px; font-size:11px; color:#9aa4b2; font-weight:600; margin-bottom:3px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>تاریخ برگشت</div>
+                <div style="font-size:13.5px; font-weight:800; color:#16202e;">{{ retLabel }}</div>
+                <div style="font-size:10.5px; color:#aeb6c2; margin-top:1px;">{{ retWd }}</div>
+              </div>
+            </div>
+          </sc-if>
+          <!-- passengers + panel -->
+          <div style="flex:1.2; min-width:150px; position:relative; border-right:1px solid #eef1f5;">
+            <div onClick="{{togglePax}}" style="cursor:pointer; padding:5px 13px; display:flex; flex-direction:column; justify-content:center; height:100%;">
+              <div style="display:flex; align-items:center; gap:6px; font-size:11px; color:#9aa4b2; font-weight:600; margin-bottom:3px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>مسافران و کلاس</div>
+              <div style="display:flex; align-items:center; gap:5px; font-size:13px; font-weight:700; color:#16202e; white-space:nowrap;">{{ paxSummary }}<span style="color:#9aa4b2; font-size:10px;">▾</span></div>
+            </div>
+            <sc-if value="{{paxOpen}}" hint-placeholder-val="{{false}}">
+              <div onClick="{{togglePax}}" style="position:fixed; inset:0; z-index:38;"></div>
+              <div style="position:absolute; top:74px; left:0; width:312px; max-width:88vw; background:#fff; border:1px solid #e6eaf0; border-radius:14px; box-shadow:0 18px 44px -12px rgba(13,38,102,.30); padding:5px 15px 15px; z-index:40;">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid #f2f4f7;">
+                  <div><div style="font-size:12.5px; font-weight:600; color:#16202e;">بزرگسال</div><div style="font-size:10.5px; color:#9aa4b2;">۱۲ سال به بالا</div></div>
+                  <div style="display:flex; align-items:center; gap:11px;"><span onClick="{{decAdult}}" style="width:32px; height:32px; border-radius:8px; border:1.5px solid #d5dde7; display:flex; align-items:center; justify-content:center; color:var(--accent,#1668c4); font-size:18px; cursor:pointer; user-select:none;">−</span><span style="width:22px; text-align:center; font-weight:700; font-size:13.5px;">{{ adults }}</span><span onClick="{{incAdult}}" style="width:32px; height:32px; border-radius:8px; border:1.5px solid #d5dde7; display:flex; align-items:center; justify-content:center; color:var(--accent,#1668c4); font-size:16px; cursor:pointer; user-select:none;">+</span></div>
+                </div>
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid #f2f4f7;">
+                  <div><div style="font-size:12.5px; font-weight:600; color:#16202e;">کودک</div><div style="font-size:10.5px; color:#9aa4b2;">۲ تا ۱۲ سال</div></div>
+                  <div style="display:flex; align-items:center; gap:11px;"><span onClick="{{decChild}}" style="width:32px; height:32px; border-radius:8px; border:1.5px solid #d5dde7; display:flex; align-items:center; justify-content:center; color:var(--accent,#1668c4); font-size:18px; cursor:pointer; user-select:none;">−</span><span style="width:22px; text-align:center; font-weight:700; font-size:13.5px;">{{ children }}</span><span onClick="{{incChild}}" style="width:32px; height:32px; border-radius:8px; border:1.5px solid #d5dde7; display:flex; align-items:center; justify-content:center; color:var(--accent,#1668c4); font-size:16px; cursor:pointer; user-select:none;">+</span></div>
+                </div>
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:11px 0;">
+                  <div><div style="font-size:12.5px; font-weight:600; color:#16202e;">نوزاد</div><div style="font-size:10.5px; color:#9aa4b2;">زیر ۲ سال</div></div>
+                  <div style="display:flex; align-items:center; gap:11px;"><span onClick="{{decInfant}}" style="width:32px; height:32px; border-radius:8px; border:1.5px solid #d5dde7; display:flex; align-items:center; justify-content:center; color:var(--accent,#1668c4); font-size:18px; cursor:pointer; user-select:none;">−</span><span style="width:22px; text-align:center; font-weight:700; font-size:13.5px;">{{ infants }}</span><span onClick="{{incInfant}}" style="width:32px; height:32px; border-radius:8px; border:1.5px solid #d5dde7; display:flex; align-items:center; justify-content:center; color:var(--accent,#1668c4); font-size:16px; cursor:pointer; user-select:none;">+</span></div>
+                </div>
+                <div style="border-top:1px solid #eef1f5; margin-top:6px; padding-top:11px;">
+                  <div style="font-size:11.5px; color:#8a96a6; font-weight:600; margin-bottom:10px;">کلاس پروازی</div>
+                  <div style="display:flex; gap:7px;">
+                    <sc-if value="{{cabinEconomy}}" hint-placeholder-val="{{true}}"><span onClick="{{setEconomy}}" style="flex:1; text-align:center; padding:7px 0; border-radius:9px; border:1.5px solid var(--accent,#1668c4); background:#eef4fb; color:var(--accent,#1668c4); font-size:11.5px; font-weight:700; cursor:pointer;">اکونومی</span></sc-if>
+                    <sc-if value="{{notCabinEconomy}}" hint-placeholder-val="{{false}}"><span onClick="{{setEconomy}}" style="flex:1; text-align:center; padding:7px 0; border-radius:9px; border:1.5px solid #e2e7ee; background:#fff; color:#5a6678; font-size:11.5px; font-weight:500; cursor:pointer;">اکونومی</span></sc-if>
+                    <sc-if value="{{cabinBusiness}}" hint-placeholder-val="{{false}}"><span onClick="{{setBusiness}}" style="flex:1; text-align:center; padding:7px 0; border-radius:9px; border:1.5px solid var(--accent,#1668c4); background:#eef4fb; color:var(--accent,#1668c4); font-size:11.5px; font-weight:700; cursor:pointer;">بیزنس</span></sc-if>
+                    <sc-if value="{{notCabinBusiness}}" hint-placeholder-val="{{true}}"><span onClick="{{setBusiness}}" style="flex:1; text-align:center; padding:7px 0; border-radius:9px; border:1.5px solid #e2e7ee; background:#fff; color:#5a6678; font-size:11.5px; font-weight:500; cursor:pointer;">بیزنس</span></sc-if>
+                    <sc-if value="{{cabinFirst}}" hint-placeholder-val="{{false}}"><span onClick="{{setFirst}}" style="flex:1; text-align:center; padding:7px 0; border-radius:9px; border:1.5px solid var(--accent,#1668c4); background:#eef4fb; color:var(--accent,#1668c4); font-size:11.5px; font-weight:700; cursor:pointer;">فرست</span></sc-if>
+                    <sc-if value="{{notCabinFirst}}" hint-placeholder-val="{{true}}"><span onClick="{{setFirst}}" style="flex:1; text-align:center; padding:7px 0; border-radius:9px; border:1.5px solid #e2e7ee; background:#fff; color:#5a6678; font-size:11.5px; font-weight:500; cursor:pointer;">فرست</span></sc-if>
+                  </div>
+                </div>
+                <div onClick="{{togglePax}}" style="margin-top:16px; height:44px; border-radius:10px; background:var(--accent,#1668c4); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12.5px; cursor:pointer;">تأیید</div>
+              </div>
+            </sc-if>
+          </div>
+          <!-- search button -->
+          <a href="نتایج پرواز.dc.html" style="flex:none; align-self:stretch; display:flex; align-items:center; gap:7px; padding:0 21px; background:var(--accent,#1668c4); color:#fff; font-size:12.5px; font-weight:800; cursor:pointer; border-radius:13px 0 0 13px; text-decoration:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>جستجو</a>
+        </div>
+        <!-- bottom row -->
+        <sc-if value="{{loggedIn}}" hint-placeholder-val="{{false}}">
+        <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap; margin-top:18px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="font-size:11.5px; color:#8a96a6; font-weight:600;">کد تخفیف:</div>
+            <div style="height:46px; width:200px; border:1.5px solid #e2e7ee; border-radius:10px; background:#fff; padding:0 11px; display:flex; align-items:center; color:#b0b8c4; font-size:12.5px;">کد را وارد کنید</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:7px; color:#3b4554; font-size:12.5px; cursor:pointer;"><span style="width:20px; height:20px; border-radius:6px; border:1.5px solid #ccd3dd; display:inline-block;"></span>پرداخت با امتیاز باشگاه</div>
+        </div>
+        </sc-if>
+        </sc-if>
+
+        </div>
+      </div>
+      <!-- popular routes -->
+      <div style="margin-top:36px;">
+        <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:15px;">
+          <span style="font-size:14.5px; color:#0d2640; font-weight:800;">مسیرهای پرتردد</span>
+          <span style="font-size:11.5px; color:#5a6678;">ارزان‌ترین نرخ در پرطرفدارترین مسیرها</span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px;">
+          <sc-for list="{{ routes }}" as="r" hint-placeholder-count="5">
+            <a href="نتایج پرواز.dc.html" style="text-decoration:none; background:#fff; border:1px solid #e8eef6; border-radius:12px; padding:10px 11px; box-shadow:0 12px 28px -20px rgba(13,38,102,.45); display:flex; flex-direction:column; gap:7px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:7px;">
+                <span style="font-size:13px; font-weight:800; color:#16202e; white-space:nowrap;">{{ r.from }} <span style="color:#b9c2cf; font-weight:600;">←</span> {{ r.to }}</span>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="#1668c4"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>
+              </div>
+              <div style="font-size:11px; color:#9aa4b2;">از <span style="font-size:13.5px; font-weight:800; color:var(--accent,#1668c4);">{{ r.price }}</span> تومان</div>
+            </a>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FEATURES ============ -->
+  <section style="max-width:1180px; margin:0 auto; padding:49px 26px 23px;">
+    <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:13px;">
+      <div style="background:#fff; border:1px solid #eef2f7; border-radius:16px; padding:18px 11px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:9px; transition:all .2s; cursor:pointer;" style-hover="box-shadow:0 20px 42px -18px rgba(13,38,102,.26); transform:translateY(-4px); border-color:#dbe7f6;">
+        <div style="width:56px; height:56px; border-radius:16px; background:linear-gradient(145deg, rgba(22,104,196,.15), rgba(22,104,196,.04)); box-shadow:inset 0 0 0 1px rgba(22,104,196,.10); color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center;"><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3" fill="currentColor" fill-opacity=".10"/><rect x="6" y="2.5" width="12" height="19" rx="3"/><circle cx="12" cy="10" r="3.2"/><path d="M10.7 10l1 1 1.9-2.1"/><path d="M9.5 18.4h5"/></svg></div>
+        <div style="font-size:13.5px; font-weight:800; color:#10243d;">آنلاین چک‌این</div>
+      </div>
+      <div style="background:#fff; border:1px solid #eef2f7; border-radius:16px; padding:18px 11px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:9px; transition:all .2s; cursor:pointer;" style-hover="box-shadow:0 20px 42px -18px rgba(13,38,102,.26); transform:translateY(-4px); border-color:#dbe7f6;">
+        <div style="width:56px; height:56px; border-radius:16px; background:linear-gradient(145deg, rgba(22,104,196,.15), rgba(22,104,196,.04)); box-shadow:inset 0 0 0 1px rgba(22,104,196,.10); color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center;"><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6.2" y="3.4" width="2.9" height="9.2" rx="1.4" fill="currentColor" fill-opacity=".12"/><rect x="6.2" y="12.2" width="11.6" height="4.1" rx="1.7" fill="currentColor" fill-opacity=".12"/><path d="M7.6 16.5v3.9M16.4 16.5l.2 3.9"/></svg></div>
+        <div style="font-size:13.5px; font-weight:800; color:#10243d;">انتخاب صندلی</div>
+      </div>
+      <div style="background:#fff; border:1px solid #eef2f7; border-radius:16px; padding:18px 11px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:9px; transition:all .2s; cursor:pointer;" style-hover="box-shadow:0 20px 42px -18px rgba(13,38,102,.26); transform:translateY(-4px); border-color:#dbe7f6;">
+        <div style="width:56px; height:56px; border-radius:16px; background:linear-gradient(145deg, rgba(22,104,196,.15), rgba(22,104,196,.04)); box-shadow:inset 0 0 0 1px rgba(22,104,196,.10); color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center;"><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7.8" width="12" height="11.4" rx="2.4" fill="currentColor" fill-opacity=".12"/><rect x="3.5" y="7.8" width="12" height="11.4" rx="2.4"/><path d="M7 7.8V6.3A1.9 1.9 0 0 1 8.9 4.4h1.2A1.9 1.9 0 0 1 12 6.3v1.5"/><path d="M6.6 11.6v3.8M12.4 11.6v3.8"/><circle cx="18" cy="7" r="3.3" fill="currentColor" fill-opacity=".14"/><path d="M18 5.5v3M16.5 7h3"/></svg></div>
+        <div style="font-size:13.5px; font-weight:800; color:#10243d;">خرید بار اضافه</div>
+      </div>
+      <div style="background:#fff; border:1px solid #eef2f7; border-radius:16px; padding:18px 11px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:9px; transition:all .2s; cursor:pointer;" style-hover="box-shadow:0 20px 42px -18px rgba(13,38,102,.26); transform:translateY(-4px); border-color:#dbe7f6;">
+        <div style="width:56px; height:56px; border-radius:16px; background:linear-gradient(145deg, rgba(22,104,196,.15), rgba(22,104,196,.04)); box-shadow:inset 0 0 0 1px rgba(22,104,196,.10); color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center;"><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity=".08"/><path d="M8 8.5h6.5a2.5 2.5 0 0 1 2.5 2.5"/><path d="M9.5 6 7.5 8.5l2 2.4"/><path d="M16 15.5H9.5A2.5 2.5 0 0 1 7 13"/><path d="M14.5 18l2-2.5-2-2.4"/></svg></div>
+        <div style="font-size:13.5px; font-weight:800; color:#10243d;">تغییر و استرداد بلیط</div>
+      </div>
+      <div style="background:#fff; border:1px solid #eef2f7; border-radius:16px; padding:18px 11px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:9px; transition:all .2s; cursor:pointer;" style-hover="box-shadow:0 20px 42px -18px rgba(13,38,102,.26); transform:translateY(-4px); border-color:#dbe7f6;">
+        <div style="width:56px; height:56px; border-radius:16px; background:linear-gradient(145deg, rgba(22,104,196,.15), rgba(22,104,196,.04)); box-shadow:inset 0 0 0 1px rgba(22,104,196,.10); color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center;"><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="7" fill="currentColor" fill-opacity=".08"/><path d="M20.5 20.5 16 16"/><path d="M13.8 8.2 8.3 10.7l2.4.7.7 2.4z" fill="currentColor" fill-opacity=".16"/></svg></div>
+        <div style="font-size:13.5px; font-weight:800; color:#10243d;">استعلام وضعیت پرواز</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SPECIAL OFFERS ============ -->
+  <section id="offers" style="max-width:1180px; margin:0 auto; padding:44px 26px 7px; scroll-margin-top:96px;">
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:10px;">
+      <div>
+        <div style="display:inline-flex; align-items:center; gap:6px; background:#eaf6ef; color:#1f8a5b; padding:4px 10px; border-radius:20px; font-size:11.5px; font-weight:700; margin-bottom:10px;"><span style="width:6px; height:6px; border-radius:50%; background:#1f8a5b;"></span>زمان محدود</div>
+        <h2 style="font-size:19px; font-weight:800; margin:0 0 6px; letter-spacing:-.5px;">پیشنهادهای ویژه</h2>
+        <p style="font-size:12px; color:#6b7585; margin:0;">تخفیف‌های مدت‌دار روی پرطرفدارترین مسیرها — تا اتمام ظرفیت</p>
+      </div>
+      <a href="مقاصد.dc.html" style="font-size:12.5px; color:var(--accent,#1668c4); font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:5px; text-decoration:none;"><span>←</span>مشاهده همه پیشنهادها</a>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:18px;">
+      <sc-for list="{{ offers }}" as="o" hint-placeholder-count="4">
+        <a href="نتایج پرواز.dc.html" style="text-decoration:none; background:#fff; border:1px solid #e8eef6; border-radius:16px; overflow:hidden; box-shadow:0 14px 34px -22px rgba(13,38,102,.4); display:flex; flex-direction:column;">
+          <div style="position:relative; height:100px; background:{{ o.grad }}; display:flex; align-items:flex-end; padding:8px;">
+            <span style="position:absolute; top:12px; right:12px; background:#1f8a5b; color:#fff; font-size:11px; font-weight:800; padding:4px 9px; border-radius:9px;">{{ o.off }} تخفیف</span>
+            <span style="position:absolute; top:13px; left:13px; font-family:'Roboto Mono',monospace; font-size:8.5px; color:#5e7fa8;">{{ o.imgTag }}</span>
+            <span style="background:#0d2640; color:#fff; font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px;">{{ o.cabin }}</span>
+          </div>
+          <div style="padding:11px 11px 11px;">
+            <div style="font-size:12px; font-weight:800; color:#16202e; margin-bottom:9px;">{{ o.from }} <span style="color:#b9c2cf; font-weight:600;">←</span> {{ o.to }}</div>
+            <div style="display:flex; align-items:baseline; gap:7px; margin-bottom:13px;">
+              <span style="font-size:11.5px; color:#9aa4b2; text-decoration:line-through;">{{ o.was }}</span>
+              <span style="font-size:14.5px; font-weight:900; color:var(--accent,#1668c4);">{{ o.now }}</span>
+              <span style="font-size:11px; color:#6b7585;">تومان</span>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <span style="display:inline-flex; align-items:center; gap:5px; font-size:10.5px; color:#e5484d; font-weight:700;"><span style="width:6px; height:6px; border-radius:50%; background:#e5484d;"></span>{{ o.deadline }}</span>
+              <span style="font-size:11.5px; font-weight:800; color:#fff; background:var(--accent,#1668c4); padding:6px 13px; border-radius:9px;">رزرو</span>
+            </div>
+          </div>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ============ PROMO SLIDER (loyalty + app) ============ -->
+  <section style="max-width:1180px; margin:48px auto 0; padding:0 26px;">
+    <div style="position:relative; border-radius:24px; overflow:hidden; box-shadow:0 18px 44px -28px rgba(13,38,102,.4);">
+      <div ref="{{ trackRef }}" style="display:flex; direction:ltr; transition:transform .45s cubic-bezier(.4,0,.2,1); will-change:transform;">
+
+        <!-- slide 1: loyalty -->
+        <div style="flex:0 0 100%; display:flex;">
+          <div dir="rtl" style="flex:1; min-height:212px; box-sizing:border-box; background:linear-gradient(120deg,var(--accent,#1668c4),#0d3b66); padding:33px 75px 33px 59px; display:flex; align-items:center; justify-content:space-between; gap:26px; position:relative; overflow:hidden;">
+            <div style="position:absolute; top:-80px; left:-40px; width:280px; height:280px; border-radius:50%; background:#ffffff14;"></div>
+            <div style="position:relative;">
+              <div style="display:inline-block; background:#ffffff22; color:#fff; padding:5px 11px; border-radius:20px; font-size:11.5px; font-weight:600; margin-bottom:14px;">باشگاه مشتریان bluejet</div>
+              <h2 style="font-size:24.5px; font-weight:800; color:#fff; margin:0 0 10px; letter-spacing:-.5px;">عضو شو، امتیاز بگیر، کش‌بک بردار</h2>
+              <p style="font-size:13.5px; color:#dce8f6; margin:0; line-height:1.7; max-width:520px;">در هر سفر امتیاز و کش‌بک دریافت کن، به سطح طلایی برس و از ترانسفر فرودگاهی و تخفیف‌های ویژه بهره‌مند شو.</p>
+            </div>
+            <a href="باشگاه مشتریان.dc.html" style="position:relative; flex:none; display:inline-block; padding:11px 25px; background:#fff; color:var(--accent,#1668c4); border-radius:12px; font-size:13.5px; font-weight:700; cursor:pointer; white-space:nowrap; text-decoration:none;">عضویت رایگان</a>
+          </div>
+        </div>
+
+        <!-- slide 2: app -->
+        <div style="flex:0 0 100%; display:flex;">
+          <div dir="rtl" style="flex:1; min-height:212px; box-sizing:border-box; background:#fff; padding:28px 75px 28px 59px; display:flex; align-items:center; justify-content:space-between; gap:30px; flex-wrap:wrap;">
+            <div style="flex:1; min-width:300px;">
+              <div style="font-size:11.5px; color:var(--accent,#1668c4); font-weight:700; margin-bottom:10px;">اپلیکیشن bluejet</div>
+              <h2 style="font-size:22.5px; font-weight:800; margin:0 0 12px; color:#0d2640; letter-spacing:-.5px;">سفرت را همراه خودت ببر</h2>
+              <p style="font-size:13px; color:#3f546b; line-height:1.8; margin:0 0 20px; max-width:460px;">رزرو سریع‌تر، مدیریت بلیط، کارت پرواز دیجیتال و دریافت آخرین تخفیف‌ها — همه در اپلیکیشن موبایل.</p>
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <span style="display:flex; align-items:center; gap:7px; background:#0d2640; color:#fff; padding:9px 16px; border-radius:12px; font-size:12.5px; font-weight:600; cursor:pointer;"><span style="font-size:14.5px;">⬇</span>App Store</span>
+                <span style="display:flex; align-items:center; gap:7px; background:#0d2640; color:#fff; padding:9px 16px; border-radius:12px; font-size:12.5px; font-weight:600; cursor:pointer;"><span style="font-size:14.5px;">⬇</span>Google Play</span>
+                <span style="display:flex; align-items:center; gap:7px; background:#fff; border:1.5px solid #d5e1f0; color:#0d2640; padding:9px 16px; border-radius:12px; font-size:12.5px; font-weight:600; cursor:pointer;">بازار / مایکت</span>
+              </div>
+            </div>
+            <div style="flex:none; width:230px; height:172px; border-radius:18px; background:linear-gradient(160deg,#cfe0f5,#e8eef6); display:flex; align-items:center; justify-content:center; color:#5e7fa8; font-family:'Roboto Mono',monospace; font-size:11px;">[ موکاپ اپلیکیشن ]</div>
+          </div>
+        </div>
+
+      </div>
+      <!-- arrows -->
+      <span onClick="{{ promoNext }}" style="position:absolute; top:50%; right:16px; transform:translateY(-50%); width:38px; height:38px; border-radius:50%; background:#ffffffe6; box-shadow:0 4px 12px rgba(13,38,102,.18); display:flex; align-items:center; justify-content:center; color:#0d2640; font-size:18px; cursor:pointer; z-index:3;">‹</span>
+      <span onClick="{{ promoPrev }}" style="position:absolute; top:50%; left:16px; transform:translateY(-50%); width:38px; height:38px; border-radius:50%; background:#ffffffe6; box-shadow:0 4px 12px rgba(13,38,102,.18); display:flex; align-items:center; justify-content:center; color:#0d2640; font-size:18px; cursor:pointer; z-index:3;">›</span>
+    </div>
+    <!-- dots -->
+    <div style="display:flex; justify-content:center; gap:7px; margin-top:16px;">
+      <span onClick="{{ promoGo0 }}" style="width:{{ promoW0 }}; height:8px; border-radius:5px; background:{{ promoDot0 }}; cursor:pointer; transition:all .3s;"></span>
+      <span onClick="{{ promoGo1 }}" style="width:{{ promoW1 }}; height:8px; border-radius:5px; background:{{ promoDot1 }}; cursor:pointer; transition:all .3s;"></span>
+    </div>
+  </section>
+
+  <!-- ============ POPULAR DESTINATIONS ============ -->
+  <section style="max-width:1180px; margin:0 auto; padding:39px 26px 20px;">
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:26px;">
+      <div>
+        <h2 style="font-size:19px; font-weight:800; margin:0 0 6px; letter-spacing:-.5px;">مقصدهای محبوب</h2>
+        <p style="font-size:12px; color:#6b7585; margin:0;">پرطرفدارترین پروازها با بهترین قیمت</p>
+      </div>
+      <span style="font-size:12.5px; color:var(--accent,#1668c4); font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:5px;"><span>←</span>مشاهده همه مقصدها</span>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:18px;">
+      <!-- card -->
+      <div style="background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 10px 30px -18px rgba(13,38,102,.25); cursor:pointer;">
+        <div style="height:150px; background:linear-gradient(160deg,#bcd6f2,#e3eefb); position:relative; display:flex; align-items:flex-end; padding:11px;"><span style="position:absolute; top:12px; right:14px; font-family:'Roboto Mono',monospace; font-size:9px; color:#5e7fa8;">[ عکس استانبول ]</span><span style="background:#ffffffe6; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; color:#0d3b66;">۳ ساعت پرواز</span></div>
+        <div style="padding:11px 12px;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;"><span style="font-size:13.5px; font-weight:800;">استانبول</span><span style="font-size:11px; color:#9aa4b2;">ترکیه</span></div><div style="font-size:11.5px; color:#6b7585;">از <span style="font-size:12.5px; font-weight:800; color:var(--accent,#1668c4);">۴٬۲۰۰٬۰۰۰</span> تومان</div></div>
+      </div>
+      <div style="background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 10px 30px -18px rgba(13,38,102,.25); cursor:pointer;">
+        <div style="height:150px; background:linear-gradient(160deg,#c8d9ec,#e8eef6); position:relative; display:flex; align-items:flex-end; padding:11px;"><span style="position:absolute; top:12px; right:14px; font-family:'Roboto Mono',monospace; font-size:9px; color:#5e7fa8;">[ عکس دبی ]</span><span style="background:#ffffffe6; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; color:#0d3b66;">۲ ساعت پرواز</span></div>
+        <div style="padding:11px 12px;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;"><span style="font-size:13.5px; font-weight:800;">دبی</span><span style="font-size:11px; color:#9aa4b2;">امارات</span></div><div style="font-size:11.5px; color:#6b7585;">از <span style="font-size:12.5px; font-weight:800; color:var(--accent,#1668c4);">۳٬۸۰۰٬۰۰۰</span> تومان</div></div>
+      </div>
+      <div style="background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 10px 30px -18px rgba(13,38,102,.25); cursor:pointer;">
+        <div style="height:150px; background:linear-gradient(160deg,#bfe0d8,#e6f2ee); position:relative; display:flex; align-items:flex-end; padding:11px;"><span style="position:absolute; top:12px; right:14px; font-family:'Roboto Mono',monospace; font-size:9px; color:#5a8a7c;">[ عکس مشهد ]</span><span style="background:#ffffffe6; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; color:#0d3b66;">۱.۵ ساعت پرواز</span></div>
+        <div style="padding:11px 12px;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;"><span style="font-size:13.5px; font-weight:800;">مشهد</span><span style="font-size:11px; color:#9aa4b2;">ایران</span></div><div style="font-size:11.5px; color:#6b7585;">از <span style="font-size:12.5px; font-weight:800; color:var(--accent,#1668c4);">۱٬۶۰۰٬۰۰۰</span> تومان</div></div>
+      </div>
+      <div style="background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 10px 30px -18px rgba(13,38,102,.25); cursor:pointer;">
+        <div style="height:150px; background:linear-gradient(160deg,#cdd9ec,#eaeff7); position:relative; display:flex; align-items:flex-end; padding:11px;"><span style="position:absolute; top:12px; right:14px; font-family:'Roboto Mono',monospace; font-size:9px; color:#5e7fa8;">[ عکس کیش ]</span><span style="background:#ffffffe6; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; color:#0d3b66;">۱.۵ ساعت پرواز</span></div>
+        <div style="padding:11px 12px;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;"><span style="font-size:13.5px; font-weight:800;">کیش</span><span style="font-size:11px; color:#9aa4b2;">ایران</span></div><div style="font-size:11.5px; color:#6b7585;">از <span style="font-size:12.5px; font-weight:800; color:var(--accent,#1668c4);">۲٬۱۰۰٬۰۰۰</span> تومان</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer style="background:#0d2640; color:#aebfd4; margin-top:72px;">
+    <div style="max-width:1180px; margin:0 auto; padding:39px 26px 20px; display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr; gap:33px;">
+      <div>
+        <div style="display:flex; align-items:center; gap:9px; margin-bottom:16px;"><div style="width:36px; height:36px; border-radius:10px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:16px;">✈</div><span style="font-weight:900; font-size:18px; color:#fff;">bluejet</span></div>
+        <p style="font-size:13.5px; line-height:1.85; margin:0 0 20px; max-width:300px;">رزرو آنلاین بلیط پروازهای داخلی و بین‌المللی با بهترین قیمت و خدمات باشگاه مشتریان.</p>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">نماد اعتماد الکترونیکی</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">انجمن صنفی دفاتر خدمات مسافرتی</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">ساماندهی</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">عضو IATA</span>
+        </div>
+      </div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">خدمات</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="نتایج پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">رزرو پرواز</a><a href="مدیریت رزرو.dc.html" style="color:#aebfd4; text-decoration:none;">مدیریت رزرو</a><a href="باشگاه مشتریان.dc.html" style="color:#aebfd4; text-decoration:none;">باشگاه مشتریان</a><a href="مدیریت رزرو.dc.html" style="color:#aebfd4; text-decoration:none;">استرداد بلیط</a></div></div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">شرکت</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="درباره ما.dc.html" style="color:#aebfd4; text-decoration:none;">درباره ما</a><a href="تماس با ما.dc.html" style="color:#aebfd4; text-decoration:none;">تماس با ما</a><a href="قوانین و مقررات.dc.html" style="color:#aebfd4; text-decoration:none;">قوانین و مقررات</a></div></div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">پشتیبانی</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">مرکز راهنما</a><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">سوالات متداول</a><span dir="ltr" style="text-align:right;" data-site-phone>۰۲۱ — ۹۱۰۰۰۰۰۰</span></div></div>
+    </div>
+    <div style="border-top:1px solid #ffffff12;"><div style="max-width:1180px; margin:0 auto; padding:15px 26px; display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:#7d92ad;"><span>© ۱۴۰۵ bluejet. تمامی حقوق محفوظ است.</span></div></div>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showLoyaltyBanner&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;loggedIn&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = { tab: "round", userMenuOpen: false, swapped: false, service: "domestic", paxOpen: false, adults: 1, children: 0, infants: 0, cabin: "اکونومی", calOpen: false, picking: "dep", depDay: 12, retDay: null, monthOffset: 0, advOpen: false, advClass: "اکونومی", advStops: "all", advFlex: false, promo: 0 };
+  prevMonth = () => this.setState(s => ({ monthOffset: Math.max(0, s.monthOffset - 1) }));
+  componentDidMount() {
+    this._applySiteData();
+    this._sdHandler = () => { this._applySiteData(); this.forceUpdate(); };
+    window.addEventListener("sitedata:change", this._sdHandler);
+    window.addEventListener("storage", this._sdHandler);
+    this._promoTimer = setInterval(() => this.setState(s => ({ promo: s.promo === 0 ? 1 : 0 })), 6000);
+  }
+  componentWillUnmount() {
+    window.removeEventListener("sitedata:change", this._sdHandler);
+    window.removeEventListener("storage", this._sdHandler);
+    clearInterval(this._promoTimer);
+  }
+  _applyPromo() { if (this._track) this._track.style.transform = "translateX(-" + (this.state.promo * 100) + "%)"; }
+  componentDidUpdate() { this._applyPromo(); }
+  _setText(id, txt) { const el = document.getElementById(id); if (el && txt != null) el.textContent = txt; }
+  _applySiteData() {
+    if (!window.SiteData) return;
+    const d = window.SiteData.getAll();
+    if (d.banner) { this._setText("hero-title", d.banner.title); this._setText("hero-sub", d.banner.subtitle); this._setText("hero-btn-label", d.banner.button); }
+    if (d.contact) {
+      document.querySelectorAll("[data-site-phone]").forEach(el => el.textContent = d.contact.phone);
+      document.querySelectorAll("[data-site-email]").forEach(el => el.textContent = d.contact.email);
+    }
+    if (d.socials) {
+      document.querySelectorAll("[data-social]").forEach(el => { el.style.display = d.socials[el.getAttribute("data-social")] ? "" : "none"; });
+    }
+  }
+  nextMonth = () => this.setState(s => ({ monthOffset: s.monthOffset + 1 }));
+  openCalDep = () => this.setState({ calOpen: true, picking: "dep", paxOpen: false });
+  openCalRet = () => this.setState({ calOpen: true, picking: "ret", paxOpen: false });
+  pickDay = (d) => {
+    const { picking, depDay, tab } = this.state;
+    if (tab !== "round") { this.setState({ depDay: d, calOpen: false }); return; }
+    if (picking === "dep") {
+      this.setState({ depDay: d, retDay: null, picking: "ret" });
+    } else {
+      if (d < depDay) this.setState({ depDay: d, retDay: null, picking: "ret" });
+      else this.setState({ retDay: d, calOpen: false });
+    }
+  };
+  renderVals() {
+    const SD = (typeof window !== "undefined" && window.SiteData) ? window.SiteData.getAll() : null;
+    const tab = this.state.tab;
+    const svc = this.state.service;
+    const tabSvg = {
+      domestic: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5a2.1 2.1 0 0 0-3-3L13 8 4.8 6.2a.5.5 0 0 0-.5.8l3.9 4.2-2.5 2.5-2-.5a.4.4 0 0 0-.4.7l2.3 1.9 1.9 2.3a.4.4 0 0 0 .7-.4l-.5-2 2.5-2.5 4.2 3.9a.5.5 0 0 0 .8-.5z"/></svg>',
+      intl: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>'
+    };
+    const mk = (key, label) => {
+      const active = svc === key && !this.state.advOpen;
+      return {
+        label,
+        svg: { __html: tabSvg[key] },
+        onClick: () => this.setState({ service: key, advOpen: false }),
+        color: active ? "var(--accent,#1668c4)" : "#5a6678",
+        weight: active ? "800" : "600",
+        bg: active ? "#fff" : "transparent",
+        shadow: active ? "0 2px 7px rgba(13,38,102,.14)" : "none"
+      };
+    };
+    const fa = (n) => String(n).replace(/[0-9]/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
+    const wdNames = ["شنبه","یکشنبه","دوشنبه","سه‌شنبه","چهارشنبه","پنجشنبه","جمعه"];
+    const CAT = [
+      { name: "تیر ۱۴۰۵", days: 31 }, { name: "مرداد ۱۴۰۵", days: 31 }, { name: "شهریور ۱۴۰۵", days: 31 },
+      { name: "مهر ۱۴۰۵", days: 30 }, { name: "آبان ۱۴۰۵", days: 30 }, { name: "آذر ۱۴۰۵", days: 30 },
+      { name: "دی ۱۴۰۵", days: 30 }, { name: "بهمن ۱۴۰۵", days: 30 }
+    ];
+    let _acc = 1, _ld = 2;
+    CAT.forEach(m => { m.start = _acc; _acc += m.days; m.lead = _ld; _ld = (_ld + m.days) % 7; });
+    const monthOf = (ord) => CAT.find(m => ord >= m.start && ord < m.start + m.days) || CAT[0];
+    const labelOf = (ord) => { const m = monthOf(ord); return fa(ord - m.start + 1) + " " + m.name.split(" ")[0]; };
+    const wdOfOrd = (ord) => { const m = monthOf(ord); return wdNames[(m.lead + (ord - m.start)) % 7]; };
+    const _dep = this.state.depDay, _ret = this.state.retDay;
+    const single = tab !== "round";
+    const off = Math.min(this.state.monthOffset, CAT.length - (single ? 1 : 2));
+    const shown = single ? [CAT[off]] : [CAT[off], CAT[off + 1]];
+    const calMonths = shown.map((M, mi) => {
+      const cells = [];
+      for (let i = 0; i < M.lead; i++) cells.push({ key: M.name + "b" + i, blank: true, label: "" });
+      for (let d = 1; d <= M.days; d++) {
+        const ord = M.start + d - 1;
+        const endpoint = ord === _dep || (tab === "round" && ord === _ret);
+        const inRange = tab === "round" && ord > _dep && ord < _ret;
+        const holiday = ((M.lead + d - 1) % 7) === 6;
+        cells.push({
+          key: M.name + "d" + d, blank: false, label: fa(d),
+          onClick: () => this.pickDay(ord),
+          bg: endpoint ? "var(--accent,#1668c4)" : (inRange ? "#eaf1fd" : "#fff"),
+          color: endpoint ? "#fff" : (inRange ? "var(--accent,#1668c4)" : (holiday ? "#e5484d" : "#16202e")),
+          bd: endpoint ? "1px solid var(--accent,#1668c4)" : (inRange ? "1px solid #d6e4f8" : "1px solid #edf1f6"),
+          weight: endpoint ? "800" : (inRange ? "700" : "500"),
+          radius: endpoint ? "9px" : (inRange ? "3px" : "9px")
+        });
+      }
+      return { key: M.name, name: M.name, cells };
+    });
+    const _maxOff = CAT.length - (single ? 1 : 2);
+    const a = this.state.adults, c = this.state.children, inf = this.state.infants, cab = this.state.cabin;
+    const parts = [fa(a) + " بزرگسال"];
+    if (c) parts.push(fa(c) + " کودک");
+    if (inf) parts.push(fa(inf) + " نوزاد");
+    const paxSummary = parts.join(" · ") + " · " + cab;
+    const setPax = (k, delta, min) => () => this.setState(s => ({ [k]: Math.max(min, s[k] + delta) }));
+    return {
+      scrollToOffers: (e) => { try { e && e.preventDefault && e.preventDefault(); } catch (_) {} const el = document.getElementById("offers"); if (el) { const y = el.getBoundingClientRect().top + window.pageYOffset - 80; window.scrollTo({ top: y, behavior: "smooth" }); } },
+      offers: [
+        { from:"تهران", to:"استانبول", cabin:"اکونومی", was:"۵٬۲۰۰٬۰۰۰", now:"۴٬۲۰۰٬۰۰۰", off:"٪۱۹", deadline:"مهلت: ۲ روز", grad:"linear-gradient(160deg,#bcd6f2,#e3eefb)", imgTag:"[ عکس استانبول ]" },
+        { from:"تهران", to:"دبی", cabin:"اکونومی", was:"۴٬۹۰۰٬۰۰۰", now:"۳٬۸۰۰٬۰۰۰", off:"٪۲۲", deadline:"مهلت: ۳ روز", grad:"linear-gradient(160deg,#c8d9ec,#e8eef6)", imgTag:"[ عکس دبی ]" },
+        { from:"مشهد", to:"کیش", cabin:"اکونومی", was:"۲٬۸۰۰٬۰۰۰", now:"۲٬۱۰۰٬۰۰۰", off:"٪۲۵", deadline:"مهلت: امروز", grad:"linear-gradient(160deg,#bfe0d8,#e6f2ee)", imgTag:"[ عکس کیش ]" },
+        { from:"تهران", to:"مشهد", cabin:"اکونومی", was:"۲٬۱۰۰٬۰۰۰", now:"۱٬۶۰۰٬۰۰۰", off:"٪۲۴", deadline:"مهلت: ۱ روز", grad:"linear-gradient(160deg,#cdd9ec,#eaeff7)", imgTag:"[ عکس مشهد ]" }
+      ],
+      services: [
+        mk("domestic", "پرواز داخلی"),
+        mk("intl", "پرواز خارجی")
+      ],
+      isFlight: true,
+      isIntl: svc === "intl",
+      advOpen: this.state.advOpen,
+      toggleAdv: () => this.setState(s => ({ advOpen: !s.advOpen })),
+      advArrow: this.state.advOpen ? "rotate(90deg)" : "rotate(0deg)",
+      advColor: this.state.advOpen ? "var(--accent,#1668c4)" : "#5a6678",
+      advWeight: this.state.advOpen ? "800" : "600",
+      advBg: this.state.advOpen ? "#fff" : "transparent",
+      advShadow: this.state.advOpen ? "0 2px 7px rgba(13,38,102,.14)" : "none",
+      advClassOpts: ["اکونومی","بیزنس","فرست"].map(c => ({ label:c, onClick:()=>this.setState({advClass:c}), bg:this.state.advClass===c?"#fff":"transparent", color:this.state.advClass===c?"var(--accent,#1668c4)":"#5a6678", weight:this.state.advClass===c?"700":"600", shadow:this.state.advClass===c?"0 2px 6px rgba(13,38,102,.12)":"none" })),
+      advStopOpts: [{k:"all",l:"همه"},{k:"direct",l:"مستقیم"},{k:"one",l:"حداکثر ۱ توقف"}].map(o => ({ label:o.l, onClick:()=>this.setState({advStops:o.k}), bg:this.state.advStops===o.k?"#fff":"transparent", color:this.state.advStops===o.k?"var(--accent,#1668c4)":"#5a6678", weight:this.state.advStops===o.k?"700":"600", shadow:this.state.advStops===o.k?"0 2px 6px rgba(13,38,102,.12)":"none" })),
+      toggleFlex: () => this.setState(s => ({ advFlex: !s.advFlex })),
+      flexBg: this.state.advFlex ? "var(--accent,#1668c4)" : "#cbd5e1",
+      flexKnob: this.state.advFlex ? "translateX(19px)" : "translateX(0)",
+      loggedIn: this.props.loggedIn ?? false,
+      notLoggedIn: !(this.props.loggedIn ?? false),
+      userMenuOpen: this.state.userMenuOpen,
+      toggleUserMenu: () => this.setState(s => ({ userMenuOpen: !s.userMenuOpen })),
+      routes: (SD && SD.routes) ? SD.routes : [
+        { from:"تهران", to:"مشهد", price:"۱٬۶۰۰٬۰۰۰" },
+        { from:"تهران", to:"استانبول", price:"۴٬۲۰۰٬۰۰۰" },
+        { from:"تهران", to:"دبی", price:"۳٬۸۰۰٬۰۰۰" },
+        { from:"مشهد", to:"کیش", price:"۲٬۱۰۰٬۰۰۰" },
+        { from:"شیراز", to:"تهران", price:"۱٬۴۵۰٬۰۰۰" }
+      ],
+      paxOpen: this.state.paxOpen,
+      togglePax: () => this.setState(s => ({ paxOpen: !s.paxOpen })),
+      adults: fa(a), children: fa(c), infants: fa(inf),
+      paxSummary,
+      incAdult: setPax("adults", 1, 1), decAdult: setPax("adults", -1, 1),
+      incChild: setPax("children", 1, 0), decChild: setPax("children", -1, 0),
+      incInfant: setPax("infants", 1, 0), decInfant: setPax("infants", -1, 0),
+      cabinEconomy: cab === "اکونومی", notCabinEconomy: cab !== "اکونومی",
+      cabinBusiness: cab === "بیزنس", notCabinBusiness: cab !== "بیزنس",
+      cabinFirst: cab === "فرست", notCabinFirst: cab !== "فرست",
+      setEconomy: () => this.setState({ cabin: "اکونومی" }),
+      setBusiness: () => this.setState({ cabin: "بیزنس" }),
+      setFirst: () => this.setState({ cabin: "فرست" }),
+      tabRound: tab === "round", notTabRound: tab !== "round",
+      tabOne: tab === "one", notTabOne: tab !== "one",
+      tabMulti: tab === "multi", notTabMulti: tab !== "multi",
+      isRoundtrip: tab === "round",
+      calOpen: this.state.calOpen,
+      calWidth: single ? "420px" : "720px",
+      prevMonth: off >= _maxOff ? (() => {}) : this.nextMonth,
+      nextMonth: off <= 0 ? (() => {}) : this.prevMonth,
+      prevDim: off >= _maxOff ? "0.3" : "1",
+      nextDim: off <= 0 ? "0.3" : "1",
+      calTitle: (tab !== "round") ? "تاریخ رفت را انتخاب کنید" : (this.state.picking === "ret" ? "چه زمانی برمی‌گردید؟" : "تاریخ رفت را انتخاب کنید"),
+      calBarText: this.state.picking === "ret" ? ("برگشت: " + (this.state.retDay ? labelOf(this.state.retDay) : "انتخاب کنید")) : ("رفت: " + labelOf(this.state.depDay)),
+      oneWayChecked: tab !== "round",
+      notOneWayChecked: tab === "round",
+      toggleOneWay: () => this.setState(s => ({ tab: s.tab === "round" ? "one" : "round", picking: "dep" })),
+      calWeekHead: ["ش","ی","د","س","چ","پ","ج"].map((w,i)=>({ key:"w"+i, label:w })),
+      calMonths: calMonths,
+      depLabel: labelOf(this.state.depDay),
+      depWd: wdOfOrd(this.state.depDay) + " ۱۴۰۵",
+      retLabel: this.state.retDay ? labelOf(this.state.retDay) : "انتخاب کنید",
+      retWd: this.state.retDay ? (wdOfOrd(this.state.retDay) + " ۱۴۰۵") : "تاریخ برگشت",
+      closeCal: () => this.setState({ calOpen: false }),
+      pickingDep: this.state.picking === "dep",
+      pickingRet: this.state.picking === "ret",
+      depBorder: (this.state.calOpen && this.state.picking === "dep") ? "var(--accent,#1668c4)" : "#e2e7ee",
+      retBorder: (this.state.calOpen && this.state.picking === "ret") ? "var(--accent,#1668c4)" : "#e2e7ee",
+      openCalDep: this.openCalDep,
+      openCalRet: this.openCalRet,
+      selRound: () => this.setState({ tab: "round" }),
+      selOne: () => this.setState({ tab: "one" }),
+      selMulti: () => this.setState({ tab: "multi" }),
+      swapped: this.state.swapped,
+      notSwapped: !this.state.swapped,
+      setSwap: () => this.setState(s => ({ swapped: !s.swapped })),
+      showLoyaltyBanner: this.props.showLoyaltyBanner ?? true,
+      trackRef: (el) => { this._track = el; if (el) el.style.transform = "translateX(-" + (this.state.promo * 100) + "%)"; },
+      promoNext: () => this.setState(s => ({ promo: s.promo === 0 ? 1 : 0 })),
+      promoPrev: () => this.setState(s => ({ promo: s.promo === 0 ? 1 : 0 })),
+      promoGo0: () => this.setState({ promo: 0 }),
+      promoGo1: () => this.setState({ promo: 1 }),
+      promoDot0: this.state.promo === 0 ? "var(--accent,#1668c4)" : "#c9d4e2",
+      promoDot1: this.state.promo === 1 ? "var(--accent,#1668c4)" : "#c9d4e2",
+      promoW0: this.state.promo === 0 ? "26px" : "8px",
+      promoW1: this.state.promo === 1 ? "26px" : "8px"
+    };
+  }
+}
+</script>
+<script>
+(async () => {
+  if (!document.title || !document.title.trim()) document.title = "صفحه اصلی";
+  // Prepend so page-supplied @page / break rules (deck-stage's margin:0,
+  // author CSS) keep source-order precedence over the baseline.
+  const baseCss = document.createElement('style');
+  baseCss.textContent = "@media print {\n  figure, table { break-inside: avoid; }\n  *, *::before, *::after {\n    print-color-adjust: exact; -webkit-print-color-adjust: exact;\n    backdrop-filter: none !important; -webkit-backdrop-filter: none !important;\n    animation-delay: -99s !important; animation-duration: .001s !important;\n    animation-iteration-count: 1 !important; animation-fill-mode: both !important;\n    animation-play-state: running !important; transition-duration: 0s !important;\n  }\n}";
+  document.head.prepend(baseCss);
+  if (document.readyState === 'loading') {
+    await new Promise((r) => document.addEventListener('DOMContentLoaded', r, { once: true }));
+  }
+  let ds = document.querySelector('deck-stage');
+  // whenDefined never resolves when nothing registers the element, so only
+  // await it when a <deck-stage> tag exists (and race a timeout regardless).
+  if (ds && !customElements.get('deck-stage')) {
+    try {
+      await Promise.race([
+        customElements.whenDefined('deck-stage'),
+        new Promise((r) => setTimeout(r, 3000)),
+      ]);
+    } catch (e) {}
+    ds = document.querySelector('deck-stage');
+  }
+  // dc-runtime assigns window.DCLogic at init and mounts into #dc-root on
+  // DOMContentLoaded; settle on that subtree so React has rendered before
+  // print(). Non-DC pages fall through to weighing body.
+  const isDc = !ds && 'DCLogic' in window;
+  const settleRoot = ds || (isDc ? document.getElementById('dc-root') : null) || document.body;
+  if (settleRoot) {
+    // Weigh only content children — skip script/style/template so inline
+    // Babel/CSS doesn't register as stable "content" before the framework
+    // has mounted anything.
+    const MEDIA = 'img,svg,canvas,video,picture,iframe,embed,object';
+    const weigh = () => {
+      let text = 0, media = 0;
+      for (const c of settleRoot.children) {
+        const t = c.tagName;
+        if (t === 'SCRIPT' || t === 'STYLE' || t === 'TEMPLATE') continue;
+        text += (c.textContent || '').trim().length;
+        media += c.querySelectorAll(MEDIA).length + (c.matches(MEDIA) ? 1 : 0);
+      }
+      return text + media * 100;
+    };
+    // "Non-zero and stable" alone is not sufficient to mean rendered: generic
+    // body can carry a static shell while async main content is pending, and
+    // #dc-root can carry the root DC's static text while child refs are still
+    // .sc-placeholder boxes. Gate generic on readyState 'complete', and never
+    // accept stability while a dc-runtime placeholder is present.
+    const isGeneric = settleRoot === document.body;
+    const deadline = Date.now() + 15000;
+    let last = -1, stable = 0;
+    while (Date.now() < deadline) {
+      const n = weigh();
+      const ready =
+        (!isGeneric || document.readyState === 'complete') &&
+        !settleRoot.querySelector('.sc-placeholder');
+      if (n > 0 && n === last && ready) { if (++stable >= 2) break; } else { stable = 0; }
+      last = n;
+      await new Promise((r) => setTimeout(r, 250));
+    }
+  }
+  // Project support.js may predate runtime default-seeding; push via bridge.
+  if (isDc && window.__dcSetProps && window.__dcRootName) {
+    try {
+      const dpEl = document.querySelector('script[data-dc-script]');
+      const meta = JSON.parse((dpEl && dpEl.getAttribute('data-props')) || '{}');
+      const bag = {};
+      for (const k in meta)
+        if (k[0] !== '$' && meta[k] && meta[k].default !== undefined)
+          bag[k] = meta[k].default;
+      if (Object.keys(bag).length) {
+        window.__dcSetProps(window.__dcRootName(), bag);
+        await new Promise((r) => setTimeout(r, 50));
+      }
+    } catch (e) {}
+  }
+  // Reveal content gated on scroll or visibility before printing. Lazy <img>,
+  // IntersectionObserver fade-ins, and collapsed <details> don't render while
+  // off-screen, so a long page would print with them blank or closed. Open
+  // every <details>, force native-lazy images eager, and scroll the document
+  // through its full height to trip lazy-load + IO; then wait (bounded) for the
+  // newly-triggered images. Inert for deck-stage (slides aren't scroll-gated).
+  try {
+    for (const d of document.querySelectorAll('details')) d.open = true;
+    for (const img of document.querySelectorAll('img[loading="lazy"]'))
+      img.loading = 'eager';
+    const scroller = document.scrollingElement || document.documentElement;
+    const full = Math.max(scroller.scrollHeight, document.body.scrollHeight);
+    const step = window.innerHeight || 800;
+    for (let y = 0; y <= full; y += step) {
+      window.scrollTo(0, y);
+      await new Promise((r) => requestAnimationFrame(r));
+    }
+    window.scrollTo(0, 0);
+    await Promise.race([
+      Promise.all(
+        [...document.images].map((img) =>
+          img.complete
+            ? null
+            : new Promise((res) => {
+                img.addEventListener('load', res, { once: true });
+                img.addEventListener('error', res, { once: true });
+              })
+        )
+      ),
+      new Promise((r) => setTimeout(r, 4000)),
+    ]);
+  } catch (e) {}
+  try { await document.fonts.ready; } catch (e) {}
+  // Jump every animation to its end state so print() never captures a slide
+  // mid-entrance. Ordering matters: the 0s-transition style must be live
+  // BEFORE data-deck-active is set so attribute-keyed transitions don't
+  // start a (now-0s) run from the pre-active base.
+  const st = document.createElement('style');
+  st.textContent = '*,*::before,*::after{animation-delay:-99s !important;animation-duration:.001s !important;animation-iteration-count:1 !important;animation-fill-mode:both !important;animation-play-state:running !important;transition-duration:0s !important}';
+  document.head.appendChild(st);
+  for (const d of document.querySelectorAll('deck-stage')) {
+    for (const c of d.children) {
+      const t = c.tagName;
+      if (t === 'SCRIPT' || t === 'STYLE' || t === 'TEMPLATE') continue;
+      c.setAttribute('data-deck-active', '');
+    }
+  }
+  // Re-append deck-stage's @page last so no author @page can add a margin and
+  // spill each full-bleed slide onto two sheets. Backstop for old copies.
+  if (ds) {
+    let pg = document.getElementById('deck-stage-print-page');
+    if (!pg) {
+      pg = document.createElement('style');
+      pg.textContent = '@page{size:' + (+ds.getAttribute('width') || 1920) +
+        'px ' + (+ds.getAttribute('height') || 1080) + 'px;margin:0}';
+    }
+    document.body.appendChild(pg);
+  }
+  try {
+    const sweep = () => {
+      for (const a of document.getAnimations()) {
+        try { a.finish(); } catch (e) {
+          try { a.currentTime = (a.effect && a.effect.getComputedTiming().duration) || 0; a.pause(); } catch (e2) {}
+        }
+      }
+    };
+    sweep();
+    await new Promise((r) => requestAnimationFrame(r));
+    sweep();
+    await new Promise((r) => requestAnimationFrame(r));
+  } catch (e) {}
+  // Size the PDF page to the rendered design unless the file opted into
+  // standard paper via @page{size:letter|A4|…}. Decks own their own @page.
+  // Wrappers (body, …) lose padding+margin so the frame sits at (0,0); the
+  // frame itself loses only margin — its padding is INSIDE the measured
+  // rect and must stay, or content shifts and leaves a gap at bottom/right.
+  var __m = null;
+  try { __m = (() => {
+  var docEl = document.documentElement;
+  var doc = { width: docEl.scrollWidth, height: docEl.scrollHeight };
+
+  var ds = document.querySelector('deck-stage');
+  if (ds) {
+    var dw = Number(ds.getAttribute('width')) || 1920;
+    var dh = Number(ds.getAttribute('height')) || 1080;
+    var n = typeof ds.length === 'number' ? ds.length : ds.children.length;
+    var idx = typeof ds.index === 'number' ? ds.index : 0;
+    var frames = [];
+    for (var i = 0; i < n; i++) frames.push({ left: 0, top: 0, width: dw, height: dh });
+    return { kind: 'deck', doc: doc, frames: frames,
+      authored: frames.map(function(){return{width:true,height:true}}),
+      deck: { width: dw, height: dh, slideCount: n, index: idx },
+      signals: { paperPage: false, pxPage: false } };
+  }
+
+  var paperPage = false, pxPage = false;
+  var eachRule = function (fn) {
+    for (var s = 0; s < document.styleSheets.length; s++) {
+      var rs; try { rs = document.styleSheets[s].cssRules; } catch (e) { continue; }
+      for (var r = 0; r < rs.length; r++) {
+        fn(rs[r]);
+        if (rs[r].cssRules) for (var n = 0; n < rs[r].cssRules.length; n++) fn(rs[r].cssRules[n]);
+      }
+    }
+  };
+  eachRule(function (r) {
+    if (r.type !== 6) return;
+    var m = /\bsize\s*:\s*([^;}]+)/i.exec(r.cssText || '');
+    if (!m) return;
+    if (/\b(letter|a[3-5]|legal|ledger)\b/i.test(m[1])) paperPage = true;
+    if (/\d+(?:\.\d+)?px\b/i.test(m[1])) pxPage = true;
+  });
+  var signals = { paperPage: paperPage, pxPage: pxPage };
+
+  var pxVal = function (v) {
+    var m = /^(\d+(?:\.\d+)?)px$/.exec(v || ''); return m ? +m[1] : 0;
+  };
+  var authoredPx = function (el, prop) {
+    if (pxVal(el.style[prop])) return true;
+    var attr = el.getAttribute(prop);
+    if (attr && /^\d+$/.test(attr)) return true;
+    var hit = false;
+    eachRule(function (r) {
+      if (hit || r.type !== 1 || !r.style) return;
+      try { if (el.matches(r.selectorText) && pxVal(r.style[prop])) hit = true; } catch (e) {}
+    });
+    return hit;
+  };
+
+  var el = document.body, rootPxW = false;
+  for (;;) {
+    var kids = [];
+    for (var c = 0; c < el.children.length; c++) {
+      var t = el.children[c].tagName;
+      if (t !== 'SCRIPT' && t !== 'STYLE' && t !== 'TEMPLATE') kids.push(el.children[c]);
+    }
+    if (kids.length !== 1 || !(kids[0] instanceof HTMLElement)) break;
+    el.setAttribute('data-om-frame-wrap', '');
+    el = kids[0];
+    rootPxW = authoredPx(el, 'width');
+    if (rootPxW) break;
+  }
+  if (!rootPxW) rootPxW = authoredPx(el, 'width');
+
+  // @page{size:letter} alone is a flowing doc; with a px-width root it's a
+  // fixed sheet pretending to be paper — fall through and size to render.
+  if (paperPage && !rootPxW) {
+    return { kind: 'paper-doc', doc: doc, signals: signals,
+      frames: [{ left: 0, top: 0, width: doc.width, height: doc.height }],
+      authored: [{ width: false, height: false }] };
+  }
+
+  var sx = window.scrollX || 0, sy = window.scrollY || 0;
+  var rectOf = function (e) {
+    var r = e.getBoundingClientRect();
+    var oy; try { oy = getComputedStyle(e).overflowY; } catch (err) {}
+    var h = oy === 'visible' ? Math.max(r.height, e.scrollHeight || 0) : r.height;
+    return { left: r.left + sx, top: r.top + sy, width: r.width, height: h };
+  };
+
+  // Multi-frame: ≥2 visible non-fixed children, each with authored px width
+  // AND height, all within ±2px of each other. Off unless the page opts in
+  // via data-om-multi-frame on the stop element — guards against card grids
+  // and pricing tables that match the geometry but aren't separate canvases.
+  if (el.hasAttribute('data-om-multi-frame')) {
+    var cands = [];
+    for (var k = 0; k < el.children.length; k++) {
+      var ch = el.children[k];
+      var cs; try { cs = getComputedStyle(ch); } catch (e) { continue; }
+      if (cs.display === 'none' || cs.visibility === 'hidden' || cs.position === 'fixed') continue;
+      var rc = rectOf(ch);
+      if (rc.width < 2 || rc.height < 2) continue;
+      if (!authoredPx(ch, 'width') || !authoredPx(ch, 'height')) continue;
+      cands.push(rc);
+    }
+    if (cands.length >= 2) {
+      var w0 = cands[0].width, h0 = cands[0].height, ok = true;
+      for (var q = 1; q < cands.length; q++)
+        if (Math.abs(cands[q].width - w0) > 2 || Math.abs(cands[q].height - h0) > 2) ok = false;
+      if (ok) return { kind: 'multi-frame', doc: doc, signals: signals,
+        frames: cands, authored: cands.map(function(){return{width:true,height:true}}) };
+    }
+  }
+
+  el.setAttribute('data-om-frame', '');
+  return { kind: 'single-canvas', doc: doc, signals: signals,
+    frames: [rectOf(el)],
+    authored: [{ width: rootPxW, height: authoredPx(el, 'height') }] };
+})(); } catch (e) {}
+  var frame = null;
+  if (__m && __m.kind === 'single-canvas') {
+    var f = __m.frames && __m.frames[0];
+    if (f && f.width >= 200 && f.height >= 200) {
+      frame = f;
+      var fst = document.createElement('style');
+      fst.textContent = '@media print{@page{size:' + Math.ceil(f.width) + 'px ' +
+        Math.ceil(f.height) + 'px;margin:0}' +
+        'html,body,[data-om-frame-wrap]{padding:0!important;margin:0!important;background:none!important}' +
+        '[data-om-frame]{margin:0!important}}';
+      document.body.appendChild(fst);
+    }
+  }
+  // Relax break-inside on oversized elements. An element taller than a
+  // printable page can't honor break-inside: avoid — browsers either overflow
+  // it or push it whole to the next page, leaving a blank gap, then break it
+  // anyway at an arbitrary point. After the final layout (content revealed,
+  // animations jumped), find elements taller than a page that still compute
+  // break-inside: avoid and reset them to auto, so the browser breaks them at
+  // their children's boundaries instead (children keep their own avoid). PAGE_PX
+  // is a conservative portrait estimate at 96 CSS px/in — Letter/A4 usable
+  // height minus our 0.5in margins — so only clearly-oversized elements are
+  // touched and under-page elements still stay whole. Skipped for decks (slides
+  // are sized to the page) and for fixed-size canvases (frame set, or an author
+  // px-based @page) — runs as before for flowing docs on letter/A4.
+  try {
+    if (!ds && !frame && !(__m && __m.signals && __m.signals.pxPage)) {
+      const PAGE_PX = 1024;
+      // Our print defaults add a real @page margin only when the source has
+      // no @page of its own; computed style can't tell us (it reports screen
+      // media), so read the injected rule directly.
+      const defaults = document.querySelector('style[data-omelette-print-defaults]');
+      const pageInset = /@page\s*\{[^}]*margin/.test(defaults ? defaults.textContent || '' : '');
+      const SEL = 'section,article,figure,table,pre,blockquote,[class~="card" i],[class~="page" i],[class~="sheet" i]';
+      for (const el of document.body.querySelectorAll(SEL)) {
+        if (el instanceof HTMLElement && el.offsetHeight > PAGE_PX) {
+          el.setAttribute('data-om-oversized', '');
+          // Fake-paged docs simulate sheets with over-tall break-after:page
+          // boxes; honoring the break spills half-blank pages and ends a
+          // colored box mid-sheet. Flow them, and (only when we own the page
+          // inset) drop the redundant padding/background via the rule below.
+          const cs = getComputedStyle(el);
+          if (cs.breakAfter === 'page' || cs.pageBreakAfter === 'always') {
+            el.setAttribute('data-om-fakepage', '');
+          }
+        }
+      }
+      const ost = document.createElement('style');
+      ost.textContent = '@media print{' +
+        '[data-om-oversized]{break-inside:auto !important;page-break-inside:auto !important}' +
+        '[data-om-fakepage]{break-after:auto !important;page-break-after:auto !important}' +
+        (pageInset ? '[data-om-fakepage]{padding:0 !important;background:none !important}' : '') +
+        '}';
+      document.head.appendChild(ost);
+    }
+  } catch (e) {}
+  // macOS Preview renders Skia-PDF Luminosity soft-masks as opaque grey boxes;
+  // swap the CSS that triggers them for Preview-safe forms.
+  try {
+    for (const el of document.body.querySelectorAll('*')) {
+      const cs = getComputedStyle(el);
+
+      if (cs.boxShadow !== 'none' && cs.filter === 'none') {
+        const outs = [], kept = [];
+        for (const s of cs.boxShadow.split(/,(?![^(]*[)])/)) {
+          const t = s.trim();
+          const m = t.match(/^(rgba?[(][^)]+[)]) (-?[0-9.]+px) (-?[0-9.]+px) ([0-9.]+px) -?[0-9.]+px$/);
+          if (m && parseFloat(m[4]) > 0) outs.push('drop-shadow(' + m[2] + ' ' + m[3] + ' ' + m[4] + ' ' + m[1] + ')');
+          else kept.push(t);
+        }
+        if (outs.length) {
+          el.style.setProperty('filter', outs.join(' '), 'important');
+          el.style.setProperty('box-shadow', kept.join(', ') || 'none', 'important');
+        }
+      }
+
+      const mask = cs.maskImage && cs.maskImage !== 'none' ? cs.maskImage : cs.webkitMaskImage;
+      if (mask && mask !== 'none' && cs.filter === 'none') el.style.setProperty('filter', 'opacity(1)', 'important');
+    }
+  } catch (e) {}
+  setTimeout(() => { try { window.print(); } catch (e) {} }, 200);
+})();
+</script>
+</body>
+</html>

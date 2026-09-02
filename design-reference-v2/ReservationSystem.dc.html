@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box;}</style>
+</helmet>
+<div dir="rtl" style="font-family:Vazirmatn,sans-serif; color:#e7ecf3;">
+
+  <!-- sub-tabs -->
+  <div style="display:flex; align-items:center; gap:5px; background:#18223a; border:1px solid #28344c; border-radius:13px; padding:4px; margin-bottom:18px; width:max-content; max-width:100%; flex-wrap:wrap;">
+    <span onClick="{{ goDash }}" style="display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:{{ wDash }}; color:{{ cDash }}; background:{{ bgDash }}; padding:7px 13px; border-radius:9px; cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>داشبورد</span>
+    <span onClick="{{ goPnr }}" style="display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:{{ wPnr }}; color:{{ cPnr }}; background:{{ bgPnr }}; padding:7px 13px; border-radius:9px; cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M8 4v16"/></svg>مدیریت رزروها</span>
+    <span onClick="{{ goAgency }}" style="display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:{{ wAgency }}; color:{{ cAgency }}; background:{{ bgAgency }}; padding:7px 13px; border-radius:9px; cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>دسترسی آژانس‌ها</span>
+    <span onClick="{{ goFlights }}" style="display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:{{ wFlights }}; color:{{ cFlights }}; background:{{ bgFlights }}; padding:7px 13px; border-radius:9px; cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>پروازها</span>
+  </div>
+
+  <!-- ============ DASHBOARD ============ -->
+  <sc-if value="{{ vDash }}" hint-placeholder-val="{{true}}">
+    <div style="display:flex; flex-direction:column; gap:13px;">
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:11px;">
+        <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:13px;"><div style="font-size:11px; color:#6b7b94; margin-bottom:7px;">رزروهای امروز</div><div style="font-size:21.5px; font-weight:900; color:#fff;">{{ kToday }}</div></div>
+        <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:13px;"><div style="font-size:11px; color:#6b7b94; margin-bottom:7px;">PNRهای فعال</div><div style="font-size:21.5px; font-weight:900; color:#60a5fa;">{{ kActive }}</div></div>
+        <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:13px;"><div style="font-size:11px; color:#6b7b94; margin-bottom:7px;">صندلی فروخته‌شده</div><div style="font-size:21.5px; font-weight:900; color:#34d399;">{{ kSeats }}</div></div>
+        <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:13px;"><div style="font-size:11px; color:#6b7b94; margin-bottom:7px;">درآمد رزروها</div><div style="font-size:16px; font-weight:900; color:#fcd34d;">{{ kRevenue }}</div></div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1.3fr 1fr; gap:13px; align-items:start;">
+        <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:15px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;"><h3 style="font-size:13.5px; font-weight:800; color:#fff; margin:0;">وضعیت سرویس‌های سامانه</h3><span style="font-size:10px; font-weight:700; color:#34d399; background:rgba(16,185,129,.14); padding:4px 9px; border-radius:14px;">پایدار</span></div>
+          <div style="font-size:11px; color:#6b7b94; margin-bottom:16px;">معماری میکروسرویس رزرواسیون — از API Gateway تا پلتفرم API شرکا</div>
+          <div style="display:flex; flex-direction:column; gap:7px;">
+            <sc-for list="{{ services }}" as="s" hint-placeholder-count="6">
+              <div style="display:flex; align-items:center; gap:10px; background:#0f1623; border:1px solid #22304a; border-radius:11px; padding:9px 11px;">
+                <span style="width:9px; height:9px; border-radius:50%; background:{{ s.dot }}; flex:none; box-shadow:0 0 0 3px {{ s.glow }};"></span>
+                <div style="flex:1; min-width:0;"><div style="font-size:12px; font-weight:700; color:#e7ecf3;" dir="ltr">{{ s.name }}</div><div style="font-size:10px; color:#6b7b94;">{{ s.fa }}</div></div>
+                <span style="font-size:10px; color:#7d8aa0; font-family:'Roboto Mono',monospace;" dir="ltr">{{ s.latency }}</span>
+                <span style="font-size:10px; font-weight:700; color:{{ s.stColor }}; flex:none; width:64px; text-align:left;">{{ s.stLabel }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:15px;">
+          <h3 style="font-size:13.5px; font-weight:800; color:#fff; margin:0 0 16px;">تفکیک کانال رزرو</h3>
+          <div style="display:flex; flex-direction:column; gap:11px;">
+            <sc-for list="{{ channels }}" as="c" hint-placeholder-count="3">
+              <div><div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;"><span style="display:flex; align-items:center; gap:7px; font-size:11.5px; color:#9fb0c7;"><span style="width:10px; height:10px; border-radius:3px; background:{{ c.color }};"></span>{{ c.label }}</span><span style="font-size:11.5px; font-weight:800; color:#e7ecf3;">{{ c.count }}</span></div><div style="height:8px; background:#0f1623; border-radius:4px; overflow:hidden;"><div style="height:100%; width:{{ c.pct }}; background:{{ c.color }};"></div></div></div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ============ PNR MANAGEMENT ============ -->
+  <sc-if value="{{ vPnr }}" hint-placeholder-val="{{false}}">
+    <div style="display:flex; flex-direction:column; gap:13px;">
+      <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:15px;">
+        <h3 style="font-size:13.5px; font-weight:800; color:#fff; margin:0 0 16px;">جستجوی رزرو</h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:9px; align-items:end;">
+          <div><div style="font-size:10.5px; color:#6b7b94; margin-bottom:6px;">کد رزرو (PNR)</div><input value="{{ pnrQ }}" onInput="{{ onPnrQ }}" placeholder="مثلاً AS-88421" dir="ltr" style="width:100%; box-sizing:border-box; height:44px; background:#0f1623; border:1px solid #28344c; border-radius:10px; padding:0 11px; color:#e7ecf3; font-family:'Roboto Mono',monospace; font-size:12px; outline:none; text-align:right;" /></div>
+          <div><div style="font-size:10.5px; color:#6b7b94; margin-bottom:6px;">نام خانوادگی مسافر</div><input value="{{ lnameQ }}" onInput="{{ onLnameQ }}" placeholder="نام خانوادگی" style="width:100%; box-sizing:border-box; height:44px; background:#0f1623; border:1px solid #28344c; border-radius:10px; padding:0 11px; color:#e7ecf3; font-family:inherit; font-size:12px; outline:none;" /></div>
+          <div onClick="{{ doPnrSearch }}" style="height:44px; padding:0 20px; border-radius:10px; background:var(--accent,#3b82f6); color:#fff; display:flex; align-items:center; justify-content:center; gap:6px; font-size:12.5px; font-weight:800; cursor:pointer; white-space:nowrap;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>جستجو</div>
+        </div>
+      </div>
+
+      <sc-if value="{{ vPnrFound }}" hint-placeholder-val="{{false}}">
+        <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; overflow:hidden;">
+          <div style="padding:13px 16px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #1f2a3d; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; align-items:center; gap:10px;"><span style="font-size:14px; font-weight:800; color:#fff; font-family:'Roboto Mono',monospace;" dir="ltr">{{ pnrShow }}</span><span style="font-size:10px; font-weight:700; color:#34d399; background:rgba(16,185,129,.14); padding:3px 9px; border-radius:14px;">صادرشده</span></div>
+            <div style="font-size:11.5px; color:#9fb0c7;">{{ pnrRoute }} · {{ pnrDate }}</div>
+          </div>
+          <div style="padding:13px 16px; display:flex; flex-direction:column; gap:8px;">
+            <sc-for list="{{ pnrPax }}" as="p" hint-placeholder-count="2">
+              <div style="display:flex; align-items:center; justify-content:space-between; background:#0f1623; border:1px solid #22304a; border-radius:11px; padding:10px 12px;">
+                <div style="display:flex; align-items:center; gap:10px;"><span style="width:34px; height:34px; border-radius:50%; background:rgba(59,130,246,.16); color:#60a5fa; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:11px; flex:none;">{{ p.initials }}</span><div><div style="font-size:12px; font-weight:700; color:#e7ecf3;">{{ p.name }}</div><div style="font-size:10px; color:#6b7b94;">صندلی {{ p.seat }}</div></div></div>
+                <span style="font-size:10.5px; font-weight:700; color:#34d399;">{{ p.status }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ vPnrNotFound }}" hint-placeholder-val="{{false}}">
+        <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:34px; text-align:center; color:#6b7b94; font-size:12px;">رزروی با این مشخصات یافت نشد.</div>
+      </sc-if>
+
+      <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; overflow:hidden;">
+        <div style="padding:12px 15px; border-bottom:1px solid #1f2a3d; font-size:13px; font-weight:800; color:#fff;">آخرین رزروهای ثبت‌شده</div>
+        <div style="display:grid; grid-template-columns:1fr 1.4fr 1fr 0.9fr; padding:11px 15px; font-size:10.5px; color:#6b7b94; font-weight:700; border-bottom:1px solid #1f2a3d;"><span>PNR</span><span>مسیر</span><span>مسافر</span><span>وضعیت</span></div>
+        <sc-for list="{{ recentPnrs }}" as="r" hint-placeholder-count="5">
+          <div style="display:grid; grid-template-columns:1fr 1.4fr 1fr 0.9fr; align-items:center; padding:12px 15px; font-size:12px; border-bottom:1px solid #16202e;">
+            <span style="font-family:'Roboto Mono',monospace; font-weight:700; color:#60a5fa;" dir="ltr">{{ r.pnr }}</span>
+            <span style="color:#cdd6e3;">{{ r.route }}</span>
+            <span style="color:#9fb0c7;">{{ r.pax }}</span>
+            <span style="font-size:10px; font-weight:700; color:{{ r.stColor }}; background:{{ r.stBg }}; padding:3px 9px; border-radius:14px; width:max-content;">{{ r.status }}</span>
+          </div>
+        </sc-for>
+        <sc-if value="{{ noRecentPnrs }}" hint-placeholder-val="{{false}}"><div style="padding:26px; text-align:center; color:#6b7b94; font-size:12px;">رزروی ثبت نشده است.</div></sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ============ AGENCY API ACCESS ============ -->
+  <sc-if value="{{ vAgency }}" hint-placeholder-val="{{false}}">
+    <div style="display:flex; flex-direction:column; gap:11px;">
+      <sc-for list="{{ agencyRows }}" as="a" hint-placeholder-count="4">
+        <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:14px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+          <span style="width:42px; height:42px; border-radius:11px; background:rgba(147,51,234,.14); color:#a855f7; display:flex; align-items:center; justify-content:center; flex:none; font-weight:800; font-size:12px;">{{ a.initials }}</span>
+          <div style="flex:1; min-width:180px;"><div style="font-size:13px; font-weight:800; color:#fff;">{{ a.name }}</div><div style="font-size:10.5px; color:#6b7b94; margin-top:3px; font-family:'Roboto Mono',monospace;" dir="ltr">{{ a.apiKey }}</div></div>
+          <div style="text-align:center; flex:none;"><div style="font-size:10px; color:#6b7b94;">درخواست امروز</div><div style="font-size:13px; font-weight:800; color:#e7ecf3; margin-top:2px;">{{ a.calls }}</div></div>
+          <span style="font-size:10.5px; font-weight:700; color:{{ a.stColor }}; background:{{ a.stBg }}; padding:5px 11px; border-radius:14px; flex:none;">{{ a.status }}</span>
+        </div>
+      </sc-for>
+      <sc-if value="{{ noAgencies }}" hint-placeholder-val="{{false}}"><div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; padding:34px; text-align:center; color:#6b7b94; font-size:12px;">آژانسی با دسترسی API ثبت نشده است.</div></sc-if>
+    </div>
+  </sc-if>
+
+  <!-- ============ FLIGHTS ============ -->
+  <sc-if value="{{ vFlights }}" hint-placeholder-val="{{false}}">
+    <div style="background:#141d2e; border:1px solid #1f2a3d; border-radius:14px; overflow:hidden;">
+      <div style="display:grid; grid-template-columns:1.6fr 1fr 1.2fr 1fr 0.9fr; padding:11px 15px; font-size:10.5px; color:#6b7b94; font-weight:700; border-bottom:1px solid #1f2a3d;"><span>مسیر</span><span>شماره پرواز</span><span>تاریخ / ساعت</span><span>ظرفیت</span><span>وضعیت</span></div>
+      <sc-for list="{{ flightRows }}" as="f" hint-placeholder-count="6">
+        <div style="display:grid; grid-template-columns:1.6fr 1fr 1.2fr 1fr 0.9fr; align-items:center; padding:12px 15px; font-size:12px; border-bottom:1px solid #16202e;">
+          <span style="font-weight:700; color:#e7ecf3;">{{ f.route }}</span>
+          <span style="font-family:'Roboto Mono',monospace; color:#9fb0c7;" dir="ltr">{{ f.flightNo }}</span>
+          <span style="color:#9fb0c7;">{{ f.date }} · {{ f.time }}</span>
+          <div style="display:flex; flex-direction:column; gap:4px;"><div style="font-size:10.5px; color:#9fb0c7;">{{ f.sold }} / {{ f.cap }}</div><div style="height:6px; background:#0f1623; border-radius:4px; overflow:hidden;"><div style="height:100%; width:{{ f.pct }}; background:{{ f.barColor }};"></div></div></div>
+          <span style="font-size:10.5px; font-weight:700; color:{{ f.stColor }}; background:{{ f.stBg }}; padding:4px 10px; border-radius:14px; width:max-content;">{{ f.status }}</span>
+        </div>
+      </sc-for>
+      <sc-if value="{{ noFlights }}" hint-placeholder-val="{{false}}"><div style="padding:34px; text-align:center; color:#6b7b94; font-size:12px;">پروازی ثبت نشده است.</div></sc-if>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1100,&quot;height&quot;:700},&quot;role&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;super&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;super&quot;,&quot;ceo&quot;,&quot;finance&quot;,&quot;commercial&quot;,&quot;siteAdmin&quot;,&quot;it&quot;]},&quot;setupMode&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;حالت حساب&quot;}}">
+class Component extends DCLogic {
+  state = { tab: "dash", pnrQ: "", lnameQ: "", pnrSearched: false };
+  toFa(n) { return String(n).replace(/[0-9]/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]); }
+
+  renderVals() {
+    const SETUP = !!(this.props.setupMode);
+    const tab = this.state.tab;
+    const go = (k) => () => this.setState({ tab: k });
+    const navStyle = (k) => ({
+      w: tab === k ? "800" : "600", c: tab === k ? "#fff" : "#9fb0c7", bg: tab === k ? "var(--accent,#3b82f6)" : "transparent"
+    });
+    const nd = navStyle("dash"), np = navStyle("pnr"), na = navStyle("agency"), nf = navStyle("flights");
+
+    const svcDefs = [
+      { name: "reservation-api", fa: "سرویس رزرواسیون مرکزی", latency: "42ms" },
+      { name: "pnr-store", fa: "پایگاه ذخیره PNR", latency: "18ms" },
+      { name: "payment-gateway", fa: "درگاه پرداخت", latency: "88ms" },
+      { name: "agency-api", fa: "پلتفرم API آژانس‌ها", latency: "61ms" },
+      { name: "seat-inventory", fa: "موجودی صندلی", latency: "25ms" },
+      { name: "notification-svc", fa: "سرویس اعلان و پیامک", latency: "34ms" }
+    ];
+    const services = svcDefs.map(s => ({ ...s, dot: "#34d399", glow: "rgba(16,185,129,.18)", stColor: "#34d399", stLabel: "سالم" }));
+
+    const channelDefs = SETUP ? [] : [
+      { label: "فروش مستقیم سایت", color: "#3b82f6", n: 52 },
+      { label: "اپلیکیشن موبایل", color: "#a855f7", n: 26 },
+      { label: "API آژانس‌های همکار", color: "#34d399", n: 22 }
+    ];
+    const chTotal = channelDefs.reduce((a, c) => a + c.n, 0) || 1;
+    const channels = channelDefs.map(c => ({ label: c.label, color: c.color, pct: Math.round(c.n / chTotal * 100) + "%", count: this.toFa(c.n) + "٪" }));
+
+    const recentDefs = SETUP ? [] : [
+      { pnr: "AS-88421", route: "تهران ← دبی", pax: "نگار رضایی", status: "صادرشده", stColor: "#34d399", stBg: "rgba(16,185,129,.14)" },
+      { pnr: "AS-77310", route: "مشهد ← تهران", pax: "امیر تهرانی", status: "صادرشده", stColor: "#34d399", stBg: "rgba(16,185,129,.14)" },
+      { pnr: "AS-90155", route: "تهران ← استانبول", pax: "مریم صادقی", status: "در انتظار", stColor: "#f59e0b", stBg: "rgba(245,158,11,.14)" }
+    ];
+    const recentPnrs = recentDefs;
+
+    const agencyDefs = SETUP ? [] : [
+      { initials: "بل", name: "آژانس blujet", apiKey: "sk_live_ag01••••7f2a", calls: this.toFa(1284), status: "فعال", stColor: "#34d399", stBg: "rgba(16,185,129,.14)" },
+      { initials: "کس", name: "کیان‌سیر جنوب", apiKey: "sk_live_ag02••••a91c", calls: this.toFa(742), status: "فعال", stColor: "#34d399", stBg: "rgba(16,185,129,.14)" },
+      { initials: "سط", name: "سفرهای طلایی پارس", apiKey: "sk_live_ag03••••44de", calls: this.toFa(0), status: "معلق", stColor: "#f87171", stBg: "rgba(248,113,113,.14)" }
+    ];
+
+    const flightDefs = SETUP ? [] : [
+      { route: "تهران ← دبی", flightNo: "EP-821", date: "۱۲ تیر", time: "۰۸:۳۰", sold: 152, cap: 180 },
+      { route: "مشهد ← تهران", flightNo: "W5-112", date: "۱۲ تیر", time: "۱۳:۱۰", sold: 138, cap: 150 },
+      { route: "تهران ← استانبول", flightNo: "IR-655", date: "۱۳ تیر", time: "۲۰:۰۰", sold: 95, cap: 200 }
+    ];
+    const flightRows = flightDefs.map(f => {
+      const pc = Math.round(f.sold / f.cap * 100);
+      return { route: f.route, flightNo: f.flightNo, date: f.date, time: f.time, sold: this.toFa(f.sold), cap: this.toFa(f.cap),
+        pct: pc + "%", barColor: pc >= 90 ? "#f59e0b" : "#34d399",
+        status: pc >= 90 ? "رو به تکمیل" : "در حال فروش", stColor: pc >= 90 ? "#f59e0b" : "#60a5fa", stBg: pc >= 90 ? "rgba(245,158,11,.14)" : "rgba(59,130,246,.14)" };
+    });
+
+    const paxDB = {
+      "AS-88421": { route: "تهران ← دبی", date: "۱۲ تیر ۱۴۰۵", pax: [{ initials: "نر", name: "نگار رضایی", seat: "12A", status: "صادرشده" }] }
+    };
+
+    const pnrKey = (this.state.pnrQ || "").trim();
+    const found = this.state.pnrSearched && !SETUP && paxDB[pnrKey];
+
+    return {
+      goDash: go("dash"), wDash: nd.w, cDash: nd.c, bgDash: nd.bg,
+      goPnr: go("pnr"), wPnr: np.w, cPnr: np.c, bgPnr: np.bg,
+      goAgency: go("agency"), wAgency: na.w, cAgency: na.c, bgAgency: na.bg,
+      goFlights: go("flights"), wFlights: nf.w, cFlights: nf.c, bgFlights: nf.bg,
+      vDash: tab === "dash", vPnr: tab === "pnr", vAgency: tab === "agency", vFlights: tab === "flights",
+
+      kToday: SETUP ? "۰" : this.toFa(recentDefs.length), kActive: SETUP ? "۰" : "۴۲", kSeats: SETUP ? "۰" : "۶۸۵", kRevenue: SETUP ? "۰ تومان" : "۱٫۸ میلیارد تومان",
+      services, channels,
+
+      pnrQ: this.state.pnrQ, onPnrQ: (e) => this.setState({ pnrQ: e.target.value, pnrSearched: false }),
+      lnameQ: this.state.lnameQ, onLnameQ: (e) => this.setState({ lnameQ: e.target.value, pnrSearched: false }),
+      doPnrSearch: () => this.setState({ pnrSearched: true }),
+      vPnrFound: !!found, vPnrNotFound: this.state.pnrSearched && !found,
+      pnrShow: pnrKey, pnrRoute: found ? found.route : "", pnrDate: found ? found.date : "",
+      pnrPax: found ? found.pax : [],
+      recentPnrs, noRecentPnrs: recentPnrs.length === 0,
+
+      agencyRows: agencyDefs, noAgencies: agencyDefs.length === 0,
+      flightRows, noFlights: flightRows.length === 0
+    };
+  }
+}
+</script>
+</body>
+</html>

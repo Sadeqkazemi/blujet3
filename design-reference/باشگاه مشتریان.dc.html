@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<template id="__bundler_thumbnail" data-bg-color="#0d2640">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#0d2640"/>
+    <circle cx="600" cy="360" r="150" fill="#1668c4"/>
+    <text x="600" y="430" font-size="170" text-anchor="middle" fill="#fff" font-family="sans-serif">✈</text>
+    <text x="600" y="600" font-size="70" text-anchor="middle" fill="#fff" font-family="Vazirmatn,sans-serif" font-weight="900">باشگاه مشتریان</text>
+  </svg>
+</template>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box;}html,body{margin:0;}summary::-webkit-details-marker{display:none;}summary{list-style:none;}</style>
+<script>document.addEventListener("click",function(e){document.querySelectorAll("details[open]").forEach(function(d){if(!d.contains(e.target))d.removeAttribute("open");});});</script>
+</helmet>
+
+<div dir="rtl" style="font-family:Vazirmatn,sans-serif; background:#f4f7fb; color:#16202e; min-height:100vh; --accent:#1668c4;">
+
+  <!-- HEADER -->
+  <header style="position:sticky; top:0; z-index:50;">
+    <div style="background:#fff; border-bottom:1px solid #e6eaf0; box-shadow:0 2px 12px -8px rgba(13,38,102,.25);"><div style="max-width:1320px; margin:0 auto; padding:0 26px; height:70px; display:flex; align-items:center; justify-content:space-between;">
+      <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:9px; text-decoration:none; color:inherit;"><div style="width:38px; height:38px; border-radius:10px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px;">✈</div><span style="font-weight:900; font-size:18px; letter-spacing:-.5px;">blujet</span></a>
+      <nav style="display:flex; gap:30px; font-size:15.5px; color:#3b4554; font-weight:600; height:100%; align-items:center;"><a href="صفحه اصلی.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">پرواز</a><a href="مقاصد.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">مقاصد پروازی</a><span style="color:var(--accent,#1668c4); height:100%; display:flex; align-items:center; border-bottom:3px solid var(--accent,#1668c4); cursor:pointer;">باشگاه مشتریان</span><a href="قوانین و مقررات.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">اطلاعات سفر</a><a href="پشتیبانی.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">پشتیبانی</a></nav>
+      <div style="display:flex; align-items:center; gap:10px;"><div style="position:relative;">
+        <div onClick="{{ toggleNotif }}" style="width:42px; height:42px; border-radius:50%; background:#f3f5f8; display:flex; align-items:center; justify-content:center; color:#5a6678; font-size:15.5px; position:relative; cursor:pointer;">🔔<span style="position:absolute; top:9px; left:12px; width:8px; height:8px; border-radius:50%; background:#e5484d; border:1.5px solid #fff;"></span></div>
+        <sc-if value="{{ notifOpen }}" hint-placeholder-val="{{false}}">
+          <div onClick="{{ toggleNotif }}" style="position:fixed; inset:0; z-index:120;"></div>
+          <div style="position:absolute; top:52px; left:0; width:340px; background:#fff; border:1px solid #e6eaf0; border-radius:14px; box-shadow:0 20px 50px -16px rgba(13,38,64,.35); z-index:130; overflow:hidden;">
+            <div style="padding:11px 12px; border-bottom:1px solid #eef1f5; display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; font-weight:800; color:#0d2640;">اعلان‌ها</span><span style="font-size:10px; font-weight:700; color:var(--accent,#1668c4); background:#eef4fb; padding:2px 7px; border-radius:12px;">۲ جدید</span></div>
+            <sc-for list="{{ notifs }}" as="n" hint-placeholder-count="3">
+              <div style="display:flex; gap:9px; padding:11px 12px; border-bottom:1px solid #f4f6fa; background:{{ n.bg }};">
+                <span style="width:34px; height:34px; border-radius:10px; background:#f3f5f8; display:flex; align-items:center; justify-content:center; font-size:14.5px; flex:none;">{{ n.icon }}</span>
+                <div style="min-width:0;"><div style="font-size:11.5px; font-weight:700; color:#16202e;">{{ n.title }}</div><div style="font-size:11px; color:#6b7787; margin-top:2px; line-height:1.7;">{{ n.body }}</div><div style="font-size:9.5px; color:#9aa4b2; margin-top:4px;">{{ n.time }}</div></div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+      <details style="position:relative;">
+              <summary style="list-style:none; display:flex; align-items:center; gap:8px; background:#fff; border:1px solid #e6eaf0; padding:4px 10px 4px 7px; border-radius:28px; cursor:pointer;"><div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,var(--accent,#1668c4),#0d3b66); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:11.5px;">نر</div><div style="line-height:1.35; text-align:right;"><div style="font-size:12px; font-weight:700; color:#16202e;">نگار رضایی</div><div style="font-size:10px; color:#caa53a; font-weight:700;">★ عضو طلایی</div></div><span style="font-size:8px; color:#9aa4b2; margin-right:2px;">▼</span></summary>
+              <div style="position:absolute; top:54px; left:0; width:320px; background:#fff; border:1px solid #e6eaf0; border-radius:16px; box-shadow:0 20px 50px -16px rgba(13,38,64,.35); z-index:130; overflow:hidden;">
+                <div style="padding:15px; background:linear-gradient(135deg,#0d2640,#16406e); color:#fff;">
+                  <div style="display:flex; align-items:center; gap:10px;"><div style="width:46px; height:46px; border-radius:50%; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13.5px;">نر</div><div style="line-height:1.5;"><div style="font-size:13.5px; font-weight:800;">نگار رضایی</div><div style="font-size:10.5px; color:#caa53a; font-weight:700;">★ عضو طلایی</div></div></div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-top:14px; background:rgba(255,255,255,.1); border-radius:10px; padding:7px 11px;"><span style="font-size:11px; color:#aac4e2;">امتیاز باشگاه</span><span style="font-size:12.5px; font-weight:800;">۱۲٬۴۵۰</span></div>
+                </div>
+                <div style="padding:5px;">
+                  <a href="پنل کاربر.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);">👤</span>مشاهده پروفایل</a>
+                  <a href="مدیریت رزرو.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);">🧳</span>سفرها و مدیریت رزرو</a>
+                  <a href="مدیریت رزرو.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);">↺</span>استرداد</a>
+                  <a href="باشگاه مشتریان.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);">★</span>باشگاه مشتریان</a>
+                  <a href="ورود و ثبتنام.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#e5484d; font-weight:600; text-decoration:none;"><span>↩</span>خروج از حساب</a>
+                </div>
+              </div>
+            </details></div>
+    </div></div>
+  </header>
+
+  <!-- HERO -->
+  <section style="background:linear-gradient(150deg,#0d2640,var(--accent,#1668c4)); color:#fff; padding:41px 22px 37px; text-align:center;">
+    <div style="max-width:760px; margin:0 auto;">
+      <div style="display:inline-block; background:#ffffff22; border:1px solid #ffffff44; padding:6px 12px; border-radius:28px; font-size:11.5px; font-weight:700; margin-bottom:20px;">باشگاه مشتریان blujet</div>
+      <h1 style="font-size:38px; font-weight:900; margin:0 0 16px; letter-spacing:-.8px;">هر پرواز، یک قدم به مزایای بیشتر</h1>
+      <p style="font-size:15.5px; color:#d6e4f7; margin:0 0 28px; line-height:1.85;">با هر سفر امتیاز جمع کنید، کش‌بک بگیرید و از خدمات اختصاصی مثل ارتقای رایگان، پذیرش ویژه‌ی فرودگاه و درخواست خودرو بهره‌مند شوید.</p>
+      <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;"><span onClick="{{ openJoin }}" style="background:#fff; color:var(--accent,#1668c4); padding:11px 24px; border-radius:12px; font-size:13.5px; font-weight:800; cursor:pointer;">عضویت رایگان</span><a href="پنل کاربر.dc.html?tab=club" style="text-decoration:none; background:#ffffff22; border:1px solid #ffffff55; color:#fff; padding:11px 21px; border-radius:12px; font-size:13.5px; font-weight:700;">حساب من</a></div>
+    </div>
+  </section>
+
+  <!-- STATS STRIP -->
+  <section style="max-width:1320px; margin:-30px auto 0; padding:0 26px; position:relative;">
+    <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; box-shadow:0 18px 40px -22px rgba(13,38,102,.3); display:grid; grid-template-columns:repeat(4,1fr);">
+      <sc-for list="{{ stats }}" as="s" hint-placeholder-count="4">
+        <div style="padding:16px; text-align:center; border-left:1px solid #f2f4f7;"><div style="font-size:25px; font-weight:900; color:var(--accent,#1668c4);">{{ s.value }}</div><div style="font-size:11.5px; color:#6b7585; margin-top:4px;">{{ s.label }}</div></div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- TIERS -->
+  <section style="max-width:1320px; margin:0 auto; padding:37px 22px 14px;">
+    <div style="text-align:center; margin-bottom:34px;"><h2 style="font-size:27px; font-weight:900; color:#0d2640; margin:0 0 10px;">سطوح عضویت</h2><p style="font-size:13.5px; color:#6b7585; margin:0;">هر چه بیشتر پرواز کنید، به سطح بالاتر و مزایای بیشتر می‌رسید.</p></div>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:18px;">
+      <div style="background:#fff; border:2px solid #e6eaf0; border-radius:18px; overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#9aa7b8,#6f7d90); color:#fff; padding:16px; text-align:center;"><div style="display:flex; justify-content:center; margin-bottom:8px;"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4l3 5 3-5"/><circle cx="12" cy="15" r="6"/><path d="M12 12.5l1 2 2.2.3-1.6 1.5.4 2.2-2-1-2 1 .4-2.2L8.8 14.8l2.2-.3z"/></svg></div><div style="font-size:18px; font-weight:900;">نقره‌ای</div><div style="font-size:11.5px; opacity:.9; margin-top:4px;">۰ تا ۵٬۰۰۰ امتیاز</div></div>
+        <div style="padding:15px;"><sc-for list="{{ perksSilver }}" as="pk" hint-placeholder-count="4"><div style="display:flex; align-items:center; gap:8px; padding:7px 0; font-size:12px; color:#3b4554;"><span style="color:#1f8a5b; font-weight:800;">✓</span>{{ pk }}</div></sc-for></div>
+      </div>
+      <div style="background:#fff; border:2px solid #caa53a; border-radius:18px; overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#caa53a,#9a7d22); color:#fff; padding:16px; text-align:center;"><div style="display:flex; justify-content:center; margin-bottom:8px;"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4l3 5 3-5"/><circle cx="12" cy="15" r="6"/><path d="M12 12.5l1 2 2.2.3-1.6 1.5.4 2.2-2-1-2 1 .4-2.2L8.8 14.8l2.2-.3z"/></svg></div><div style="font-size:18px; font-weight:900;">طلایی</div><div style="font-size:11.5px; opacity:.9; margin-top:4px;">۵٬۰۰۰ تا ۱۵٬۰۰۰ امتیاز</div></div>
+        <div style="padding:15px;"><sc-for list="{{ perksGold }}" as="pk" hint-placeholder-count="4"><div style="display:flex; align-items:center; gap:8px; padding:7px 0; font-size:12px; color:#3b4554;"><span style="color:#1f8a5b; font-weight:800;">✓</span>{{ pk }}</div></sc-for></div>
+      </div>
+      <div style="background:#fff; border:2px solid #1668c4; border-radius:18px; overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#1668c4,#0d2640); color:#fff; padding:16px; text-align:center;"><div style="display:flex; justify-content:center; margin-bottom:8px;"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14l3 5-10 12L2 9z"/><path d="M2 9h20M9 4L6 9l6 12 6-12-3-5"/></svg></div><div style="font-size:18px; font-weight:900;">پلاتین</div><div style="font-size:11.5px; opacity:.9; margin-top:4px;">بالای ۱۵٬۰۰۰ امتیاز</div></div>
+        <div style="padding:15px;"><sc-for list="{{ perksPlat }}" as="pk" hint-placeholder-count="4"><div style="display:flex; align-items:center; gap:8px; padding:7px 0; font-size:12px; color:#3b4554;"><span style="color:#1f8a5b; font-weight:800;">✓</span>{{ pk }}</div></sc-for></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MEMBERSHIP CARD ISSUANCE -->
+  <section style="max-width:1320px; margin:0 auto; padding:28px 22px 14px;">
+    <div style="background:linear-gradient(135deg,#0d2640,#16406e); border:1px solid #1668c4; border-radius:18px; padding:24px; position:relative; overflow:hidden;">
+      <div style="position:absolute; top:-70px; left:-50px; width:220px; height:220px; border-radius:50%; background:#ffffff0d;"></div>
+      <div style="position:relative; text-align:center; margin-bottom:28px;">
+        <div style="display:inline-block; background:#ffffff1a; color:#aac4e2; padding:5px 11px; border-radius:20px; font-size:11.5px; font-weight:800; margin-bottom:12px;">صدور کارت بلوجت</div>
+        <h2 style="font-size:21.5px; font-weight:900; color:#fff; margin:0 0 10px;">با رسیدن به حد امتیاز، کارت بگیرید</h2>
+        <p style="font-size:13px; color:#aac4e2; margin:0; line-height:1.8; max-width:680px; margin-right:auto; margin-left:auto;">به محض رسیدن به آستانه‌ی <b style="color:#fff;">۵٬۰۰۰ امتیاز</b>، واجد شرایط دریافت کارت عضویت می‌شوید. درخواست شما برای ادمین سایت ارسال و سپس برای تأیید به رئیس هیئت مدیره یا مدیر ارشد ارجاع می‌شود؛ پس از تأیید، کارت برای مسافر صادر می‌گردد.</p>
+      </div>
+      <div style="position:relative; display:grid; grid-template-columns:repeat(4,1fr); gap:11px;">
+        <div style="text-align:center; background:#ffffff12; border:1px solid #ffffff1f; border-radius:15px; padding:18px 13px;"><div style="width:46px; height:46px; border-radius:50%; background:#fff; color:#0d2640; font-weight:900; font-size:16px; display:flex; align-items:center; justify-content:center; margin:0 auto 13px;">۱</div><div style="font-size:13.5px; font-weight:800; color:#fff; margin-bottom:6px;">کسب امتیاز</div><div style="font-size:11.5px; color:#aac4e2; line-height:1.7;">با هر پرواز امتیاز جمع کنید تا به حد ۵٬۰۰۰ برسید.</div></div>
+        <div style="text-align:center; background:#ffffff12; border:1px solid #ffffff1f; border-radius:15px; padding:18px 13px;"><div style="width:46px; height:46px; border-radius:50%; background:#fff; color:#0d2640; font-weight:900; font-size:16px; display:flex; align-items:center; justify-content:center; margin:0 auto 13px;">۲</div><div style="font-size:13.5px; font-weight:800; color:#fff; margin-bottom:6px;">ارسال درخواست</div><div style="font-size:11.5px; color:#aac4e2; line-height:1.7;">درخواست صدور کارت برای ادمین سایت ارسال می‌شود.</div></div>
+        <div style="text-align:center; background:#ffffff12; border:1px solid #ffffff1f; border-radius:15px; padding:18px 13px;"><div style="width:46px; height:46px; border-radius:50%; background:#fff; color:#0d2640; font-weight:900; font-size:16px; display:flex; align-items:center; justify-content:center; margin:0 auto 13px;">۳</div><div style="font-size:13.5px; font-weight:800; color:#fff; margin-bottom:6px;">ارجاع برای تأیید</div><div style="font-size:11.5px; color:#aac4e2; line-height:1.7;">ادمین درخواست را به رئیس هیئت مدیره یا مدیر ارشد ارجاع می‌دهد.</div></div>
+        <div style="text-align:center; background:#e8c65a22; border:1px solid #e8c65a55; border-radius:15px; padding:18px 13px;"><div style="width:46px; height:46px; border-radius:50%; background:#e8c65a; color:#0d2640; font-weight:900; font-size:16px; display:flex; align-items:center; justify-content:center; margin:0 auto 13px;">۴</div><div style="font-size:13.5px; font-weight:800; color:#fff; margin-bottom:6px;">صدور کارت</div><div style="font-size:11.5px; color:#dfeaf7; line-height:1.7;">پس از تأیید، کارت عضویت برای مسافر صادر می‌شود.</div></div>
+      </div>
+      <div style="position:relative; display:flex; gap:10px; flex-wrap:wrap; margin-top:18px;">
+        <div style="flex:1; min-width:200px; display:flex; align-items:center; gap:9px; border:1.5px solid #ffffff26; border-radius:13px; padding:11px 13px;"><span style="width:13px; height:13px; border-radius:50%; background:#c8cfd9; flex:none;"></span><span style="font-size:12.5px; font-weight:800; color:#fff;">کارت نقره‌ای</span><span style="margin-right:auto; font-size:11.5px; color:#aac4e2; font-weight:600;">۰ تا ۵٬۰۰۰ امتیاز</span></div>
+        <div style="flex:1; min-width:200px; display:flex; align-items:center; gap:9px; border:1.5px solid #e8c65a55; border-radius:13px; padding:11px 13px;"><span style="width:13px; height:13px; border-radius:50%; background:#e8c65a; flex:none;"></span><span style="font-size:12.5px; font-weight:800; color:#fff;">کارت طلایی</span><span style="margin-right:auto; font-size:11.5px; color:#aac4e2; font-weight:600;">۵٬۰۰۰ تا ۱۵٬۰۰۰ امتیاز</span></div>
+        <div style="flex:1; min-width:200px; display:flex; align-items:center; gap:9px; border:1.5px solid #ffffff26; border-radius:13px; padding:11px 13px;"><span style="width:13px; height:13px; border-radius:50%; background:#7fb2f0; flex:none;"></span><span style="font-size:12.5px; font-weight:800; color:#fff;">کارت پلاتین</span><span style="margin-right:auto; font-size:11.5px; color:#aac4e2; font-weight:600;">بالای ۱۵٬۰۰۰ امتیاز</span></div>
+      </div>
+      <div style="position:relative; text-align:center; margin-top:22px;">
+        <span onClick="{{ requestCard }}" style="display:inline-flex; align-items:center; gap:8px; background:#fff; color:#0d2640; padding:13px 28px; border-radius:12px; font-size:13.5px; font-weight:800; cursor:pointer;">درخواست صدور کارت</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- SAMAN BANK BANNER -->
+  <section style="max-width:1320px; margin:0 auto; padding:14px 22px;">
+    <div style="background:linear-gradient(135deg,#0d2640,#1668c4); border-radius:18px; padding:40px 48px; display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap;">
+      <div style="display:flex; align-items:center; gap:24px;">
+        <div style="width:84px; height:84px; border-radius:18px; background:#fff; color:#0d2640; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:24px; flex:none;">سامان</div>
+        <div>
+          <div style="font-size:24px; font-weight:800; color:#fff;">خرید اقساطی بلیط با کارت بانک سامان</div>
+          <div style="font-size:15px; color:#aac4e2; margin-top:7px;">بدون کارمزد، تا ۱۲ ماه اقساط روی خرید بلیط پرواز</div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <input value="{{ samanNumber }}" onInput="{{ onSamanNumber }}" placeholder="شماره مشتری بانک سامان" style="width:220px; background:#ffffff1a; border:1.5px solid #ffffff40; border-radius:12px; padding:15px 16px; font-size:14px; color:#fff; font-family:inherit; text-align:center;"/>
+        <span onClick="{{ submitSaman }}" style="background:#fff; color:#0d2640; padding:17px 38px; border-radius:13px; font-size:16px; font-weight:800; cursor:pointer; white-space:nowrap;">ثبت شماره مشتری</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW TO EARN -->
+  <section style="max-width:1320px; margin:0 auto; padding:28px 22px 14px;">
+    <div style="background:#fff; border:1px solid #eef1f5; border-radius:18px; padding:24px;">
+      <h2 style="font-size:21.5px; font-weight:900; color:#0d2640; margin:0 0 26px; text-align:center;">چطور امتیاز بگیرم؟</h2>
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px;">
+        <div style="text-align:center;"><div style="width:60px; height:60px; border-radius:16px; background:#eef4fb; color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; margin:0 auto 14px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15l-7 3-9-4 2-2 3 1 4-5 3 1-2 3 3 1z"/><path d="M5 21h14"/></svg></div><div style="font-size:13.5px; font-weight:800; margin-bottom:6px;">پرواز کنید</div><div style="font-size:11.5px; color:#6b7585; line-height:1.7;">به ازای هر خرید بلیط امتیاز بگیرید.</div></div>
+        <div style="text-align:center;"><div style="width:60px; height:60px; border-radius:16px; background:#eef4fb; color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; margin:0 auto 14px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6"/><circle cx="9.3" cy="9.3" r=".7" fill="currentColor"/><circle cx="14.7" cy="14.7" r=".7" fill="currentColor"/></svg></div><div style="font-size:13.5px; font-weight:800; margin-bottom:6px;">کش‌بک بگیرید</div><div style="font-size:11.5px; color:#6b7585; line-height:1.7;">بخشی از مبلغ به کیف پول برمی‌گردد.</div></div>
+        <div style="text-align:center;"><div style="width:60px; height:60px; border-radius:16px; background:#eef4fb; color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; margin:0 auto 14px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3.2"/><path d="M2 20c0-3.3 2.7-5 6-5s6 1.7 6 5"/><circle cx="17" cy="9" r="2.6"/><path d="M15 15c3 0 6 1.4 6 5"/></svg></div><div style="font-size:13.5px; font-weight:800; margin-bottom:6px;">معرفی دوستان</div><div style="font-size:11.5px; color:#6b7585; line-height:1.7;">با دعوت دوستان امتیاز هدیه بگیرید.</div></div>
+        <div style="text-align:center;"><div style="width:60px; height:60px; border-radius:16px; background:#eef4fb; color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; margin:0 auto 14px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg></div><div style="font-size:13.5px; font-weight:800; margin-bottom:6px;">ماموریت‌ها</div><div style="font-size:11.5px; color:#6b7585; line-height:1.7;">با تکمیل ماموریت‌ها امتیاز جمع کنید.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SPECIAL SERVICES -->
+  <section style="max-width:1320px; margin:0 auto; padding:28px 22px 16px;">
+    <h2 style="font-size:21.5px; font-weight:900; color:#0d2640; margin:0 0 22px;">خدمات ویژه‌ی اعضا</h2>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
+      <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:18px;"><div style="width:52px; height:52px; border-radius:15px; background:#eef4fb; color:#1668c4; display:flex; align-items:center; justify-content:center; margin-bottom:16px;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 16l1-5a3 3 0 0 1 3-2h6a3 3 0 0 1 3 2l1 5"/><rect x="3" y="16" width="18" height="4" rx="1.5"/><path d="M6 20v1M18 20v1"/><path d="M7 13h3M14 13h3"/></svg></div><div style="font-size:15.5px; font-weight:800; margin-bottom:8px;">درخواست خودرو</div><div style="font-size:12px; color:#6b7585; line-height:1.8;">رزرو خودرو فرودگاه تا مقصد با تخفیف ویژه اعضا.</div></div>
+      <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:18px;"><div style="width:52px; height:52px; border-radius:15px; background:#fff7e6; color:#caa53a; display:flex; align-items:center; justify-content:center; margin-bottom:16px;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8v9h7"/><path d="M7 17l-2 4M14 17l2 4"/><path d="M7 11H5a2 2 0 0 0-2 2"/><path d="M18 11V3M14.5 6.5L18 3l3.5 3.5"/></svg></div><div style="font-size:15.5px; font-weight:800; margin-bottom:8px;">ارتقای صندلی</div><div style="font-size:12px; color:#6b7585; line-height:1.8;">ارتقای رایگان یا تخفیف‌دار به کلاس بیزنس.</div></div>
+      <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:18px;"><div style="width:52px; height:52px; border-radius:15px; background:#e8f5ee; color:#1f8a5b; display:flex; align-items:center; justify-content:center; margin-bottom:16px;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.4-3 7.5-7 9-4-1.5-7-4.6-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div><div style="font-size:15.5px; font-weight:800; margin-bottom:8px;">پذیرش ویژه</div><div style="font-size:12px; color:#6b7585; line-height:1.8;">چک‌این سریع و پذیرش اختصاصی بدون صف.</div></div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section style="max-width:1320px; margin:0 auto; padding:16px 22px 41px;">
+    <div style="background:linear-gradient(135deg,#caa53a,#9a7d22); color:#fff; border-radius:20px; padding:29px; text-align:center;">
+      <h2 style="font-size:25px; font-weight:900; margin:0 0 12px;">همین حالا عضو طلایی شوید</h2>
+      <p style="font-size:13.5px; color:#fff; opacity:.92; margin:0 0 24px;">عضویت رایگان است و از اولین پرواز، امتیاز و کش‌بک دریافت می‌کنید.</p>
+      <span onClick="{{ openJoin }}" style="display:inline-block; background:#fff; color:#9a7d22; padding:11px 28px; border-radius:12px; font-size:14.5px; font-weight:800; cursor:pointer;">ثبت‌نام در باشگاه</span>
+    </div>
+  </section>
+
+  <footer style="background:#0d2640; color:#aebfd4;">
+    <div style="max-width:1320px; margin:0 auto; padding:39px 26px 20px; display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr; gap:33px;">
+      <div>
+        <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:9px; margin-bottom:16px; text-decoration:none;"><div style="width:36px; height:36px; border-radius:10px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:16px;">✈</div><span style="font-weight:900; font-size:18px; color:#fff;">blujet</span></a>
+        <p style="font-size:13.5px; line-height:1.85; margin:0 0 20px; max-width:300px;">رزرو آنلاین بلیط پروازهای داخلی و بین‌المللی با بهترین قیمت و خدمات باشگاه مشتریان.</p>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">نماد اعتماد الکترونیکی</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">انجمن صنفی دفاتر خدمات مسافرتی</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">ساماندهی</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">عضو IATA</span>
+        </div>
+      </div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">خدمات</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="نتایج پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">رزرو پرواز</a><a href="مدیریت رزرو.dc.html" style="color:#aebfd4; text-decoration:none;">مدیریت رزرو</a><a href="باشگاه مشتریان.dc.html" style="color:#aebfd4; text-decoration:none;">باشگاه مشتریان</a><a href="مدیریت رزرو.dc.html" style="color:#aebfd4; text-decoration:none;">استرداد بلیط</a></div></div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">شرکت</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="درباره ما.dc.html" style="color:#aebfd4; text-decoration:none;">درباره ما</a><a href="تماس با ما.dc.html" style="color:#aebfd4; text-decoration:none;">تماس با ما</a><a href="قوانین و مقررات.dc.html" style="color:#aebfd4; text-decoration:none;">قوانین و مقررات</a></div></div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">پشتیبانی</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">مرکز راهنما</a><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">سوالات متداول</a><span dir="ltr" style="text-align:right;" data-site-phone>۰۲۱ — ۹۱۰۰۰۰۰۰</span></div></div>
+    </div>
+    <div style="border-top:1px solid #ffffff12;"><div style="max-width:1320px; margin:0 auto; padding:15px 26px; display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:#7d92ad;"><span>© ۱۴۰۵ blujet. تمامی حقوق محفوظ است.</span></div></div>
+  </footer>  <!-- JOIN MODAL -->
+  <sc-if value="{{ joinOpen }}" hint-placeholder-val="{{false}}">
+    <div onClick="{{ closeJoin }}" style="position:fixed; inset:0; background:rgba(7,12,22,.6); z-index:200; display:flex; align-items:center; justify-content:center; padding:20px;">
+      <div onClick="{{ stop }}" style="background:#fff; border-radius:18px; width:460px; max-width:100%; overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#0d2640,#16406e); color:#fff; padding:18px 20px; display:flex; align-items:center; justify-content:space-between;">
+          <div><div style="font-size:15.5px; font-weight:900;">عضویت در باشگاه مشتریان</div><div style="font-size:11.5px; color:#aac4e2; margin-top:3px;">عضویت رایگان است و از اولین پرواز امتیاز می‌گیرید.</div></div>
+          <span onClick="{{ closeJoin }}" style="width:32px; height:32px; border-radius:9px; background:rgba(255,255,255,.14); color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px;">×</span>
+        </div>
+        <sc-if value="{{ joinDone }}" hint-placeholder-val="{{false}}">
+          <div style="padding:30px 22px; text-align:center;">
+            <div style="width:64px; height:64px; border-radius:50%; background:#eef9f1; color:#1f8a5b; display:flex; align-items:center; justify-content:center; font-size:27px; margin:0 auto 14px;">✓</div>
+            <div style="font-size:16px; font-weight:900; margin-bottom:6px; color:#0d2640;">عضویت شما ثبت شد</div>
+            <div style="font-size:12px; color:#8a96a6; line-height:1.9;">به باشگاه مشتریان blujet خوش آمدید، {{ joinName }}! حساب شما با سطح نقره‌ای فعال شد و از اولین پرواز امتیاز جمع می‌کنید.</div>
+            <a href="صفحه اصلی.dc.html" style="display:inline-block; margin-top:18px; background:var(--accent,#1668c4); color:#fff; padding:11px 24px; border-radius:11px; font-size:12.5px; font-weight:800; text-decoration:none;">مشاهدهٔ حساب من</a>
+          </div>
+        </sc-if>
+        <sc-if value="{{ joinForm }}" hint-placeholder-val="{{true}}">
+          <div style="padding:20px 20px 22px; display:flex; flex-direction:column; gap:12px;">
+            <div><div style="font-size:11.5px; color:#8a96a6; font-weight:600; margin-bottom:7px;">نام و نام خانوادگی</div><input value="{{ jName }}" onInput="{{ onJName }}" placeholder="مثلاً نگار رضایی" style="width:100%; height:46px; border:1.5px solid #e2e7ee; border-radius:11px; background:#fafbfd; padding:0 12px; font-family:inherit; font-size:12.5px; outline:none; box-sizing:border-box;" /></div>
+            <div style="display:flex; gap:11px;">
+              <div style="flex:1;"><div style="font-size:11.5px; color:#8a96a6; font-weight:600; margin-bottom:7px;">ایمیل</div><input value="{{ jEmail }}" onInput="{{ onJEmail }}" placeholder="email@example.com" dir="ltr" style="width:100%; height:46px; border:1.5px solid #e2e7ee; border-radius:11px; background:#fafbfd; padding:0 12px; font-family:inherit; font-size:12.5px; outline:none; text-align:right; box-sizing:border-box;" /></div>
+              <div style="flex:1;"><div style="font-size:11.5px; color:#8a96a6; font-weight:600; margin-bottom:7px;">شماره موبایل</div><input value="{{ jPhone }}" onInput="{{ onJPhone }}" placeholder="۰۹۱۲۰۰۰۰۰۰۰" dir="ltr" style="width:100%; height:46px; border:1.5px solid #e2e7ee; border-radius:11px; background:#fafbfd; padding:0 12px; font-family:inherit; font-size:12.5px; outline:none; text-align:right; box-sizing:border-box;" /></div>
+            </div>
+            <div><div style="font-size:11.5px; color:#8a96a6; font-weight:600; margin-bottom:7px;">کد ملی</div><input value="{{ jNid }}" onInput="{{ onJNid }}" placeholder="۰۰۱۲۳۴۵۶۷۸" dir="ltr" style="width:100%; height:46px; border:1.5px solid #e2e7ee; border-radius:11px; background:#fafbfd; padding:0 12px; font-family:inherit; font-size:12.5px; outline:none; text-align:right; box-sizing:border-box;" /></div>
+            <div onClick="{{ submitJoin }}" style="height:50px; border-radius:12px; background:{{ joinBtnBg }}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13.5px; font-weight:800; cursor:{{ joinBtnCursor }}; margin-top:4px;">ثبت عضویت رایگان</div>
+            <div style="font-size:10.5px; color:#9aa4b2; text-align:center; line-height:1.7;">با ثبت‌نام، قوانین و مقررات باشگاه مشتریان blujet را می‌پذیرید.</div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- TOAST -->
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div dir="rtl" style="position:fixed; inset:0; z-index:9000; background:rgba(8,22,40,.6); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; padding:24px;"><div style="width:420px; max-width:100%; background:#fff; border-radius:22px; box-shadow:0 50px 120px -30px rgba(4,16,34,.7); padding:40px 32px 30px; text-align:center; position:relative; overflow:hidden;"><div style="position:absolute; top:0; left:0; right:0; height:5px; background:linear-gradient(90deg,var(--accent,#1668c4),#5ea3e8);"></div><div style="width:96px; height:96px; border-radius:50%; background:#e8f0fb; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;"><span style="width:56px; height:56px; border-radius:50%; background:var(--accent,#1668c4); color:#fff; display:flex; align-items:center; justify-content:center; font-size:26px; box-shadow:0 10px 24px -8px rgba(22,104,196,.55);">✓</span></div><div style="font-size:16.5px; font-weight:900; color:#16202e; line-height:2;">{{ toast }}</div><div style="margin-top:10px; font-size:11px; color:#9aa7b8; font-weight:600;">این پیام به‌صورت خودکار بسته می‌شود</div></div></div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { joinOpen: false, jName: "", jEmail: "", jPhone: "", jNid: "", joinDone: false, toast: "", notifOpen: false, samanNumber: "" };
+  toast(t){ this.setState({ toast: t }); clearTimeout(this._toastT); this._toastT = setTimeout(() => this.setState({ toast: "" }), 2800); }
+  submitJoin = () => {
+    const { jName, jEmail } = this.state;
+    if (!jName.trim() || !jEmail.trim()) { this.toast("لطفاً نام و ایمیل خود را وارد کنید"); return; }
+    try {
+      if (window.SiteData && window.SiteData.addClubMember) {
+        const fa = (n) => String(n).replace(/[0-9]/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
+        window.SiteData.addClubMember({
+          id: "CM-" + fa(Date.now().toString().slice(-4)),
+          name: jName.trim(), email: jEmail.trim(), phone: this.state.jPhone,
+          nationalId: this.state.jNid, birth: "", joinDate: "۱۴۰۵/۰۴/۱۱",
+          points: 0, used: 0, level: "silver", cardStatus: "none"
+        });
+      }
+    } catch (e) {}
+    this.setState({ joinDone: true });
+    this.toast("عضویت شما در باشگاه مشتریان ثبت شد ✓");
+  };
+  renderVals() {
+    const canSubmit = this.state.jName.trim() && this.state.jEmail.trim();
+    return {
+      notifOpen: this.state.notifOpen,
+      toggleNotif: () => this.setState(s => ({ notifOpen: !s.notifOpen })),
+      notifs: [
+        { icon: "✈", title: "یادآوری سفر", body: "پرواز تهران → دبی شما فرداست. آنلاین چک‌این باز است.", time: "۱ ساعت پیش", bg: "#f6faff" },
+        { icon: "★", title: "امتیاز باشگاه", body: "۴۵۰ امتیاز از خرید قبلی به حساب شما اضافه شد.", time: "دیروز", bg: "#fff" },
+        { icon: "🏷", title: "کد تخفیف", body: "کد BLUE20 برای پروازهای داخلی تا پایان هفته فعال است.", time: "۲ روز پیش", bg: "#fff" }
+      ],
+      toast: this.state.toast, hasToast: !!this.state.toast,
+      joinOpen: this.state.joinOpen,
+      joinDone: this.state.joinDone,
+      joinForm: !this.state.joinDone,
+      joinName: this.state.jName,
+      openJoin: () => this.setState({ joinOpen: true, joinDone: false }),
+      requestCard: () => { this.toast("درخواست صدور کارت ثبت شد ✓"); setTimeout(() => { window.location.href = "پنل کاربر.dc.html?tab=club"; }, 900); },
+      samanNumber: this.state.samanNumber, onSamanNumber: (e) => this.setState({ samanNumber: e.target.value }),
+      submitSaman: () => { if (!this.state.samanNumber.trim()) { this.toast("لطفاً شماره مشتری را وارد کنید"); return; } this.toast("شماره مشتری بانک سامان ثبت شد ✓"); this.setState({ samanNumber: "" }); },
+      closeJoin: () => this.setState({ joinOpen: false }),
+      stop: (e) => { if (e && e.stopPropagation) e.stopPropagation(); },
+      jName: this.state.jName, onJName: (e) => this.setState({ jName: e.target.value }),
+      jEmail: this.state.jEmail, onJEmail: (e) => this.setState({ jEmail: e.target.value }),
+      jPhone: this.state.jPhone, onJPhone: (e) => this.setState({ jPhone: e.target.value }),
+      jNid: this.state.jNid, onJNid: (e) => this.setState({ jNid: e.target.value }),
+      submitJoin: this.submitJoin,
+      joinBtnBg: canSubmit ? "var(--accent,#1668c4)" : "#aab8c8",
+      joinBtnCursor: canSubmit ? "pointer" : "not-allowed",
+      stats: [
+        { value: "۵٪", label: "کش‌بک در هر خرید" },
+        { value: "۲۰۰+", label: "مقصد پروازی" },
+        { value: "۳", label: "سطح عضویت" },
+        { value: "۲۴/۷", label: "پشتیبانی اعضا" }
+      ],
+      perksSilver: ["۲٪ کش‌بک در هر خرید", "جمع‌آوری امتیاز پایه", "پشتیبانی اعضا", "پیشنهادهای فصلی"],
+      perksGold: ["۵٪ کش‌بک در هر خرید", "ارتقای رایگان به بیزنس", "پذیرش اختصاصی فرودگاه", "درخواست خودرو با تخفیف"],
+      perksPlat: ["۷٪ کش‌بک + هدایای ویژه", "ارتقای تضمینی صندلی", "لانژ اختصاصی فرودگاه", "مدیر سفر اختصاصی"],
+      tiers: [
+        { name: "نقره‌ای", icon: "🥈", range: "۰ تا ۵٬۰۰۰ امتیاز", border: "#e6eaf0", head: "linear-gradient(135deg,#9aa7b8,#6f7d90)", perks: ["۲٪ کش‌بک در هر خرید", "جمع‌آوری امتیاز پایه", "پشتیبانی اعضا", "پیشنهادهای فصلی"] },
+        { name: "طلایی", icon: "🥇", range: "۵٬۰۰۰ تا ۱۵٬۰۰۰ امتیاز", border: "#caa53a", head: "linear-gradient(135deg,#caa53a,#9a7d22)", perks: ["۵٪ کش‌بک در هر خرید", "ارتقای رایگان به بیزنس", "پذیرش اختصاصی فرودگاه", "درخواست خودرو با تخفیف"] },
+        { name: "پلاتین", icon: "💎", range: "بالای ۱۵٬۰۰۰ امتیاز", border: "#1668c4", head: "linear-gradient(135deg,#1668c4,#0d2640)", perks: ["۷٪ کش‌بک + هدایای ویژه", "ارتقای تضمینی صندلی", "لانژ اختصاصی فرودگاه", "مدیر سفر اختصاصی"] }
+      ],
+      earn: [
+        { icon: "✈", title: "پرواز کنید", desc: "به ازای هر خرید بلیط امتیاز بگیرید." },
+        { icon: "%", title: "کش‌بک بگیرید", desc: "بخشی از مبلغ به کیف پول برمی‌گردد." },
+        { icon: "🎁", title: "معرفی دوستان", desc: "با دعوت دوستان امتیاز هدیه بگیرید." },
+        { icon: "★", title: "ماموریت‌ها", desc: "با تکمیل ماموریت‌ها امتیاز جمع کنید." }
+      ],
+      services: [
+        { icon: "🚗", title: "درخواست خودرو", desc: "رزرو خودرو فرودگاه تا مقصد با تخفیف ویژه اعضا.", bg: "#eef4fb", color: "#1668c4" },
+        { icon: "↑", title: "ارتقای صندلی", desc: "ارتقای رایگان یا تخفیف‌دار به کلاس بیزنس.", bg: "#fff7e6", color: "#caa53a" },
+        { icon: "⚑", title: "پذیرش ویژه", desc: "چک‌این سریع و پذیرش اختصاصی بدون صف.", bg: "#e8f5ee", color: "#1f8a5b" }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

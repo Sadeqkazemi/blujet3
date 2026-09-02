@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box;}html,body{margin:0;}@keyframes float404{0%,100%{transform:translateY(0);}50%{transform:translateY(-14px);}}@keyframes dash404{to{stroke-dashoffset:-40;}}</style>
+</helmet>
+
+<div dir="rtl" style="font-family:'Vazirmatn',sans-serif; min-height:100vh; background:#f6f8fb; color:#16202e; display:flex; flex-direction:column; --accent:#1668c4;">
+
+  <header style="border-bottom:1px solid #e9eef4; background:#fff;">
+    <div style="max-width:1180px; margin:0 auto; padding:0 26px; height:74px; display:flex; align-items:center;">
+      <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:9px; text-decoration:none; color:inherit;">
+        <div style="width:36px; height:36px; border-radius:10px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:17px;">✈</div>
+        <span style="font-weight:900; font-size:18px;">blujet</span>
+      </a>
+    </div>
+  </header>
+
+  <main style="flex:1; display:flex; align-items:center; justify-content:center; padding:40px 24px;">
+    <div style="max-width:560px; width:100%; text-align:center;">
+      <div style="position:relative; margin-bottom:14px; animation:float404 4s ease-in-out infinite;">
+        <div style="font-size:150px; font-weight:900; line-height:1; letter-spacing:-4px; background:linear-gradient(120deg,#1668c4,#3b8ae0); -webkit-background-clip:text; background-clip:text; color:transparent;">404</div>
+        <svg viewBox="0 0 320 80" style="position:absolute; left:0; right:0; bottom:8px; margin:0 auto; width:280px; height:70px; overflow:visible;">
+          <path d="M20 60 C 90 60, 120 20, 180 26 C 240 32, 270 55, 300 30" fill="none" stroke="#c3d5ea" stroke-width="2.5" stroke-dasharray="6 8" stroke-linecap="round" style="animation:dash404 1.6s linear infinite;"></path>
+          <g transform="translate(296,28) rotate(28)"><path d="M0 -9 L26 0 L0 9 L7 0 Z" fill="var(--accent,#1668c4)"></path></g>
+        </svg>
+      </div>
+      <h1 style="font-size:24px; font-weight:900; margin:0 0 12px;">صفحه‌ای که دنبالش بودید پیدا نشد</h1>
+      <p style="font-size:14px; color:#5a6678; line-height:2; margin:0 0 28px;">به نظر می‌رسد این پرواز از مسیر خارج شده است. آدرس واردشده اشتباه است یا این صفحه جابه‌جا شده. می‌توانید به صفحهٔ اصلی برگردید یا پروازتان را دوباره جستجو کنید.</p>
+      <div style="display:flex; gap:11px; justify-content:center; flex-wrap:wrap;">
+        <a href="صفحه اصلی.dc.html" style="display:inline-flex; align-items:center; gap:8px; height:48px; padding:0 24px; background:var(--accent,#1668c4); color:#fff; border-radius:12px; font-size:13.5px; font-weight:800; text-decoration:none;">بازگشت به صفحهٔ اصلی<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></a>
+        <a href="نتایج پرواز.dc.html" style="display:inline-flex; align-items:center; gap:8px; height:48px; padding:0 24px; background:#fff; border:1.5px solid #d5e1f0; color:#0d2640; border-radius:12px; font-size:13.5px; font-weight:700; text-decoration:none;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>جستجوی پرواز</a>
+      </div>
+      <div style="margin-top:30px; font-size:12px; color:#9aa4b2;">کد خطا: ۴۰۴ — صفحه یافت نشد</div>
+    </div>
+  </main>
+
+</div>
+</x-dc>
+</body>
+</html>

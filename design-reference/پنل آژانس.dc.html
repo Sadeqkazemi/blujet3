@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;}
+    body{margin:0;}
+    ::-webkit-scrollbar{width:9px;height:9px;}
+    ::-webkit-scrollbar-thumb{background:#cdd6e2;border-radius:6px;}
+  </style>
+  <script src="./site-data.js"></script>
+</helmet>
+
+<div dir="rtl" style="font-family:Vazirmatn,sans-serif; background:#f6f8fb; color:#16202e; min-height:100vh; display:grid; grid-template-columns:248px 1fr; --accent:#1668c4;">
+
+  <!-- SIDEBAR -->
+  <aside style="background:#fff; border-left:1px solid #e9eef4; padding:15px 11px; display:flex; flex-direction:column; gap:4px; position:sticky; top:0; height:100vh;">
+    <div style="display:flex; align-items:center; gap:9px; padding:5px 7px 12px;">
+      <div style="width:38px; height:38px; border-radius:10px; background:var(--accent); display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px;">✈</div>
+      <div style="line-height:1.3;"><div style="font-weight:900; font-size:16px; color:#0d2640;">blujet</div><div style="font-size:10px; color:#8a96a6;">پورتال آژانس</div></div>
+    </div>
+
+    <div style="background:#f0f5fb; border:1px solid #e1ebf6; border-radius:13px; padding:11px 11px; margin-bottom:14px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg,#1668c4,#3b8ae0); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12.5px; color:#fff;">پا</div>
+        <div style="line-height:1.4; min-width:0;"><div style="font-size:12px; font-weight:800; color:#0d2640; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">blujet</div><div style="font-size:10px; color:#1f8a5b; font-weight:700;">● فعال · کد ۴۴۷۱</div></div>
+      </div>
+    </div>
+
+    <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="6">
+      <div onClick="{{ n.go }}" style="display:flex; align-items:center; gap:9px; padding:9px 11px; border-radius:11px; cursor:pointer; font-size:12.5px; font-weight:{{ n.weight }}; color:{{ n.color }}; background:{{ n.bg }};">
+        <span style="width:20px; height:20px; display:flex; flex:none;">{{ n.icon }}</span>
+        <span style="flex:1;">{{ n.label }}</span>
+        <sc-if value="{{ n.badge }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px; font-weight:800; color:#fff; background:#e8553a; min-width:19px; height:19px; padding:0 5px; border-radius:10px; display:flex; align-items:center; justify-content:center;">{{ n.badgeNum }}</span></sc-if>
+      </div>
+    </sc-for>
+
+    <a href="ورود و ثبتنام.dc.html" style="margin-top:auto; display:flex; align-items:center; gap:7px; padding:10px 11px; border-top:1px solid #eef2f7; cursor:pointer; color:#e8553a; font-size:12px; font-weight:700; text-decoration:none;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      خروج از حساب
+    </a>
+  </aside>
+
+  <!-- MAIN -->
+  <main style="padding:16px 21px 34px; min-width:0;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:22px;">
+      <div><h1 style="font-size:20px; font-weight:900; color:#0d2640; margin:0;">{{ pageTitle }}</h1><div style="font-size:11.5px; color:#7a8696; margin-top:3px;">{{ pageSub }}</div></div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <div onClick="{{ openCompose }}" style="height:42px; padding:0 15px; background:var(--accent); color:#fff; border-radius:10px; display:flex; align-items:center; gap:7px; font-size:12px; font-weight:700; cursor:pointer;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>پیام جدید</div>
+        <div style="width:42px; height:42px; border-radius:10px; background:#fff; border:1px solid #e6ecf3; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#5a6678;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.5 21a2 2 0 0 1-3 0"/></svg></div>
+      </div>
+    </div>
+
+    <!-- ============ DASHBOARD ============ -->
+    <sc-if value="{{ showDashboard }}" hint-placeholder-val="{{ true }}">
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:13px; margin-bottom:20px;">
+        <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+          <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:12px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+              <div style="width:40px; height:40px; border-radius:10px; background:{{ k.iconBg }}; color:{{ k.iconColor }}; display:flex; align-items:center; justify-content:center;">{{ k.icon }}</div>
+              <span style="font-size:11px; font-weight:700; color:{{ k.trendColor }}; background:{{ k.trendBg }}; padding:2px 7px; border-radius:7px;">{{ k.trend }}</span>
+            </div>
+            <div style="font-size:21.5px; font-weight:900; color:#0d2640; letter-spacing:-.5px;">{{ k.value }}</div>
+            <div style="font-size:11.5px; color:#8a96a6; margin-top:3px;">{{ k.label }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1.6fr 1fr; gap:13px;">
+        <!-- sales chart -->
+        <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:14px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+            <div><h3 style="font-size:14px; font-weight:800; color:#0d2640; margin:0;">روند فروش آژانس</h3><div style="font-size:11px; color:#8a96a6; margin-top:3px;">۶ ماه اخیر · میلیون تومان</div></div>
+          </div>
+          <div style="display:flex; align-items:flex-end; gap:11px; height:170px; padding-top:5px;">
+            <sc-for list="{{ salesBars }}" as="b" hint-placeholder-count="6">
+              <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:7px; height:100%; justify-content:flex-end;">
+                <div style="font-size:10px; font-weight:700; color:#5a6678;">{{ b.val }}</div>
+                <div style="width:100%; max-width:34px; height:{{ b.h }}; background:linear-gradient(180deg,#3b8ae0,#1668c4); border-radius:7px 7px 0 0;"></div>
+                <div style="font-size:10.5px; color:#8a96a6; font-weight:600;">{{ b.m }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <!-- credit summary -->
+        <div style="background:linear-gradient(135deg,#0d2640,#16406e); border-radius:14px; padding:15px; color:#fff; display:flex; flex-direction:column;">
+          <div style="font-size:11.5px; color:#aac4e2; font-weight:600;">مانده اعتبار</div>
+          <div style="font-size:27px; font-weight:900; margin:6px 0 2px; letter-spacing:-.5px;">{{ creditRemaining }}</div>
+          <div style="font-size:11.5px; color:#8fb0d6;">از سقف {{ creditLimit }}</div>
+          <div style="height:9px; background:rgba(255,255,255,.16); border-radius:6px; margin:16px 0 8px; overflow:hidden;"><div style="width:{{ creditBarW }}; height:100%; background:linear-gradient(90deg,#4ade80,#22c55e); border-radius:6px;"></div></div>
+          <div style="display:flex; justify-content:space-between; font-size:11px; color:#aac4e2;"><span>مصرف‌شده: {{ creditUsed }}</span><span>{{ creditPct }}</span></div>
+          <div onClick="{{ goCredit }}" style="margin-top:auto; padding-top:13px;"><div style="background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.18); border-radius:10px; height:42px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; cursor:pointer;">مشاهده صورت‌حساب</div></div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ ALLOCATED SEATS ============ -->
+    <sc-if value="{{ showSeats }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-direction:column; gap:11px;">
+        <div style="background:#eef4fb; border:1px solid #d9e7f6; border-radius:13px; padding:11px 12px; display:flex; align-items:center; gap:8px; font-size:12px; color:#1a4674;">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          صندلی‌های تخصیص‌یافته از سوی ایرلاین بر اساس میزان تقاضای آژانس شما، برای پروازهایی که مجوز پرواز آن‌ها صادر شده است. این ظرفیت برای فروش در اختیار شما قرار گرفته است.
+        </div>
+        <sc-for list="{{ seatFlights }}" as="f" hint-placeholder-count="4">
+          <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:12px 14px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:11px;">
+              <div style="display:flex; align-items:center; gap:11px;">
+                <div style="width:46px; height:46px; border-radius:11px; background:#eef4fb; color:var(--accent); display:flex; align-items:center; justify-content:center; font-size:20px;">✈</div>
+                <div>
+                  <div style="font-size:14.5px; font-weight:800; color:#0d2640;">{{ f.route }}</div>
+                  <div style="font-size:11.5px; color:#8a96a6; margin-top:2px;">{{ f.flightNo }} · {{ f.date }} · ساعت {{ f.time }}</div>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:20px;">
+                <div style="text-align:center;"><div style="font-size:10.5px; color:#8a96a6; margin-bottom:2px;">تقاضای شما</div><div style="font-size:15.5px; font-weight:800; color:#0d2640;">{{ f.demand }}</div></div>
+                <div style="text-align:center;"><div style="font-size:10.5px; color:#8a96a6; margin-bottom:2px;">تخصیص‌یافته</div><div style="font-size:15.5px; font-weight:800; color:#8a5cf6;">{{ f.alloc }}</div></div>
+                <div style="text-align:center;"><div style="font-size:10.5px; color:#8a96a6; margin-bottom:2px;">فروخته</div><div style="font-size:15.5px; font-weight:800; color:#1f8a5b;">{{ f.sold }}</div></div>
+                <div style="text-align:center;"><div style="font-size:10.5px; color:#8a96a6; margin-bottom:2px;">باقی‌مانده</div><div style="font-size:15.5px; font-weight:800; color:var(--accent);">{{ f.left }}</div></div>
+                <div style="display:flex; align-items:center; gap:6px; height:34px; padding:0 11px; background:#eaf7f0; color:#1f8a5b; border:1px solid #cdeede; border-radius:18px; font-size:11.5px; font-weight:700;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>مجوز پرواز صادر شده</div>
+              </div>
+            </div>
+            <div style="height:8px; background:#eef2f7; border-radius:5px; margin-top:16px; overflow:hidden;"><div style="width:{{ f.pct }}; height:100%; background:linear-gradient(90deg,#1f8a5b,#34d399); border-radius:5px;"></div></div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- ============ WEB SERVICE ============ -->
+    <sc-if value="{{ showWebservice }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-direction:column; gap:13px;">
+        <div style="background:#eef4fb; border:1px solid #d9e7f6; border-radius:13px; padding:11px 12px; display:flex; align-items:center; gap:8px; font-size:12px; color:#1a4674; line-height:1.8;">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M8 8l-4 4 4 4"/><path d="M16 8l4 4-4 4"/><path d="M13.5 6l-3 12"/></svg>
+          برای استفاده از وب‌سرویس ابتدا باید یک پلن را خریداری کنید؛ درخواست شما برای ادمین ارسال و پس از بررسی و تأیید، کلید دسترسی و مستندات API فعال و نمایش داده می‌شود.
+        </div>
+
+        <sc-if value="{{ wsActive }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:14px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:18px; flex-wrap:wrap;">
+              <div style="display:flex; align-items:center; gap:9px;"><span style="width:40px; height:40px; border-radius:10px; background:#eaf7f0; color:#1f8a5b; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8l-4 4 4 4"/><path d="M16 8l4 4-4 4"/><path d="M13.5 6l-3 12"/></svg></span><div style="line-height:1.4;"><div style="font-size:14px; font-weight:800; color:#0d2640;">اتصال فعال وب‌سرویس</div><div style="font-size:11px; color:#8a96a6;">{{ wsActivePlan }}</div></div></div>
+              <span style="font-size:11px; font-weight:700; color:#1f8a5b; background:#eaf7f0; border:1px solid #cdeede; padding:5px 11px; border-radius:18px;">● فعال</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div style="background:#f6f8fb; border:1px solid #e9eef4; border-radius:11px; padding:11px 12px;">
+                <div style="font-size:10.5px; color:#8a96a6; margin-bottom:6px;">آدرس پایه (Base URL)</div>
+                <div style="font-size:12px; font-weight:700; color:#0d2640; font-family:monospace; direction:ltr; text-align:left;">{{ wsBaseUrl }}</div>
+              </div>
+              <div style="background:#f6f8fb; border:1px solid #e9eef4; border-radius:11px; padding:11px 12px;">
+                <div style="font-size:10.5px; color:#8a96a6; margin-bottom:6px;">کلید دسترسی (API Key)</div>
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                  <div style="font-size:12px; font-weight:700; color:#0d2640; font-family:monospace; direction:ltr; text-align:left; min-width:0; overflow:hidden; text-overflow:ellipsis;">{{ wsKeyShown }}</div>
+                  <div style="display:flex; align-items:center; gap:7px; flex:none;">
+                    <span onClick="{{ toggleWsKey }}" style="height:34px; padding:0 11px; background:#fff; border:1px solid #d9e7f6; color:var(--accent); border-radius:9px; display:flex; align-items:center; gap:5px; font-size:11.5px; font-weight:700; cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>نمایش</span>
+                    <span onClick="{{ copyWsKey }}" style="height:34px; padding:0 11px; background:#fff; border:1px solid #d9e7f6; color:var(--accent); border-radius:9px; display:flex; align-items:center; gap:5px; font-size:11.5px; font-weight:700; cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>کپی</span>
+                  </div>
+                </div>
+              </div>
+              <span onClick="{{ openWsDocs }}" style="height:44px; border:1px solid #d9e7f6; color:var(--accent); border-radius:10px; display:flex; align-items:center; justify-content:center; gap:7px; font-size:12px; font-weight:700; cursor:pointer;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>مشاهده مستندات API</span>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ wsPending }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fff; border:1px solid #f7e0c4; border-radius:14px; padding:15px; display:flex; align-items:center; gap:13px; flex-wrap:wrap;">
+            <span style="width:46px; height:46px; border-radius:12px; background:#fdf1e7; color:#e8893a; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+            <div style="line-height:1.6; flex:1; min-width:0;"><div style="font-size:13.5px; font-weight:800; color:#0d2640;">درخواست خرید شما در حال بررسی است</div><div style="font-size:11.5px; color:#8a96a6; margin-top:2px;">پس از تأیید توسط ادمین و مدیران مربوطه، وب‌سرویس فعال و کلید دسترسی نمایش داده می‌شود.</div></div>
+            <span style="font-size:11px; font-weight:700; color:#e8893a; background:#fdf1e7; border:1px solid #f7e0c4; padding:5px 12px; border-radius:16px; flex:none;">در انتظار تأیید</span>
+          </div>
+        </sc-if>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:13px; align-items:start;">
+          <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:14px;">
+            <div style="font-size:13.5px; font-weight:800; color:#0d2640; margin-bottom:4px;">خرید وب‌سرویس جدید</div>
+            <div style="font-size:11px; color:#8a96a6; margin-bottom:16px;">پلن مورد نظر را انتخاب و خریداری کنید تا درخواست برای ادمین ارسال شود.</div>
+            <div style="display:flex; flex-direction:column; gap:11px;">
+              <div><label style="display:block; font-size:11.5px; font-weight:700; color:#16202e; margin-bottom:7px;">نوع وب‌سرویس</label><select value="{{ wsReqType }}" onChange="{{ onWsReqType }}" style="width:100%; box-sizing:border-box; height:44px; background:#f6f8fb; border:1px solid #e1ebf6; border-radius:10px; padding:0 10px; color:#16202e; font-family:inherit; font-size:12px; outline:none; cursor:pointer;"><sc-for list="{{ wsTypeOptions }}" as="o" hint-placeholder-count="4"><option value="{{ o.value }}">{{ o.label }}</option></sc-for></select></div>
+              <div><label style="display:block; font-size:11.5px; font-weight:700; color:#16202e; margin-bottom:7px;">مدت اشتراک</label>
+                <div style="display:flex; gap:8px;">
+                  <sc-for list="{{ wsPlanOptions }}" as="p" hint-placeholder-count="3"><div onClick="{{ p.onPick }}" style="flex:1; border:1.5px solid {{ p.border }}; background:{{ p.bg }}; border-radius:10px; padding:9px 6px; text-align:center; cursor:pointer;"><div style="font-size:11.5px; font-weight:800; color:#0d2640;">{{ p.label }}</div><div style="font-size:10px; color:#8a96a6; margin-top:2px;">{{ p.priceLabel }}</div></div></sc-for>
+                </div>
+              </div>
+              <div><label style="display:block; font-size:11.5px; font-weight:700; color:#16202e; margin-bottom:7px;">توضیحات درخواست</label><textarea value="{{ wsReqNote }}" onInput="{{ onWsReqNote }}" placeholder="کاربرد مورد نظر و سیستم متصل‌شونده را توضیح دهید…" style="width:100%; box-sizing:border-box; min-height:74px; resize:vertical; background:#f6f8fb; border:1px solid #e1ebf6; border-radius:10px; padding:9px 11px; color:#16202e; font-family:inherit; font-size:12px; line-height:1.85; outline:none;"></textarea></div>
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:11px 12px; background:#f6f8fb; border:1px solid #e9eef4; border-radius:11px;"><span style="font-size:12px; color:#5a6678;">مبلغ قابل پرداخت</span><span style="font-size:15.5px; font-weight:900; color:#0d2640;">{{ wsPriceLabel }} <span style="font-size:11px; font-weight:600; color:#8a96a6;">تومان</span></span></div>
+              <span onClick="{{ submitWsReq }}" style="height:46px; border-radius:11px; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; gap:7px; font-size:12.5px; font-weight:800; cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg>خرید و ثبت درخواست</span>
+            </div>
+          </div>
+          <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; overflow:hidden;">
+            <div style="padding:11px 14px; border-bottom:1px solid #eef2f7; font-size:13.5px; font-weight:800; color:#0d2640;">درخواست‌های خرید من</div>
+            <sc-for list="{{ wsReqRows }}" as="r" hint-placeholder-count="2">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px; border-bottom:1px solid #f4f6fa;">
+                <div style="min-width:0;"><div style="font-size:12px; font-weight:700; color:#16202e;">{{ r.type }}</div><div style="font-size:10.5px; color:#8a96a6; margin-top:3px;">{{ r.plan }} · {{ r.priceLabel }} تومان · {{ r.date }}</div></div>
+                <span style="font-size:10.5px; font-weight:700; color:{{ r.stColor }}; background:{{ r.stBg }}; padding:4px 10px; border-radius:14px; flex:none;">{{ r.stLabel }}</span>
+              </div>
+            </sc-for>
+            <sc-if value="{{ wsNoRequests }}" hint-placeholder-val="{{ true }}"><div style="padding:22px 14px; text-align:center; color:#8a96a6; font-size:11.5px;">هنوز درخواست خریدی ثبت نکرده‌اید.</div></sc-if>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ CREDIT & BALANCE ============ -->
+    <sc-if value="{{ showCredit }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-direction:column; gap:13px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <span style="font-size:13.5px; font-weight:800; color:#0d2640;">اعتبار و مانده حساب</span>
+          <span onClick="{{ openTopup }}" style="height:42px; padding:0 17px; background:var(--accent); color:#fff; border-radius:11px; display:inline-flex; align-items:center; gap:7px; font-size:12.5px; font-weight:800; cursor:pointer;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>افزایش اعتبار</span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:13px;">
+          <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:14px;"><div style="font-size:11.5px; color:#8a96a6;">سقف اعتبار</div><div style="font-size:20.5px; font-weight:900; color:#0d2640; margin-top:6px;">{{ creditLimit }}</div></div>
+          <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:14px;"><div style="font-size:11.5px; color:#8a96a6;">مصرف‌شده</div><div style="font-size:20.5px; font-weight:900; color:#e8553a; margin-top:6px;">{{ creditUsed }}</div></div>
+          <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:14px;"><div style="font-size:11.5px; color:#8a96a6;">مانده قابل استفاده</div><div style="font-size:20.5px; font-weight:900; color:#1f8a5b; margin-top:6px;">{{ creditRemaining }}</div></div>
+        </div>
+        <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; overflow:hidden;">
+          <div style="padding:11px 14px; border-bottom:1px solid #eef2f7; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+            <span style="font-size:13.5px; font-weight:800; color:#0d2640;">فاکتورهای صادرشده توسط ایرلاین</span>
+            <sc-if value="{{ hasUnpaid }}" hint-placeholder-val="{{ true }}"><span style="font-size:10.5px; font-weight:700; color:#e8893a; background:#fdf1e7; border:1px solid #f7e0c4; padding:4px 10px; border-radius:14px;">{{ invUnpaidCount }} فاکتور در انتظار پرداخت</span></sc-if>
+          </div>
+          <sc-for list="{{ invoiceRows }}" as="v" hint-placeholder-count="3">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:11px; padding:12px 14px; border-bottom:1px solid #f4f6fa; flex-wrap:wrap;">
+              <div style="display:flex; align-items:center; gap:11px; min-width:0;">
+                <div style="width:38px; height:38px; border-radius:9px; background:#eef4fb; color:var(--accent); display:flex; align-items:center; justify-content:center; flex:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18l2.5-1.5L10 21l2-1.5L14 21l2.5-1.5L19 21V3l-2.5 1.5L14 3l-2 1.5L10 3 7.5 4.5z"/><path d="M9 8h6M9 12h6"/></svg></div>
+                <div style="min-width:0;"><div style="font-size:12px; font-weight:700; color:#16202e;">{{ v.desc }}</div><div style="font-size:10.5px; color:#8a96a6; margin-top:3px;">{{ v.no }} · صدور {{ v.date }} · سررسید {{ v.due }}</div></div>
+              </div>
+              <div style="display:flex; align-items:center; gap:13px; flex-wrap:wrap;">
+                <div style="text-align:left;"><div style="font-size:13px; font-weight:800; color:#0d2640;">{{ v.amount }}</div><div style="font-size:10px; font-weight:700; color:{{ v.stColor }}; margin-top:2px;">{{ v.stLabel }}</div></div>
+                <sc-if value="{{ v.canPay }}" hint-placeholder-val="{{ true }}"><span onClick="{{ v.pay }}" style="height:40px; padding:0 16px; background:var(--accent); color:#fff; border-radius:10px; display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; cursor:pointer; flex:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>پرداخت از اعتبار</span></sc-if>
+                <sc-if value="{{ v.isPaid }}" hint-placeholder-val="{{ false }}"><span style="height:40px; padding:0 15px; background:#eaf7f0; color:#1f8a5b; border:1px solid #cdeede; border-radius:10px; display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; flex:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>پرداخت‌شده</span></sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; overflow:hidden;">
+          <div style="padding:11px 14px; border-bottom:1px solid #eef2f7; font-size:13.5px; font-weight:800; color:#0d2640;">گردش حساب اخیر</div>
+          <sc-for list="{{ transactions }}" as="t" hint-placeholder-count="5">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:11px 14px; border-bottom:1px solid #f4f6fa;">
+              <div style="display:flex; align-items:center; gap:11px;">
+                <div style="width:36px; height:36px; border-radius:9px; background:{{ t.bg }}; color:{{ t.color }}; display:flex; align-items:center; justify-content:center;">{{ t.icon }}</div>
+                <div><div style="font-size:12px; font-weight:700; color:#16202e;">{{ t.title }}</div><div style="font-size:11px; color:#8a96a6; margin-top:2px;">{{ t.date }}</div></div>
+              </div>
+              <div style="font-size:13px; font-weight:800; color:{{ t.color }};">{{ t.amount }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ SALES REPORT ============ -->
+    <sc-if value="{{ showReport }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-direction:column; gap:13px;">
+
+        <!-- OVERVIEW: clickable category cards -->
+        <sc-if value="{{ reportOverview }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:13px;">
+            <sc-for list="{{ reportCards }}" as="c" hint-placeholder-count="4">
+              <div onClick="{{ c.onOpen }}" style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:15px; cursor:pointer; display:flex; align-items:center; gap:13px;" style-hover="border-color:#cddff2; box-shadow:0 3px 14px rgba(20,40,80,.07);">
+                <span style="width:46px; height:46px; border-radius:12px; background:{{ c.bg }}; color:{{ c.color }}; display:flex; align-items:center; justify-content:center; flex:none;">{{ c.icon }}</span>
+                <div style="min-width:0; flex:1;">
+                  <div style="font-size:12px; color:#8a96a6;">{{ c.label }}</div>
+                  <div style="font-size:18px; font-weight:900; color:#0d2640; margin-top:3px;">{{ c.value }}</div>
+                  <div style="font-size:11px; color:{{ c.color }}; font-weight:700; margin-top:5px; display:flex; align-items:center; gap:4px;">{{ c.sub }} <span style="font-size:13px;">←</span></div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <!-- financial activity report -->
+          <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; overflow:hidden;">
+            <div style="padding:12px 14px; border-bottom:1px solid #eef2f7; display:flex; align-items:center; gap:8px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1668c4" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+              <span style="font-size:13.5px; font-weight:800; color:#0d2640;">گزارش فعالیت مالی</span>
+              <span style="margin-inline-start:auto; font-size:11px; color:#8a96a6;">پرداخت فاکتورها و افزایش اعتبار</span>
+            </div>
+            <sc-for list="{{ activityRows }}" as="t" hint-placeholder-count="4">
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:11px 14px; border-bottom:1px solid #f4f6fa;">
+                <div style="display:flex; align-items:center; gap:11px; min-width:0;">
+                  <div style="width:36px; height:36px; border-radius:9px; background:{{ t.bg }}; color:{{ t.color }}; display:flex; align-items:center; justify-content:center; flex:none;">{{ t.icon }}</div>
+                  <div style="min-width:0;"><div style="font-size:12px; font-weight:700; color:#16202e;">{{ t.title }}</div><div style="font-size:10.5px; color:#8a96a6; margin-top:2px;">{{ t.meta }}</div></div>
+                </div>
+                <div style="text-align:left; flex:none;"><div style="font-size:13px; font-weight:800; color:{{ t.color }};">{{ t.amount }}</div><div style="font-size:10px; color:#9aa4b2; margin-top:2px;">{{ t.date }}</div></div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <!-- DETAIL sub-view (opens like a new page) -->
+        <sc-if value="{{ reportDetail }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; align-items:center; gap:11px; margin-bottom:2px;">
+            <span onClick="{{ backToReport }}" style="width:40px; height:40px; border-radius:10px; background:#fff; border:1px solid #e3e9f1; color:#0d2640; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
+            <div><div style="font-size:15px; font-weight:900; color:#0d2640;">{{ reportDetailTitle }}</div><div style="font-size:11px; color:#8a96a6; margin-top:2px;">بازگشت به گزارش فروش</div></div>
+            <span onClick="{{ exportExcel }}" style="margin-inline-start:auto; height:38px; padding:0 13px; background:#fff; border:1px solid #d9e7f6; color:var(--accent); border-radius:9px; font-size:11.5px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:5px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>خروجی Excel</span>
+          </div>
+
+          <!-- total sales: issued tickets table -->
+          <sc-if value="{{ rvSales }}" hint-placeholder-val="{{ true }}">
+            <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; overflow:hidden; padding:0 7px;">
+              <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr 0.9fr 1fr; padding:11px; font-size:11px; color:#8a96a6; font-weight:700; border-bottom:1px solid #f4f6fa;"><span>مسافر</span><span>مسیر</span><span>تاریخ</span><span>کلاس</span><span>مبلغ</span></div>
+              <sc-for list="{{ salesRows }}" as="s" hint-placeholder-count="6">
+                <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr 0.9fr 1fr; padding:11px; font-size:11.5px; color:#16202e; border-bottom:1px solid #f6f8fb; align-items:center;"><span style="font-weight:700;">{{ s.name }}</span><span>{{ s.route }}</span><span style="color:#5a6678;">{{ s.date }}</span><span style="color:#5a6678;">{{ s.cls }}</span><span style="font-weight:800; color:#0d2640;">{{ s.amount }}</span></div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <!-- per-flight sales -->
+          <sc-if value="{{ rvPerFlight }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; overflow:hidden; padding:0 7px;">
+              <div style="display:grid; grid-template-columns:2fr 1fr 1.2fr; padding:11px; font-size:11px; color:#8a96a6; font-weight:700; border-bottom:1px solid #f4f6fa;"><span>مسیر پرواز</span><span>تعداد بلیط</span><span>مبلغ فروش</span></div>
+              <sc-for list="{{ perFlightRows }}" as="p" hint-placeholder-count="4">
+                <div style="display:grid; grid-template-columns:2fr 1fr 1.2fr; padding:12px 11px; font-size:12px; color:#16202e; border-bottom:1px solid #f6f8fb; align-items:center;"><span style="font-weight:800; color:#0d2640;">{{ p.route }}</span><span style="color:#5a6678;">{{ p.count }}</span><span style="font-weight:800; color:#1f8a5b;">{{ p.total }}</span></div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <!-- purchased web services -->
+          <sc-if value="{{ rvWebservice }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; overflow:hidden;">
+              <sc-for list="{{ purchasedWs }}" as="r" hint-placeholder-count="2">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:13px 14px; border-bottom:1px solid #f4f6fa;">
+                  <div style="display:flex; align-items:center; gap:11px; min-width:0;"><span style="width:38px; height:38px; border-radius:9px; background:#f2ecfb; color:#7c3aed; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8l-4 4 4 4"/><path d="M16 8l4 4-4 4"/><path d="M13.5 6l-3 12"/></svg></span><div style="min-width:0;"><div style="font-size:12.5px; font-weight:700; color:#16202e;">{{ r.type }}</div><div style="font-size:10.5px; color:#8a96a6; margin-top:3px;">{{ r.plan }} · {{ r.priceLabel }} تومان · {{ r.date }}</div></div></div>
+                  <span style="font-size:10.5px; font-weight:700; color:{{ r.stColor }}; background:{{ r.stBg }}; padding:4px 10px; border-radius:14px; flex:none;">{{ r.stLabel }}</span>
+                </div>
+              </sc-for>
+              <sc-if value="{{ purchasedNone }}" hint-placeholder-val="{{ false }}"><div style="padding:24px; text-align:center; color:#8a96a6; font-size:12px;">هنوز وب‌سرویسی خریداری نشده است.</div></sc-if>
+            </div>
+          </sc-if>
+
+          <!-- unpaid invoices -->
+          <sc-if value="{{ rvInvoices }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; overflow:hidden;">
+              <sc-for list="{{ unpaidInvoiceRows }}" as="v" hint-placeholder-count="2">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:11px; padding:13px 14px; border-bottom:1px solid #f4f6fa; flex-wrap:wrap;">
+                  <div style="display:flex; align-items:center; gap:11px; min-width:0;"><div style="width:38px; height:38px; border-radius:9px; background:#fdf1e7; color:#e8893a; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18l2.5-1.5L10 21l2-1.5L14 21l2.5-1.5L19 21V3l-2.5 1.5L14 3l-2 1.5L10 3 7.5 4.5z"/><path d="M9 8h6M9 12h6"/></svg></div><div style="min-width:0;"><div style="font-size:12px; font-weight:700; color:#16202e;">{{ v.desc }}</div><div style="font-size:10.5px; color:#8a96a6; margin-top:3px;">{{ v.no }} · سررسید {{ v.due }}</div></div></div>
+                  <div style="display:flex; align-items:center; gap:13px; flex-wrap:wrap;"><div style="text-align:left;"><div style="font-size:13px; font-weight:800; color:#0d2640;">{{ v.amount }}</div><div style="font-size:10px; font-weight:700; color:{{ v.stColor }}; margin-top:2px;">{{ v.stLabel }}</div></div><span onClick="{{ v.pay }}" style="height:40px; padding:0 16px; background:var(--accent); color:#fff; border-radius:10px; display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; cursor:pointer; flex:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>پرداخت از اعتبار</span></div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ unpaidNone }}" hint-placeholder-val="{{ false }}"><div style="padding:24px; text-align:center; color:#1f8a5b; font-size:12px; font-weight:700;">✓ همهٔ فاکتورها پرداخت شده‌اند.</div></sc-if>
+            </div>
+          </sc-if>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- ============ CARTABLE / MESSAGES ============ -->
+    <sc-if value="{{ showInbox }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:13px; align-items:stretch;">
+        <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; overflow:hidden;">
+          <div style="padding:12px 12px; border-bottom:1px solid #eef2f7; font-size:13px; font-weight:800; color:#0d2640;">صندوق پیام‌ها</div>
+          <sc-for list="{{ messages }}" as="m" hint-placeholder-count="4">
+            <div onClick="{{ m.open }}" style="padding:11px 12px; border-bottom:1px solid #f4f6fa; cursor:pointer; background:{{ m.bg }}; border-right:3px solid {{ m.bar }};">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                <span style="font-size:12px; font-weight:800; color:#0d2640;">{{ m.from }}</span>
+                <span style="font-size:10px; color:#9aa4b2;">{{ m.time }}</span>
+              </div>
+              <div style="font-size:11.5px; color:#5a6678; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ m.subject }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:16px; min-height:340px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:13px; border-bottom:1px solid #eef2f7;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:42px; height:42px; border-radius:10px; background:#eef4fb; color:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:11.5px;">{{ openMsgInitial }}</div>
+              <div><div style="font-size:13.5px; font-weight:800; color:#0d2640;">{{ openMsgFrom }}</div><div style="font-size:11px; color:#8a96a6;">{{ openMsgTime }}</div></div>
+            </div>
+            <span style="font-size:11px; font-weight:700; color:{{ openMsgTagColor }}; background:{{ openMsgTagBg }}; padding:4px 9px; border-radius:8px;">{{ openMsgTag }}</span>
+          </div>
+          <h3 style="font-size:15.5px; font-weight:800; color:#0d2640; margin:18px 0 12px;">{{ openMsgSubject }}</h3>
+          <p style="font-size:12.5px; line-height:1.85; color:#3f546b; margin:0; white-space:pre-line;">{{ openMsgBody }}</p>
+          <div style="margin-top:24px; padding-top:15px; border-top:1px solid #eef2f7; display:flex; gap:8px;">
+            <input value="{{ replyText }}" onInput="{{ onReply }}" placeholder="پاسخ خود را بنویسید…" style="flex:1; height:46px; background:#f6f8fb; border:1px solid #e3e9f1; border-radius:11px; padding:0 13px; font-family:inherit; font-size:12px; color:#16202e;"/>
+            <div onClick="{{ sendReply }}" style="height:46px; padding:0 20px; background:var(--accent); color:#fff; border-radius:11px; display:flex; align-items:center; font-size:12px; font-weight:700; cursor:pointer;">ارسال پاسخ</div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ PROFILE & DOCUMENTS ============ -->
+    <sc-if value="{{ showProfile }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:13px; align-items:start;">
+        <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:16px;">
+          <div style="display:flex; align-items:center; gap:11px; padding-bottom:15px; border-bottom:1px solid #eef2f7; margin-bottom:18px;">
+            <div style="width:58px; height:58px; border-radius:14px; background:linear-gradient(135deg,#1668c4,#3b8ae0); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px; color:#fff;">پا</div>
+            <div><div style="font-size:16px; font-weight:900; color:#0d2640;">آژانس blujet</div><div style="font-size:11.5px; color:#1f8a5b; font-weight:700; margin-top:3px;">● حساب فعال · عضو از فروردین ۱۴۰۲</div></div>
+          </div>
+          <sc-for list="{{ profileFields }}" as="p" hint-placeholder-count="6">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid #f4f6fa;">
+              <span style="font-size:11.5px; color:#8a96a6;">{{ p.label }}</span>
+              <span style="font-size:12px; font-weight:700; color:#16202e;">{{ p.value }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:#fff; border:1px solid #eef2f7; border-radius:14px; padding:16px;">
+          <h3 style="font-size:14px; font-weight:800; color:#0d2640; margin:0 0 16px;">مدارک آژانس</h3>
+          <div style="display:flex; flex-direction:column; gap:9px;">
+            <sc-for list="{{ documents }}" as="d" hint-placeholder-count="3">
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:11px 12px; background:#f8fafc; border:1px solid #eef2f7; border-radius:12px;">
+                <div style="display:flex; align-items:center; gap:9px;">
+                  <div style="width:36px; height:36px; border-radius:9px; background:#fff; border:1px solid #e6ecf3; color:var(--accent); display:flex; align-items:center; justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+                  <div><div style="font-size:12px; font-weight:700; color:#16202e;">{{ d.name }}</div><div style="font-size:10.5px; color:#8a96a6;">{{ d.meta }}</div></div>
+                </div>
+                <span style="font-size:10.5px; font-weight:700; color:{{ d.statusColor }}; background:{{ d.statusBg }}; padding:3px 8px; border-radius:7px;">{{ d.status }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <label style="margin-top:14px; display:flex; align-items:center; justify-content:center; gap:7px; height:46px; border:1.5px dashed #c3d2e3; border-radius:12px; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+            بارگذاری مدرک جدید
+            <input type="file" onChange="{{ onUploadDoc }}" style="display:none;"/>
+          </label>
+        </div>
+      </div>
+    </sc-if>
+  </main>
+
+  <!-- ============ COMPOSE MODAL ============ -->
+  <sc-if value="{{ composeOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeCompose }}" style="position:fixed; inset:0; background:rgba(13,38,64,.4); display:flex; align-items:center; justify-content:center; z-index:80; padding:14px;">
+      <div onClick="{{ stop }}" style="background:#fff; border-radius:16px; width:520px; max-width:100%; max-height:88vh; overflow:auto; box-shadow:0 30px 80px -20px rgba(13,38,64,.5);">
+        <div style="padding:12px 15px; border-bottom:1px solid #eef2f7; display:flex; align-items:center; justify-content:space-between;">
+          <h3 style="font-size:14.5px; font-weight:800; color:#0d2640; margin:0;">پیام جدید به مدیریت</h3>
+          <span onClick="{{ closeCompose }}" style="cursor:pointer; color:#9aa4b2; font-size:20px; line-height:1;">×</span>
+        </div>
+        <div style="padding:14px 15px; display:flex; flex-direction:column; gap:11px;">
+          <div>
+            <label style="display:block; font-size:11.5px; font-weight:700; color:#16202e; margin-bottom:7px;">گیرنده</label>
+            <select value="{{ cmRecipient }}" onChange="{{ onCmRecipient }}" style="width:100%; height:46px; background:#f6f8fb; border:1px solid #e3e9f1; border-radius:11px; padding:0 11px; font-family:inherit; font-size:12px; color:#16202e;">
+              <option value="">انتخاب گیرنده…</option>
+              <sc-for list="{{ recipients }}" as="r" hint-placeholder-count="4"><option value="{{ r }}">{{ r }}</option></sc-for>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-size:11.5px; font-weight:700; color:#16202e; margin-bottom:7px;">موضوع</label>
+            <input value="{{ cmSubject }}" onInput="{{ onCmSubject }}" placeholder="موضوع پیام" style="width:100%; height:46px; background:#f6f8fb; border:1px solid #e3e9f1; border-radius:11px; padding:0 11px; font-family:inherit; font-size:12px; color:#16202e;"/>
+          </div>
+          <div>
+            <label style="display:block; font-size:11.5px; font-weight:700; color:#16202e; margin-bottom:7px;">متن پیام</label>
+            <textarea value="{{ cmBody }}" onInput="{{ onCmBody }}" placeholder="متن پیام خود را بنویسید…" style="width:100%; min-height:120px; background:#f6f8fb; border:1px solid #e3e9f1; border-radius:11px; padding:11px 11px; font-family:inherit; font-size:12px; color:#16202e; resize:vertical;"></textarea>
+          </div>
+          <sc-if value="{{ cmErr }}" hint-placeholder-val="{{ false }}"><div style="font-size:11.5px; color:#e8553a; font-weight:700;">لطفاً گیرنده، موضوع و متن پیام را کامل کنید.</div></sc-if>
+          <div style="display:flex; gap:8px; padding-top:3px;">
+            <div onClick="{{ sendCompose }}" style="flex:1; height:46px; background:var(--accent); color:#fff; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:700; cursor:pointer;">ارسال پیام</div>
+            <div onClick="{{ closeCompose }}" style="height:46px; padding:0 18px; background:#f0f3f7; color:#5a6678; border-radius:11px; display:flex; align-items:center; font-size:12px; font-weight:700; cursor:pointer;">انصراف</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ============ TOP-UP CREDIT MODAL ============ -->
+  <sc-if value="{{ topupOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeTopup }}" style="position:fixed; inset:0; background:rgba(13,38,64,.4); display:flex; align-items:center; justify-content:center; z-index:80; padding:14px;">
+      <div onClick="{{ stopProp }}" style="background:#fff; border-radius:16px; width:420px; max-width:100%; box-shadow:0 30px 80px -20px rgba(13,38,64,.5); overflow:hidden;">
+        <div style="padding:15px 18px; border-bottom:1px solid #eef2f7; display:flex; align-items:center; justify-content:space-between;">
+          <div style="display:flex; align-items:center; gap:9px;"><span style="width:38px; height:38px; border-radius:10px; background:#eef4fb; color:var(--accent); display:flex; align-items:center; justify-content:center;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span><span style="font-size:14.5px; font-weight:800; color:#0d2640;">افزایش اعتبار حساب</span></div>
+          <span onClick="{{ closeTopup }}" style="width:32px; height:32px; border-radius:8px; background:#f4f6fa; color:#5a6678; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:15px;">✕</span>
+        </div>
+        <div style="padding:18px;">
+          <div style="font-size:12px; color:#5a6678; line-height:1.85; margin-bottom:14px;">مبلغ مورد نظر برای افزایش اعتبار را وارد کنید. پس از تأیید، اعتبار به کیف پول آژانس افزوده و تراکنش در «گزارش فعالیت مالی» ثبت می‌شود.</div>
+          <label style="display:block; font-size:11.5px; font-weight:700; color:#16202e; margin-bottom:7px;">مبلغ (تومان)</label>
+          <input value="{{ topupAmount }}" onInput="{{ onTopupAmount }}" placeholder="مثلاً ۳۰۰۰۰۰۰۰" inputmode="numeric" style="width:100%; box-sizing:border-box; height:46px; background:#f6f8fb; border:1px solid #e1ebf6; border-radius:11px; padding:0 13px; font-family:inherit; font-size:14px; font-weight:700; color:#0d2640; outline:none; text-align:left; direction:ltr;"/>
+          <div style="display:flex; gap:8px; margin-top:18px;">
+            <span onClick="{{ closeTopup }}" style="flex:1; height:46px; border:1px solid #e3e9f1; color:#5a6678; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:700; cursor:pointer;">انصراف</span>
+            <span onClick="{{ submitTopup }}" style="flex:1.4; height:46px; background:var(--accent); color:#fff; border-radius:11px; display:flex; align-items:center; justify-content:center; gap:7px; font-size:12.5px; font-weight:800; cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>تأیید و افزایش اعتبار</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- TOAST -->
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#0d2640; color:#fff; padding:11px 16px; border-radius:12px; font-size:12px; font-weight:700; box-shadow:018px 50px -12px rgba(13,38,64,.55); z-index:90;">{{ toast }}</div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  componentDidMount(){ this._sdh = () => this.forceUpdate(); window.addEventListener("sitedata:change", this._sdh); window.addEventListener("storage", this._sdh); }
+  componentWillUnmount(){ window.removeEventListener("sitedata:change", this._sdh); window.removeEventListener("storage", this._sdh); }
+  state = { tab: "dashboard", reportView: "overview", paidInv: [], activityLog: [], topupOpen: false, topupAmount: "", openMsg: 0, replyText: "", composeOpen: false, cmRecipient: "", cmSubject: "", cmBody: "", cmErr: false, toast: "", wsReqType: "search", wsReqPlan: "y1", wsReqNote: "", wsReqErr: false, wsKeyVisible: false, wsRequests: [ { id:1, type:"جستجو و رزرو پرواز", date:"۱۲ تیر ۱۴۰۵", status:"approved", note:"" }, { id:2, type:"استعلام صندلی تخصیص‌یافته", date:"۱۸ تیر ۱۴۰۵", status:"pending", note:"" } ] };
+
+  submitWsReq(){
+    const typeMap = { search:"جستجو و رزرو پرواز (API)", seat:"استعلام صندلی تخصیص‌یافته (API)", credit:"استعلام اعتبار و فاکتورها (API)", report:"دریافت گزارش فروش (API)" };
+    const planMap = { m6:{label:"شش‌ماهه",base:26000000}, y1:{label:"یک‌ساله",base:48000000}, y2:{label:"دوساله",base:84000000} };
+    const type = typeMap[this.state.wsReqType] || "وب‌سرویس";
+    const plan = planMap[this.state.wsReqPlan] || planMap.y1;
+    if (!window.SiteData) return;
+    const id = "WS-" + Math.floor(Math.random()*9000+1000);
+    window.SiteData.addWebServiceRequest({ id, agency:"blujet", agencyId:"AG-1", type, plan:plan.label, price:plan.base, note:(this.state.wsReqNote||"").trim(), status:"submitted", assignee:null, at:"هم‌اکنون", jy:1405, jm:4, jd:12, history:[{step:"submitted", label:"ثبت درخواست خرید توسط آژانس", at:"هم‌اکنون"}] });
+    this.setState({ wsReqNote:"", wsReqErr:false });
+    this.toast("درخواست خرید وب‌سرویس «"+type+"» ثبت و برای ادمین ارسال شد ✓");
+  }
+
+  toFa(s){ return String(s).replace(/[0-9]/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]); }
+  faMoney(n){ return this.toFa(Number(n||0).toLocaleString("en-US")).replace(/,/g,"٬"); }
+  payInvoice(v){
+    if((this.state.paidInv||[]).includes(v.no)) return;
+    this.setState(s => ({
+      paidInv: [...(s.paidInv||[]), v.no],
+      activityLog: [{ kind:"payment", title:"پرداخت فاکتور "+v.no, meta:v.desc, date:"امروز", sign:-1, amt:v.amtNum, amount:"−"+this.faMoney(v.amtNum) }, ...(s.activityLog||[])]
+    }));
+    this.toast("فاکتور "+v.no+" از اعتبار پرداخت شد و در گزارش ثبت گردید ✓");
+  }
+  submitTopup(){
+    const raw = String(this.state.topupAmount||"").replace(/[^0-9]/g,"");
+    const n = parseInt(raw,10);
+    if(!n || n < 1000000){ this.toast("مبلغ افزایش اعتبار باید حداقل ۱٬۰۰۰٬۰۰۰ تومان باشد"); return; }
+    this.setState(s => ({
+      topupOpen:false, topupAmount:"",
+      activityLog: [{ kind:"topup", title:"افزایش اعتبار حساب", meta:"واریز به کیف پول آژانس", date:"امروز", sign:1, amt:n, amount:"+"+this.faMoney(n) }, ...(s.activityLog||[])]
+    }));
+    this.toast("اعتبار حساب "+this.faMoney(n)+" تومان افزایش یافت و در گزارش ثبت شد ✓");
+  }
+  toast(t){ this.setState({ toast: t }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: "" }), 2600); }
+
+  icon(name){
+    const s = 'width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
+    const paths = {
+      dash: '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+      seat: '<path d="M5 11V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v6"/><path d="M5 11h11a2 2 0 0 1 2 2v3H5z"/><path d="M5 16v3M18 16v3"/>',
+      credit: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
+      report: '<path d="M3 3v18h18"/><path d="M7 14l3.5-3.5 3 3L20 7"/>',
+      inbox: '<path d="M4 13h4l1.5 3h5L16 13h4"/><path d="M5.5 13L7 5.5h10L18.5 13v5a1 1 0 0 1-1 1H6.5a1 1 0 0 1-1-1z"/>',
+      profile: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/>',
+      webservice: '<path d="M8 8l-4 4 4 4"/><path d="M16 8l4 4-4 4"/><path d="M13.5 6l-3 12"/>'
+    };
+    return React.createElement('svg', { dangerouslySetInnerHTML: { __html: paths[name] }, width:20, height:20, viewBox:"0 0 24 24", fill:"none", stroke:"currentColor", strokeWidth:1.8, strokeLinecap:"round", strokeLinejoin:"round" });
+  }
+  miniIcon(html, color){
+    return React.createElement('svg', { dangerouslySetInnerHTML: { __html: html }, width:20, height:20, viewBox:"0 0 24 24", fill:"none", stroke:"currentColor", strokeWidth:1.8, strokeLinecap:"round", strokeLinejoin:"round" });
+  }
+
+  messagesData(){ return [
+    { from:"مدیر بازرگانی", initial:"مب", time:"۱ ساعت پیش", tag:"نرخ‌گذاری", tagColor:"#1668c4", tagBg:"#eef4fb",
+      subject:"به‌روزرسانی نرخ پروازهای مسیر دبی", body:"همکار گرامی،\nنرخ بلیط مسیر تهران-دبی برای پروازهای هفته آینده به‌روزرسانی شد. لطفاً پیش از صدور بلیط، نرخ جدید را در سامانه بررسی فرمایید.\nبا احترام" },
+    { from:"مدیر مالی", initial:"مم", time:"دیروز", tag:"مالی", tagColor:"#1f8a5b", tagBg:"#eaf7f0",
+      subject:"تسویه صورت‌حساب دوره‌ای", body:"احتراماً، مهلت تسویه صورت‌حساب دوره جاری تا پایان هفته می‌باشد. مانده بدهی شما ۴۹٬۰۰۰٬۰۰۰ تومان است." },
+    { from:"ادمین سایت", initial:"اس", time:"۲ روز پیش", tag:"اطلاعیه", tagColor:"#8a5cf6", tagBg:"#f1ecfe",
+      subject:"افزایش ظرفیت تخصیص‌یافته", body:"ظرفیت تخصیص‌یافته به آژانس شما برای مسیر مشهد افزایش یافت. هم‌اکنون می‌توانید صندلی‌های بیشتری صادر کنید." },
+    { from:"مدیر عامل", initial:"مع", time:"هفته پیش", tag:"قدردانی", tagColor:"#e8893a", tagBg:"#fdf1e7",
+      subject:"تقدیر از عملکرد فروش", body:"از تلاش مجموعه شما در رشد فروش سه‌ماهه گذشته صمیمانه قدردانی می‌کنیم. امیدواریم این همکاری ادامه یابد." },
+  ]; }
+
+  renderVals(){
+    const tab = this.state.tab;
+    const titles = { dashboard:"داشبورد آژانس", seats:"صندلی‌های تخصیص‌یافته", webservice:"وب‌سرویس", credit:"اعتبار و مانده حساب", report:"فروش و گزارش", inbox:"کارتابل و پیام‌ها", profile:"پروفایل و مدارک" };
+    const subs = { dashboard:"نمای کلی فروش، اعتبار و صندلی‌های شما", seats:"ظرفیت تخصیص‌یافته بر اساس تقاضا برای پروازهای دارای مجوز", webservice:"درخواست و دریافت وب‌سرویس اختصاصی آژانس", credit:"سقف اعتبار، فاکتورهای ایرلاین و گردش حساب", report:"عملکرد فروش و گزارش‌های آژانس", inbox:"پیام‌های دریافتی از مدیریت ایرلاین", profile:"اطلاعات آژانس و مدارک ثبت‌شده" };
+
+    const go = (key) => () => this.setState({ tab: key });
+    const navMeta = [
+      { key:"dashboard", label:"داشبورد", icon:"dash" },
+      { key:"seats", label:"صندلی‌های تخصیص‌یافته", icon:"seat" },
+      { key:"webservice", label:"وب‌سرویس", icon:"webservice" },
+      { key:"credit", label:"اعتبار و مانده", icon:"credit" },
+      { key:"report", label:"فروش و گزارش", icon:"report" },
+      { key:"inbox", label:"کارتابل و پیام‌ها", icon:"inbox", badge:true, badgeNum:"۴" },
+      { key:"profile", label:"پروفایل و مدارک", icon:"profile" },
+    ];
+    const navItems = navMeta.map(n => ({
+      label:n.label, icon:this.icon(n.icon), go:go(n.key),
+      bg: tab===n.key ? "#eef4fb" : "transparent",
+      color: tab===n.key ? "#1668c4" : "#5a6678",
+      weight: tab===n.key ? "800" : "600",
+      badge: !!n.badge, badgeNum: n.badgeNum || ""
+    }));
+
+    // KPIs
+    const mi = (h) => this.miniIcon(h);
+    const kpis = [
+      { icon:mi('<path d="M3 3v18h18"/><path d="M7 14l3.5-3.5 3 3L20 7"/>'), iconBg:"#eef4fb", iconColor:"#1668c4", value:"۳۸۴ میلیون", label:"فروش این ماه (تومان)", trend:"+۱۲٪", trendColor:"#1f8a5b", trendBg:"#eaf7f0" },
+      { icon:mi('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>'), iconBg:"#eaf7f0", iconColor:"#1f8a5b", value:"۵۱ میلیون", label:"مانده اعتبار (تومان)", trend:"۵۱٪", trendColor:"#1668c4", trendBg:"#eef4fb" },
+      { icon:mi('<path d="M5 11V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v6"/><path d="M5 11h11a2 2 0 0 1 2 2v3H5z"/>'), iconBg:"#f1ecfe", iconColor:"#8a5cf6", value:"۸۶", label:"صندلی تخصیص‌یافته", trend:"+۸", trendColor:"#1f8a5b", trendBg:"#eaf7f0" },
+      { icon:mi('<path d="M9 12l2 2 4-4"/><path d="M12 3l7 3v5.5c0 4.2-2.9 7.4-7 8.5-4.1-1.1-7-4.3-7-8.5V6z"/>'), iconBg:"#fdf1e7", iconColor:"#e8893a", value:"۱۴۲", label:"صندلی فروش‌رفته", trend:"+۲۳", trendColor:"#1f8a5b", trendBg:"#eaf7f0" },
+    ];
+
+    const salesVals = [180, 220, 260, 240, 320, 384];
+    const maxS = 400;
+    const salesMonths = ["بهمن","اسفند","فروردین","اردیبهشت","خرداد","تیر"];
+    const salesBars = salesVals.map((v,i) => ({ val:this.toFa(v), m:salesMonths[i], h:Math.round(v/maxS*100)+"%" }));
+
+    const _paidSet = this.state.paidInv || [];
+    const _log = this.state.activityLog || [];
+    const _topupTotal = _log.filter(a => a.kind==="topup").reduce((s,a)=>s+a.amt, 0);
+    const _baseLimit = 100000000, _baseUsed = 49000000;
+
+    const seatFlights = [
+      { route:"تهران ← دبی", flightNo:"EP-821", date:"۲۵ تیر ۱۴۰۵", time:"۰۸:۳۰", demand:"۳۵", alloc:"۳۰", sold:"۱۸", left:"۱۲", pct:"60%" },
+      { route:"مشهد ← تهران", flightNo:"W5-112", date:"۲۷ تیر ۱۴۰۵", time:"۱۴:۱۵", demand:"۲۰", alloc:"۲۰", sold:"۱۵", left:"۵", pct:"75%" },
+      { route:"تهران ← استانبول", flightNo:"EP-640", date:"۳۰ تیر ۱۴۰۵", time:"۰۶:۴۵", demand:"۴۰", alloc:"۲۵", sold:"۹", left:"۱۶", pct:"36%" },
+      { route:"شیراز ← تهران", flightNo:"RV-415", date:"۲ مرداد ۱۴۰۵", time:"۱۹:۰۰", demand:"۱۵", alloc:"۱۱", sold:"۷", left:"۴", pct:"64%" },
+    ];
+
+    const transactions = [
+      { icon:mi('<path d="M12 5v14M5 12h14"/>'), bg:"#eaf7f0", color:"#1f8a5b", title:"شارژ اعتبار توسط مدیریت", date:"۱۰ تیر ۱۴۰۵", amount:"+۳۰٬۰۰۰٬۰۰۰" },
+      { icon:mi('<path d="M5 12h14"/>'), bg:"#fdecea", color:"#e8553a", title:"پرداخت فاکتور تخصیص ۸ صندلی مسیر دبی", date:"۸ تیر ۱۴۰۵", amount:"−۳۰٬۴۰۰٬۰۰۰" },
+      { icon:mi('<path d="M5 12h14"/>'), bg:"#fdecea", color:"#e8553a", title:"پرداخت فاکتور تخصیص ۵ صندلی مسیر مشهد", date:"۵ تیر ۱۴۰۵", amount:"−۹٬۷۵۰٬۰۰۰" },
+      { icon:mi('<path d="M12 5v14M5 12h14"/>'), bg:"#eaf7f0", color:"#1f8a5b", title:"تسویه نقدی", date:"۱ تیر ۱۴۰۵", amount:"+۲۰٬۰۰۰٬۰۰۰" },
+      { icon:mi('<path d="M5 12h14"/>'), bg:"#fdecea", color:"#e8553a", title:"پرداخت فاکتور تخصیص ۳ صندلی مسیر استانبول", date:"۲۸ خرداد ۱۴۰۵", amount:"−۱۲٬۶۰۰٬۰۰۰" },
+    ];
+
+    const reportKpis = [
+      { label:"کل فروش (تومان)", value:"۲٫۱ میلیارد" },
+      { label:"بلیط صادرشده", value:"۱۴۲" },
+      { label:"میانگین نرخ", value:"۳٬۱۰۰٬۰۰۰" },
+      { label:"نرخ استرداد", value:"۳٫۲٪" },
+    ];
+    const salesRows = [
+      { name:"رضا احمدی", route:"تهران ← دبی", date:"۸ تیر", cls:"اکونومی", amount:"۳٬۸۰۰٬۰۰۰", amt:3800000 },
+      { name:"مریم کاظمی", route:"مشهد ← تهران", date:"۷ تیر", cls:"اکونومی", amount:"۱٬۹۵۰٬۰۰۰", amt:1950000 },
+      { name:"علی موسوی", route:"تهران ← استانبول", date:"۶ تیر", cls:"بیزنس", amount:"۶٬۴۰۰٬۰۰۰", amt:6400000 },
+      { name:"سارا نوری", route:"شیراز ← تهران", date:"۵ تیر", cls:"اکونومی", amount:"۱٬۶۵۰٬۰۰۰", amt:1650000 },
+      { name:"حسین رضایی", route:"تهران ← دبی", date:"۴ تیر", cls:"اکونومی", amount:"۳٬۸۰۰٬۰۰۰", amt:3800000 },
+      { name:"زهرا عابدی", route:"تهران ← مشهد", date:"۳ تیر", cls:"اکونومی", amount:"۱٬۹۵۰٬۰۰۰", amt:1950000 },
+    ];
+    const _faMoney = (n) => this.toFa(Number(n||0).toLocaleString("en-US")).replace(/,/g,"٬");
+    // sales aggregated per flight/route
+    const _pfMap = {};
+    salesRows.forEach(s => { if(!_pfMap[s.route]) _pfMap[s.route] = { route:s.route, count:0, total:0 }; _pfMap[s.route].count++; _pfMap[s.route].total += s.amt; });
+    const perFlightRows = Object.values(_pfMap).sort((a,b)=>b.total-a.total).map(x => ({ route:x.route, count:this.toFa(x.count)+" بلیط", total:_faMoney(x.total)+" تومان" }));
+
+    const msgs = this.messagesData();
+    const om = this.state.openMsg;
+    const messages = msgs.map((m,i) => ({
+      from:m.from, time:m.time, subject:m.subject,
+      open: () => this.setState({ openMsg:i, replyText:"" }),
+      bg: om===i ? "#f4f8fc" : "#fff",
+      bar: om===i ? "#1668c4" : "transparent"
+    }));
+    const cur = msgs[om] || msgs[0];
+
+    const profileFields = [
+      { label:"مدیر عامل", value:"حسین مهری" },
+      { label:"شماره مجوز", value:"۱۱۰۲-۴۴۷۱" },
+      { label:"شهر", value:"تهران" },
+      { label:"تلفن", value:"۰۲۱-۸۸۴۵۲۲۱۰" },
+      { label:"ایمیل", value:"info@parsiangasht.ir" },
+      { label:"نوع همکاری", value:"آژانس همکار طلایی" },
+    ];
+    const documents = [
+      { name:"مجوز بند ب", meta:"PDF · ۱.۲ مگابایت", status:"تأیید شده", statusColor:"#1f8a5b", statusBg:"#eaf7f0" },
+      { name:"پروانه کسب", meta:"PDF · ۸۰۰ کیلوبایت", status:"تأیید شده", statusColor:"#1f8a5b", statusBg:"#eaf7f0" },
+      { name:"کارت ملی مدیر", meta:"تصویر · ۴۲۰ کیلوبایت", status:"در انتظار", statusColor:"#e8893a", statusBg:"#fdf1e7" },
+    ];
+
+    // invoices issued by the airline (paid via credit → logged to report)
+    const invoices = [
+      { no:"INV-۱۴۰۵-۰۳۸", desc:"بابت تخصیص ۳۰ صندلی پرواز EP-821 (تهران ← دبی)", date:"۲۰ تیر ۱۴۰۵", due:"۲۷ تیر ۱۴۰۵", amtNum:114000000, amount:"۱۱۴٬۰۰۰٬۰۰۰ تومان", status:"unpaid" },
+      { no:"INV-۱۴۰۵-۰۳۵", desc:"بابت تخصیص ۲۰ صندلی پرواز W5-112 (مشهد ← تهران)", date:"۱۵ تیر ۱۴۰۵", due:"۲۲ تیر ۱۴۰۵", amtNum:39000000, amount:"۳۹٬۰۰۰٬۰۰۰ تومان", status:"overdue" },
+      { no:"INV-۱۴۰۵-۰۳۱", desc:"بابت تخصیص ۲۵ صندلی پرواز EP-640 (تهران ← استانبول)", date:"۱۰ تیر ۱۴۰۵", due:"۱۷ تیر ۱۴۰۵", amtNum:105000000, amount:"۱۰۵٬۰۰۰٬۰۰۰ تومان", status:"paid" },
+    ];
+    const invStMeta = { unpaid:{label:"در انتظار پرداخت",color:"#e8893a",bg:"#fdf1e7"}, overdue:{label:"سررسید گذشته",color:"#e8553a",bg:"#fdecea"}, paid:{label:"پرداخت‌شده",color:"#1f8a5b",bg:"#eaf7f0"} };
+    const invoiceRows = invoices.map(v => { const isPaidNow = v.status==="paid" || _paidSet.includes(v.no); const m=invStMeta[isPaidNow?"paid":v.status]; return { ...v, stLabel:m.label, stColor:m.color, stBg:m.bg, canPay: !isPaidNow, isPaid: isPaidNow, pay: () => this.payInvoice(v) }; });
+    const invUnpaidCount = invoiceRows.filter(v=>!v.isPaid).length;
+    const unpaidInvoiceRows = invoiceRows.filter(v=>!v.isPaid);
+    // dynamic credit: top-ups raise the limit, credit-paid invoices raise the used amount
+    const _paidTotal = invoices.filter(v => v.status!=="paid" && _paidSet.includes(v.no)).reduce((s,v)=>s+v.amtNum, 0);
+    const _limitN = _baseLimit + _topupTotal;
+    const _usedN = _baseUsed + _paidTotal;
+    const _remN = Math.max(0, _limitN - _usedN);
+    const creditLimit = this.faMoney(_limitN) + " تومان";
+    const creditUsed = this.faMoney(_usedN) + " تومان";
+    const creditRemaining = this.faMoney(_remN) + " تومان";
+    const _pctN = _limitN ? Math.round(_usedN/_limitN*100) : 0;
+    const creditPct = this.toFa(_pctN) + "٪";
+    const creditBarW = _pctN + "%";
+    // financial activity report (new entries first, then seed history)
+    const _actIcons = { topup: mi('<path d="M12 5v14M5 12h14"/>'), payment: mi('<path d="M5 12h14"/>') };
+    const activityRows = _log.map(a => ({ title:a.title, meta:a.meta||"", date:a.date, amount:a.amount, color: a.sign>0 ? "#1f8a5b" : "#e8553a", bg: a.sign>0 ? "#eaf7f0" : "#fdecea", icon: _actIcons[a.kind] || _actIcons.payment }))
+      .concat(transactions.map(t => ({ title:t.title, meta:"", date:t.date, amount:t.amount, color:t.color, bg:t.bg, icon:t.icon })));
+    // clickable report cards → detail sub-views
+    const _totalSalesN = salesRows.reduce((s,r)=>s+r.amt, 0);
+    const rv = this.state.reportView || "overview";
+    const setRV = (k) => () => this.setState({ reportView: k });
+
+    // web service (purchase-first: credentials only after approval)
+    const wsStMeta = { active:{label:"تأییدشده · فعال",color:"#1f8a5b",bg:"#eaf7f0"}, submitted:{label:"در حال بررسی",color:"#e8893a",bg:"#fdf1e7"}, review:{label:"در حال بررسی",color:"#e8893a",bg:"#fdf1e7"}, referred:{label:"ارجاع‌شده",color:"#7c3aed",bg:"#f2ecfb"}, rejected:{label:"رد شده",color:"#e8553a",bg:"#fdecea"} };
+    const _wsAll = (window.SiteData ? window.SiteData.getWebServiceRequests() : []).filter(r => r.agencyId === "AG-1");
+    const _fmtWs = (n) => this.toFa(Number(n||0).toLocaleString("en-US")).replace(/,/g,"٬");
+    const wsReqRows = _wsAll.map(r => { const m=wsStMeta[r.status]||wsStMeta.submitted; return { id:r.id, type:r.type, plan:r.plan, priceLabel:_fmtWs(r.price), date:r.at, stLabel:m.label, stColor:m.color, stBg:m.bg }; });
+    const _wsActiveRec = _wsAll.find(r => r.status==="active");
+    const wsActive = !!_wsActiveRec;
+    const wsPending = _wsAll.some(r => r.status==="submitted" || r.status==="review" || r.status==="referred");
+    const wsKeyFull = "ws_live_4471_8f2a9c1d7b6e4a05";
+    const wsTypeOptions = [ {value:"search",label:"جستجو و رزرو پرواز (API)"}, {value:"seat",label:"استعلام صندلی تخصیص‌یافته (API)"}, {value:"credit",label:"استعلام اعتبار و فاکتورها (API)"}, {value:"report",label:"دریافت گزارش فروش (API)"} ];
+    const _planDefs = [ {v:"m6",label:"شش‌ماهه",base:26000000}, {v:"y1",label:"یک‌ساله",base:48000000}, {v:"y2",label:"دوساله",base:84000000} ];
+    const wsPlanOptions = _planDefs.map(p => { const on=this.state.wsReqPlan===p.v; return { label:p.label, priceLabel:_fmtWs(p.base), border:on?"var(--accent)":"#e1ebf6", bg:on?"#eaf2fb":"#f6f8fb", onPick:()=>this.setState({wsReqPlan:p.v}) }; });
+    const _curPlan = _planDefs.find(p=>p.v===this.state.wsReqPlan) || _planDefs[1];
+    const wsPriceLabel = _fmtWs(_curPlan.base);
+
+    const purchasedWs = wsReqRows;
+    const purchasedCount = wsReqRows.length;
+    const reportCards = [
+      { key:"sales", label:"کل فروش", value:"۲٫۱ میلیارد تومان", sub:"مشاهدهٔ بلیط‌های صادرشده", color:"#1668c4", bg:"#eef4fb", icon:mi('<path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/>'), onOpen:setRV("sales") },
+      { key:"perflight", label:"فروش هر پرواز", value:this.toFa(perFlightRows.length)+" مسیر فعال", sub:"تفکیک فروش بر اساس مسیر", color:"#1f8a5b", bg:"#eaf7f0", icon:mi('<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>'), onOpen:setRV("perflight") },
+      { key:"webservice", label:"وب‌سرویس‌های خریداری‌شده", value:this.toFa(purchasedCount)+" سرویس", sub:"پلن‌های خریداری‌شده", color:"#7c3aed", bg:"#f2ecfb", icon:mi('<path d="M8 8l-4 4 4 4"/><path d="M16 8l4 4-4 4"/><path d="M13.5 6l-3 12"/>'), onOpen:setRV("webservice") },
+      { key:"invoices", label:"فاکتورهای پرداخت‌نشده", value:this.toFa(invUnpaidCount)+" فاکتور", sub:"در انتظار پرداخت از اعتبار", color:"#e8893a", bg:"#fdf1e7", icon:mi('<path d="M5 3v18l2.5-1.5L10 21l2-1.5L14 21l2.5-1.5L19 21V3l-2.5 1.5L14 3l-2 1.5L10 3 7.5 4.5z"/><path d="M9 8h6M9 12h6"/>'), onOpen:setRV("invoices") },
+    ];
+    const _rvTitles = { sales:"کل فروش — بلیط‌های صادرشده", perflight:"فروش هر پرواز — تفکیک مسیر", webservice:"وب‌سرویس‌های خریداری‌شده", invoices:"فاکتورهای پرداخت‌نشده" };
+    return {
+      pageTitle: titles[tab], pageSub: subs[tab],
+      navItems,
+      showWebservice: tab==="webservice",
+      invoiceRows, invUnpaidCount: this.toFa(invUnpaidCount), hasUnpaid: invUnpaidCount>0,
+      wsReqRows, wsNoRequests: _wsAll.length===0,
+      wsActive, wsInactive: !wsActive, wsPending,
+      wsActivePlan: _wsActiveRec ? (_wsActiveRec.type + " · " + _wsActiveRec.plan) : "دسترسی API اختصاصی آژانس شما",
+      wsKeyVisible: this.state.wsKeyVisible, wsKeyShown: this.state.wsKeyVisible ? wsKeyFull : "•••• •••• •••• ••••",
+      toggleWsKey: () => this.setState(s=>({ wsKeyVisible: !s.wsKeyVisible })),
+      copyWsKey: () => this.toast("کلید وب‌سرویس کپی شد"),
+      openWsDocs: () => this.toast("مستندات API وب‌سرویس باز شد"),
+      wsBaseUrl: "https://api.aseman.ir/agency/v1",
+      wsTypeOptions, wsPlanOptions, wsPriceLabel, wsReqType: this.state.wsReqType, wsReqNote: this.state.wsReqNote, wsReqErr: this.state.wsReqErr,
+      onWsReqType:(e)=>this.setState({ wsReqType:e.target.value }), onWsReqNote:(e)=>this.setState({ wsReqNote:e.target.value, wsReqErr:false }),
+      submitWsReq: () => this.submitWsReq(),
+      showDashboard: tab==="dashboard", showSeats: tab==="seats", showCredit: tab==="credit",
+      showReport: tab==="report", showInbox: tab==="inbox", showProfile: tab==="profile",
+      kpis, salesBars,
+      creditLimit, creditUsed, creditRemaining, creditPct, creditBarW,
+      openTopup: () => this.setState({ topupOpen:true, topupAmount:"" }),
+      closeTopup: () => this.setState({ topupOpen:false }),
+      topupOpen: this.state.topupOpen, topupAmount: this.state.topupAmount,
+      onTopupAmount: (e) => this.setState({ topupAmount: e.target.value }),
+      submitTopup: () => this.submitTopup(),
+      stopProp: (e) => { if(e && e.stopPropagation) e.stopPropagation(); },
+      goCredit: () => this.setState({ tab:"credit" }),
+      seatFlights, transactions, reportKpis, salesRows,
+      reportCards, reportOverview: rv==="overview",
+      reportDetail: rv!=="overview", reportDetailTitle: _rvTitles[rv] || "",
+      rvSales: rv==="sales", rvPerFlight: rv==="perflight", rvWebservice: rv==="webservice", rvInvoices: rv==="invoices",
+      backToReport: () => this.setState({ reportView:"overview" }),
+      perFlightRows, activityRows, hasActivity: activityRows.length>0,
+      purchasedWs, purchasedNone: purchasedCount===0,
+      unpaidInvoiceRows, unpaidNone: unpaidInvoiceRows.length===0,
+      exportExcel: () => this.toast("خروجی Excel در حال آماده‌سازی…"),
+      messages,
+      openMsgFrom: cur.from, openMsgInitial: cur.initial, openMsgTime: cur.time,
+      openMsgSubject: cur.subject, openMsgBody: cur.body,
+      openMsgTag: cur.tag, openMsgTagColor: cur.tagColor, openMsgTagBg: cur.tagBg,
+      replyText: this.state.replyText,
+      onReply: (e) => this.setState({ replyText: e.target.value }),
+      sendReply: () => { if(!(this.state.replyText||"").trim()) return; this.setState({ replyText:"" }); this.toast("پاسخ به «" + cur.from + "» ارسال شد"); },
+      profileFields, documents,
+      onUploadDoc: (e) => { const f=(e.target.files||[])[0]; if(f) this.toast("مدرک «"+f.name+"» بارگذاری شد"); e.target.value=""; },
+      stop: (e) => e.stopPropagation(),
+      composeOpen: this.state.composeOpen,
+      openCompose: () => this.setState({ composeOpen:true, cmRecipient:"", cmSubject:"", cmBody:"", cmErr:false }),
+      closeCompose: () => this.setState({ composeOpen:false }),
+      recipients: ["مدیر عامل","مدیر بازرگانی","مدیر مالی","ادمین سایت"],
+      cmRecipient: this.state.cmRecipient, cmSubject: this.state.cmSubject, cmBody: this.state.cmBody, cmErr: this.state.cmErr,
+      onCmRecipient: (e) => this.setState({ cmRecipient:e.target.value, cmErr:false }),
+      onCmSubject: (e) => this.setState({ cmSubject:e.target.value, cmErr:false }),
+      onCmBody: (e) => this.setState({ cmBody:e.target.value, cmErr:false }),
+      sendCompose: () => {
+        const r=this.state.cmRecipient, s=(this.state.cmSubject||"").trim(), b=(this.state.cmBody||"").trim();
+        if(!r||!s||!b){ this.setState({ cmErr:true }); return; }
+        this.setState({ composeOpen:false }); this.toast("پیام به «"+r+"» ارسال شد");
+      },
+      toast: this.state.toast, hasToast: !!this.state.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>

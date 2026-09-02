@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box;}html,body{margin:0;}image-slot{display:block !important;width:100% !important;height:100% !important;}</style>
+<script src="./site-data.js"></script>
+<script src="./image-slot.js"></script>
+<script>document.addEventListener("click",function(e){document.querySelectorAll("details[open]").forEach(function(d){if(!d.contains(e.target))d.removeAttribute("open");});});</script>
+</helmet>
+
+<div dir="rtl" style="font-family:Vazirmatn,sans-serif; background:#f6f8fb; color:#16202e; min-height:100vh; --accent:#1668c4;">
+
+  <header style="position:sticky; top:0; z-index:50;">
+    <div style="background:{{ headerBarBg }}; border-bottom:{{ headerBorderB }}; box-shadow:0 2px 12px -8px rgba(13,38,102,.25);">
+      <div style="max-width:1400px; margin:0 auto; padding:0 26px; height:70px; display:flex; align-items:center; justify-content:space-between; position:relative;">
+        <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:9px; text-decoration:none; color:#16202e; order:{{ logoOrder }}; position:{{ logoPosition }}; left:{{ logoLeft }}; transform:{{ logoTransform }};">
+          <div style="width:38px; height:38px; border-radius:10px; background:{{ logoSquareBg }}; display:flex; align-items:center; justify-content:center; color:{{ logoIconColor }}; font-size:18px;">✈</div>
+          <span style="font-weight:900; font-size:18px; letter-spacing:-.5px; color:{{ logoTextColor }};">blujet</span>
+        </a>
+        <span onClick="{{ toggleMobileMenu }}" style="display:{{ hamburgerDisplay }}; width:38px; height:38px; align-items:center; justify-content:center; border-radius:10px; cursor:pointer; flex:none; font-size:17px; color:{{ hamburgerColor }};">☰</span><nav style="display:{{ navDisplay }}; gap:30px; font-size:15.5px; color:#3b4554; font-weight:600; height:100%; align-items:center;">
+          <a href="صفحه اصلی.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">پرواز</a>
+          <a href="مقاصد.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">مقاصد پروازی</a>
+          <a href="باشگاه مشتریان.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">باشگاه مشتریان</a>
+          <a href="قوانین و مقررات.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">اطلاعات سفر</a>
+          <a href="پشتیبانی.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">پشتیبانی</a>
+        </nav>
+        <div style="display:{{ navDisplay }}; align-items:center; gap:10px;">
+          <div style="position:relative;">
+            <div onClick="{{ toggleLang }}" style="width:42px; height:42px; border-radius:50%; background:#f3f5f8; display:flex; align-items:center; justify-content:center; color:#5a6678; cursor:pointer;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 4 5.7 4 9s-1.5 6.5-4 9c-2.5-2.5-4-5.7-4-9s1.5-6.5 4-9z"/></svg></div>
+            <sc-if value="{{ langOpen }}" hint-placeholder-val="{{false}}">
+              <div onClick="{{ toggleLang }}" style="position:fixed; inset:0; z-index:120;"></div>
+              <div style="position:absolute; top:52px; left:0; width:170px; background:#fff; border:1px solid #e6eaf0; border-radius:14px; box-shadow:0 20px 50px -16px rgba(13,38,64,.35); z-index:130; overflow:hidden; padding:6px;">
+                <div onClick="{{ setLangFa }}" style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:9px 11px; border-radius:9px; font-size:12.5px; font-weight:600; color:#16202e; cursor:pointer;">فارسی<span style="color:var(--accent,#1668c4); font-weight:900;">✓</span></div>
+                <div onClick="{{ setLangEn }}" style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:9px 11px; border-radius:9px; font-size:12.5px; font-weight:600; color:#16202e; cursor:pointer;">English</div>
+              </div>
+            </sc-if>
+          </div>
+          <div style="position:relative;">
+            <div onClick="{{ toggleUserMenu }}" style="display:flex; align-items:center; gap:8px; background:#fff; border:1px solid #e6eaf0; padding:4px 10px 4px 7px; border-radius:28px; cursor:pointer;"><div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,var(--accent,#1668c4),#0d3b66); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13.5px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="8.2" r="4.4"/><path d="M12 14.6c-5.5 0-9.2 3-9.9 7.4h19.8c-.7-4.4-4.4-7.4-9.9-7.4z"/></svg></div><div style="line-height:1.35;"><div style="font-size:12px; font-weight:700; color:#16202e;">نگار رضایی</div><div style="font-size:12px; color:#caa53a; font-weight:700;">★ عضو طلایی</div></div><span style="font-size:10px; color:#9aa4b2;">▼</span></div>
+            <sc-if value="{{ userMenuOpen }}" hint-placeholder-val="{{false}}">
+              <div onClick="{{ toggleUserMenu }}" style="position:fixed; inset:0; z-index:120;"></div>
+              <div style="position:absolute; top:54px; left:0; width:280px; background:#fff; border:1px solid #e6eaf0; border-radius:16px; box-shadow:0 20px 50px -16px rgba(13,38,64,.35); z-index:130; overflow:hidden; padding:5px;">
+                <a href="پنل کاربر.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:13.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);">👤</span>مشاهده پروفایل</a>
+                <a href="مدیریت رزرو.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:13.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);">🧳</span>سفرها و مدیریت رزرو</a>
+                <a href="باشگاه مشتریان.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:13.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);">★</span>باشگاه مشتریان</a>
+                <a href="ورود و ثبتنام.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:13.5px; color:#e5484d; font-weight:600; text-decoration:none;"><span>↩</span>خروج از حساب</a>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+        <sc-if value="{{ hamburgerShown }}" hint-placeholder-val="{{false}}">
+        <div style="display:flex; align-items:center; gap:2px; order:{{ iconRowOrder }};">
+          <span onClick="{{ toggleUserMenu }}" style="width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; cursor:pointer;"><svg width="19" height="19" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="8.2" r="4.4"/><path d="M12 14.6c-5.5 0-9.2 3-9.9 7.4h19.8c-.7-4.4-4.4-7.4-9.9-7.4z"/></svg></span>
+        </div>
+        </sc-if>
+      </div>
+    </div>
+    <sc-if value="{{ mobileMenuOpen }}" hint-placeholder-val="{{false}}">
+      <div onClick="{{ toggleMobileMenu }}" style="position:fixed; inset:0; background:rgba(13,38,64,.45); z-index:200;"></div>
+      <div style="position:fixed; top:0; right:0; bottom:0; width:78vw; max-width:320px; background:#fff; z-index:210; box-shadow:-8px 0 30px rgba(13,38,102,.2); padding:20px; display:flex; flex-direction:column; gap:6px; overflow-y:auto;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+          <span onClick="{{ toggleMobileMenu }}" style="width:34px; height:34px; border-radius:9px; background:#f3f5f8; display:flex; align-items:center; justify-content:center; font-size:16px; color:#5a6678; cursor:pointer;">×</span>
+        </div>
+        <a href="صفحه اصلی.dc.html" style="padding:12px 8px; border-radius:9px; text-decoration:none; color:#16202e; font-size:14px; font-weight:700; border-bottom:1px solid #f2f4f7;">پرواز</a>
+        <a href="مقاصد.dc.html" style="padding:12px 8px; border-radius:9px; text-decoration:none; color:#16202e; font-size:14px; font-weight:700; border-bottom:1px solid #f2f4f7;">مقاصد پروازی</a>
+        <a href="باشگاه مشتریان.dc.html" style="padding:12px 8px; border-radius:9px; text-decoration:none; color:#16202e; font-size:14px; font-weight:700; border-bottom:1px solid #f2f4f7;">باشگاه مشتریان</a>
+        <a href="قوانین و مقررات.dc.html" style="padding:12px 8px; border-radius:9px; text-decoration:none; color:#16202e; font-size:14px; font-weight:700; border-bottom:1px solid #f2f4f7;">اطلاعات سفر</a>
+        <a href="پشتیبانی.dc.html" style="padding:12px 8px; border-radius:9px; text-decoration:none; color:#16202e; font-size:14px; font-weight:700;">پشتیبانی</a>
+      </div>
+    </sc-if>
+  </header>
+
+  <section style="background:linear-gradient(135deg,#0d2640,#16406e); color:#fff; padding:54px 22px; position:relative; overflow:hidden;">
+    <div style="position:absolute; inset:0; opacity:.08; background-image:radial-gradient(circle at 20% 30%, #fff 0, transparent 45%), radial-gradient(circle at 80% 70%, #fff 0, transparent 40%);"></div>
+    <div style="max-width:900px; margin:0 auto; text-align:center; position:relative;">
+      <span style="display:inline-block; font-size:12px; font-weight:700; background:#ffffff1a; border:1px solid #ffffff2a; padding:6px 14px; border-radius:20px; margin-bottom:16px; color:#cfe0f5;">به تیم ما بپیوندید</span>
+      <h1 style="font-size:32px; font-weight:900; margin:0 0 12px;">فرصت‌های شغلی blujet</h1>
+      <p style="font-size:14.5px; color:#aac4e2; margin:0; line-height:1.8;">در کنار تیمی حرفه‌ای در صنعت هوانوردی رشد کنید. آگهی‌های استخدام فعال را ببینید و رزومهٔ خود را ارسال کنید.</p>
+    </div>
+  </section>
+
+  <section style="max-width:1100px; margin:0 auto; padding:44px 26px 80px;">
+
+    <sc-if value="{{ hasJobs }}" hint-placeholder-val="{{true}}">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:22px;">
+        <h2 style="font-size:17px; font-weight:800; margin:0;">آگهی‌های استخدام فعال</h2>
+        <span style="font-size:12.5px; font-weight:700; color:#7a8794;">{{ jobCount }} فرصت شغلی</span>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:20px;">
+        <sc-for list="{{ jobs }}" as="j" hint-placeholder-count="3">
+          <a href="{{ j.href }}" style="display:block; text-decoration:none; color:inherit; border:1px solid #eef1f5; border-radius:18px; overflow:hidden; background:#fff; box-shadow:0 14px 34px -22px rgba(13,38,64,.35); transition:transform .18s, box-shadow .18s;" style-hover="transform:translateY(-4px); box-shadow:0 20px 40px -18px rgba(13,38,64,.4);">
+            <div style="height:160px; border-bottom:1px solid #eef1f5; background:#eef3fa; position:relative;">
+              <image-slot id="{{ j.slotId }}" shape="rect" placeholder="تصویر آگهی استخدام" style="width:100%; height:100%; color:#4a5a73;"></image-slot>
+              <span style="position:absolute; top:11px; right:11px; font-size:11px; font-weight:700; color:{{ j.typeColor }}; background:{{ j.typeBg }}; padding:5px 11px; border-radius:18px; backdrop-filter:blur(4px);">{{ j.type }}</span>
+            </div>
+            <div style="padding:18px;">
+              <div style="font-size:16px; font-weight:800; color:#16202e;">{{ j.title }}</div>
+              <div style="display:flex; align-items:center; gap:6px; font-size:12.5px; color:#7a8794; margin-top:8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-9m0 0 3-3m-3 3 3 3"/></svg>{{ j.dept }} · {{ j.city }}</div>
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-top:16px; padding-top:14px; border-top:1px solid #f2f4f7;">
+                <span style="font-size:12.5px; font-weight:800; color:var(--accent,#1668c4);">مشاهده و ارسال رزومه</span>
+                <span style="width:30px; height:30px; border-radius:50%; background:#eef4fb; color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 5l-7 7 7 7"/></svg></span>
+              </div>
+            </div>
+          </a>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ noJobs }}" hint-placeholder-val="{{false}}">
+      <div style="text-align:center; padding:90px 20px; color:#9aa4b2; background:#fff; border:1px solid #eef1f5; border-radius:18px;">
+        <div style="font-size:34px; margin-bottom:14px;">🗂</div>
+        <div style="font-size:15px; font-weight:700; color:#5a6678;">در حال حاضر فرصت شغلی فعالی وجود ندارد</div>
+        <div style="font-size:13px; margin-top:6px;">به‌زودی آگهی‌های استخدام جدید در همین صفحه منتشر می‌شود.</div>
+      </div>
+    </sc-if>
+
+  </section>
+
+  <footer style="background:#0d2640; color:#aebfd4;">
+    <sc-if value="{{ notMobile }}" hint-placeholder-val="{{true}}">
+    <div style="max-width:1400px; margin:0 auto; padding:39px 26px 20px; display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr; gap:33px;">
+      <div>
+        <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:9px; margin-bottom:16px; text-decoration:none;"><div style="width:36px; height:36px; border-radius:10px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:16px;">✈</div><span style="font-weight:900; font-size:18px; color:#fff;">blujet</span></a>
+        <p style="font-size:13.5px; line-height:1.85; margin:0 0 20px; max-width:300px;">رزرو آنلاین بلیط پروازهای داخلی و بین‌المللی با بهترین قیمت و خدمات باشگاه مشتریان.</p>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:10.5px; color:#9fb2c9; line-height:1.5; padding:6px;">نماد اعتماد الکترونیکی</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:10.5px; color:#9fb2c9; line-height:1.5; padding:6px;">انجمن صنفی دفاتر خدمات مسافرتی</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:10.5px; color:#9fb2c9; line-height:1.5; padding:6px;">ساماندهی</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:10.5px; color:#9fb2c9; line-height:1.5; padding:6px;">عضو IATA</span>
+        </div>
+      </div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">خدمات</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="نتایج پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">رزرو پرواز</a><a href="مدیریت رزرو.dc.html" style="color:#aebfd4; text-decoration:none;">مدیریت رزرو</a><a href="وضعیت پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">وضعیت پرواز</a><a href="باشگاه مشتریان.dc.html" style="color:#aebfd4; text-decoration:none;">باشگاه مشتریان</a></div></div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">شرکت</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="درباره ما.dc.html" style="color:#aebfd4; text-decoration:none;">درباره ما</a><a href="تماس با ما.dc.html" style="color:#aebfd4; text-decoration:none;">تماس با ما</a><a href="قوانین و مقررات.dc.html" style="color:#aebfd4; text-decoration:none;">قوانین و مقررات</a><a href="فرصتهای شغلی.dc.html" style="color:#fff; font-weight:700; text-decoration:none;">فرصت‌های شغلی</a></div></div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">پشتیبانی</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">مرکز راهنما</a><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">سوالات متداول</a></div></div>
+    </div>
+    <div style="border-top:1px solid #ffffff12;"><div style="max-width:1400px; margin:0 auto; padding:15px 26px; display:flex; justify-content:space-between; align-items:center; font-size:13.5px; color:#7d92ad;"><span>© ۱۴۰۵ blujet. تمامی حقوق محفوظ است.</span></div></div>
+    </sc-if>
+    <sc-if value="{{ isMobile }}" hint-placeholder-val="{{false}}">
+    <div style="padding:34px 24px 6px; text-align:center;">
+      <div style="display:flex; align-items:center; justify-content:center; gap:9px; margin-bottom:14px;"><div style="width:34px; height:34px; border-radius:10px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:15px;">✈</div><span style="font-weight:900; font-size:17px; color:#fff;">blujet</span></div>
+      <p style="font-size:12.5px; line-height:1.8; margin:0 auto 16px; max-width:270px; color:#aebfd4;">رزرو آنلاین بلیط پروازهای داخلی و بین‌المللی با بهترین قیمت و خدمات باشگاه مشتریان.</p>
+    </div>
+    <div style="margin-top:6px; border-top:1px solid #ffffff14;">
+      <details><summary style="display:flex; align-items:center; justify-content:space-between; padding:15px 24px; font-size:13.5px; font-weight:700; color:#fff; border-bottom:1px solid #ffffff14;">خدمات<span class="chev" style="color:#7d92ad; font-size:12px;">⌄</span></summary>
+        <div style="padding:14px 24px 18px; display:flex; flex-direction:column; align-items:flex-end; gap:13px; font-size:13px; border-bottom:1px solid #ffffff14;"><a href="نتایج پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">رزرو پرواز</a><a href="مدیریت رزرو.dc.html" style="color:#aebfd4; text-decoration:none;">مدیریت رزرو</a><a href="وضعیت پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">وضعیت پرواز</a><a href="باشگاه مشتریان.dc.html" style="color:#aebfd4; text-decoration:none;">باشگاه مشتریان</a></div>
+      </details>
+      <details><summary style="display:flex; align-items:center; justify-content:space-between; padding:15px 24px; font-size:13.5px; font-weight:700; color:#fff; border-bottom:1px solid #ffffff14;">شرکت<span class="chev" style="color:#7d92ad; font-size:12px;">⌄</span></summary>
+        <div style="padding:14px 24px 18px; display:flex; flex-direction:column; align-items:flex-end; gap:13px; font-size:13px; border-bottom:1px solid #ffffff14;"><a href="درباره ما.dc.html" style="color:#aebfd4; text-decoration:none;">درباره ما</a><a href="تماس با ما.dc.html" style="color:#aebfd4; text-decoration:none;">تماس با ما</a><a href="قوانین و مقررات.dc.html" style="color:#aebfd4; text-decoration:none;">قوانین و مقررات</a><a href="فرصتهای شغلی.dc.html" style="color:#fff; font-weight:700; text-decoration:none;">فرصت‌های شغلی</a></div>
+      </details>
+      <details><summary style="display:flex; align-items:center; justify-content:space-between; padding:15px 24px; font-size:13.5px; font-weight:700; color:#fff;">پشتیبانی<span class="chev" style="color:#7d92ad; font-size:12px;">⌄</span></summary>
+        <div style="padding:14px 24px 18px; display:flex; flex-direction:column; align-items:flex-end; gap:13px; font-size:13px;"><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">مرکز راهنما</a><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">سوالات متداول</a></div>
+      </details>
+    </div>
+    <div style="padding:16px 24px; text-align:center; font-size:13px; color:#7d92ad;">© ۱۴۰۵ blujet. تمامی حقوق محفوظ است.</div>
+    </sc-if>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;setupMode&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;حالت حساب&quot;}}">
+class Component extends DCLogic {
+  state = { isMobile: (typeof window !== "undefined" && window.innerWidth < 768), mobileMenuOpen: false, langOpen: false, userMenuOpen: false };
+  componentDidMount() {
+    this._mq = window.matchMedia("(max-width:847px)");
+    this._mqHandler = (e) => this.setState({ isMobile: e.matches });
+    if (this._mq.addEventListener) this._mq.addEventListener("change", this._mqHandler); else this._mq.addListener(this._mqHandler);
+  }
+  componentWillUnmount() {
+    if (this._mq) { if (this._mq.removeEventListener) this._mq.removeEventListener("change", this._mqHandler); else this._mq.removeListener(this._mqHandler); }
+  }
+  renderVals() {
+    const raw = this.props.setupMode ? [] : ((typeof window !== "undefined" && window.SiteData) ? window.SiteData.getActiveJobs() : []);
+    const typeStyle = { "تمام‌وقت":["#34d399","rgba(16,185,129,.14)"], "دورکاری":["#60a5fa","rgba(59,130,246,.14)"], "پاره‌وقت":["#f59e0b","rgba(245,158,11,.14)"] };
+    const jobs = raw.map(j => { const ts = typeStyle[j.type] || ["#60a5fa","rgba(59,130,246,.14)"]; return {
+      id: j.id, slotId: j.slotId, title: j.title, dept: j.dept, city: j.city, type: j.type,
+      typeColor: ts[0], typeBg: ts[1], href: "استخدام.dc.html?job=" + encodeURIComponent(j.id)
+    }; });
+    const isMobile = this.state.isMobile;
+    return {
+      jobs, hasJobs: jobs.length > 0, noJobs: jobs.length === 0, jobCount: jobs.length,
+      isMobile, notMobile: !isMobile,
+      mobileMenuOpen: this.state.mobileMenuOpen, toggleMobileMenu: () => this.setState(s => ({ mobileMenuOpen: !s.mobileMenuOpen })),
+      navDisplay: isMobile ? "none" : "flex", hamburgerDisplay: isMobile ? "flex" : "none", hamburgerShown: isMobile,
+      headerBarBg: isMobile ? "var(--accent,#1668c4)" : "#fff", headerBorderB: isMobile ? "none" : "1px solid #e6eaf0",
+      logoTextColor: isMobile ? "#fff" : "#16202e", logoSquareBg: isMobile ? "#fff" : "var(--accent,#1668c4)", logoIconColor: isMobile ? "var(--accent,#1668c4)" : "#fff",
+      hamburgerColor: isMobile ? "#fff" : "#0d2640", logoOrder: isMobile ? 3 : 0, iconRowOrder: isMobile ? 2 : 0,
+      logoPosition: isMobile ? "absolute" : "static", logoLeft: isMobile ? "50%" : "auto", logoTransform: isMobile ? "translateX(-50%)" : "none",
+      langOpen: this.state.langOpen, toggleLang: () => this.setState(s => ({ langOpen: !s.langOpen, userMenuOpen: false })),
+      setLangFa: () => this.setState({ langOpen: false }), setLangEn: () => this.setState({ langOpen: false }),
+      userMenuOpen: this.state.userMenuOpen, toggleUserMenu: () => this.setState(s => ({ userMenuOpen: !s.userMenuOpen, langOpen: false }))
+    };
+  }
+}
+</script>
+</body>
+</html>

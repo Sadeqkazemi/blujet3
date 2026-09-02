@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<template id="__bundler_thumbnail" data-bg-color="#0d2640">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#0d2640"/>
+    <circle cx="600" cy="360" r="150" fill="#1668c4"/>
+    <text x="600" y="430" font-size="170" text-anchor="middle" fill="#fff" font-family="sans-serif">✈</text>
+    <text x="600" y="600" font-size="78" text-anchor="middle" fill="#fff" font-family="Vazirmatn,sans-serif" font-weight="900">پنل کاربری</text>
+  </svg>
+</template>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box;}html,body{margin:0;}@keyframes spin{to{transform:rotate(360deg);}}</style>
+<script src="./site-data.js"></script>
+</helmet>
+
+<div dir="rtl" style="font-family:Vazirmatn,sans-serif; background:#f4f7fb; color:#16202e; min-height:100vh; --accent:#1668c4;">
+
+  <!-- HEADER -->
+  <header style="position:sticky; top:0; z-index:50;">
+    <div style="background:#fff; border-bottom:1px solid #e6eaf0; box-shadow:0 2px 12px -8px rgba(13,38,102,.25);">
+      <div style="max-width:1320px; margin:0 auto; padding:0 26px; height:70px; display:flex; align-items:center; justify-content:space-between;">
+        <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:9px; text-decoration:none; color:inherit; cursor:pointer;">
+          <div style="width:38px; height:38px; border-radius:10px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px;">✈</div>
+          <span style="font-weight:900; font-size:20px; letter-spacing:-.5px;">blujet</span>
+        </a>
+        <nav style="display:flex; gap:38px; font-size:17px; color:#3b4554; font-weight:600;">
+          <a href="صفحه اصلی.dc.html" style="text-decoration:none; color:#3b4554; cursor:pointer;">پرواز</a>
+          <a href="مقاصد.dc.html" style="text-decoration:none; color:#3b4554; cursor:pointer;">مقاصد پروازی</a>
+          <a href="باشگاه مشتریان.dc.html" style="text-decoration:none; color:#3b4554; cursor:pointer;">باشگاه مشتریان</a>
+          <span style="cursor:pointer;">پشتیبانی</span>
+        </nav>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="display:flex; align-items:center; gap:6px; background:#eef4fb; border:1px solid #dce8f7; padding:7px 11px; border-radius:22px;"><span style="color:#caa53a; font-size:12.5px;">★</span><span style="font-size:11.5px; font-weight:800; color:var(--accent,#1668c4);">۱۲٬۴۵۰</span><span style="font-size:11px; color:#7a8696;">امتیاز</span></div>
+          <div style="position:relative;">
+            <div onClick="{{ toggleMenu }}" style="display:flex; align-items:center; gap:8px; background:{{ menuBtnBg }}; border:1px solid {{ menuBtnBorder }}; padding:4px 10px 4px 7px; border-radius:28px; cursor:pointer;" style-hover="border-color:var(--accent,#1668c4);"><div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,var(--accent,#1668c4),#0d3b66); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:11.5px; flex:none;">نر</div><div style="line-height:1.35; white-space:nowrap;"><div style="font-size:12px; font-weight:700;">نگار رضایی</div><div style="font-size:10px; color:#caa53a; font-weight:700;">★ عضو طلایی</div></div><span style="color:#9aa4b2; font-size:9px; margin-right:2px; flex:none; transition:transform .15s; transform:{{ menuChevron }};">▾</span></div>
+            <sc-if value="{{ menuOpen }}" hint-placeholder-val="{{false}}">
+              <div onClick="{{ closeMenu }}" style="position:fixed; inset:0; z-index:55;"></div>
+              <div style="position:absolute; top:56px; left:0; width:302px; background:#fff; border:1px solid #e6eaf0; border-radius:16px; box-shadow:0 20px 46px -14px rgba(13,38,102,.4); padding:12px; z-index:60;">
+                <div style="display:flex; align-items:center; gap:11px; padding:4px 4px 12px;">
+                  <div style="width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,var(--accent,#1668c4),#0d3b66); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; flex:none;">نر</div>
+                  <div style="line-height:1.5; min-width:0;"><div style="font-size:13.5px; font-weight:800; color:#16202e;">نگار رضایی</div><div style="font-size:11px; color:#9aa4b2; font-family:'Roboto Mono',monospace;" dir="ltr">{{ headerPhone }}</div></div>
+                </div>
+                <div onClick="{{ goWallet }}" style="background:linear-gradient(135deg,#0d2640,#16406e); color:#fff; border-radius:13px; padding:12px 13px; display:flex; align-items:center; justify-content:space-between; cursor:pointer;">
+                  <div style="line-height:1.5;"><div style="font-size:10.5px; color:#aac4e2;">جمع کیف‌پول‌های من</div><div style="font-size:16px; font-weight:900; margin-top:2px;">{{ walletBalanceFa }} <span style="font-size:10.5px; font-weight:400; opacity:.8;">تومان</span></div></div>
+                  <span onClick="{{ copyWallet }}" style="width:30px; height:30px; border-radius:9px; background:#ffffff1c; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></span>
+                </div>
+                <div style="height:1px; background:#eef1f5; margin:11px 2px;"></div>
+                <sc-for list="{{ profileMenu }}" as="m" hint-placeholder-count="6">
+                  <div onClick="{{ m.onClick }}" style="display:flex; align-items:center; gap:10px; padding:9px 8px; border-radius:10px; cursor:pointer;" style-hover="background:#f4f7fb;"><span style="width:20px; height:20px; display:flex; color:#5a6678; flex:none;" dangerouslySetInnerHTML="{{ m.icon }}"></span><span style="font-size:12px; font-weight:600; color:#16202e; flex:1;">{{ m.label }}</span><sc-if value="{{ m.hasBadge }}" hint-placeholder-val="{{false}}"><span style="font-size:9.5px; font-weight:700; color:#c47d1a; background:#fff3e0; padding:3px 8px; border-radius:14px; white-space:nowrap;">{{ m.badge }}</span></sc-if></div>
+                </sc-for>
+                <div style="height:1px; background:#eef1f5; margin:8px 2px;"></div>
+                <div onClick="{{ doLogout }}" style="display:flex; align-items:center; gap:10px; padding:9px 8px; border-radius:10px; cursor:pointer; color:#e5484d;" style-hover="background:#fdecec;"><span style="width:20px; height:20px; display:flex; flex:none;" dangerouslySetInnerHTML="{{ logoutIcon }}"></span><span style="font-size:12px; font-weight:700;">خروج از حساب</span></div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- BODY -->
+  <div style="max-width:1320px; margin:0 auto; padding:20px 22px 44px; display:grid; grid-template-columns:262px 1fr; gap:20px; align-items:start;">
+
+    <!-- SIDEBAR -->
+    <aside style="position:sticky; top:86px; align-self:start; background:#fff; border:1px solid #e9eef4; border-radius:18px; overflow:hidden; box-shadow:0 20px 44px -32px rgba(13,38,102,.55);">
+      <div style="padding:16px 15px 15px; background:linear-gradient(150deg,#123a62 0%,#0c243d 100%); color:#fff;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="position:relative; width:52px; height:52px; flex:none;">
+            <div style="width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg,#ffffff2e,#ffffff0f); border:1.5px solid #ffffff59; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800;">نر</div>
+            <span style="position:absolute; bottom:-2px; left:-2px; width:20px; height:20px; border-radius:50%; background:#caa53a; border:2px solid #0f2e4f; display:flex; align-items:center; justify-content:center; font-size:10px;">★</span>
+          </div>
+          <div style="min-width:0; line-height:1.4;">
+            <div style="font-size:15.5px; font-weight:800;">نگار رضایی</div>
+            <div style="display:inline-flex; align-items:center; gap:4px; margin-top:6px; font-size:10px; font-weight:700; color:#f2d98a; background:#ffffff17; border:1px solid #ffffff29; padding:3px 9px; border-radius:12px; white-space:nowrap;">★ عضو طلایی باشگاه</div>
+          </div>
+        </div>
+        <div style="margin-top:14px; display:flex; align-items:center; justify-content:space-between; background:#ffffff12; border:1px solid #ffffff24; border-radius:12px; padding:9px 8px 9px 12px;">
+          <div style="line-height:1.35;"><div style="font-size:9.5px; color:#aac4e2;">امتیاز باشگاه</div><div style="font-size:16px; font-weight:900; margin-top:2px;">{{ pointsChipFa }}</div></div>
+          <span onClick="{{ goWallet }}" style="font-size:10px; font-weight:800; color:#0d2640; background:#f2d98a; padding:7px 11px; border-radius:9px; cursor:pointer; white-space:nowrap;">کیف پول ›</span>
+        </div>
+      </div>
+      <div style="padding:9px;">
+        <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="4">
+          <div onClick="{{ n.onClick }}" style="position:relative; display:flex; align-items:center; gap:11px; padding:9px 12px; border-radius:11px; cursor:pointer; font-size:13px; font-weight:{{ n.weight }}; color:{{ n.color }}; background:{{ n.bg }}; margin-bottom:2px;" style-hover="background:#f4f7fb;"><span style="position:absolute; right:-1px; top:50%; transform:translateY(-50%); width:3px; height:{{ n.barH }}; border-radius:3px; background:{{ n.bar }}; transition:height .15s;"></span><span style="width:20px; height:20px; display:flex; align-items:center; justify-content:center; color:{{ n.iconColor }}; flex:none; transition:color .15s;" dangerouslySetInnerHTML="{{ n.iconSvg }}"></span>{{ n.label }}</div>
+        </sc-for>
+        <div style="height:6px;"></div>
+        <sc-for list="{{ accountNav }}" as="n" hint-placeholder-count="5">
+          <div onClick="{{ n.onClick }}" style="position:relative; display:flex; align-items:center; gap:11px; padding:9px 12px; border-radius:11px; cursor:pointer; font-size:13px; font-weight:{{ n.weight }}; color:{{ n.color }}; background:{{ n.bg }}; margin-bottom:2px;" style-hover="background:#f4f7fb;"><span style="position:absolute; right:-1px; top:50%; transform:translateY(-50%); width:3px; height:{{ n.barH }}; border-radius:3px; background:{{ n.bar }}; transition:height .15s;"></span><span style="width:20px; height:20px; display:flex; align-items:center; justify-content:center; color:{{ n.iconColor }}; flex:none; transition:color .15s;" dangerouslySetInnerHTML="{{ n.iconSvg }}"></span>{{ n.label }}</div>
+        </sc-for>
+        <div style="height:1px; background:#eef1f5; margin:11px 6px 7px;"></div>
+        <div onClick="{{ doLogout }}" style="display:flex; align-items:center; gap:11px; padding:9px 12px; border-radius:11px; cursor:pointer; font-size:13px; font-weight:700; color:#e5484d;" style-hover="background:#fdecec;"><span style="width:20px; height:20px; display:flex; align-items:center; justify-content:center; flex:none;" dangerouslySetInnerHTML="{{ logoutIcon }}"></span>خروج از حساب</div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main style="min-width:0;">
+
+      <!-- ===== خریدها / سفرها ===== -->
+      <sc-if value="{{ isPurchases }}" hint-placeholder-val="{{false}}">
+        <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:18px;">
+          <h2 style="font-size:17px; font-weight:800; margin:0 0 6px;">سفرها و خریدهای من</h2>
+          <p style="font-size:11.5px; color:#8a96a6; margin:0 0 20px;">تاریخچه بلیط‌های خریداری‌شده شما</p>
+          <div style="display:flex; flex-direction:column; gap:11px;">
+            <sc-for list="{{ purchases }}" as="t" hint-placeholder-count="4">
+              <div onClick="{{ t.onOpen }}" style="border:1px solid #eef1f5; border-radius:14px; padding:12px 14px; cursor:pointer;" style-hover="border-color:#dbe7f6; box-shadow:0 12px 26px -20px rgba(13,38,102,.3);">
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:11px;">
+                  <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+                    <div style="line-height:1.5;"><div style="font-size:14px; font-weight:800;">{{ t.route }}</div><div style="font-size:11.5px; color:#9aa4b2;">{{ t.airline }} · {{ t.date }} · {{ t.time }}</div></div>
+                    <span style="font-size:11px; font-family:'Roboto Mono',monospace; color:#5a6678; background:#f6f8fb; padding:4px 10px; border-radius:8px;">{{ t.code }}</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:15px;">
+                    <span style="font-size:11.5px; font-weight:700; color:{{ t.statusColor }}; background:{{ t.statusBg }}; padding:5px 11px; border-radius:18px;">{{ t.status }}</span>
+                    <div style="text-align:left;"><div style="font-size:14.5px; font-weight:900; color:var(--accent,#1668c4);">{{ t.price }}</div><div style="font-size:10px; color:#9aa4b2;">تومان</div></div>
+                  </div>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:14px; padding-top:11px; border-top:1px solid #f2f4f7; align-items:center;">
+                  <span onClick="{{ t.onDownload }}" style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--accent,#1668c4); border:1.5px solid var(--accent,#1668c4); padding:7px 12px; border-radius:9px; font-weight:700; cursor:pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M5 21h14"/></svg>دانلود بلیط PDF</span>
+                  <sc-if value="{{ t.upcoming }}" hint-placeholder-val="{{false}}"><span onClick="{{ t.onCancelRow }}" style="font-size:11.5px; color:#e5484d; border:1.5px solid #f3c9cc; padding:7px 12px; border-radius:9px; font-weight:700; cursor:pointer;">درخواست استرداد</span></sc-if>
+                  <span style="margin-right:auto; font-size:11px; color:#9aa4b2; font-weight:600;">جزئیات ‹</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== استرداد بلیط (بازطراحی‌شده) ===== -->
+      <sc-if value="{{ isRefund }}" hint-placeholder-val="{{false}}">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+
+          <!-- intro + summary -->
+          <div style="background:linear-gradient(135deg,#0d2640,#16406e); color:#fff; border-radius:18px; padding:20px 22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+            <div style="line-height:1.6;">
+              <h2 style="font-size:18px; font-weight:900; margin:0 0 5px;">استرداد و کنسلی بلیط</h2>
+              <p style="font-size:11.5px; color:#aac4e2; margin:0; max-width:360px; line-height:1.9;">فقط بلیط پروازهای انجام‌نشده و پیش از زمان پرواز قابل استرداد هستند. جریمهٔ کنسلی بر اساس فاصله تا زمان پرواز محاسبه می‌شود.</p>
+            </div>
+            <div style="display:flex; gap:11px;">
+              <div style="background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.14); border-radius:13px; padding:12px 16px; text-align:center; min-width:96px;"><div style="font-size:23px; font-weight:900;">{{ eligibleCount }}</div><div style="font-size:10.5px; color:#aac4e2; margin-top:3px;">قابل استرداد</div></div>
+              <div style="background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.14); border-radius:13px; padding:12px 16px; text-align:center; min-width:96px;"><div style="font-size:23px; font-weight:900;">{{ activeRefundCount }}</div><div style="font-size:10.5px; color:#aac4e2; margin-top:3px;">درخواست فعال</div></div>
+            </div>
+          </div>
+
+          <!-- eligible flights -->
+          <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:18px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;"><h3 style="font-size:15px; font-weight:800; margin:0;">پروازهای قابل استرداد</h3></div>
+            <p style="font-size:11.5px; color:#8a96a6; margin:0 0 16px;">برای مشاهدهٔ قوانین و ثبت درخواست، روی «درخواست استرداد» بزنید.</p>
+            <div style="display:flex; flex-direction:column; gap:11px;">
+              <sc-for list="{{ eligibleRefunds }}" as="r" hint-placeholder-count="1">
+                <div style="border:1px solid #eef1f5; border-radius:14px; padding:14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;">
+                  <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+                    <div style="display:flex; align-items:center; gap:9px;">
+                      <span style="font-size:17px; font-weight:900; color:#16202e;">{{ r.depCode }}</span>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1668c4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                      <span style="font-size:17px; font-weight:900; color:#16202e;">{{ r.arrCode }}</span>
+                    </div>
+                    <div style="line-height:1.6;">
+                      <div style="font-size:11.5px; color:#5a6678; font-weight:600;">{{ r.airline }} · {{ r.code }}</div>
+                      <div style="font-size:10.5px; color:#9aa4b2;">{{ r.dateLine }}</div>
+                    </div>
+                    <div style="display:flex; gap:7px; flex-wrap:wrap;">
+                      <span style="font-size:10.5px; font-weight:700; color:#1668c4; background:#eef4fb; padding:5px 10px; border-radius:16px;">⏳ {{ r.timeLeft }}</span>
+                      <span style="font-size:10.5px; font-weight:700; color:#e5484d; background:#fdecec; padding:5px 10px; border-radius:16px;">جریمه {{ r.penaltyPct }}</span>
+                    </div>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:14px;">
+                    <div style="text-align:left; line-height:1.4;"><div style="font-size:9.5px; color:#9aa4b2;">قابل بازگشت</div><div style="font-size:14.5px; font-weight:900; color:#1f8a5b;">{{ r.refundable }}</div></div>
+                    <span onClick="{{ r.onStart }}" style="font-size:12px; font-weight:800; color:#fff; background:#e5484d; padding:10px 16px; border-radius:11px; cursor:pointer; white-space:nowrap;">درخواست استرداد</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ noEligibleRefunds }}" hint-placeholder-val="{{false}}">
+              <div style="text-align:center; padding:26px 18px; color:#9aa4b2;">
+                <div style="width:52px; height:52px; margin:0 auto 12px; border-radius:50%; background:#f2f5f9; color:#aab4c2; display:flex; align-items:center; justify-content:center;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg></div>
+                <div style="font-size:12.5px; font-weight:700; color:#5a6678; margin-bottom:4px;">پرواز قابل استردادی ندارید</div>
+                <div style="font-size:11px;">فقط بلیط پروازهای پیش‌رو (انجام‌نشده) قابل استرداد هستند.</div>
+              </div>
+            </sc-if>
+          </div>
+
+          <!-- cancellation rules -->
+          <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:18px;">
+            <h3 style="font-size:15px; font-weight:800; margin:0 0 4px;">قوانین کنسلی و جریمهٔ استرداد</h3>
+            <p style="font-size:11.5px; color:#8a96a6; margin:0 0 16px;">درصد جریمه بر اساس فاصلهٔ زمانی تا پرواز</p>
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px;">
+              <div style="border:1px solid #e8f5ee; background:#f4fbf7; border-radius:13px; padding:14px 12px; text-align:center;"><div style="font-size:20px; font-weight:900; color:#1f8a5b;">۳۰٪</div><div style="font-size:10.5px; color:#5a6678; margin-top:6px; line-height:1.6;">بیش از ۷۲ ساعت مانده</div></div>
+              <div style="border:1px solid #fdf0e4; background:#fef9f2; border-radius:13px; padding:14px 12px; text-align:center;"><div style="font-size:20px; font-weight:900; color:#c47d1a;">۵۰٪</div><div style="font-size:10.5px; color:#5a6678; margin-top:6px; line-height:1.6;">۲۴ تا ۷۲ ساعت مانده</div></div>
+              <div style="border:1px solid #fdecec; background:#fef5f5; border-radius:13px; padding:14px 12px; text-align:center;"><div style="font-size:20px; font-weight:900; color:#e5484d;">۷۰٪</div><div style="font-size:10.5px; color:#5a6678; margin-top:6px; line-height:1.6;">۳ تا ۲۴ ساعت مانده</div></div>
+              <div style="border:1px solid #eef1f5; background:#f7f8fa; border-radius:13px; padding:14px 12px; text-align:center;"><div style="font-size:13px; font-weight:900; color:#8a96a6; margin-top:5px;">غیرمجاز</div><div style="font-size:10.5px; color:#5a6678; margin-top:8px; line-height:1.6;">کمتر از ۳ ساعت / پس از پرواز</div></div>
+            </div>
+            <div style="margin-top:14px; background:#fff8ec; border:1px solid #f6e0bb; color:#9a6a16; border-radius:11px; padding:11px 12px; font-size:11.5px; line-height:1.9;">پس از ثبت درخواست، ابتدا ادمین سایت آن را بررسی و به مدیر مالی ارجاع می‌دهد؛ سپس مبلغ قابل بازگشت پس از کسر جریمه، حداکثر تا ۷ روز کاری به کارت پرداخت‌کننده واریز می‌شود.</div>
+          </div>
+
+          <!-- tracking -->
+          <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:18px;">
+            <h3 style="font-size:15px; font-weight:800; margin:0 0 4px;">پیگیری درخواست‌های استرداد</h3>
+            <p style="font-size:11.5px; color:#8a96a6; margin:0 0 18px;">وضعیت لحظه‌ای درخواست‌های شما در هر مرحله</p>
+            <sc-if value="{{ hasRefunds }}" hint-placeholder-val="{{true}}">
+              <div style="display:flex; flex-direction:column; gap:13px;">
+                <sc-for list="{{ myRefunds }}" as="rf" hint-placeholder-count="1">
+                  <div style="border:1px solid #eef1f5; border-radius:14px; padding:13px 14px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:7px;">
+                      <div><div style="font-size:13px; font-weight:800;">{{ rf.route }}</div><div style="font-size:10.5px; color:#9aa4b2; margin-top:3px;">کد پیگیری {{ rf.id }} · بلیط {{ rf.ticket }}</div></div>
+                      <span style="font-size:10.5px; font-weight:700; color:{{ rf.statusColor }}; background:{{ rf.statusBg }}; padding:4px 11px; border-radius:18px;">{{ rf.statusLabel }}</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:0;">
+                      <sc-for list="{{ rf.steps }}" as="st" hint-placeholder-count="4">
+                        <div style="display:flex; gap:11px;">
+                          <div style="display:flex; flex-direction:column; align-items:center;"><span style="width:22px; height:22px; border-radius:50%; background:{{ st.dotBg }}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; flex:none;" dangerouslySetInnerHTML="{{ st.icon }}"></span><span style="width:2px; flex:1; min-height:14px; background:{{ st.lineBg }};"></span></div>
+                          <div style="padding-bottom:11px;"><div style="font-size:12px; font-weight:700; color:{{ st.textColor }};">{{ st.label }}</div><div style="font-size:10px; color:#9aa4b2; margin-top:2px;">{{ st.at }}</div></div>
+                        </div>
+                      </sc-for>
+                    </div>
+                    <div style="margin-top:6px; padding-top:11px; border-top:1px solid #f2f4f7; display:flex; justify-content:space-between; align-items:center;"><span style="font-size:11.5px; color:#5a6678;">مبلغ قابل استرداد</span><span style="font-size:13.5px; font-weight:900; color:#1f8a5b;">{{ rf.amount }} تومان</span></div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ noRefunds }}" hint-placeholder-val="{{false}}">
+              <div style="text-align:center; padding:18px; color:#9aa4b2; font-size:11.5px;">هنوز درخواست استردادی ثبت نکرده‌اید.</div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== کیف پول و امتیاز ===== -->
+      <sc-if value="{{ isWallet }}" hint-placeholder-val="{{false}}">
+        <div style="display:flex; flex-direction:column; gap:16px; min-height:100%;">
+          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:15px;">
+            <div style="background:linear-gradient(135deg,var(--accent,#1668c4),#0d3b66); color:#fff; border-radius:16px; padding:18px; display:flex; flex-direction:column;"><div style="font-size:11.5px; opacity:.85; margin-bottom:10px;">موجودی کیف پول</div><div style="font-size:27px; font-weight:900;">{{ walletBalanceFa }} <span style="font-size:12.5px; opacity:.8; font-weight:400;">تومان</span></div><span onClick="{{ openTopup }}" style="margin-top:16px; align-self:flex-start; display:inline-flex; align-items:center; gap:7px; background:#ffffff; color:#0d3b66; font-size:12px; font-weight:800; padding:9px 15px; border-radius:10px; cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>افزایش موجودی</span></div>
+            <div style="background:linear-gradient(135deg,#caa53a,#9a7d22); color:#fff; border-radius:16px; padding:18px; display:flex; flex-direction:column; justify-content:center;"><div style="font-size:11.5px; opacity:.9; margin-bottom:10px;">امتیاز باشگاه</div><div style="font-size:27px; font-weight:900;">۱۲٬۴۵۰ <span style="font-size:12.5px; opacity:.8; font-weight:400;">امتیاز</span></div></div>
+          </div>
+          <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:18px; flex:1;">
+            <h3 style="font-size:14.5px; font-weight:800; margin:0 0 16px;">گردش امتیاز</h3>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <sc-for list="{{ pointsLog }}" as="g" hint-placeholder-count="3">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:10px; border-bottom:1px solid #f2f4f7;"><div style="line-height:1.5;"><div style="font-size:12.5px; font-weight:600;">{{ g.title }}</div><div style="font-size:11px; color:#9aa4b2;">{{ g.date }}</div></div><span style="font-size:13px; font-weight:800; color:{{ g.color }};">{{ g.amount }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <sc-if value="{{ topupOpen }}" hint-placeholder-val="{{false}}">
+          <div onClick="{{ closeTopup }}" style="position:fixed; inset:0; background:rgba(13,38,102,.35); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; padding:16px; z-index:95;">
+            <div onClick="{{ stopTopup }}" style="background:#fff; border-radius:18px; width:420px; max-width:100%; overflow:hidden; box-shadow:0 30px 80px -20px rgba(13,38,102,.35);">
+              <sc-if value="{{ topupForm }}" hint-placeholder-val="{{true}}">
+                <div style="padding:18px 20px; border-bottom:1px solid #eef1f5; display:flex; align-items:center; justify-content:space-between;"><div style="font-size:16px; font-weight:900; color:#0d2640;">افزایش موجودی کیف پول</div><span onClick="{{ closeTopup }}" style="width:32px; height:32px; border-radius:9px; background:#f4f6fa; color:#5a6678; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px;">×</span></div>
+                <div style="padding:20px;">
+                  <div style="font-size:12px; color:#5a6678; margin-bottom:8px;">موجودی فعلی: <b style="color:#0d2640;">{{ walletBalanceFa }} تومان</b></div>
+                  <label style="display:block; font-size:12px; font-weight:700; color:#0d2640; margin-bottom:8px;">مبلغ واریزی (تومان)</label>
+                  <input value="{{ topupAmount }}" onInput="{{ onTopupAmount }}" placeholder="مثلاً ۵۰۰٬۰۰۰" dir="ltr" inputmode="numeric" style="width:100%; box-sizing:border-box; height:48px; border:1.5px solid #e3e8ef; border-radius:12px; padding:0 14px; font-size:14px; color:#16202e; text-align:right; font-family:inherit; outline:none;" />
+                  <div style="display:flex; gap:8px; margin-top:11px; flex-wrap:wrap;">
+                    <sc-for list="{{ topupPresets }}" as="p" hint-placeholder-count="4"><span onClick="{{ p.onPick }}" style="font-size:11.5px; font-weight:700; color:var(--accent,#1668c4); background:#eaf2fb; padding:7px 13px; border-radius:9px; cursor:pointer;">{{ p.label }}</span></sc-for>
+                  </div>
+                  <label style="display:block; font-size:12px; font-weight:700; color:#0d2640; margin:18px 0 9px;">روش پرداخت</label>
+                  <div style="display:flex; gap:9px;">
+                    <div style="flex:1; border:1.5px solid var(--accent,#1668c4); background:#eaf2fb; border-radius:11px; padding:12px; display:flex; align-items:center; gap:9px;"><span style="color:var(--accent,#1668c4);"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span><span style="font-size:12px; font-weight:700; color:#16202e;">درگاه بانکی (شتاب)</span><span style="margin-right:auto; width:20px; height:20px; border-radius:50%; background:var(--accent,#1668c4); color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px;">✓</span></div>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:18px; padding-top:15px; border-top:1px solid #eef1f5;"><span style="font-size:12px; color:#5a6678;">موجودی پس از واریز</span><span style="font-size:16px; font-weight:900; color:#1f8a5b;">{{ topupNewBalanceFa }} تومان</span></div>
+                  <span onClick="{{ confirmTopup }}" style="display:flex; align-items:center; justify-content:center; gap:8px; height:50px; border-radius:12px; background:{{ topupBtnBg }}; color:{{ topupBtnColor }}; font-size:14px; font-weight:800; cursor:pointer; margin-top:15px;">پرداخت و افزایش موجودی</span>
+                </div>
+              </sc-if>
+              <sc-if value="{{ topupProcessing }}" hint-placeholder-val="{{false}}">
+                <div style="padding:42px 24px; text-align:center;">
+                  <div style="width:56px; height:56px; margin:0 auto 18px; border:3px solid #dbe7f6; border-top-color:var(--accent,#1668c4); border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+                  <div style="font-size:15px; font-weight:800; color:#0d2640; margin-bottom:7px;">در حال اتصال به درگاه بانکی…</div>
+                  <div style="font-size:12px; color:#5a6678; line-height:1.9;">لطفاً صبر کنید؛ پرداخت مبلغ <b style="color:#0d2640;">{{ topupAmountFa }} تومان</b> در حال پردازش است.</div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ topupDone }}" hint-placeholder-val="{{false}}">
+                <div style="padding:34px 24px; text-align:center;">
+                  <div style="width:66px; height:66px; border-radius:50%; background:#e7f6ee; color:#1f8a5b; display:flex; align-items:center; justify-content:center; margin:0 auto 18px;"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+                  <div style="font-size:18px; font-weight:900; color:#0d2640; margin-bottom:8px;">واریز با موفقیت انجام شد</div>
+                  <div style="font-size:13px; color:#5a6678; line-height:1.9; margin-bottom:6px;">مبلغ <b style="color:#0d2640;">{{ topupAmountFa }} تومان</b> به کیف پول شما اضافه شد.</div>
+                  <div style="font-size:13px; color:#5a6678; margin-bottom:22px;">موجودی جدید: <b style="color:#1f8a5b;">{{ walletBalanceFa }} تومان</b></div>
+                  <span onClick="{{ closeTopup }}" style="display:inline-flex; align-items:center; justify-content:center; height:46px; padding:0 30px; border-radius:12px; background:var(--accent,#1668c4); color:#fff; font-size:13.5px; font-weight:800; cursor:pointer;">بستن</span>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+      </sc-if>
+
+      <!-- ===== باشگاه مشتریان ===== -->
+      <sc-if value="{{ isClub }}" hint-placeholder-val="{{false}}">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div style="background:linear-gradient(135deg,#caa53a,#9a7d22); color:#fff; border-radius:16px; padding:20px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:13px;">
+              <div><div style="font-size:11.5px; opacity:.9;">سطح عضویت شما</div><div style="font-size:23.5px; font-weight:900; margin-top:4px;">★ عضو طلایی</div></div>
+              <div style="text-align:left;"><div style="font-size:11.5px; opacity:.9;">امتیاز فعلی</div><div style="font-size:23.5px; font-weight:900; margin-top:4px;">۱۲٬۴۵۰</div></div>
+            </div>
+            <div style="margin-top:22px;">
+              <div style="display:flex; justify-content:space-between; font-size:11.5px; opacity:.95; margin-bottom:8px;"><span>طلایی</span><span>تا پلاتین: ۲٬۵۵۰ امتیاز دیگر</span><span>پلاتین</span></div>
+              <div style="height:10px; background:#ffffff33; border-radius:18px; overflow:hidden;"><div style="width:83%; height:100%; background:#fff; border-radius:18px;"></div></div>
+            </div>
+          </div>
+
+          <!-- MEMBERSHIP CARD ISSUANCE -->
+          <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:18px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
+              <h3 style="font-size:15.5px; font-weight:800; margin:0;">کارت عضویت باشگاه</h3>
+              <span style="font-size:11px; font-weight:700; color:{{ cardStatusColor }}; background:{{ cardStatusBg }}; padding:5px 11px; border-radius:18px;">{{ cardStatusLabel }}</span>
+            </div>
+            <p style="font-size:11.5px; color:#8a96a6; margin:0 0 18px;">با رسیدن به ۵٬۰۰۰ امتیاز واجد شرایط دریافت کارت می‌شوید؛ درخواست برای ادمین ارسال و پس از تأیید مدیران کارت صادر می‌شود.</p>
+            <div style="display:flex; justify-content:space-between; font-size:11.5px; color:#5a6678; margin-bottom:8px;"><span>امتیاز شما: <b style="color:#0d2640;">{{ myPointsFa }}</b></span><span>حد لازم: ۵٬۰۰۰</span></div>
+            <div style="height:10px; background:#eef1f5; border-radius:18px; overflow:hidden; margin-bottom:18px;"><div style="width:{{ cardProgress }}; height:100%; background:var(--accent,#1668c4); border-radius:18px;"></div></div>
+
+            <sc-if value="{{ cardIssued }}" hint-placeholder-val="{{true}}">
+              <div style="display:flex; align-items:center; gap:13px; background:linear-gradient(135deg,#caa53a,#9a7d22); color:#fff; border-radius:14px; padding:15px 16px; margin-bottom:18px;">
+                <div style="font-size:27px;">💳</div>
+                <div style="line-height:1.5;"><div style="font-size:11.5px; opacity:.9;">کارت {{ myCardTier }} صادر شد</div><div style="font-size:16px; font-weight:900; letter-spacing:1px;" dir="ltr">{{ myCardNo }}</div></div>
+                <span style="margin-right:auto; font-size:11.5px; background:#ffffff22; padding:7px 12px; border-radius:10px; cursor:pointer;">دانلود کارت</span>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ showCardTracker }}" hint-placeholder-val="{{true}}">
+              <div style="display:flex; flex-direction:column;">
+                <sc-for list="{{ cardSteps }}" as="st" hint-placeholder-count="3">
+                  <div style="display:flex; gap:11px;">
+                    <div style="display:flex; flex-direction:column; align-items:center;"><span style="width:24px; height:24px; border-radius:50%; background:{{ st.dotBg }}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; flex:none;">{{ st.icon }}</span><span style="width:2px; flex:1; min-height:16px; background:{{ st.lineBg }};"></span></div>
+                    <div style="padding-bottom:13px;"><div style="font-size:12px; font-weight:700; color:{{ st.textColor }};">{{ st.label }}</div><div style="font-size:10px; color:#9aa4b2; margin-top:2px;">{{ st.at }}</div></div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ canRequestCard }}" hint-placeholder-val="{{false}}">
+              <div style="border:1.5px solid #bfe6cf; background:linear-gradient(135deg,#f0faf4,#e7f6ee); border-radius:14px; padding:15px 15px 13px;">
+                <div style="display:flex; align-items:flex-start; gap:11px;">
+                  <div style="width:42px; height:42px; border-radius:11px; background:#1f8a5b; color:#fff; display:flex; align-items:center; justify-content:center; flex:none;" dangerouslySetInnerHTML="{{ eligibleIcon }}"></div>
+                  <div style="line-height:1.65;">
+                    <div style="font-size:14px; font-weight:800; color:#15683f;">شما امتیاز کافی برای دریافت {{ eligibleCardLabel }} را دارید!</div>
+                    <div style="font-size:11.5px; color:#3f7a5c; margin-top:3px;">با {{ myPointsFa }} امتیاز واجد شرایط صدور کارت شدید. درخواست شما برای ادمین ارسال و پس از تأیید مدیران، کارت صادر می‌شود.</div>
+                  </div>
+                </div>
+                <div onClick="{{ requestCard }}" style="margin-top:16px; height:50px; border-radius:12px; background:#1f8a5b; color:#fff; display:flex; align-items:center; justify-content:center; gap:7px; font-size:13.5px; font-weight:800; cursor:pointer;"><span style="display:flex;" dangerouslySetInnerHTML="{{ sendIcon }}"></span>ارسال درخواست صدور کارت</div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ cardLocked }}" hint-placeholder-val="{{false}}">
+              <div style="text-align:center; padding:11px; color:#9aa4b2; font-size:11.5px;">برای دریافت کارت باید حداقل ۵٬۰۰۰ امتیاز داشته باشید.</div>
+            </sc-if>
+          </div>
+
+          <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:18px;">
+            <h3 style="font-size:15.5px; font-weight:800; margin:0 0 18px;">مزایای سطح طلایی شما</h3>
+            <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:11px;">
+              <sc-for list="{{ clubBenefits }}" as="b" hint-placeholder-count="4">
+                <div style="display:flex; align-items:center; gap:11px; border:1px solid #eef1f5; border-radius:13px; padding:11px;">
+                  <div style="width:44px; height:44px; border-radius:12px; background:#fff7e6; color:#caa53a; display:flex; align-items:center; justify-content:center; flex:none;" dangerouslySetInnerHTML="{{ b.iconSvg }}"></div>
+                  <div style="line-height:1.5;"><div style="font-size:13px; font-weight:700;">{{ b.title }}</div><div style="font-size:11.5px; color:#9aa4b2;">{{ b.desc }}</div></div>
+                </div>
+              </sc-for>
+            </div>
+            <a href="باشگاه مشتریان.dc.html" style="text-decoration:none; display:flex; margin-top:20px; height:50px; border-radius:12px; background:var(--accent,#1668c4); color:#fff; align-items:center; justify-content:center; font-size:13.5px; font-weight:800;">معرفی کامل باشگاه و سطوح بالاتر</a>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== پروفایل من ===== -->
+      <sc-if value="{{ isProfile }}" hint-placeholder-val="{{false}}">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div style="background:linear-gradient(135deg,#0d2640,#16406e); color:#fff; border-radius:18px; padding:20px 22px;">
+            <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+              <div style="width:64px; height:64px; border-radius:50%; background:#ffffff22; border:2px solid #ffffff55; display:flex; align-items:center; justify-content:center; font-size:21px; font-weight:800; flex:none;">نر</div>
+              <div style="line-height:1.6;"><div style="font-size:18px; font-weight:900;">نگار رضایی</div><div style="font-size:11.5px; color:#aac4e2;">★ عضو طلایی · کد کاربری CM-2001 · عضویت از مهر ۱۴۰۲</div></div>
+              <span onClick="{{ goSecurity }}" style="margin-right:auto; font-size:11.5px; font-weight:700; background:#ffffff1e; border:1px solid #ffffff33; padding:9px 14px; border-radius:11px; cursor:pointer;">تنظیمات امنیت</span>
+            </div>
+            <div style="margin-top:16px; background:#ffffff14; border:1px solid #ffffff22; border-radius:12px; padding:11px 14px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; font-size:11px; margin-bottom:8px;"><span style="color:#aac4e2;">تکمیل پروفایل</span><span style="font-weight:800; color:#f2d98a;">{{ profileCompletion }}</span></div>
+              <div style="height:7px; border-radius:6px; background:#ffffff1c; overflow:hidden;"><div style="height:100%; width:{{ profileCompletionW }}; border-radius:6px; background:linear-gradient(90deg,#f2d98a,#caa53a);"></div></div>
+              <div style="font-size:10px; color:#8fa9cc; margin-top:7px;">با تکمیل شماره گذرنامه و تأیید ایمیل، پروفایل را کامل کنید و ۲۰۰ امتیاز بگیرید.</div>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:11px;">
+            <sc-for list="{{ profileStats }}" as="st" hint-placeholder-count="4">
+              <div style="background:#fff; border:1px solid #eef1f5; border-radius:14px; padding:13px 14px; display:flex; align-items:center; gap:11px;">
+                <span style="width:38px; height:38px; border-radius:11px; background:{{ st.bg }}; color:{{ st.accent }}; display:flex; align-items:center; justify-content:center; font-size:16px; flex:none;">{{ st.icon }}</span>
+                <div style="line-height:1.5; min-width:0;"><div style="font-size:15px; font-weight:900; color:#16202e;">{{ st.value }}</div><div style="font-size:10px; color:#9aa4b2; white-space:nowrap;">{{ st.label }}</div></div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:18px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;"><h3 style="font-size:15px; font-weight:800; margin:0;">اطلاعات حساب</h3><span onClick="{{ saveProfile }}" style="font-size:11.5px; font-weight:700; color:var(--accent,#1668c4); cursor:pointer;">ویرایش اطلاعات</span></div>
+            <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:11px;">
+              <sc-for list="{{ profileFields }}" as="f" hint-placeholder-count="6">
+                <div style="background:#f6f8fb; border-radius:12px; padding:11px 13px;"><div style="font-size:10.5px; color:#9aa4b2; margin-bottom:5px;">{{ f.label }}</div><div style="font-size:12.5px; font-weight:700; color:#16202e;" dir="{{ f.dir }}">{{ f.value }}</div></div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:18px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;"><h3 style="font-size:15px; font-weight:800; margin:0;">مسافران ذخیره‌شده</h3><span onClick="{{ addPax }}" style="font-size:11.5px; font-weight:700; color:var(--accent,#1668c4); cursor:pointer;">+ افزودن مسافر</span></div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <sc-for list="{{ savedPax }}" as="p" hint-placeholder-count="3">
+                <div style="display:flex; align-items:center; gap:11px; border:1px solid #eef1f5; border-radius:12px; padding:11px 13px;"><div style="width:38px; height:38px; border-radius:50%; background:#eef4fb; color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px; flex:none;">{{ p.initials }}</div><div style="line-height:1.5;"><div style="font-size:12.5px; font-weight:700;">{{ p.name }}</div><div style="font-size:10.5px; color:#9aa4b2; font-family:'Roboto Mono',monospace;" dir="ltr">{{ p.meta }}</div></div></div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== نشان‌شده‌ها ===== -->
+      <sc-if value="{{ isSaved }}" hint-placeholder-val="{{false}}">
+        <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:18px;">
+          <h2 style="font-size:17px; font-weight:800; margin:0 0 6px;">نشان‌شده‌ها</h2>
+          <p style="font-size:11.5px; color:#8a96a6; margin:0 0 20px;">پروازهایی که برای بعد ذخیره کرده‌اید</p>
+          <div style="display:flex; flex-direction:column; gap:11px;">
+            <sc-for list="{{ savedFlights }}" as="f" hint-placeholder-count="2">
+              <div style="border:1px solid #eef1f5; border-radius:14px; padding:13px 14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;"><div style="line-height:1.5;"><div style="font-size:14px; font-weight:800;">{{ f.route }}</div><div style="font-size:11px; color:#9aa4b2;">{{ f.airline }} · {{ f.date }} · {{ f.time }}</div></div><span style="font-size:11px; font-family:'Roboto Mono',monospace; color:#5a6678; background:#f6f8fb; padding:4px 10px; border-radius:8px;" dir="ltr">{{ f.code }}</span></div>
+                <div style="display:flex; align-items:center; gap:12px;"><div style="text-align:left;"><div style="font-size:14px; font-weight:900; color:var(--accent,#1668c4);">{{ f.price }}</div><div style="font-size:10px; color:#9aa4b2;">تومان</div></div><span onClick="{{ f.onBook }}" style="font-size:11.5px; font-weight:800; color:#fff; background:var(--accent,#1668c4); padding:9px 14px; border-radius:10px; cursor:pointer;">رزرو</span><span onClick="{{ f.onRemove }}" style="font-size:14px; color:#c2cad6; cursor:pointer;">✕</span></div>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ noSaved }}" hint-placeholder-val="{{false}}"><div style="text-align:center; padding:26px; color:#9aa4b2; font-size:12px;">هنوز پروازی ذخیره نکرده‌اید.</div></sc-if>
+        </div>
+      </sc-if>
+
+      <!-- ===== پیام به پشتیبانی (تیکت) ===== -->
+      <sc-if value="{{ isTickets }}" hint-placeholder-val="{{false}}">
+        <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:18px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:6px;"><h2 style="font-size:17px; font-weight:800; margin:0;">پیام به پشتیبانی</h2><span onClick="{{ newTicket }}" style="display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; background:var(--accent,#1668c4); color:#fff; padding:9px 13px; border-radius:10px; cursor:pointer;">+ تیکت جدید</span></div>
+          <p style="font-size:11.5px; color:#8a96a6; margin:0 0 20px;">پیگیری گفت‌وگوهای شما با تیم پشتیبانی</p>
+          <div style="display:flex; flex-direction:column; gap:11px;">
+            <sc-for list="{{ supportTickets }}" as="t" hint-placeholder-count="2">
+              <div onClick="{{ t.onOpen }}" style="border:1px solid #eef1f5; border-radius:14px; padding:13px 14px; cursor:pointer;" style-hover="border-color:#dbe7f6;"><div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;"><div style="display:flex; align-items:center; gap:10px;"><span style="font-size:10.5px; font-family:'Roboto Mono',monospace; color:#5a6678; background:#f6f8fb; padding:3px 9px; border-radius:7px;" dir="ltr">{{ t.id }}</span><span style="font-size:13px; font-weight:700;">{{ t.subject }}</span></div><span style="font-size:10.5px; font-weight:700; color:{{ t.statusColor }}; background:{{ t.statusBg }}; padding:4px 11px; border-radius:16px;">{{ t.status }}</span></div><div style="font-size:11px; color:#9aa4b2; margin-top:9px; line-height:1.7;">{{ t.last }}</div><div style="font-size:10px; color:#c2cad6; margin-top:7px;">{{ t.date }}</div></div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== احراز هویت ===== -->
+      <sc-if value="{{ isIdentity }}" hint-placeholder-val="{{false}}">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div style="background:linear-gradient(135deg,#fff8ec,#fef2e0); border:1px solid #f6e0bb; border-radius:16px; padding:16px 18px; display:flex; align-items:center; gap:13px;">
+            <span style="width:44px; height:44px; border-radius:12px; background:#f0a83c; color:#fff; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5.5c0 4.2-2.9 7.4-7 8.5-4.1-1.1-7-4.3-7-8.5V6l7-3z"/><path d="M12 9v3M12 16h.01"/></svg></span>
+            <div style="line-height:1.6;"><div style="font-size:14px; font-weight:800; color:#9a6a16;">احراز هویت شما هنوز کامل نشده است</div><div style="font-size:11.5px; color:#b07f2a;">برای استرداد وجه و خرید بیش از سقف، احراز هویت لازم است.</div></div>
+          </div>
+          <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:18px;">
+            <h3 style="font-size:15px; font-weight:800; margin:0 0 16px;">مراحل احراز هویت</h3>
+            <div style="display:flex; flex-direction:column; gap:11px;">
+              <sc-for list="{{ identitySteps }}" as="s" hint-placeholder-count="3">
+                <div style="display:flex; align-items:center; gap:12px; border:1px solid {{ s.border }}; background:{{ s.bg }}; border-radius:13px; padding:13px 14px;"><span style="width:30px; height:30px; border-radius:50%; background:{{ s.dotBg }}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; flex:none;">{{ s.icon }}</span><div style="flex:1; line-height:1.5; min-width:0;"><div style="font-size:12.5px; font-weight:700; color:#16202e;">{{ s.label }}</div><div style="font-size:10.5px; color:#9aa4b2;">{{ s.hint }}</div></div><sc-if value="{{ s.showUpload }}" hint-placeholder-val="{{false}}"><span onClick="{{ uploadDoc }}" style="font-size:11px; font-weight:700; color:var(--accent,#1668c4); border:1.5px solid var(--accent,#1668c4); padding:7px 12px; border-radius:9px; cursor:pointer; white-space:nowrap;">بارگذاری</span></sc-if><sc-if value="{{ s.doneTag }}" hint-placeholder-val="{{false}}"><span style="font-size:10.5px; font-weight:700; color:#1f8a5b; white-space:nowrap;">✓ تکمیل</span></sc-if></div>
+              </sc-for>
+            </div>
+            <div onClick="{{ submitIdentity }}" style="margin-top:16px; height:50px; border-radius:12px; background:var(--accent,#1668c4); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13.5px; font-weight:800; cursor:pointer;">ثبت و ارسال برای بررسی</div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== امنیت حساب ===== -->
+      <sc-if value="{{ isSecurity }}" hint-placeholder-val="{{false}}">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:18px;">
+            <h3 style="font-size:15px; font-weight:800; margin:0 0 4px;">تغییر رمز عبور</h3>
+            <p style="font-size:11.5px; color:#8a96a6; margin:0 0 16px;">برای امنیت بیشتر، رمز عبور خود را دوره‌ای تغییر دهید</p>
+            <div style="display:flex; flex-direction:column; gap:11px; max-width:430px;">
+              <input type="password" placeholder="رمز عبور فعلی" style="width:100%; box-sizing:border-box; height:46px; border:1.5px solid #e3e8ef; border-radius:12px; padding:0 14px; font-size:13px; color:#16202e; font-family:inherit; outline:none;" />
+              <input type="password" placeholder="رمز عبور جدید" style="width:100%; box-sizing:border-box; height:46px; border:1.5px solid #e3e8ef; border-radius:12px; padding:0 14px; font-size:13px; color:#16202e; font-family:inherit; outline:none;" />
+              <input type="password" placeholder="تکرار رمز عبور جدید" style="width:100%; box-sizing:border-box; height:46px; border:1.5px solid #e3e8ef; border-radius:12px; padding:0 14px; font-size:13px; color:#16202e; font-family:inherit; outline:none;" />
+            </div>
+            <span onClick="{{ savePassword }}" style="display:inline-flex; margin-top:14px; height:44px; padding:0 20px; align-items:center; border-radius:11px; background:var(--accent,#1668c4); color:#fff; font-size:12.5px; font-weight:800; cursor:pointer;">ذخیره رمز جدید</span>
+          </div>
+          <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:18px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;"><div style="line-height:1.6;"><div style="font-size:14px; font-weight:800;">ورود دو مرحله‌ای</div><div style="font-size:11.5px; color:#8a96a6;">ارسال کد یک‌بارمصرف به موبایل هنگام ورود</div></div><div onClick="{{ toggle2fa }}" dir="ltr" style="width:46px; height:26px; border-radius:14px; background:{{ twofaBg }}; position:relative; cursor:pointer; flex:none;"><span style="position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; transform:{{ twofaKnob }}; transition:transform .18s;"></span></div></div>
+          </div>
+          <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:18px;">
+            <h3 style="font-size:15px; font-weight:800; margin:0 0 16px;">دستگاه‌های فعال</h3>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <sc-for list="{{ sessions }}" as="s" hint-placeholder-count="2">
+                <div style="display:flex; align-items:center; gap:12px; border:1px solid #eef1f5; border-radius:12px; padding:11px 13px;"><span style="width:36px; height:36px; border-radius:10px; background:#f6f8fb; color:#5a6678; display:flex; align-items:center; justify-content:center; flex:none;" dangerouslySetInnerHTML="{{ s.icon }}"></span><div style="flex:1; line-height:1.5; min-width:0;"><div style="font-size:12.5px; font-weight:700;">{{ s.device }}</div><div style="font-size:10.5px; color:#9aa4b2;">{{ s.place }} · {{ s.time }}</div></div><sc-if value="{{ s.current }}" hint-placeholder-val="{{false}}"><span style="font-size:10px; font-weight:700; color:#1f8a5b; background:#e7f6ee; padding:4px 10px; border-radius:14px; white-space:nowrap;">دستگاه فعلی</span></sc-if><sc-if value="{{ s.other }}" hint-placeholder-val="{{false}}"><span onClick="{{ s.onEnd }}" style="font-size:11px; font-weight:700; color:#e5484d; cursor:pointer;">خروج</span></sc-if></div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== حساب‌های بانکی ===== -->
+      <sc-if value="{{ isBanks }}" hint-placeholder-val="{{false}}">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:18px;">
+            <h2 style="font-size:17px; font-weight:800; margin:0 0 6px;">حساب‌های بانکی</h2>
+            <p style="font-size:11.5px; color:#8a96a6; margin:0 0 18px;">کارت‌ها و شماره شبای ثبت‌شده برای واریز مبلغ استرداد</p>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <sc-for list="{{ bankCards }}" as="c" hint-placeholder-count="2">
+                <div style="border:1px solid #eef1f5; border-radius:14px; padding:14px 15px; display:flex; align-items:center; gap:14px; background:{{ c.bg }};"><span style="width:44px; height:32px; border-radius:7px; background:{{ c.brandBg }}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; flex:none;">{{ c.short }}</span><div style="flex:1; line-height:1.6; min-width:0;"><div style="font-size:13px; font-weight:700;">{{ c.bank }}</div><div style="font-size:12px; color:#5a6678; font-family:'Roboto Mono',monospace;" dir="ltr">{{ c.card }}</div><div style="font-size:10px; color:#9aa4b2; font-family:'Roboto Mono',monospace;" dir="ltr">شبا IR{{ c.sheba }}</div></div><sc-if value="{{ c.isDefault }}" hint-placeholder-val="{{false}}"><span style="font-size:10px; font-weight:700; color:var(--accent,#1668c4); background:#eef4fb; padding:4px 10px; border-radius:14px; white-space:nowrap;">پیش‌فرض</span></sc-if></div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:18px;">
+            <h3 style="font-size:14.5px; font-weight:800; margin:0 0 16px;">افزودن کارت / شبای جدید</h3>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:11px; max-width:540px;">
+              <input placeholder="شماره کارت ۱۶ رقمی" dir="ltr" inputmode="numeric" style="width:100%; box-sizing:border-box; height:46px; border:1.5px solid #e3e8ef; border-radius:12px; padding:0 14px; font-size:13px; color:#16202e; text-align:left; font-family:'Roboto Mono',monospace; outline:none;" />
+              <input placeholder="شماره شبا (۲۴ رقم)" dir="ltr" inputmode="numeric" style="width:100%; box-sizing:border-box; height:46px; border:1.5px solid #e3e8ef; border-radius:12px; padding:0 14px; font-size:13px; color:#16202e; text-align:left; font-family:'Roboto Mono',monospace; outline:none;" />
+            </div>
+            <span onClick="{{ addBank }}" style="display:inline-flex; margin-top:14px; height:44px; padding:0 20px; align-items:center; border-radius:11px; background:var(--accent,#1668c4); color:#fff; font-size:12.5px; font-weight:800; cursor:pointer;">ثبت حساب بانکی</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== معرفی دوستان ===== -->
+      <sc-if value="{{ isReferral }}" hint-placeholder-val="{{false}}">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div style="background:linear-gradient(135deg,var(--accent,#1668c4),#0d3b66); color:#fff; border-radius:18px; padding:22px;">
+            <h2 style="font-size:19px; font-weight:900; margin:0 0 6px;">دوستانت را دعوت کن، امتیاز بگیر</h2>
+            <p style="font-size:11.5px; color:#cfe0f2; margin:0 0 18px; max-width:430px; line-height:1.9;">با هر دوستی که با کد شما ثبت‌نام کند و اولین پروازش را رزرو کند، ۵۰۰ امتیاز باشگاه دریافت می‌کنید.</p>
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;"><div style="display:flex; align-items:center; gap:12px; background:#ffffff1c; border:1px solid #ffffff33; border-radius:12px; padding:11px 16px;"><span style="font-size:10.5px; color:#cfe0f2;">کد معرف شما</span><span style="font-size:16px; font-weight:900; letter-spacing:1px; font-family:'Roboto Mono',monospace;" dir="ltr">{{ referralCode }}</span></div><span onClick="{{ copyReferral }}" style="height:44px; padding:0 16px; display:inline-flex; align-items:center; gap:7px; background:#fff; color:#0d3b66; font-size:12px; font-weight:800; border-radius:11px; cursor:pointer;">کپی کد</span><span onClick="{{ inviteFriend }}" style="height:44px; padding:0 16px; display:inline-flex; align-items:center; gap:7px; background:#ffffff1c; border:1px solid #ffffff44; color:#fff; font-size:12px; font-weight:800; border-radius:11px; cursor:pointer;">اشتراک‌گذاری لینک</span></div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:13px;">
+            <div style="background:#fff; border:1px solid #eef1f5; border-radius:14px; padding:16px; text-align:center;"><div style="font-size:24px; font-weight:900; color:var(--accent,#1668c4);">۳</div><div style="font-size:10.5px; color:#8a96a6; margin-top:5px;">دوست دعوت‌شده</div></div>
+            <div style="background:#fff; border:1px solid #eef1f5; border-radius:14px; padding:16px; text-align:center;"><div style="font-size:24px; font-weight:900; color:#caa53a;">۱٬۵۰۰</div><div style="font-size:10.5px; color:#8a96a6; margin-top:5px;">امتیاز کسب‌شده</div></div>
+            <div style="background:#fff; border:1px solid #eef1f5; border-radius:14px; padding:16px; text-align:center;"><div style="font-size:24px; font-weight:900; color:#1f8a5b;">۲</div><div style="font-size:10.5px; color:#8a96a6; margin-top:5px;">رزرو موفق</div></div>
+          </div>
+          <div style="background:#fff; border:1px solid #eef1f5; border-radius:16px; padding:18px;">
+            <h3 style="font-size:14.5px; font-weight:800; margin:0 0 16px;">دوستان دعوت‌شده</h3>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <sc-for list="{{ invitedFriends }}" as="f" hint-placeholder-count="3">
+                <div style="display:flex; align-items:center; gap:12px; border:1px solid #eef1f5; border-radius:12px; padding:11px 13px;"><div style="width:36px; height:36px; border-radius:50%; background:#eef4fb; color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px; flex:none;">{{ f.initials }}</div><div style="flex:1; min-width:0;"><div style="font-size:12.5px; font-weight:700;">{{ f.name }}</div><div style="font-size:10.5px; color:#9aa4b2;">{{ f.joined }}</div></div><span style="font-size:10.5px; font-weight:700; color:{{ f.statusColor }}; background:{{ f.statusBg }}; padding:4px 11px; border-radius:16px; white-space:nowrap;">{{ f.status }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+    </main>
+  </div>
+
+  <!-- FOOTER -->
+  <footer style="background:#0d2640; color:#aebfd4;">
+    <div style="max-width:1320px; margin:0 auto; padding:39px 26px 20px; display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr; gap:33px;">
+      <div>
+        <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:9px; margin-bottom:16px; text-decoration:none;"><div style="width:36px; height:36px; border-radius:10px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:16px;">✈</div><span style="font-weight:900; font-size:18px; color:#fff;">blujet</span></a>
+        <p style="font-size:13.5px; line-height:1.85; margin:0 0 20px; max-width:300px;">رزرو آنلاین بلیط پروازهای داخلی و بین‌المللی با بهترین قیمت و خدمات باشگاه مشتریان.</p>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">نماد اعتماد الکترونیکی</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">انجمن صنفی دفاتر خدمات مسافرتی</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">ساماندهی</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">عضو IATA</span>
+        </div>
+      </div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">خدمات</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="نتایج پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">رزرو پرواز</a><a href="مدیریت رزرو.dc.html" style="color:#aebfd4; text-decoration:none;">مدیریت رزرو</a><a href="باشگاه مشتریان.dc.html" style="color:#aebfd4; text-decoration:none;">باشگاه مشتریان</a><a href="مدیریت رزرو.dc.html" style="color:#aebfd4; text-decoration:none;">استرداد بلیط</a></div></div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">شرکت</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="درباره ما.dc.html" style="color:#aebfd4; text-decoration:none;">درباره ما</a><a href="تماس با ما.dc.html" style="color:#aebfd4; text-decoration:none;">تماس با ما</a><a href="قوانین و مقررات.dc.html" style="color:#aebfd4; text-decoration:none;">قوانین و مقررات</a></div></div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">پشتیبانی</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">مرکز راهنما</a><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">سوالات متداول</a><span dir="ltr" style="text-align:right;" data-site-phone>۰۲۱ — ۹۱۰۰۰۰۰۰</span></div></div>
+    </div>
+    <div style="border-top:1px solid #ffffff12;"><div style="max-width:1320px; margin:0 auto; padding:15px 26px; display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:#7d92ad;"><span>© ۱۴۰۵ blujet. تمامی حقوق محفوظ است.</span></div></div>
+  </footer>
+
+  <!-- PURCHASE DETAIL MODAL -->
+  <sc-if value="{{ detailOpen }}" hint-placeholder-val="{{false}}">
+    <div onClick="{{ closeDetail }}" style="position:fixed; inset:0; background:rgba(7,12,22,.6); z-index:200; display:flex; align-items:center; justify-content:center; padding:20px;">
+      <div onClick="{{ stopDetail }}" style="background:#fff; border-radius:18px; width:560px; max-width:100%; max-height:90vh; overflow:auto;">
+        <div style="background:linear-gradient(135deg,#0d2640,#16406e); color:#fff; padding:16px 20px; display:flex; align-items:center; justify-content:space-between;">
+          <div style="display:flex; align-items:center; gap:9px;"><div style="width:30px; height:30px; border-radius:8px; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-size:13.5px;">✈</div><span style="font-size:13.5px; font-weight:800;">{{ detail.airline }}</span></div>
+          <div style="display:flex; align-items:center; gap:12px;"><div style="text-align:left;"><div style="font-size:10px; color:#aac4e2;">کد رزرو</div><div style="font-size:14px; font-weight:800; font-family:'Roboto Mono',monospace;" dir="ltr">{{ detail.code }}</div></div><span onClick="{{ closeDetail }}" style="width:30px; height:30px; border-radius:8px; background:rgba(255,255,255,.14); color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px;">×</span></div>
+        </div>
+        <div style="padding:18px 20px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; border-bottom:1px solid #eef1f5;">
+          <div style="text-align:center;"><div style="font-size:24px; font-weight:900; color:#16202e;">{{ detail.depCode }}</div><div style="font-size:13px; font-weight:700; color:var(--accent,#1668c4); margin-top:4px;">{{ detail.time }}</div></div>
+          <div style="flex:1; min-width:120px; display:flex; flex-direction:column; align-items:center; color:#c2cad6;"><div style="font-size:11px; color:#8a96a6;">{{ detail.duration }}</div><div style="width:100%; height:2px; background:#e6eaf0; position:relative; margin:7px 0;"><span style="position:absolute; left:50%; top:-7px; font-size:12.5px; color:var(--accent,#1668c4);">✈</span></div><div style="font-size:10.5px; color:#9aa4b2;">{{ detail.flightNo }}</div></div>
+          <div style="text-align:center;"><div style="font-size:24px; font-weight:900; color:#16202e;">{{ detail.arrCode }}</div><div style="font-size:13px; font-weight:700; color:var(--accent,#1668c4); margin-top:4px;">{{ detail.arrTime }}</div></div>
+        </div>
+        <div style="padding:16px 20px;">
+          <div style="font-size:12.5px; font-weight:800; color:#0d2640; margin-bottom:11px;">اطلاعات سفر</div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-bottom:18px;">
+            <div style="background:#f6f8fb; border-radius:10px; padding:9px 11px;"><div style="font-size:10px; color:#9aa4b2; margin-bottom:3px;">تاریخ</div><div style="font-size:11.5px; font-weight:700;">{{ detail.date }}</div></div>
+            <div style="background:#f6f8fb; border-radius:10px; padding:9px 11px;"><div style="font-size:10px; color:#9aa4b2; margin-bottom:3px;">مسافر</div><div style="font-size:11.5px; font-weight:700;">{{ detail.passenger }}</div></div>
+            <div style="background:#f6f8fb; border-radius:10px; padding:9px 11px;"><div style="font-size:10px; color:#9aa4b2; margin-bottom:3px;">صندلی</div><div style="font-size:11.5px; font-weight:700;" dir="ltr">{{ detail.seat }}</div></div>
+            <div style="background:#f6f8fb; border-radius:10px; padding:9px 11px;"><div style="font-size:10px; color:#9aa4b2; margin-bottom:3px;">کلاس</div><div style="font-size:11.5px; font-weight:700;">{{ detail.cabin }}</div></div>
+            <div style="background:#f6f8fb; border-radius:10px; padding:9px 11px;"><div style="font-size:10px; color:#9aa4b2; margin-bottom:3px;">ترمینال</div><div style="font-size:11.5px; font-weight:700;">{{ detail.terminal }}</div></div>
+            <div style="background:#f6f8fb; border-radius:10px; padding:9px 11px;"><div style="font-size:10px; color:#9aa4b2; margin-bottom:3px;">گیت</div><div style="font-size:11.5px; font-weight:700;" dir="ltr">{{ detail.gate }}</div></div>
+          </div>
+          <div style="font-size:12.5px; font-weight:800; color:#0d2640; margin-bottom:11px;">نحوهٔ پرداخت</div>
+          <div style="background:#f6f8fb; border-radius:12px; padding:13px 15px; display:flex; flex-direction:column; gap:9px; margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:#5a6678;"><span>مبلغ بلیط</span><span style="font-weight:700; color:#16202e;">{{ detail.base }} تومان</span></div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:#5a6678;"><span>مالیات و عوارض</span><span style="font-weight:700; color:#16202e;">{{ detail.tax }} تومان</span></div>
+            <div style="border-top:1px dashed #dbe2ea; padding-top:9px; display:flex; justify-content:space-between; font-size:13px; font-weight:800;"><span>مبلغ کل پرداختی</span><span style="color:var(--accent,#1668c4);">{{ detail.price }} تومان</span></div>
+            <div style="border-top:1px solid #eef1f5; padding-top:9px; display:flex; justify-content:space-between; font-size:11.5px; color:#5a6678;"><span>روش پرداخت</span><span style="font-weight:700; color:#16202e;">{{ detail.payMethod }}</span></div>
+            <div style="display:flex; justify-content:space-between; font-size:11.5px; color:#5a6678;"><span>تاریخ پرداخت</span><span style="font-weight:700; color:#16202e;">{{ detail.payDate }}</span></div>
+            <div style="display:flex; justify-content:space-between; font-size:11.5px; color:#5a6678;"><span>شمارهٔ پیگیری پرداخت</span><span style="font-weight:700; color:#16202e;" dir="ltr">{{ detail.refId }}</span></div>
+          </div>
+          <div style="display:flex; gap:9px;">
+            <sc-if value="{{ detail.upcoming }}" hint-placeholder-val="{{false}}">
+              <div onClick="{{ detail.onCancel }}" style="flex:1; height:50px; border-radius:12px; border:1.5px solid #e5484d; color:#e5484d; display:flex; align-items:center; justify-content:center; gap:7px; font-size:12.5px; font-weight:800; cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 6 6v1"/></svg>استرداد / کنسل بلیط</div>
+            </sc-if>
+            <div onClick="{{ detail.onDownload }}" style="flex:1; height:50px; border-radius:12px; background:var(--accent,#1668c4); color:#fff; display:flex; align-items:center; justify-content:center; gap:7px; font-size:13px; font-weight:800; cursor:pointer;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M5 21h14"/></svg>دانلود بلیط PDF</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- CANCELLATION / REFUND SCREEN -->
+  <sc-if value="{{ cancelOpen }}" hint-placeholder-val="{{false}}">
+    <div onClick="{{ closeCancel }}" style="position:fixed; inset:0; background:rgba(7,12,22,.6); z-index:210; display:flex; align-items:center; justify-content:center; padding:20px;">
+      <div onClick="{{ stopCancel }}" style="background:#fff; border-radius:18px; width:560px; max-width:100%; max-height:90vh; overflow:auto;">
+        <div style="background:linear-gradient(135deg,#7a1f24,#b23138); color:#fff; padding:16px 20px; display:flex; align-items:center; justify-content:space-between;">
+          <div><div style="font-size:15px; font-weight:900;">استرداد و کنسلی بلیط</div><div style="font-size:11.5px; color:#f3c9cc; margin-top:3px;">{{ cancel.route }} · {{ cancel.code }}</div></div>
+          <span onClick="{{ closeCancel }}" style="width:32px; height:32px; border-radius:9px; background:rgba(255,255,255,.16); color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px;">×</span>
+        </div>
+        <sc-if value="{{ cancelDone }}" hint-placeholder-val="{{false}}">
+          <div style="padding:30px 22px; text-align:center;">
+            <div style="width:64px; height:64px; border-radius:50%; background:#eef9f1; color:#1f8a5b; display:flex; align-items:center; justify-content:center; font-size:27px; margin:0 auto 14px;">✓</div>
+            <div style="font-size:16px; font-weight:900; margin-bottom:6px; color:#0d2640;">درخواست استرداد ثبت شد</div>
+            <div style="font-size:12px; color:#8a96a6; line-height:1.9;">درخواست کنسلی بلیط {{ cancel.code }} ثبت و برای بررسی ارسال شد. وضعیت آن را می‌توانید در بخش «استرداد بلیط» دنبال کنید. مبلغ قابل بازگشت پس از تأیید مدیر مالی به کارت شما واریز می‌شود.</div>
+            <div onClick="{{ cancelToRefund }}" style="display:inline-block; margin-top:18px; background:var(--accent,#1668c4); color:#fff; padding:11px 24px; border-radius:11px; font-size:12.5px; font-weight:800; cursor:pointer;">مشاهدهٔ بخش استرداد</div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ cancelPending }}" hint-placeholder-val="{{true}}">
+          <div style="padding:18px 20px;">
+            <div style="display:flex; gap:11px; margin-bottom:16px;">
+              <div style="flex:1; background:#f6f8fb; border-radius:12px; padding:12px 13px;"><div style="font-size:10.5px; color:#9aa4b2; margin-bottom:5px;">زمان مانده تا پرواز</div><div style="font-size:15px; font-weight:900; color:var(--accent,#1668c4);">{{ cancel.timeLeft }}</div></div>
+              <div style="flex:1; background:#fdecec; border-radius:12px; padding:12px 13px;"><div style="font-size:10.5px; color:#b06a6a; margin-bottom:5px;">درصد جریمهٔ کنسلی</div><div style="font-size:15px; font-weight:900; color:#e5484d;">{{ cancel.penaltyPct }}</div></div>
+            </div>
+            <div style="font-size:12.5px; font-weight:800; color:#0d2640; margin-bottom:10px;">قوانین کنسلی پرواز</div>
+            <div style="display:flex; flex-direction:column; gap:7px; margin-bottom:18px;">
+              <sc-for list="{{ cancel.rules }}" as="r" hint-placeholder-count="4">
+                <div style="display:flex; align-items:center; justify-content:space-between; border:1.5px solid {{ r.rowBorder }}; background:{{ r.rowBg }}; border-radius:11px; padding:10px 13px;">
+                  <span style="font-size:11.5px; color:#3b4554;">{{ r.range }}</span>
+                  <span style="font-size:12px; color:{{ r.pctColor }}; font-weight:{{ r.pctWeight }};">{{ r.pct }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="background:#f6f8fb; border-radius:12px; padding:13px 15px; display:flex; flex-direction:column; gap:9px; margin-bottom:16px;">
+              <div style="display:flex; justify-content:space-between; font-size:12px; color:#5a6678;"><span>مبلغ پرداخت‌شده</span><span style="font-weight:700; color:#16202e;">{{ cancel.totalAmount }} تومان</span></div>
+              <div style="display:flex; justify-content:space-between; font-size:12px; color:#5a6678;"><span>جریمهٔ کنسلی ({{ cancel.penaltyPct }})</span><span style="font-weight:700; color:#e5484d;">−{{ cancel.penaltyAmount }} تومان</span></div>
+              <div style="border-top:1px dashed #dbe2ea; padding-top:9px; display:flex; justify-content:space-between; font-size:13px; font-weight:800;"><span>مبلغ قابل بازگشت</span><span style="color:#1f8a5b;">{{ cancel.refundable }} تومان</span></div>
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block; font-size:11.5px; font-weight:700; color:#0d2640; margin-bottom:7px;">شماره شبا برای واریز مبلغ استرداد</label>
+              <div style="display:flex; align-items:center; gap:8px; border:1.5px solid {{ ibanBorder }}; border-radius:12px; padding:0 13px; background:#fff;">
+                <span style="font-size:12.5px; font-weight:800; color:#8a96a6;">IR</span>
+                <input value="{{ refundIban }}" onInput="{{ onRefundIban }}" placeholder="۲۴ رقم شماره شبا" dir="ltr" inputmode="numeric" style="flex:1; height:48px; border:none; outline:none; font-size:13px; color:#16202e; font-family:'Roboto Mono',monospace; letter-spacing:1px; text-align:left; background:transparent;" />
+              </div>
+              <div style="font-size:10.5px; color:#9aa4b2; margin-top:6px;">مبلغ استرداد فقط به همین شماره شبا (به نام مسافر) واریز می‌شود.</div>
+            </div>
+            <div onClick="{{ cancel.onConfirm }}" style="height:52px; border-radius:12px; background:{{ cancel.confirmBg }}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13.5px; font-weight:800; cursor:{{ cancel.confirmCursor }};">ثبت درخواست کنسلی و استرداد</div>
+            <div style="margin-top:11px; font-size:10.5px; color:#9aa4b2; text-align:center; line-height:1.8;">پس از ثبت، درخواست به ادمین سایت و سپس مدیر مالی ارجاع می‌شود و مبلغ طی ۳ تا ۷ روز کاری بازگردانده می‌شود.</div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- LOGOUT CONFIRM -->
+  <sc-if value="{{ logoutConfirm }}" hint-placeholder-val="{{false}}">
+    <div onClick="{{ cancelLogout }}" style="position:fixed; inset:0; background:rgba(13,38,102,.35); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; padding:16px; z-index:120;">
+      <div onClick="{{ stopTopup }}" style="background:#fff; border-radius:18px; width:380px; max-width:100%; padding:24px 22px; text-align:center; box-shadow:0 30px 80px -20px rgba(13,38,102,.4);">
+        <div style="width:60px; height:60px; border-radius:50%; background:#fdecec; color:#e5484d; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5.5A1.5 1.5 0 0 1 4 19.5v-15A1.5 1.5 0 0 1 5.5 3H9"/><path d="m15 17 5-5-5-5"/><path d="M20 12H9"/></svg></div>
+        <div style="font-size:16.5px; font-weight:900; color:#0d2640; margin-bottom:8px;">خروج از حساب کاربری</div>
+        <div style="font-size:12.5px; color:#5a6678; line-height:1.9; margin-bottom:22px;">آیا مطمئن هستید که می‌خواهید از حساب کاربری خود خارج شوید؟</div>
+        <div style="display:flex; gap:10px;">
+          <span onClick="{{ confirmLogout }}" style="flex:1; height:48px; border-radius:12px; background:#e5484d; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; cursor:pointer;">بله، خارج شو</span>
+          <span onClick="{{ cancelLogout }}" style="flex:1; height:48px; border-radius:12px; border:1.5px solid #e2e7ee; color:#5a6678; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; cursor:pointer;">انصراف</span>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- TOAST -->
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:9000; background:#0d2640; color:#fff; padding:12px 18px; border-radius:12px; font-size:12.5px; font-weight:700; box-shadow:0 14px 40px -10px rgba(13,38,64,.5); display:flex; align-items:center; gap:9px; max-width:90vw;"><span style="width:22px; height:22px; border-radius:50%; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; flex:none; font-size:12px;">✓</span><span>{{ toast }}</span></div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { tab: "purchases", addFormOpen: false, menuOpen: false, detailIdx: null, cancelIdx: null, cancelDone: false, refundIban: "", walletBalance: null, topupOpen: false, topupAmount: "", topupMethod: "gateway", topupDone: false, topupProcessing: false, logoutConfirm: false, twofa: true, toast: "" };
+  toast(t){ this.setState({ toast: t }); clearTimeout(this._toastT); this._toastT = setTimeout(() => this.setState({ toast: "" }), 2800); }
+  componentDidMount() {
+    this._h = () => this.forceUpdate(); window.addEventListener("sitedata:change", this._h); window.addEventListener("storage", this._h);
+    try { const b = localStorage.getItem("aseman_wallet_balance"); if (b != null) this.setState({ walletBalance: parseInt(b, 10) }); } catch (e) {}
+  }
+  _balance() { return this.state.walletBalance == null ? 1200000 : this.state.walletBalance; }
+  _fa(n) { return String(n).replace(/[0-9]/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]); }
+  _fmtT(n) { return this._fa(Number(n || 0).toLocaleString("en-US")).replace(/,/g, "٬"); }
+  _confirmTopup() {
+    if (this.state.topupProcessing) return;
+    const amt = parseInt((this.state.topupAmount || "").replace(/[^\d]/g, ""), 10);
+    if (!amt || amt < 10000) { this.toast("مبلغ شارژ را وارد کنید (حداقل ۱۰٬۰۰۰ تومان)"); return; }
+    this.setState({ topupProcessing: true });
+    this.toast("در حال انتقال به درگاه بانکی…");
+    clearTimeout(this._payT);
+    this._payT = setTimeout(() => {
+      const next = this._balance() + amt;
+      try { localStorage.setItem("aseman_wallet_balance", String(next)); } catch (e) {}
+      this.setState({ walletBalance: next, topupProcessing: false, topupDone: true });
+      this.toast("پرداخت از درگاه بانکی با موفقیت انجام شد ✓");
+    }, 1500);
+  }
+  doLogout() { this.setState({ menuOpen: false, logoutConfirm: true }); }
+  confirmLogout() {
+    if (this._loggingOut) return;
+    this._loggingOut = true;
+    this.setState({ logoutConfirm: false });
+    this.toast("در حال خروج از حساب…");
+    clearTimeout(this._logoutT);
+    this._logoutT = setTimeout(() => { window.location.href = "ورود و ثبتنام.dc.html"; }, 900);
+  }
+  componentWillUnmount() { window.removeEventListener("sitedata:change", this._h); window.removeEventListener("storage", this._h); }
+  _downloadTicket(p) {
+    const row = (k, v) => '<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px dashed #e2e7ee;font-size:13px;"><span style="color:#8a96a6;">' + k + '</span><span style="font-weight:700;color:#16202e;">' + v + '</span></div>';
+    const html = '<!doctype html><html dir="rtl" lang="fa"><head><meta charset="utf-8"><title>بلیط ' + p.code + '</title>'
+      + '<style>@page{size:A5 landscape;margin:12mm;}*{box-sizing:border-box;font-family:Tahoma,"IRANSans",sans-serif;}body{margin:0;color:#16202e;}'
+      + '.card{border:1px solid #e2e7ee;border-radius:18px;overflow:hidden;max-width:720px;margin:0 auto;}'
+      + '.hd{background:linear-gradient(135deg,#0d2640,#16406e);color:#fff;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;}'
+      + '.route{font-size:26px;font-weight:900;}.bd{padding:20px 24px;}</style></head><body>'
+      + '<div class="card"><div class="hd"><div><div style="font-size:12px;opacity:.85;">بلیط الکترونیکی · ایرلاین blujet</div>'
+      + '<div class="route">' + p.route + '</div></div><div style="text-align:left;"><div style="font-size:11px;opacity:.85;">کد رزرو</div>'
+      + '<div style="font-size:20px;font-weight:900;letter-spacing:1px;">' + p.code + '</div></div></div><div class="bd">'
+      + row('مسافر', p.passenger) + row('ایرلاین / پرواز', p.airline + ' · ' + p.flightNo)
+      + row('تاریخ / ساعت', p.date + ' · ' + p.time) + row('صندلی / کلاس', p.seat + ' · ' + p.cabin)
+      + row('ترمینال / گیت', p.terminal + ' · ' + p.gate) + row('مبلغ کل', p.price + ' تومان')
+      + row('روش پرداخت', p.payMethod) + row('وضعیت', p.status)
+      + '<div style="text-align:center;margin-top:16px;font-size:10.5px;color:#9aa4b2;">این بلیط توسط سامانه آنلاین blujet صادر شده است.</div>'
+      + '</div></div></body></html>';
+    const w = window.open("", "_blank");
+    if (!w) { this.toast("لطفاً اجازهٔ باز شدن پنجره را بدهید"); return; }
+    w.document.open(); w.document.write(html); w.document.close();
+    w.focus();
+    setTimeout(() => { try { w.print(); } catch (_) {} }, 500);
+    this.toast("بلیط الکترونیکی پرواز " + p.route + " آمادهٔ دانلود PDF شد ✓");
+  }
+  _faMoney(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, "٬").replace(/[0-9]/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]); }
+  _toNum(s) { return parseInt(String(s).replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/[^\d]/g, ""), 10) || 0; }
+  _purchData() {
+    const now = Date.now(), H = 3600000, D = 24 * H;
+    // departTs: negative offset = گذشته، مثبت = آینده
+    return [
+      { route: "تهران ← دبی", airline: "blujet", flightNo: "IR-۶۵۱", date: "۱۲ تیر ۱۴۰۵", time: "۰۸:۳۰", arrTime: "۱۰:۴۵", duration: "۲ ساعت و ۱۵ دقیقه", code: "AS-88421", price: "۴٬۱۲۰٬۰۰۰", base: "۳٬۸۰۰٬۰۰۰", tax: "۳۲۰٬۰۰۰", passenger: "نگار رضایی", seat: "۱۴C", cabin: "اکونومی", terminal: "ترمینال ۲", gate: "B۱۲", payMethod: "درگاه بانکی — کارت ۶۰۳۷****۴۵۲۱", payDate: "۱۰ تیر ۱۴۰۵ · ۱۴:۲۲", refId: "۵۲۰۹۸۸۴۱", status: "تکمیل‌شده", statusColor: "#1f8a5b", statusBg: "#e8f5ee", departTs: now - 30 * D },
+      { route: "مشهد ← تهران", airline: "ماهان", flightNo: "W5-۱۰۸۴", date: "۲ خرداد ۱۴۰۵", time: "۱۶:۱۰", arrTime: "۱۷:۴۰", duration: "۱ ساعت و ۳۰ دقیقه", code: "AS-77310", price: "۲٬۳۵۰٬۰۰۰", base: "۲٬۱۵۰٬۰۰۰", tax: "۲۰۰٬۰۰۰", passenger: "نگار رضایی", seat: "۹A", cabin: "اکونومی", terminal: "ترمینال ۴", gate: "A۰۵", payMethod: "کیف پول باشگاه + درگاه بانکی", payDate: "۲۹ اردیبهشت ۱۴۰۵ · ۰۹:۱۰", refId: "۴۸۷۷۳۱۰۰", status: "تکمیل‌شده", statusColor: "#1f8a5b", statusBg: "#e8f5ee", departTs: now - 40 * D },
+      { route: "تهران ← استانبول", airline: "ایران‌ایر", flightNo: "IR-۷۲۳", date: "۲۸ مرداد ۱۴۰۵", time: "۲۰:۰۰", arrTime: "۲۲:۵۰", duration: "۲ ساعت و ۵۰ دقیقه", code: "AS-90155", price: "۶٬۸۰۰٬۰۰۰", base: "۶٬۳۰۰٬۰۰۰", tax: "۵۰۰٬۰۰۰", passenger: "نگار رضایی", seat: "۳D", cabin: "بیزنس", terminal: "ترمینال ۲", gate: "C۰۸", payMethod: "درگاه بانکی — کارت ۶۰۳۷****۴۵۲۱", payDate: "۲۰ مرداد ۱۴۰۵ · ۱۹:۴۵", refId: "۶۱۹۰۱۵۵۰", status: "در انتظار پرواز", statusColor: "#1668c4", statusBg: "#eef4fb", departTs: now + 5 * D + 6 * H },
+      { route: "شیراز ← کیش", airline: "قشم‌ایر", flightNo: "QB-۲۲۰۱", date: "۱۵ اردیبهشت ۱۴۰۵", time: "۱۱:۴۵", arrTime: "۱۲:۵۵", duration: "۱ ساعت و ۱۰ دقیقه", code: "AS-66201", price: "۱٬۹۸۰٬۰۰۰", base: "۱٬۸۰۰٬۰۰۰", tax: "۱۸۰٬۰۰۰", passenger: "نگار رضایی", seat: "۱۷F", cabin: "اکونومی", terminal: "ترمینال داخلی", gate: "D۰۳", payMethod: "درگاه بانکی — کارت ۶۰۳۷****۴۵۲۱", payDate: "۱۰ اردیبهشت ۱۴۰۵ · ۱۳:۰۰", refId: "۳۹۶۶۲۰۱۰", status: "مسترد شده", statusColor: "#e5484d", statusBg: "#fdecec", departTs: now - 60 * D }
+    ].map(p => ({ ...p, upcoming: p.status === "در انتظار پرواز" && p.departTs > now }));
+  }
+  // قوانین کنسلی بر اساس زمان مانده تا پرواز
+  _cancelInfo(p) {
+    const now = Date.now(), H = 3600000;
+    const msLeft = Math.max(0, p.departTs - now);
+    const hoursLeft = msLeft / H;
+    const daysLeft = Math.floor(hoursLeft / 24);
+    const remHours = Math.floor(hoursLeft % 24);
+    const fa = (n) => String(n).replace(/[0-9]/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
+    let pct;
+    if (hoursLeft >= 72) pct = 30;
+    else if (hoursLeft >= 24) pct = 50;
+    else if (hoursLeft >= 3) pct = 70;
+    else pct = 100;
+    const total = this._toNum(p.price);
+    const penalty = Math.round(total * pct / 100);
+    const refundable = total - penalty;
+    const rules = [
+      { range: "بیش از ۷۲ ساعت مانده به پرواز", pct: "۳۰٪", active: hoursLeft >= 72 },
+      { range: "بین ۲۴ تا ۷۲ ساعت مانده", pct: "۵۰٪", active: hoursLeft >= 24 && hoursLeft < 72 },
+      { range: "بین ۳ تا ۲۴ ساعت مانده", pct: "۷۰٪", active: hoursLeft >= 3 && hoursLeft < 24 },
+      { range: "کمتر از ۳ ساعت / پس از پرواز", pct: "غیرقابل استرداد", active: hoursLeft < 3 }
+    ].map(r => ({ ...r, rowBg: r.active ? "#f3f7fc" : "#fff", rowBorder: r.active ? "var(--accent,#1668c4)" : "#eef1f5", pctColor: r.active ? "var(--accent,#1668c4)" : "#5a6678", pctWeight: r.active ? "800" : "600" }));
+    return {
+      timeLeft: fa(daysLeft) + " روز و " + fa(remHours) + " ساعت",
+      penaltyPct: "٪" + fa(pct),
+      penaltyAmount: this._faMoney(penalty),
+      totalAmount: this._faMoney(total),
+      refundable: this._faMoney(refundable),
+      refundableNum: refundable,
+      allowed: pct < 100,
+      rules
+    };
+  }
+  _submitCancel(p, info) {
+    if (!window.SiteData) return;
+    const n = window.SiteData.getRefunds().length + 1044;
+    const ibanRaw = (this.state.refundIban || "").replace(/[^\d]/g, "");
+    const ibanFa = ("IR" + ibanRaw).replace(/[0-9]/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
+    const nowFa = (() => { const t = new Date(); const hh=String(t.getHours()).padStart(2,"0"); const mm=String(t.getMinutes()).padStart(2,"0"); return ("امروز · " + hh + ":" + mm).replace(/[0-9]/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]); })();
+    window.SiteData.addRefund({
+      id: "RF-" + n, ticket: p.code, passenger: p.passenger, route: p.route,
+      date: "امروز", amount: info.refundable, status: "submitted",
+      iban: ibanFa, submittedAt: nowFa,
+      nid: p.nid || "۰۰۱۲۳۴۵۶۷۸", mobile: p.mobile || "۰۹۱۲۳۴۵۶۷۸۹",
+      airline: p.airline || "", flightNo: p.flightNo || "", flightDate: p.date || "", flightTime: p.time || "",
+      cabin: p.cabin || "اکونومی", seat: p.seat || "—",
+      totalPaid: info.totalAmount, penaltyPct: info.penaltyPct, penaltyAmount: info.penaltyAmount, refundable: info.refundable,
+      history: [ { step: "submitted", label: "ثبت درخواست کنسلی توسط مشتری — جریمه " + info.penaltyPct, at: nowFa } ]
+    });
+    this.setState({ refundIban: "" });
+    this.toast("درخواست کنسلی و استرداد ثبت و برای بررسی ارسال شد ✓");
+  }
+  _ic(p){ return { __html: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>' }; }
+  _svg(p, size){ return { __html: '<svg width="'+(size||20)+'" height="'+(size||20)+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>' }; }
+  renderVals() {
+    const tab = this.state.tab;
+    const ORDER = ["submitted","review","finance","paid"];
+    const STMETA = {
+      submitted: { label:"در انتظار بررسی", c:"#9a6a16", bg:"#fff8ec" },
+      review:    { label:"در حال بررسی ادمین", c:"#1668c4", bg:"#eef4fb" },
+      finance:   { label:"ارسال به مدیر مالی", c:"#7c3aed", bg:"#f3edfd" },
+      paid:      { label:"پرداخت شد", c:"#1f8a5b", bg:"#e7f6ee" }
+    };
+    const refunds = (window.SiteData ? window.SiteData.getRefunds() : []);
+    const myRefunds = refunds.map(rf => {
+      const cur = rf.status;
+      const curIdx = ORDER.indexOf(cur);
+      const sm = STMETA[cur] || STMETA.submitted;
+      const steps = (rf.history || []).map((h, i) => {
+        const done = true;
+        return { label: h.label, at: h.at,
+          dotBg: "#1f8a5b", lineBg: "#cfe9da", textColor: "#16202e",
+          icon: this._ic('<path d="M20 6L9 17l-5-5"/>') };
+      });
+      return { id: rf.id, ticket: rf.ticket, route: rf.route, amount: rf.amount, status: rf.status,
+        statusLabel: sm.label, statusColor: sm.c, statusBg: sm.bg, steps };
+    });
+    // ── Loyalty card issuance ──────────────────────────────────────────────
+    const SD2 = window.SiteData;
+    const ME_ID = "CM-2001";
+    const myPoints = 12450;
+    const THRESH = SD2 ? SD2.CARD_THRESHOLD : 5000;
+    const allReqs = SD2 ? SD2.getCardRequests() : [];
+    const myReq = allReqs.find(r => r.memberId === ME_ID) || null;
+    const meMember = SD2 ? (SD2.getClubMembers().find(m => m.id === ME_ID) || null) : null;
+    const cStatus = myReq ? myReq.status : "none";
+    const cIssued = cStatus === "approved" || (meMember && meMember.cardStatus === "issued");
+    const cEligible = myPoints >= THRESH;
+    const CTIER = { silver:"نقره‌ای", gold:"طلایی", platinum:"پلاتین" };
+    const CSTAT = {
+      none:      { label:"ثبت‌نشده", c:"#5a6678", bg:"#eef1f5" },
+      submitted: { label:"در انتظار بررسی ادمین", c:"#9a6a16", bg:"#fff8ec" },
+      referred:  { label: (myReq && myReq.assignedTo === "super") ? "ارجاع به رئیس هیئت مدیره" : "ارجاع به مدیر ارشد", c:"#7c3aed", bg:"#f3edfd" },
+      approved:  { label:"کارت صادر شد", c:"#1f8a5b", bg:"#e7f6ee" },
+      rejected:  { label:"رد شده", c:"#e5484d", bg:"#fdecec" }
+    };
+    const csm = CSTAT[cIssued ? "approved" : cStatus] || CSTAT.none;
+    const C_ORDER = ["submitted","referred","approved"];
+    const C_LABELS = { submitted:"ثبت درخواست صدور کارت", referred:"ارجاع برای تأیید مدیران", approved:"تأیید و صدور کارت" };
+    const C_FA = ["۱","۲","۳"];
+    const cCurIdx = myReq ? C_ORDER.indexOf(cIssued ? "approved" : cStatus) : -1;
+    const cardSteps = C_ORDER.map((k, i) => {
+      const done = i <= cCurIdx;
+      const hist = (myReq && myReq.history) ? myReq.history.find(h => h.step === k) : null;
+      return {
+        label: C_LABELS[k], at: hist ? hist.at : (done ? "" : "در انتظار"),
+        dotBg: done ? "#1f8a5b" : "#cbd5e1",
+        lineBg: i < cCurIdx ? "#cfe9da" : "#eef1f5",
+        textColor: done ? "#16202e" : "#9aa4b2",
+        icon: done ? "✓" : C_FA[i]
+      };
+    });
+    const faNum = (n) => String(n).replace(/[0-9]/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]).replace(/\B(?=(\d{3})+(?!\d))/g, "٬");
+
+    const NAV_ICONS = {
+      profile:   '<path d="M20 21v-1.5a4.5 4.5 0 0 0-4.5-4.5h-7A4.5 4.5 0 0 0 4 19.5V21"/><circle cx="12" cy="7.5" r="4"/>',
+      purchases: '<path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v2.2a1.6 1.6 0 0 0 0 2.6v2.2A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 15.5v-2.2a1.6 1.6 0 0 0 0-2.6Z"/><path d="M14 7v12" stroke-dasharray="1.5 2.5"/>',
+      refund:    '<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 6 6v1"/>',
+      wallet:    '<path d="M21 11V7.5A1.5 1.5 0 0 0 19.5 6H5a2 2 0 0 1 0-4h13"/><path d="M3 4v14a2 2 0 0 0 2 2h14.5a1.5 1.5 0 0 0 1.5-1.5V15"/><path d="M21 11h-4a2 2 0 0 0 0 4h4Z"/>',
+      club:      '<path d="M3 8.5 7 12l5-7 5 7 4-3.5-1.8 9.5a1 1 0 0 1-1 .8H5.8a1 1 0 0 1-1-.8Z"/><circle cx="12" cy="3.6" r="1.1"/>'
+    };
+    const nav = [
+      { key: "profile", label: "پروفایل من" },
+      { key: "purchases", label: "سفرها و خریدها" },
+      { key: "refund", label: "استرداد بلیط" },
+      { key: "wallet", label: "کیف پول و امتیاز" },
+      { key: "club", label: "باشگاه مشتریان" }
+    ];
+    const navItems = nav.map(n => ({
+      label: n.label, iconSvg: this._svg((NAV_ICONS[n.key]||ACC[n.key]), 19),
+      onClick: () => this.setState({ tab: n.key }),
+      bg: tab === n.key ? "#eef4fb" : "transparent",
+      color: tab === n.key ? "var(--accent,#1668c4)" : "#3b4554",
+      weight: tab === n.key ? "700" : "600",
+      bar: tab === n.key ? "var(--accent,#1668c4)" : "transparent",
+      barH: tab === n.key ? "18px" : "0px",
+      iconColor: tab === n.key ? "var(--accent,#1668c4)" : "#8a96a6"
+    }));
+
+    // ===== account sections (profile dropdown + sidebar group) =====
+    const ACC = {
+      profile: NAV_ICONS.profile,
+      purchases: NAV_ICONS.purchases,
+      saved: '<path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/>',
+      tickets: '<path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+      identity: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M13 10h5M13 14h4M5.5 16a3 3 0 0 1 6 0"/>',
+      security: '<path d="M12 3l7 3v5.5c0 4.2-2.9 7.4-7 8.5-4.1-1.1-7-4.3-7-8.5V6l7-3z"/>',
+      banks: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
+      referral: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'
+    };
+    const accountNav = [
+      { key:"tickets", label:"پیام به پشتیبانی" }
+    ].map(n => ({ label:n.label, iconSvg:this._svg(ACC[n.key],19), onClick:()=>this.setState({ tab:n.key }),
+      bg: tab===n.key?"#eef4fb":"transparent", color: tab===n.key?"var(--accent,#1668c4)":"#3b4554", weight: tab===n.key?"700":"600",
+      bar: tab===n.key?"var(--accent,#1668c4)":"transparent", barH: tab===n.key?"18px":"0px", iconColor: tab===n.key?"var(--accent,#1668c4)":"#8a96a6" }));
+    const profileMenu = [
+      { key:"purchases", label:"سفارش‌های من" }, { key:"tickets", label:"پیام به پشتیبانی (تیکت)" }
+    ].map(m => ({ label:m.label, icon:this._svg(ACC[m.key],18), badge:m.badge||"", hasBadge:!!m.badge,
+      onClick:()=>this.setState({ tab:m.key, menuOpen:false }) }));
+    const savedFlights = [
+      { route:"تهران ← مشهد", airline:"blujet", date:"۲۰ تیر ۱۴۰۵", time:"۰۹:۳۰", price:"۱٬۹۵۰٬۰۰۰", code:"IR-334" },
+      { route:"تهران ← کیش", airline:"قشم‌ایر", date:"۲۵ تیر ۱۴۰۵", time:"۱۵:۳۰", price:"۲٬۱۰۰٬۰۰۰", code:"EP-410" }
+    ].map(f => ({ ...f, onBook:()=>this.toast("در حال انتقال به رزرو "+f.route+" …"), onRemove:()=>this.toast("از نشان‌شده‌ها حذف شد") }));
+    const supportTickets = [
+      { id:"TK-2041", subject:"مشکل در دانلود بلیط پرواز IR-651", status:"پاسخ داده شد", statusColor:"#1f8a5b", statusBg:"#e7f6ee", last:"پشتیبانی: فایل بلیط اصلاح شد و مجدداً از بخش سفرها قابل دانلود است.", date:"۸ تیر ۱۴۰۵ · ۱۴:۱۰" },
+      { id:"TK-2038", subject:"سوال درباره مدت زمان استرداد وجه", status:"در حال بررسی", statusColor:"#1668c4", statusBg:"#eef4fb", last:"شما: مبلغ استرداد بلیط شیراز-کیش هنوز واریز نشده است.", date:"۵ تیر ۱۴۰۵ · ۱۰:۲۲" }
+    ].map(t => ({ ...t, onOpen:()=>this.toast("گفت‌وگوی تیکت "+t.id+" باز شد") }));
+    const identitySteps = [
+      { label:"اطلاعات هویتی (نام، کد ملی، تاریخ تولد)", hint:"از پروفایل شما تکمیل شده است", done:true },
+      { label:"بارگذاری تصویر کارت ملی", hint:"تصویر واضح پشت و روی کارت ملی", done:false },
+      { label:"تصویر سلفی همراه کارت ملی", hint:"چهره و کارت ملی هم‌زمان دیده شود", done:false }
+    ].map((s,i) => ({ label:s.label, hint:s.hint, icon: s.done ? "✓" : String(i+1).replace(/[0-9]/g,d=>"۰۱۲۳۴۵۶۷۸۹"[d]),
+      dotBg: s.done ? "#1f8a5b" : "#cbd5e1", border: s.done ? "#bfe6cf" : "#eef1f5", bg: s.done ? "#f4fbf7" : "#fff", showUpload: !s.done, doneTag: s.done }));
+    const sessions = [
+      { device:"کروم · ویندوز ۱۱", place:"تهران، ایران", time:"هم‌اکنون", current:true, icon:this._svg('<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',18) },
+      { device:"اپلیکیشن blujet · اندروید", place:"تهران، ایران", time:"دیروز ۱۹:۳۰", current:false, icon:this._svg('<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>',18) }
+    ].map(s => ({ ...s, other:!s.current, onEnd:()=>this.toast("دستگاه از حساب خارج شد") }));
+    const bankCards = [
+      { bank:"بانک ملت", card:"۶۱۰۴ ۳۳۷۱ •••• ۴۵۲۱", sheba:"۰۶۰۱۲۰•••۴۵۲۱", short:"ملت", brandBg:"#d6336c", isDefault:true, bg:"#fbfdff" },
+      { bank:"بانک سامان", card:"۶۲۱۹ ۸۶۱۹ •••• ۷۷۳۰", sheba:"۳۳۰۵۶۰•••۷۷۳۰", short:"سامان", brandBg:"#1c7ed6", isDefault:false, bg:"#fff" }
+    ];
+    const invitedFriends = [
+      { initials:"رم", name:"رضا مرادی", joined:"عضویت: ۲ تیر ۱۴۰۵", status:"رزرو انجام شد", statusColor:"#1f8a5b", statusBg:"#e7f6ee" },
+      { initials:"سک", name:"سمیرا کریمی", joined:"عضویت: ۲۸ خرداد ۱۴۰۵", status:"رزرو انجام شد", statusColor:"#1f8a5b", statusBg:"#e7f6ee" },
+      { initials:"آه", name:"آرش هاشمی", joined:"عضویت: ۱۰ تیر ۱۴۰۵", status:"در انتظار اولین رزرو", statusColor:"#9a6a16", statusBg:"#fff8ec" }
+    ];
+    return {
+      navItems, accountNav, profileMenu,
+      headerPhone: "۰۹۱۲ ۳۴۵ ۶۷۸۹",
+      pointsChipFa: faNum(myPoints),
+      goWallet: () => this.setState({ tab:"wallet", menuOpen:false }),
+      goSaved: () => this.setState({ tab:"saved", menuOpen:false }),
+      goClub: () => this.setState({ tab:"club", menuOpen:false }),
+      goSecurity: () => this.setState({ tab:"security" }),
+      copyWallet: (e) => { if(e&&e.stopPropagation) e.stopPropagation(); this.toast("مبلغ کیف پول کپی شد ✓"); },
+      isSaved: tab==="saved", isTickets: tab==="tickets", isIdentity: tab==="identity", isSecurity: tab==="security", isBanks: tab==="banks", isReferral: tab==="referral",
+      savedFlights, noSaved: savedFlights.length===0,
+      supportTickets, newTicket: () => this.toast("فرم تیکت جدید باز شد ✓"),
+      identitySteps, submitIdentity: () => this.toast("مدارک برای بررسی ارسال شد ✓"), uploadDoc: () => this.toast("فایل با موفقیت بارگذاری شد ✓"),
+      twofa: this.state.twofa, toggle2fa: () => this.setState(s=>({ twofa:!s.twofa })), twofaBg: this.state.twofa?"#1f8a5b":"#cbd5e1", twofaKnob: this.state.twofa?"translateX(20px)":"translateX(0)",
+      savePassword: () => this.toast("رمز عبور با موفقیت تغییر کرد ✓"),
+      sessions,
+      bankCards, addBank: () => this.toast("حساب بانکی جدید ثبت شد ✓"),
+      referralCode: "NEGAR-4152", copyReferral: () => this.toast("کد معرف کپی شد ✓"), inviteFriend: () => this.toast("لینک دعوت آمادهٔ اشتراک‌گذاری شد ✓"),
+      invitedFriends,
+      saveProfile: () => this.toast("اطلاعات حساب ذخیره شد ✓"), addPax: () => this.toast("فرم افزودن مسافر باز شد ✓"),
+      toast: this.state.toast, hasToast: !!this.state.toast,
+      savePax: () => { this.setState({ addFormOpen: false }); this.toast("اطلاعات مسافر ذخیره شد ✓"); },
+      isProfile: tab === "profile",
+      isPurchases: tab === "purchases",
+      isRefund: tab === "refund",
+      isWallet: tab === "wallet",
+      isClub: tab === "club",
+      logoutIcon: this._svg('<path d="M9 21H5.5A1.5 1.5 0 0 1 4 19.5v-15A1.5 1.5 0 0 1 5.5 3H9"/><path d="m15 17 5-5-5-5"/><path d="M20 12H9"/>', 19),
+      clubBenefits: [
+        { iconSvg: this._svg('<path d="m6 15 6-6 6 6"/><path d="m6 9 6-6 6 6"/>', 22), title: "ارتقای رایگان به بیزنس", desc: "در پروازهای منتخب" },
+        { iconSvg: this._svg('<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>', 22), title: "تا ۵٪ کش‌بک بیشتر", desc: "روی هر خرید بلیط" },
+        { iconSvg: this._svg('<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>', 22), title: "پذیرش اختصاصی فرودگاه", desc: "بدون صف، سریع‌تر" },
+        { iconSvg: this._svg('<path d="m12 3 2.6 5.3 5.9.9-4.2 4.1 1 5.8L12 16.6 6.7 19.2l1-5.8L3.5 9.2l5.9-.9z"/>', 22), title: "۲ برابر امتیاز", desc: "در فصل‌های پرسفر" }
+      ],
+      myPointsFa: faNum(myPoints),
+      cardProgress: Math.min(100, Math.round(myPoints / THRESH * 100)) + "%",
+      cardStatusLabel: csm.label, cardStatusColor: csm.c, cardStatusBg: csm.bg,
+      cardIssued: cIssued,
+      myCardNo: (myReq && myReq.cardNo) || (meMember && meMember.cardNo) || "—",
+      myCardTier: CTIER[(meMember && meMember.level) || (myReq && myReq.level) || "gold"],
+      showCardTracker: !!myReq,
+      cardSteps,
+      canRequestCard: cEligible && !myReq && !cIssued,
+      eligibleCardLabel: "کارت " + (CTIER[SD2 ? SD2.levelForPoints(myPoints) : "gold"] || "طلایی"),
+      eligibleIcon: this._svg('<path d="m12 3 2.6 5.3 5.9.9-4.2 4.1 1 5.8L12 16.6 6.7 19.2l1-5.8L3.5 9.2l5.9-.9z"/>', 22),
+      sendIcon: this._svg('<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/>', 18),
+      cardLocked: !cEligible && !myReq && !cIssued,
+      requestCard: () => {
+        if (!SD2) return;
+        const id = "CR-" + (SD2.getCardRequests().length + 502);
+        SD2.addCardRequest({
+          id, memberId: ME_ID, name: "نگار رضایی", level: SD2.levelForPoints(myPoints), points: myPoints,
+          date: "امروز", status: "submitted", assignedTo: null, cardNo: null,
+          history: [ { step:"submitted", label:"رسیدن به حد امتیاز و ثبت درخواست صدور کارت", at:"امروز" } ]
+        });
+        SD2.updateClubMember(ME_ID, { cardStatus: "review" });
+        this.toast("درخواست صدور کارت عضویت ثبت و برای ادمین ارسال شد ✓");
+      },
+      addFormOpen: this.state.addFormOpen,
+      toggleAddForm: () => this.setState(s => ({ addFormOpen: !s.addFormOpen })),
+      goRefund: () => this.setState({ tab: "refund" }),
+      goProfile: () => this.setState({ tab: "profile" }),
+      menuOpen: this.state.menuOpen,
+      menuBtnBg: this.state.menuOpen ? "#f4f7fb" : "#fff",
+      menuBtnBorder: this.state.menuOpen ? "var(--accent,#1668c4)" : "#e6eaf0",
+      menuChevron: this.state.menuOpen ? "rotate(180deg)" : "rotate(0deg)",
+      toggleMenu: () => this.setState(s => ({ menuOpen: !s.menuOpen })),
+      closeMenu: () => this.setState({ menuOpen: false }),
+      menuLinks: [
+        { key: "purchases", label: "سفرها", icon: this._svg(NAV_ICONS.purchases, 18), color: "#16202e", iconColor: "#5a6678" },
+        { key: "wallet", label: "کیف پول و امتیاز", icon: this._svg(NAV_ICONS.wallet, 18), color: "#16202e", iconColor: "#5a6678" },
+        { key: "logout", label: "خروج از حساب", icon: this._svg('<path d="M9 21H5.5A1.5 1.5 0 0 1 4 19.5v-15A1.5 1.5 0 0 1 5.5 3H9"/><path d="m15 17 5-5-5-5"/><path d="M20 12H9"/>', 18), color: "#e5484d", iconColor: "#e5484d" }
+      ].map(m => ({ label: m.label, icon: m.icon, color: m.color, iconColor: m.iconColor,
+        onClick: () => {
+          if (m.key === "logout") { this.doLogout(); return; }
+          this.setState({ tab: m.key, menuOpen: false });
+        } })),
+      myRefunds, hasRefunds: myRefunds.length > 0, noRefunds: myRefunds.length === 0,
+      activeRefundCount: (() => { const n = myRefunds.filter(r => r.status !== "paid").length; return String(n).replace(/[0-9]/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]); })(),
+      submitRefund: () => {
+        if (!window.SiteData) return;
+        const n = window.SiteData.getRefunds().length + 1044;
+        window.SiteData.addRefund({
+          id: "RF-" + n, ticket: "AS-" + (90000 + n), passenger: "نگار رضایی",
+          route: "تهران ← مشهد", date: "امروز", amount: "۲٬۸۸۴٬۰۰۰", status: "submitted",
+          history: [ { step:"submitted", label:"ثبت درخواست توسط مشتری", at:"امروز" } ]
+        });
+        this.toast("درخواست استرداد ثبت شد ✓");
+      },
+      profileFields: [
+        { label: "نام و نام خانوادگی", value: "نگار رضایی", dir:"rtl" },
+        { label: "نام لاتین", value: "NEGAR REZAEI", dir:"ltr" },
+        { label: "کد ملی", value: "۰۰۱۲۳۴۵۶۷۸", dir:"ltr" },
+        { label: "تاریخ تولد", value: "۱۳۷۲/۰۵/۱۴", dir:"ltr" },
+        { label: "شماره موبایل", value: "۰۹۱۲۳۴۵۶۷۸۹", dir:"ltr" },
+        { label: "ایمیل", value: "negar@email.com", dir:"ltr" },
+        { label: "جنسیت", value: "زن", dir:"rtl" },
+        { label: "شماره گذرنامه", value: "K48291065 · اعتبار تا ۱۴۰۸", dir:"ltr" },
+        { label: "آدرس", value: "تهران، سعادت‌آباد، خیابان سرو غربی، پلاک ۲۴", dir:"rtl" },
+        { label: "تاریخ عضویت", value: "مهر ۱۴۰۲", dir:"rtl" }
+      ],
+      profileStats: [
+        { label: "سفرهای انجام‌شده", value: "۱۸", icon: "✈", accent: "#1668c4", bg: "#eef4fb" },
+        { label: "امتیاز باشگاه", value: "۱۲٬۴۵۰", icon: "★", accent: "#caa53a", bg: "#fdf6e3" },
+        { label: "موجودی کیف پول", value: "۲٬۴۵۰٬۰۰۰", icon: "👛", accent: "#1f8a5b", bg: "#e9f6ef" },
+        { label: "مسافران ذخیره‌شده", value: "۳", icon: "👥", accent: "#7c5cd6", bg: "#f1edfb" }
+      ],
+      profileCompletion: "۸۵٪",
+      profileCompletionW: "85%",
+      savedPax: [
+        { initials: "مر", name: "محمد رضایی", meta: "MOHAMMAD REZAEI · A22113344" },
+        { initials: "سا", name: "سارا احمدی", meta: "SARA AHMADI · B99887766" },
+        { initials: "کر", name: "کیان رضایی (کودک)", meta: "KIAN REZAEI · C55667788" }
+      ],
+      purchases: this._purchData().map((p, i) => ({ ...p, onOpen: () => this.setState({ detailIdx: i }), onDownload: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this._downloadTicket(p); }, onCancelRow: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.setState({ cancelIdx: i, cancelDone: false }); } })),
+      detailOpen: this.state.detailIdx !== null,
+      detail: this.state.detailIdx !== null ? (() => {
+        const P = this._purchData()[this.state.detailIdx];
+        return { ...P, depCode: P.route.split(" ← ")[0], arrCode: P.route.split(" ← ")[1], onDownload: () => this._downloadTicket(P), onCancel: () => this.setState({ detailIdx: null, cancelIdx: this.state.detailIdx, cancelDone: false }) };
+      })() : {},
+      closeDetail: () => this.setState({ detailIdx: null }),
+      stopDetail: (e) => { if (e && e.stopPropagation) e.stopPropagation(); },
+      // ===== جریان کنسلی/استرداد =====
+      cancelOpen: this.state.cancelIdx !== null,
+      cancelDone: this.state.cancelDone,
+      cancelPending: !this.state.cancelDone,
+      cancel: this.state.cancelIdx !== null ? (() => {
+        const P = this._purchData()[this.state.cancelIdx];
+        const info = this._cancelInfo(P);
+        return { ...P, ...info, depCode: P.route.split(" ← ")[0], arrCode: P.route.split(" ← ")[1],
+          onConfirm: () => { const ibanOk = (this.state.refundIban || "").replace(/[^\d]/g, "").length >= 20; if (info.allowed && ibanOk) { this._submitCancel(P, info); this.setState({ cancelDone: true }); } else if (!ibanOk) { this.toast("شماره شبای ۲۴ رقمی معتبر وارد کنید"); } else { this.toast("این بلیط قابل استرداد نیست"); } },
+          confirmBg: (info.allowed && (this.state.refundIban || "").replace(/[^\d]/g, "").length >= 20) ? "#e5484d" : "#dca9a9",
+          confirmCursor: (info.allowed && (this.state.refundIban || "").replace(/[^\d]/g, "").length >= 20) ? "pointer" : "not-allowed" };
+      })() : { rules: [] },
+      closeCancel: () => this.setState({ cancelIdx: null, cancelDone: false }),
+      refundIban: this.state.refundIban || "",
+      onRefundIban: (e) => this.setState({ refundIban: e.target.value.replace(/[^\d]/g, "").slice(0, 24) }),
+      ibanBorder: ((this.state.refundIban || "").replace(/[^\d]/g, "").length >= 20) ? "var(--accent,#1668c4)" : "#e3e8ef",
+      cancelToRefund: () => this.setState({ cancelIdx: null, cancelDone: false, tab: "refund" }),
+      stopCancel: (e) => { if (e && e.stopPropagation) e.stopPropagation(); },
+      // ===== بخش استرداد بلیط (بازطراحی‌شده) =====
+      eligibleRefunds: (() => {
+        return this._purchData().map((p, i) => ({ p, i })).filter(x => x.p.upcoming).map(({ p, i }) => {
+          const info = this._cancelInfo(p);
+          return {
+            route: p.route, dateLine: p.date + " · ساعت " + p.time, code: p.code, airline: p.airline,
+            depCode: p.route.split(" ← ")[0], arrCode: p.route.split(" ← ")[1],
+            timeLeft: info.timeLeft, penaltyPct: info.penaltyPct, price: p.price,
+            refundable: info.refundable, onStart: () => this.setState({ cancelIdx: i, cancelDone: false })
+          };
+        });
+      })(),
+      noEligibleRefunds: this._purchData().filter(p => p.upcoming).length === 0,
+      eligibleCount: (() => { const n = this._purchData().filter(p => p.upcoming).length; return String(n).replace(/[0-9]/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]); })(),
+      refundables: this._refundList(),
+      walletBalanceFa: this._fmtT(this._balance()),
+      openTopup: () => this.setState({ topupOpen: true, topupAmount: "", topupMethod: "gateway", topupDone: false, topupProcessing: false }),
+      closeTopup: () => this.setState({ topupOpen: false, topupDone: false, topupProcessing: false }),
+      doLogout: () => this.doLogout(),
+      logoutConfirm: this.state.logoutConfirm,
+      confirmLogout: () => this.confirmLogout(),
+      cancelLogout: () => this.setState({ logoutConfirm: false }),
+      stopTopup: (e) => { if (e && e.stopPropagation) e.stopPropagation(); },
+      topupOpen: this.state.topupOpen, topupDone: this.state.topupDone, topupNotDone: !this.state.topupDone,
+      topupProcessing: this.state.topupProcessing,
+      topupForm: !this.state.topupDone && !this.state.topupProcessing,
+      topupAmount: this.state.topupAmount, onTopupAmount: (e) => this.setState({ topupAmount: (e.target.value || "").replace(/[^\d]/g, "") }),
+      topupAmountFa: this._fmtT((this.state.topupAmount || "0").replace(/[^\d]/g, "") || 0),
+      topupNewBalanceFa: this._fmtT(this._balance() + (parseInt((this.state.topupAmount || "").replace(/[^\d]/g, ""), 10) || 0)),
+      topupPresets: [200000, 500000, 1000000, 2000000].map(v => ({ label: this._fmtT(v), onPick: () => this.setState({ topupAmount: String(v) }) })),
+      pickGateway: () => this.setState({ topupMethod: "gateway" }), pickCard: () => this.setState({ topupMethod: "card" }),
+      gatewayBorder: this.state.topupMethod === "gateway" ? "var(--accent,#1668c4)" : "#e3e8ef", gatewayBg: this.state.topupMethod === "gateway" ? "#eaf2fb" : "#fff",
+      cardBorder: this.state.topupMethod === "card" ? "var(--accent,#1668c4)" : "#e3e8ef", cardBg: this.state.topupMethod === "card" ? "#eaf2fb" : "#fff",
+      confirmTopup: () => this._confirmTopup(),
+      topupBtnBg: ((parseInt((this.state.topupAmount || "").replace(/[^\d]/g, ""), 10) || 0) >= 10000) ? "var(--accent,#1668c4)" : "#c7d2e0",
+      topupBtnColor: ((parseInt((this.state.topupAmount || "").replace(/[^\d]/g, ""), 10) || 0) >= 10000) ? "#fff" : "#8a96a6",
+      pointsLog: [
+        { title: "خرید بلیط تهران-دبی", date: "۱۲ تیر ۱۴۰۵", amount: "+ ۱۹۰", color: "#1f8a5b" },
+        { title: "استفاده از امتیاز در خرید", date: "۲ خرداد ۱۴۰۵", amount: "− ۵۰۰", color: "#e5484d" },
+        { title: "هدیه عضویت طلایی", date: "۱ فروردین ۱۴۰۵", amount: "+ ۲٬۰۰۰", color: "#1f8a5b" }
+      ]
+    };
+  }
+  _refundList() {
+    const sel = this.state.refundSel ?? 0;
+    const items = [
+      { route: "تهران ← استانبول", date: "۲۸ مرداد ۱۴۰۵", code: "AS-90155", price: "۶٬۸۰۰٬۰۰۰" },
+      { route: "تهران ← دبی", date: "۱۲ تیر ۱۴۰۵", code: "AS-88421", price: "۴٬۱۲۰٬۰۰۰" }
+    ];
+    return items.map((r, i) => ({
+      ...r,
+      onSelect: () => this.setState({ refundSel: i }),
+      border: i === sel ? "var(--accent,#1668c4)" : "#eef1f5",
+      bg: i === sel ? "#f3f7fc" : "#fff",
+      dot: i === sel ? "var(--accent,#1668c4)" : "#ccd3dd",
+      dotFill: i === sel ? "var(--accent,#1668c4)" : "transparent"
+    }));
+  }
+}
+</script>
+</body>
+</html>

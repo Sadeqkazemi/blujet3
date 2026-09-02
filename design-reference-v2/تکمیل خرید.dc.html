@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&amp;family=Roboto+Mono:wght@400&amp;display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+  a{ color:#1668c4; } a:hover{ color:#0d3b66; }
+  @keyframes bjpop { 0%{ transform:scale(.6); opacity:0; } 70%{ transform:scale(1.08); } 100%{ transform:scale(1); opacity:1; } }
+  @media print {
+    body * { visibility: hidden; }
+    #bj-ticket, #bj-ticket * { visibility: visible; }
+    #bj-ticket { position: fixed; inset: 0; margin: 24px auto; max-width: 430px; }
+    @page { size: A5 landscape; margin: 10mm; }
+  }
+</style>
+<script src="./site-data.js"></script>
+</helmet>
+
+<div dir="{{ pageDir }}" style="font-family:Vazirmatn,sans-serif; background:#f6f8fb; color:#16202e; min-height:100vh; display:flex; flex-direction:column; --accent:#1668c4;">
+
+  <!-- ============ HEADER ============ -->
+  <header style="position:sticky; top:0; z-index:50;">
+    <div style="background:{{ headerBarBg }}; border-bottom:{{ headerBorderB }}; box-shadow:0 2px 12px -8px rgba(13,38,102,.25);">
+      <div style="max-width:1180px; margin:0 auto; padding:0 26px; height:{{ headerH }}; display:flex; align-items:center; justify-content:space-between;">
+        <span onClick="{{ toggleMobileMenu }}" style="display:{{ hamburgerDisplay }}; width:40px; height:40px; align-items:center; justify-content:center; border-radius:10px; cursor:pointer; flex:none; font-size:17px; color:{{ hamburgerColor }};">☰</span>
+        <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:9px; text-decoration:none; color:#16202e; flex:none;">
+          <div style="width:38px; height:38px; border-radius:10px; background:{{ logoSquareBg }}; display:flex; align-items:center; justify-content:center; color:{{ logoIconColor }}; font-size:18px; flex:none;">✈</div>
+          <span style="font-weight:900; font-size:21px; letter-spacing:-.5px; color:{{ logoTextColor }}; line-height:1;">blujet</span>
+        </a>
+        <nav style="display:{{ navDisplay }}; gap:{{ navGap }}; font-size:{{ navFontSize }}; color:#3b4554; font-weight:600; height:100%; align-items:center; white-space:nowrap; flex-wrap:nowrap;">
+          <a href="صفحه اصلی.dc.html" style="color:var(--accent,#1668c4); height:100%; display:flex; align-items:center; border-bottom:3px solid var(--accent,#1668c4); cursor:pointer; text-decoration:none;">{{ navFlights }}</a>
+          <a href="مقاصد.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">{{ navDestinations }}</a>
+          <a href="باشگاه مشتریان.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">{{ navLoyalty }}</a>
+          <a href="پشتیبانی.dc.html" style="cursor:pointer; text-decoration:none; color:#3b4554;">{{ navSupport }}</a>
+        </nav>
+        <div style="display:{{ navDisplay }}; align-items:center; gap:10px;">
+          <div style="position:relative;">
+            <span onClick="{{ toggleLang }}" style="display:flex; align-items:center; gap:6px; cursor:pointer; color:#5a6678; border:1.5px solid #e2e7ee; border-radius:20px; padding:6px 12px; font-size:12.5px; font-weight:700;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.5 2.5 4 5.7 4 9s-1.5 6.5-4 9c-2.5-2.5-4-5.7-4-9s1.5-6.5 4-9z"></path></svg>{{ langLabel }}</span>
+            <sc-if value="{{ langOpen }}" hint-placeholder-val="{{false}}">
+              <div onClick="{{ toggleLang }}" style="position:fixed; inset:0; z-index:120;"></div>
+              <div style="position:absolute; top:44px; left:0; width:150px; background:#fff; border:1px solid #e6eaf0; border-radius:14px; box-shadow:0 20px 50px -16px rgba(13,38,64,.35); z-index:130; overflow:hidden; padding:6px;">
+                <div onClick="{{ setLangEn }}" style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:9px 11px; border-radius:9px; font-size:12.5px; font-weight:600; color:#16202e; cursor:pointer;">English<span style="color:var(--accent,#1668c4); font-weight:900;">{{ enCheck }}</span></div>
+                <div onClick="{{ setLangFa }}" style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:9px 11px; border-radius:9px; font-size:12.5px; font-weight:600; color:#16202e; cursor:pointer;">FA<span style="color:var(--accent,#1668c4); font-weight:900;">{{ faCheck }}</span></div>
+                <div onClick="{{ setLangAr }}" style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:9px 11px; border-radius:9px; font-size:12.5px; font-weight:600; color:#16202e; cursor:pointer;">العربية<span style="color:var(--accent,#1668c4); font-weight:900;">{{ arCheck }}</span></div>
+              </div>
+            </sc-if>
+          </div>
+          <sc-if value="{{ loggedIn }}" hint-placeholder-val="{{true}}">
+          <div style="position:relative;">
+            <div onClick="{{ toggleNotif }}" style="width:42px; height:42px; border-radius:50%; background:#f3f5f8; display:flex; align-items:center; justify-content:center; color:#5a6678; font-size:15.5px; position:relative; cursor:pointer;">🔔<span style="position:absolute; top:5px; left:8px; min-width:16px; height:16px; padding:0 3px; box-sizing:border-box; border-radius:8px; background:#e5484d; border:1.5px solid #fff; color:#fff; font-size:9px; font-weight:800; display:flex; align-items:center; justify-content:center; line-height:1;">2</span></div>
+            <sc-if value="{{ notifOpen }}" hint-placeholder-val="{{false}}">
+              <div onClick="{{ toggleNotif }}" style="position:fixed; inset:0; z-index:120;"></div>
+              <div style="position:absolute; top:52px; left:0; width:340px; background:#fff; border:1px solid #e6eaf0; border-radius:14px; box-shadow:0 20px 50px -16px rgba(13,38,64,.35); z-index:130; overflow:hidden;">
+                <div style="padding:11px 12px; border-bottom:1px solid #eef1f5; display:flex; align-items:center; justify-content:space-between;"><span style="font-size:12.5px; font-weight:800; color:#0d2640;">{{ notifTitle }}</span><span style="font-size:10px; font-weight:700; color:var(--accent,#1668c4); background:#eef4fb; padding:2px 7px; border-radius:12px;">{{ notifNewLabel }}</span></div>
+                <sc-for list="{{ notifs }}" as="n" hint-placeholder-count="3">
+                  <div style="display:flex; gap:9px; padding:11px 12px; border-bottom:1px solid #f4f6fa; background:{{ n.bg }};">
+                    <span style="width:34px; height:34px; border-radius:10px; background:#f3f5f8; display:flex; align-items:center; justify-content:center; font-size:14.5px; flex:none;">{{ n.icon }}</span>
+                    <div style="min-width:0;"><div style="font-size:11.5px; font-weight:700; color:#16202e;">{{ n.title }}</div><div style="font-size:11px; color:#6b7787; margin-top:2px; line-height:1.7;">{{ n.body }}</div><div style="font-size:9.5px; color:#9aa4b2; margin-top:4px;">{{ n.time }}</div></div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+          </sc-if>
+          <sc-if value="{{ notLoggedIn }}" hint-placeholder-val="{{false}}">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <a href="ورود و ثبتنام.dc.html" style="display:flex; align-items:center; gap:7px; padding:7px 15px; border:1.5px solid #d5e1f0; color:#0d2640; border-radius:10px; font-size:12.5px; white-space:nowrap; flex:none; font-weight:700; cursor:pointer; text-decoration:none;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg>{{ btnLoginSignup }}</a>
+              <a href="باشگاه مشتریان.dc.html" style="padding:8px 18px; background:var(--accent,#1668c4); color:#fff; border-radius:10px; font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap; flex:none; text-decoration:none;">{{ btnJoinClub }}</a>
+            </div>
+          </sc-if>
+          <sc-if value="{{ loggedIn }}" hint-placeholder-val="{{true}}">
+          <div style="position:relative;">
+            <div onClick="{{ toggleUserMenu }}" style="display:flex; align-items:center; gap:8px; background:{{ userChipBg }}; border:{{ userChipBorder }}; padding:4px 10px 4px 7px; border-radius:28px; cursor:pointer; position:relative;">
+              <div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,var(--accent,#1668c4),#0d3b66); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:11.5px; position:relative;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-5.33 0-9 2.69-9 6v2h18v-2c0-3.31-3.67-6-9-6z"></path></svg><sc-if value="{{ profileIncomplete }}" hint-placeholder-val="{{false}}"><span style="position:absolute; top:-2px; right:-2px; width:11px; height:11px; border-radius:50%; background:#e5484d; border:1.5px solid #fff;"></span></sc-if></div>
+              <div style="line-height:1.35;"><div style="font-size:12px; font-weight:700; color:{{ userChipTextColor }};">{{ userDisplayName }}</div></div>
+              <span style="font-size:8px; color:#9aa4b2; margin-right:2px;">▼</span>
+            </div>
+            <sc-if value="{{ userMenuOpen }}" hint-placeholder-val="{{false}}">
+              <div onClick="{{ toggleUserMenu }}" style="position:fixed; inset:0; z-index:120;"></div>
+              <div style="position:absolute; top:54px; left:0; width:320px; background:#fff; border:1px solid #e6eaf0; border-radius:14px; box-shadow:0 20px 50px -16px rgba(13,38,64,.35); z-index:130; overflow:hidden;">
+                <div style="padding:12px; background:linear-gradient(135deg,#0d2640,#16406e); color:#fff;">
+                  <div style="display:flex; align-items:center; gap:10px;"><div style="width:46px; height:46px; border-radius:50%; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13.5px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-5.33 0-9 2.69-9 6v2h18v-2c0-3.31-3.67-6-9-6z"></path></svg></div><div style="line-height:1.5;"><div style="font-size:13.5px; font-weight:800;">{{ userDisplayName }}</div><div style="font-size:10.5px; color:#caa53a; font-weight:700;">{{ userTierLabel }}</div></div></div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-top:14px; background:rgba(255,255,255,.1); border-radius:10px; padding:7px 11px;"><span style="font-size:11px; color:#aac4e2;">{{ loyaltyPointsLabel }}</span><span style="font-size:12.5px; font-weight:800;">{{ uPoints }}</span></div>
+                </div>
+                <sc-if value="{{ profileIncomplete }}" hint-placeholder-val="{{false}}">
+                  <a href="پنل کاربر.dc.html" style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:#fff7ed; border-bottom:1px solid #f6dcbb; text-decoration:none; color:#9a5b16; font-size:11.5px; font-weight:700;"><span style="width:16px; height:16px; border-radius:50%; background:#e5484d; color:#fff; display:flex; align-items:center; justify-content:center; font-size:10px; flex:none;">!</span>{{ completeProfileLabel }}</a>
+                </sc-if>
+                <div style="padding:5px;">
+                  <a href="پنل کاربر.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);">👤</span>{{ profileLabel }}</a>
+                  <a href="مدیریت رزرو.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);">↺</span>{{ refundsLabel }}</a>
+                  <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#e5484d; text-decoration:none; font-weight:600;"><span>↩</span>{{ signOutLabel }}</a>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+          </sc-if>
+        </div>
+        <sc-if value="{{ hamburgerShown }}" hint-placeholder-val="{{false}}">
+        <div style="display:flex; align-items:center; gap:2px;">
+          <span onClick="{{ toggleLang }}" style="display:flex; align-items:center; gap:3px; height:36px; padding:0 9px; border-radius:20px; background:rgba(255,255,255,.16); color:#fff; cursor:pointer; font-size:11.5px; font-weight:800;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.5 2.5 4 5.7 4 9s-1.5 6.5-4 9c-2.5-2.5-4-5.7-4-9s1.5-6.5 4-9z"></path></svg>{{ langLabel }}</span>
+          <sc-if value="{{ notLoggedIn }}" hint-placeholder-val="{{false}}">
+            <a href="ورود و ثبتنام.dc.html" style="width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; text-decoration:none;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg></a>
+          </sc-if>
+          <sc-if value="{{ loggedIn }}" hint-placeholder-val="{{true}}">
+          <div style="position:relative;">
+            <span onClick="{{ toggleUserMenu }}" style="width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; cursor:pointer;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg></span>
+            <sc-if value="{{ userMenuOpen }}" hint-placeholder-val="{{false}}">
+              <div onClick="{{ toggleUserMenu }}" style="position:fixed; inset:0; z-index:120;"></div>
+              <div style="position:absolute; top:44px; {{ mobDropSide }}; width:280px; max-width:80vw; background:#fff; border:1px solid #e6eaf0; border-radius:14px; box-shadow:0 20px 50px -16px rgba(13,38,64,.35); z-index:130; overflow:hidden;">
+                <div style="padding:12px; background:linear-gradient(135deg,#0d2640,#16406e); color:#fff;">
+                  <div style="display:flex; align-items:center; gap:10px;"><div style="width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12.5px; position:relative;"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-5.33 0-9 2.69-9 6v2h18v-2c0-3.31-3.67-6-9-6z"></path></svg><sc-if value="{{ profileIncomplete }}" hint-placeholder-val="{{false}}"><span style="position:absolute; top:-2px; right:-2px; width:11px; height:11px; border-radius:50%; background:#e5484d; border:1.5px solid #0d2640;"></span></sc-if></div><div style="line-height:1.5;"><div style="font-size:12.5px; font-weight:800;">{{ userDisplayName }}</div><div style="font-size:10px; color:#caa53a; font-weight:700;">{{ userTierLabel }}</div></div></div>
+                </div>
+                <sc-if value="{{ profileIncomplete }}" hint-placeholder-val="{{false}}">
+                  <a href="پنل کاربر.dc.html" style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:#fff7ed; border-bottom:1px solid #f6dcbb; text-decoration:none; color:#9a5b16; font-size:11.5px; font-weight:700;"><span style="width:16px; height:16px; border-radius:50%; background:#e5484d; color:#fff; display:flex; align-items:center; justify-content:center; font-size:10px; flex:none;">!</span>{{ completeProfileLabel }}</a>
+                </sc-if>
+                <div style="padding:5px;">
+                  <a href="پنل کاربر.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#16202e; text-decoration:none; font-weight:600;"><span style="color:var(--accent,#1668c4);">👤</span>{{ profileLabel }}</a>
+                  <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:7px; padding:9px 11px; border-radius:9px; font-size:11.5px; color:#e5484d; text-decoration:none; font-weight:600;"><span>↩</span>{{ signOutLabel }}</a>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+          </sc-if>
+        </div>
+        </sc-if>
+      </div>
+    </div>
+  </header>
+
+  <sc-if value="{{ mobileMenuOpen }}" hint-placeholder-val="{{false}}">
+    <div style="position:fixed; inset:0; background:#fff; z-index:220; display:flex; flex-direction:column; overflow-y:auto;">
+      <div style="display:flex; align-items:center; justify-content:center; position:relative; padding:26px 20px 18px;">
+        <span style="font-size:22px; font-weight:800; color:#16202e;">{{ menuLabel }}</span>
+        <span onClick="{{ toggleMobileMenu }}" style="position:absolute; right:20px; top:22px; width:34px; height:34px; display:flex; align-items:center; justify-content:center; font-size:24px; color:#16202e; cursor:pointer;">×</span>
+      </div>
+      <div style="padding:4px 24px 0; display:flex; flex-direction:column;">
+        <a href="مقاصد.dc.html" style="padding:20px 0; text-decoration:none; color:#16202e; font-size:17px; font-weight:700;">{{ navDestinations }}</a>
+        <a href="باشگاه مشتریان.dc.html" style="padding:20px 0; text-decoration:none; color:#16202e; font-size:17px; font-weight:700; border-top:1px solid #eef1f5;">{{ navLoyalty }}</a>
+        <a href="پشتیبانی.dc.html" style="padding:20px 0; text-decoration:none; color:#16202e; font-size:17px; font-weight:700; border-top:1px solid #eef1f5; border-bottom:1px solid #eef1f5;">{{ navSupport }}</a>
+      </div>
+      <div style="margin-top:auto; padding:14px 24px 32px; display:flex; flex-direction:column; gap:6px;">
+        <a href="مدیریت رزرو.dc.html" style="display:flex; align-items:center; gap:8px; padding:10px 0; text-decoration:none; color:#16202e; font-size:14px; font-weight:700;"><span style="color:var(--accent,#1668c4);">↺</span>{{ refundsLabel }}</a>
+        <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:8px; padding:10px 0; text-decoration:none; color:#e5484d; font-size:14px; font-weight:700;"><span>↩</span>{{ signOutLabel }}</a>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isMobile }}" hint-placeholder-val="{{false}}">
+  <sc-if value="{{ notDone }}" hint-placeholder-val="{{true}}">
+  <div style="background:#fff; border-bottom:1px solid #eef1f5; padding:12px 16px; display:flex; align-items:center; gap:12px;">
+    <span onClick="{{ goBack }}" style="width:36px; height:36px; border-radius:50%; background:#f3f5f8; border:1px solid #e6eaf0; display:flex; align-items:center; justify-content:center; color:#0d2640; cursor:pointer; flex:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ backArrowPath }}"/></svg></span>
+    <span style="font-size:14px; font-weight:800; color:#16202e;">{{ completePurchaseLabel }}</span>
+  </div>
+  </sc-if>
+  </sc-if>
+
+  <sc-if value="{{ notMobile }}" hint-placeholder-val="{{true}}">
+  <sc-if value="{{ notDone }}" hint-placeholder-val="{{true}}">
+  <div style="background:#f6f9fd; border-bottom:1px solid #e8eef6;">
+    <div style="max-width: 1180px; margin: 0 auto; padding: 22px 26px 20px; display: flex; justify-content: center; position: relative">
+    <div style="position:relative; left:{{ stepBarShift }}; max-width:560px; width:100%;">
+        <div style="position:absolute; top:19px; left:30px; right:30px; height:3px; background:#e2e7ee; border-radius:2px;">
+          <div style="height:100%; width:{{ stepProgressPct }}; background:var(--accent,#1668c4); border-radius:2px; transition:width .35s ease;"></div>
+        </div>
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; position:relative;">
+          <sc-for list="{{ stepBar }}" as="sb" hint-placeholder-count="4">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:8px; min-width:74px; position:relative;">
+              <div style="width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; background:{{ sb.bg }}; color:{{ sb.color }}; border:2.5px solid {{ sb.border }}; box-shadow:{{ sb.shadow }}; transition:all .25s;"><span dangerouslySetInnerHTML="{{ sb.icon }}" style="display:flex;"></span></div>
+              <span style="font-size:11.5px; font-weight:{{ sb.labelWeight }}; color:{{ sb.labelColor }}; white-space:nowrap;">{{ sb.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+  </div>
+  </div>
+  </sc-if>
+  </sc-if>
+  <main style="flex:1; width:100%; max-width:1180px; margin:0 auto; padding:{{ mainPad }}; display:grid; grid-template-columns:{{ mainCols }}; gap:10px; align-items:stretch; overflow-x:hidden; box-sizing:border-box;">
+    <div style="display:flex; flex-direction:column; gap:15px; min-width:0;">
+
+      <section style="background:#fff; border:1px solid #eef1f5; border-radius:15px; padding:32px 18px; min-height:130px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="width:38px; height:38px; border-radius:50%; background:var(--accent,#1668c4); color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; flex:none;">✈</span>
+          <div style="line-height:1.6;">
+            <div style="font-size:16px; font-weight:800; color:#0d2640;">{{ routeLabel }}</div>
+            <div style="font-size:11.5px; color:#8a96a6; margin-top:3px;">{{ flightMeta }}</div>
+          </div>
+        </div>
+        <span style="font-size:11px; font-weight:700; color:#1f8a5b; background:#e9f6ef; border:1px solid #cdeadb; padding:6px 12px; border-radius:16px; flex:none;">{{ cabinLabel }}</span>
+      </section>
+
+      <!-- ===== STEP: PASSENGERS ===== -->
+      <sc-if value="{{ stepPax }}" hint-placeholder-val="{{true}}">
+        <section style="background:#fff; border:1px solid #eef1f5; border-radius:15px; padding:16px 17px;">
+          <div style="display:flex; align-items:center; gap:9px; margin-bottom:16px;">
+            <span style="width:30px; height:30px; border-radius:9px; background:#eef4fb; color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"></circle><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"></path><path d="M16 5a3.2 3.2 0 0 1 0 6.4"></path></svg></span>
+            <h2 style="font-size:15.5px; font-weight:800; margin:0; color:#0d2640;">{{ enterPaxDetailsLabel }}</h2>
+          </div>
+          <sc-for list="{{ paxCards }}" as="p" hint-placeholder-count="1">
+            <div style="border:1px solid #eef1f5; border-radius:13px; padding:15px; margin-bottom:12px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+                <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+                  <span style="font-size:13px; font-weight:800; color:#0d2640;">{{ p.label }}</span>
+                  <span onClick="{{ p.setDocNid }}" style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:#3b4554; cursor:pointer;"><span style="width:17px; height:17px; border-radius:50%; border:2px solid {{ p.docNidBorder }}; display:flex; align-items:center; justify-content:center;"><span style="width:8px; height:8px; border-radius:50%; background:{{ p.docNidDot }};"></span></span>{{ nationalIdLabel }}</span>
+                  <span onClick="{{ p.setDocPass }}" style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:#3b4554; cursor:pointer;"><span style="width:17px; height:17px; border-radius:50%; border:2px solid {{ p.docPassBorder }}; display:flex; align-items:center; justify-content:center;"><span style="width:8px; height:8px; border-radius:50%; background:{{ p.docPassDot }};"></span></span>{{ passportLabel }}</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:14px;">
+                  <span onClick="{{ p.triggerScan }}" style="display:flex; align-items:center; gap:5px; font-size:11.5px; font-weight:700; color:var(--accent,#1668c4); cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M20 8V5a1 1 0 0 0-1-1h-3M4 16v3a1 1 0 0 0 1 1h3M20 16v3a1 1 0 0 1-1 1h-3"></path><rect x="7" y="9" width="10" height="6" rx="1"></rect></svg>{{ scanDocumentLabel }}</span>
+                  <input type="file" accept="image/*" capture="environment" ref="{{ p.scanInputRef }}" onChange="{{ p.onScanFile }}" style="display:none;">
+                  <span onClick="{{ p.openPrev }}" style="display:flex; align-items:center; gap:5px; font-size:11.5px; font-weight:700; color:var(--accent,#1668c4); cursor:pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"></circle><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"></path></svg>{{ fromSavedPaxLabel }}</span>
+                  <sc-if value="{{ p.canRemove }}" hint-placeholder-val="{{false}}"><span onClick="{{ p.onRemove }}" style="font-size:11px; font-weight:700; color:#e5484d; cursor:pointer;">{{ removeLabel }}</span></sc-if>
+                </div>
+              </div>
+              <sc-if value="{{ p.prevOpen }}" hint-placeholder-val="{{false}}">
+                <div style="background:#f6faff; border:1px solid #dce8f7; border-radius:11px; padding:10px 12px; margin-bottom:13px;">
+                  <div style="font-size:11px; font-weight:700; color:#0d2640; margin-bottom:8px;">{{ selectSavedPaxColonLabel }}</div>
+                  <div style="display:flex; gap:7px; flex-wrap:wrap;">
+                    <sc-for list="{{ p.prevChips }}" as="c" hint-placeholder-count="3">
+                      <span onClick="{{ c.onPick }}" style="padding:6px 12px; border-radius:18px; border:1.5px solid #cfe0f2; background:#fff; color:#0d2640; font-size:11.5px; font-weight:600; cursor:pointer;" style-hover="border-color:var(--accent,#1668c4); color:var(--accent,#1668c4);">{{ c.label }}</span>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+              <div style="display:grid; grid-template-columns:{{ paxNameCols }}; gap:11px;">
+                <input value="{{ p.first }}" onInput="{{ p.onFirst }}" dir="ltr" placeholder="{{ firstNameLatinPlaceholder }}" style="width:100%; box-sizing:border-box; height:46px; border:1.5px solid #e2e7ee; border-radius:10px; background:#fff; padding:0 14px; font-size:14px; font-family:Vazirmatn,sans-serif; outline:none; text-align:right;">
+                <input value="{{ p.last }}" onInput="{{ p.onLast }}" dir="ltr" placeholder="{{ lastNameLatinPlaceholder }}" style="width:100%; box-sizing:border-box; height:46px; border:1.5px solid #e2e7ee; border-radius:10px; background:#fff; padding:0 14px; font-size:14px; font-family:Vazirmatn,sans-serif; outline:none; text-align:right;">
+                <select value="{{ p.gender }}" onChange="{{ p.onGender }}" style="width:100%; height:46px; border:1.5px solid #e2e7ee; border-radius:10px; background:#fff; padding:0 10px; font-size:13px; font-family:Vazirmatn,sans-serif; color:#5a6678; outline:none;"><option value="">{{ genderLabel }}</option><option value="female">{{ femaleLabel }}</option><option value="male">{{ maleLabel }}</option></select>
+              </div>
+              <sc-if value="{{ p.isNid }}" hint-placeholder-val="{{true}}">
+              <div style="display:grid; grid-template-columns:{{ dobGridCols }}; gap:11px; margin-top:13px; align-items:end;">
+                <div>
+                  <div style="font-size:10.5px; color:#8a96a6; margin-bottom:6px; font-weight:600;">{{ nationalIdLabel }}</div>
+                  <input value="{{ p.nid }}" onInput="{{ p.onNid }}" onBlur="{{ p.onNidBlur }}" dir="ltr" placeholder="0012345678" style="width:100%; box-sizing:border-box; height:46px; border:1.5px solid #e2e7ee; border-radius:10px; background:#fff; padding:0 14px; font-size:13px; font-family:'Roboto Mono',sans-serif; outline:none; text-align:left;">
+                </div>
+                <div>
+                  <div style="font-size:10.5px; color:#8a96a6; margin-bottom:6px; font-weight:600;">{{ dateOfBirthLabel }}</div>
+                  <div style="display:grid; grid-template-columns:1fr 1.2fr 1fr; border:1.5px solid #e2e7ee; border-radius:10px; background:#fff; overflow:hidden;">
+                    <select value="{{ p.day }}" onChange="{{ p.onDay }}" style="height:43px; border:none; background:transparent; padding:0 10px; font-size:12.5px; font-family:Vazirmatn,sans-serif; color:#5a6678; outline:none;"><option value="">{{ dayLabel }}</option><sc-for list="{{ dayOpts }}" as="o" hint-placeholder-count="5"><option value="{{ o }}">{{ o }}</option></sc-for></select>
+                    <select value="{{ p.month }}" onChange="{{ p.onMonth }}" style="height:43px; border:none; border-right:1.5px solid #eef1f5; border-left:1.5px solid #eef1f5; background:transparent; padding:0 10px; font-size:12.5px; font-family:Vazirmatn,sans-serif; color:#5a6678; outline:none;"><option value="">{{ monthLabel }}</option><sc-for list="{{ monthOpts }}" as="o" hint-placeholder-count="5"><option value="{{ o }}">{{ o }}</option></sc-for></select>
+                    <select value="{{ p.year }}" onChange="{{ p.onYear }}" style="height:43px; border:none; background:transparent; padding:0 10px; font-size:12.5px; font-family:Vazirmatn,sans-serif; color:#5a6678; outline:none;"><option value="">{{ yearLabel }}</option><sc-for list="{{ yearOpts }}" as="o" hint-placeholder-count="5"><option value="{{ o }}">{{ o }}</option></sc-for></select>
+                  </div>
+                </div>
+              </div>
+              </sc-if>
+              <sc-if value="{{ p.isPass }}" hint-placeholder-val="{{false}}">
+              <div>
+              <div style="display:grid; grid-template-columns:{{ dobGridCols }}; gap:11px; margin-top:13px;">
+                <div>
+                  <div style="font-size:10.5px; color:#8a96a6; margin-bottom:6px; font-weight:600;">{{ passportIssuingCountryLabel }}</div>
+                  <select value="{{ p.passCountry }}" onChange="{{ p.onPassCountry }}" style="width:100%; height:46px; border:1.5px solid #e2e7ee; border-radius:10px; background:#fff; padding:0 10px; font-size:13px; font-family:Vazirmatn,sans-serif; color:#16202e; outline:none;"><sc-for list="{{ countryOpts }}" as="o" hint-placeholder-count="4"><option value="{{ o }}">{{ o }}</option></sc-for></select>
+                </div>
+                <div>
+                  <div style="font-size:10.5px; color:#8a96a6; margin-bottom:6px; font-weight:600;">{{ birthCountryLabel }}</div>
+                  <select value="{{ p.birthCountry }}" onChange="{{ p.onBirthCountry }}" style="width:100%; height:46px; border:1.5px solid #e2e7ee; border-radius:10px; background:#fff; padding:0 10px; font-size:13px; font-family:Vazirmatn,sans-serif; color:#16202e; outline:none;"><sc-for list="{{ countryOpts }}" as="o" hint-placeholder-count="4"><option value="{{ o }}">{{ o }}</option></sc-for></select>
+                </div>
+              </div>
+              <div style="display:grid; grid-template-columns:{{ passportDobExpCols }}; gap:11px; margin-top:11px; align-items:end;">
+                <div>
+                  <div style="font-size:10.5px; color:#8a96a6; margin-bottom:6px; font-weight:600;">{{ dateOfBirthLabel }}</div>
+                  <div style="display:grid; grid-template-columns:1fr 1.2fr 1fr; border:1.5px solid #e2e7ee; border-radius:10px; background:#fff; overflow:hidden;">
+                    <select value="{{ p.day }}" onChange="{{ p.onDay }}" style="height:43px; border:none; background:transparent; padding:0 6px; font-size:12px; font-family:Vazirmatn,sans-serif; color:#5a6678; outline:none;"><option value="">{{ dayLabel }}</option><sc-for list="{{ dayOpts }}" as="o" hint-placeholder-count="5"><option value="{{ o }}">{{ o }}</option></sc-for></select>
+                    <select value="{{ p.month }}" onChange="{{ p.onMonth }}" style="height:43px; border:none; border-right:1.5px solid #eef1f5; border-left:1.5px solid #eef1f5; background:transparent; padding:0 6px; font-size:12px; font-family:Vazirmatn,sans-serif; color:#5a6678; outline:none;"><option value="">{{ monthLabel }}</option><sc-for list="{{ monthOpts }}" as="o" hint-placeholder-count="5"><option value="{{ o }}">{{ o }}</option></sc-for></select>
+                    <select value="{{ p.year }}" onChange="{{ p.onYear }}" style="height:43px; border:none; background:transparent; padding:0 6px; font-size:12px; font-family:Vazirmatn,sans-serif; color:#5a6678; outline:none;"><option value="">{{ yearLabel }}</option><sc-for list="{{ yearOpts }}" as="o" hint-placeholder-count="5"><option value="{{ o }}">{{ o }}</option></sc-for></select>
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:10.5px; color:#8a96a6; margin-bottom:6px; font-weight:600;">{{ passportExpiryLabel }}</div>
+                  <div style="display:grid; grid-template-columns:1fr 1.2fr 1fr; border:1.5px solid #e2e7ee; border-radius:10px; background:#fff; overflow:hidden;">
+                    <select value="{{ p.expDay }}" onChange="{{ p.onExpDay }}" style="height:43px; border:none; background:transparent; padding:0 6px; font-size:12px; font-family:Vazirmatn,sans-serif; color:#5a6678; outline:none;"><option value="">{{ dayLabel }}</option><sc-for list="{{ dayOpts }}" as="o" hint-placeholder-count="5"><option value="{{ o }}">{{ o }}</option></sc-for></select>
+                    <select value="{{ p.expMonth }}" onChange="{{ p.onExpMonth }}" style="height:43px; border:none; border-right:1.5px solid #eef1f5; border-left:1.5px solid #eef1f5; background:transparent; padding:0 6px; font-size:12px; font-family:Vazirmatn,sans-serif; color:#5a6678; outline:none;"><option value="">{{ monthLabel }}</option><sc-for list="{{ monthOpts }}" as="o" hint-placeholder-count="5"><option value="{{ o }}">{{ o }}</option></sc-for></select>
+                    <select value="{{ p.expYear }}" onChange="{{ p.onExpYear }}" style="height:43px; border:none; background:transparent; padding:0 6px; font-size:12px; font-family:Vazirmatn,sans-serif; color:#5a6678; outline:none;"><option value="">{{ yearLabel }}</option><sc-for list="{{ expYearOpts }}" as="o" hint-placeholder-count="5"><option value="{{ o }}">{{ o }}</option></sc-for></select>
+                  </div>
+                </div>
+                <div style="grid-column:span 2;">
+                  <div style="font-size:10.5px; color:#8a96a6; margin-bottom:6px; font-weight:600;">{{ passportNoLabel }}</div>
+                  <input value="{{ p.passNo }}" onInput="{{ p.onPassNo }}" onBlur="{{ p.onPassBlur }}" dir="ltr" placeholder="K12345678" style="width:100%; box-sizing:border-box; height:46px; border:1.5px solid #e2e7ee; border-radius:10px; background:#fff; padding:0 14px; font-size:13px; font-family:'Roboto Mono',sans-serif; outline:none; text-align:left;">
+                </div>
+              </div>
+              </div>
+              </sc-if>
+            </div>
+          </sc-for>
+          <span onClick="{{ addPax }}" style="display:inline-flex; align-items:center; gap:7px; border:1.5px solid var(--accent,#1668c4); color:var(--accent,#1668c4); border-radius:11px; padding:11px 18px; font-size:12.5px; font-weight:700; cursor:pointer;"><span style="font-size:16px; line-height:1;">+</span>{{ addNewPaxLabel }}</span>
+        </section>
+      </sc-if>
+
+      <!-- ===== STEP: SERVICES ===== -->
+      <sc-if value="{{ stepSrv }}" hint-placeholder-val="{{false}}">
+        <section style="background:#fff; border:1px solid #eef1f5; border-radius:15px; padding:16px 17px;">
+          <div onClick="{{ onSrvToggle }}" style="display:flex; align-items:center; justify-content:space-between; gap:9px; margin-bottom:6px; cursor:{{ srvCursor }};">
+            <div style="display:flex; align-items:center; gap:9px;">
+              <span style="width:30px; height:30px; border-radius:9px; background:#eef4fb; color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center;"><span dangerouslySetInnerHTML="{{ srvHeadIcon }}" style="display:flex;"></span></span>
+              <h2 style="font-size:15.5px; font-weight:800; margin:0; color:#0d2640;">{{ travelExtrasLabel }}</h2>
+            </div>
+            <sc-if value="{{ srvToggleShown }}" hint-placeholder-val="{{false}}">
+              <span style="font-size:14px; color:#8a96a6; transition:transform .2s; transform:{{ srvChevron }};">⌄</span>
+            </sc-if>
+          </div>
+          <sc-if value="{{ srvShown }}" hint-placeholder-val="{{true}}">
+          <p style="font-size:11.5px; color:#9aa4b2; margin:0 0 15px;">{{ pickServicesLabel }}</p>
+          <div style="display:grid; grid-template-columns:{{ servicesCols }}; gap:10px;">
+            <sc-for list="{{ services }}" as="sv" hint-placeholder-count="4">
+              <div onClick="{{ sv.onToggle }}" style="display:flex; align-items:center; justify-content:space-between; gap:10px; border:1.5px solid {{ sv.border }}; background:{{ sv.bg }}; border-radius:13px; padding:13px 14px; cursor:pointer;">
+                <div style="display:flex; align-items:center; gap:11px;">
+                  <span style="width:38px; height:38px; border-radius:11px; background:#f2f6fb; color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center;"><span dangerouslySetInnerHTML="{{ sv.icon }}" style="display:flex;"></span></span>
+                  <div style="line-height:1.6;"><div style="font-size:12.5px; font-weight:800; color:#0d2640;">{{ sv.title }}</div><div style="font-size:10.5px; color:#8a96a6;">{{ sv.desc }}</div></div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex:none;">
+                  <div style="font-size:12px; font-weight:800; color:var(--accent,#1668c4);">{{ sv.priceFa }}</div>
+                  <span style="width:34px; height:20px; border-radius:12px; background:{{ sv.switchBg }}; position:relative; display:inline-block; transition:background .2s; flex:none;"><span style="position:absolute; top:2px; {{ sv.knobPos }}; width:16px; height:16px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:all .2s;"></span></span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-top:16px; border-top:1px solid #f0f2f6; padding-top:15px;">
+            <div onClick="{{ onSeatToggle }}" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:11px; cursor:pointer;">
+              <div><div style="font-size:13px; font-weight:800; color:#0d2640;">{{ seatMapCaptionLabel }}</div><sc-if value="{{ bizLocked }}" hint-placeholder-val="{{true}}"><div style="font-size:10.5px; color:#96701a; margin-top:4px;">🔒 {{ bizLockedHintLabel }}</div></sc-if></div>
+              <span style="font-size:14px; color:#8a96a6; transition:transform .2s; transform:{{ seatChevron }}; flex:none;">⌄</span>
+            </div>
+            <sc-if value="{{ seatOpen }}" hint-placeholder-val="{{false}}">
+            <div style="display:flex; gap:11px; font-size:10.5px; color:#5a6678; margin-bottom:11px;">
+              <span style="display:flex; align-items:center; gap:4px;"><span style="width:13px; height:13px; border-radius:4px; background:#fff6e3; border:1.5px solid #e6c368;"></span>{{ businessLabel }}</span>
+              <span style="display:flex; align-items:center; gap:4px;"><span style="width:13px; height:13px; border-radius:4px; background:#eaf4ff; border:1.5px solid #bcd9f5;"></span>{{ availableLabel }}</span>
+              <span style="display:flex; align-items:center; gap:4px;"><span style="width:13px; height:13px; border-radius:4px; background:#e6eaf0;"></span>{{ reservedLabel }}</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:5px; max-height:300px; overflow:auto; background:#f8fafc; border:1px solid #eef1f5; border-radius:13px; padding:13px;">
+              <sc-for list="{{ seatRows }}" as="r" hint-placeholder-count="8">
+                <div style="display:flex; align-items:center; gap:5px;">
+                  <span style="width:20px; font-size:9.5px; color:#9aa4b2; text-align:center; flex:none;">{{ r.num }}</span>
+                  <sc-for list="{{ r.seats }}" as="st" hint-placeholder-count="5">
+                    <span onClick="{{ st.onClick }}" style="width:30px; height:30px; border-radius:7px; background:{{ st.bg }}; border:1.5px solid {{ st.border }}; color:{{ st.color }}; display:flex; align-items:center; justify-content:center; font-size:9.5px; font-weight:700; cursor:{{ st.cursor }}; margin-left:{{ st.mLeft }};">{{ st.label }}</span>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:8px;">
+              <div style="font-size:11px; color:#5a6678;">{{ selectedSeatLabel }}: <b style="color:var(--accent,#1668c4);">{{ seatSelLabel }}</b></div>
+              <div style="font-size:11px; color:#5a6678;">{{ totalSoldLabel }}: <b style="color:#c0343a;">{{ soldSeatsFa }}</b> {{ ofLabel }} <b>{{ seatCapFa }}</b></div>
+            </div>
+            </sc-if>
+          </div>
+          </sc-if>
+        </section>
+      </sc-if>
+
+      <!-- ===== STEP: REVIEW ===== -->
+      <sc-if value="{{ stepReview }}" hint-placeholder-val="{{false}}">
+        <section style="background:#fff; border:1px solid #eef1f5; border-radius:15px; padding:16px 17px;">
+          <div style="display:flex; align-items:center; gap:9px; margin-bottom:15px;">
+            <span style="width:30px; height:30px; border-radius:9px; background:#eef4fb; color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg></span>
+            <h2 style="font-size:15.5px; font-weight:800; margin:0; color:#0d2640;">{{ confirmDetailsLabel }}</h2>
+          </div>
+          <div style="border:1px solid #eef1f5; border-radius:13px; overflow:hidden; margin-bottom:13px;">
+            <div style="display:grid; grid-template-columns:{{ cols2 }}; gap:0; background:#f8fafc; padding:10px 13px; font-size:10.5px; color:#8a96a6; font-weight:700;"><span>{{ passengerLabel }}</span><span>{{ documentLabel }}</span><span>{{ dateOfBirthLabel }}</span><span>{{ genderLabel }}</span></div>
+            <sc-for list="{{ reviewPax }}" as="rp" hint-placeholder-count="1">
+              <div style="display:grid; grid-template-columns:{{ cols2 }}; padding:12px 13px; border-top:1px solid #f0f2f6; font-size:12px; align-items:center;">
+                <span style="font-weight:700; color:#0d2640;">{{ rp.name }}</span>
+                <span style="color:#3b4554; font-family:'Roboto Mono',monospace; font-size:11.5px;">{{ rp.doc }}</span>
+                <span style="color:#3b4554;">{{ rp.birth }}</span>
+                <span style="color:#3b4554;">{{ rp.gender }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:grid; grid-template-columns:{{ reviewExtraCols }}; gap:10px;">
+            <div style="background:#f8fafc; border:1px solid #eef1f5; border-radius:12px; padding:12px 14px;"><div style="font-size:10.5px; color:#8a96a6; margin-bottom:5px;">{{ selectedExtrasLabel }}</div><div style="font-size:12px; font-weight:700; color:#0d2640; line-height:1.9;">{{ reviewSrv }}</div></div>
+            <div style="background:#f8fafc; border:1px solid #eef1f5; border-radius:12px; padding:12px 14px;"><div style="font-size:10.5px; color:#8a96a6; margin-bottom:5px;">{{ seatLabel }}</div><div style="font-size:12px; font-weight:700; color:#0d2640;">{{ seatSelLabel }}</div></div>
+          </div>
+          <div style="margin-top:13px; background:#fff9ee; border:1px solid #f0dcae; border-radius:11px; padding:11px 13px; font-size:11px; color:#96701a; line-height:1.9;">{{ nameChangeWarningLabel }}</div>
+        </section>
+      </sc-if>
+
+      <!-- ===== STEP: PAYMENT ===== -->
+      <sc-if value="{{ stepPay }}" hint-placeholder-val="{{false}}">
+        <section style="background:#fff; border:1px solid #eef1f5; border-radius:15px; padding:16px 17px;">
+          <div style="display:flex; align-items:center; gap:9px; margin-bottom:15px;">
+            <span style="width:30px; height:30px; border-radius:9px; background:#eef4fb; color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></span>
+            <h2 style="font-size:15.5px; font-weight:800; margin:0; color:#0d2640;">{{ paymentLabel }}</h2>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:15px;">
+            <sc-for list="{{ payMethods }}" as="pm" hint-placeholder-count="3">
+              <div onClick="{{ pm.onPick }}" style="display:flex; align-items:center; justify-content:space-between; gap:10px; border:1.5px solid {{ pm.border }}; background:{{ pm.bg }}; border-radius:13px; padding:13px 15px; cursor:pointer;">
+                <div style="display:flex; align-items:center; gap:11px;">
+                  <span style="width:17px; height:17px; border-radius:50%; border:2px solid {{ pm.dotBorder }}; display:flex; align-items:center; justify-content:center;"><span style="width:8px; height:8px; border-radius:50%; background:{{ pm.dot }};"></span></span>
+                  <span style="width:40px; height:40px; border-radius:11px; background:{{ pm.iconBg }}; color:{{ pm.iconColor }}; display:flex; align-items:center; justify-content:center;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="{{ pm.iconPath }}"></path></svg></span>
+                  <div style="line-height:1.6;"><div style="font-size:12.5px; font-weight:800; color:#0d2640;">{{ pm.title }}</div><div style="font-size:10.5px; color:#8a96a6;">{{ pm.desc }}</div></div>
+                </div>
+                <span style="font-size:11px; font-weight:700; color:{{ pm.tagColor }};">{{ pm.tag }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex; gap:8px; margin-bottom:13px;">
+            <input value="{{ discountInput }}" onInput="{{ onDiscountInput }}" dir="ltr" placeholder="{{ discountCodePlaceholder }}" style="flex:1; box-sizing:border-box; height:46px; border:1.5px solid #e2e7ee; border-radius:10px; padding:0 14px; font-size:13px; font-family:'Roboto Mono',sans-serif; outline:none;">
+            <span onClick="{{ onApplyDiscount }}" style="height:46px; padding:0 20px; display:flex; align-items:center; justify-content:center; background:{{ discBtnBg }}; color:{{ discBtnColor }}; border-radius:10px; font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap;">{{ discBtnLabel }}</span>
+          </div>
+          <sc-if value="{{ discApplied }}" hint-placeholder-val="{{false}}">
+            <div style="display:flex; align-items:center; justify-content:space-between; background:#e9f6ef; border:1px solid #cdeadb; color:#1f8a5b; border-radius:11px; padding:9px 13px; font-size:11.5px; font-weight:700; margin-bottom:13px;"><span>{{ discAppliedLabel }} {{ discFa }} {{ offLabel }}</span><span onClick="{{ onRemoveDiscount }}" style="cursor:pointer; color:#c0343a;">{{ removeLabel }}</span></div>
+          </sc-if>
+          <div style="display:flex; align-items:center; gap:8px; font-size:11px; color:#8a96a6; background:#f8fafc; border:1px solid #eef1f5; border-radius:12px; padding:11px 13px;"><span style="font-size:13px;">ℹ</span> {{ pointsCalcHintLabel }}</div>
+        </section>
+      </sc-if>
+
+      <!-- ===== STEP: TICKET ===== -->
+      <sc-if value="{{ stepDone }}" hint-placeholder-val="{{false}}">
+        <section style="background:#fff; border:1px solid #eef1f5; border-radius:15px; padding:24px 20px; text-align:center; animation:bjpop .5s ease;">
+          <span style="width:58px; height:58px; margin:0 auto 12px; border-radius:50%; background:#e9f6ef; color:#1f8a5b; display:flex; align-items:center; justify-content:center;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>
+          <h2 style="font-size:18px; font-weight:900; color:#0d2640; margin:0 0 6px;">{{ ticketIssuedTitle }}</h2>
+          <p style="font-size:12px; color:#8a96a6; margin:0 0 18px;">{{ ticketIssuedMsg }}</p>
+          <div id="bj-ticket" style="max-width:640px; margin:0 auto; border-radius:18px; overflow:hidden; text-align:left; box-shadow:0 18px 40px -16px rgba(13,38,102,.4); border:1px solid #e6eaf0;">
+            <div style="background:linear-gradient(135deg,#0d2640,#16406e); color:#fff; padding:18px 24px; display:flex; align-items:center; justify-content:space-between;">
+              <span style="display:flex; align-items:center; gap:8px; font-size:16px; font-weight:800;" dir="ltr"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#caa53a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"></path></svg>blujet</span>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:12px; font-weight:700; background:rgba(255,255,255,.14); padding:6px 14px; border-radius:16px;">{{ boardingPassLabel }}</span>
+                <span style="font-size:13px; font-weight:800; color:#caa53a;">{{ cabinLabel }}</span>
+              </div>
+            </div>
+            <div style="padding:24px 24px 18px; background:#fff;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+                <div style="text-align:center; min-width:110px;"><div style="font-size:28px; font-weight:900; color:#0d2640;">{{ depTime }}</div><div style="font-size:13px; color:#5a6678; font-weight:700; margin-top:4px;">{{ fromCity }}</div></div>
+                <div style="flex:1; margin:0 18px; position:relative; text-align:center;">
+                  <div style="border-top:1.5px dashed #cfd8e4; position:absolute; top:50%; right:0; left:0;"></div>
+                  <span style="position:relative; background:#fff; padding:0 12px; color:var(--accent,#1668c4); font-size:22px; display:inline-block;">✈</span>
+                  <div style="font-size:11px; color:#9aa4b2; margin-top:5px;">{{ nonstopFlightLabel }}</div>
+                </div>
+                <div style="text-align:center; min-width:110px;"><div style="font-size:28px; font-weight:900; color:#0d2640;">{{ arrTime }}</div><div style="font-size:13px; color:#5a6678; font-weight:700; margin-top:4px;">{{ toCity }}</div></div>
+              </div>
+              <div style="display:grid; grid-template-columns:{{ cols2 }}; gap:11px; font-size:12px;">
+                <div style="background:#f8fafc; border:1px solid #eef1f5; border-radius:11px; padding:11px 12px;"><div style="color:#9aa4b2; font-size:10.5px;">{{ passengerLabel }}</div><div style="font-weight:800; color:#0d2640; margin-top:4px;" dir="ltr">{{ firstPaxName }}</div></div>
+                <div style="background:#f8fafc; border:1px solid #eef1f5; border-radius:11px; padding:11px 12px;"><div style="color:#9aa4b2; font-size:10.5px;">{{ seatLabel }}</div><div style="font-weight:800; color:#0d2640; margin-top:4px;">{{ seatSelLabel }}</div></div>
+                <div style="background:#f8fafc; border:1px solid #eef1f5; border-radius:11px; padding:11px 12px;"><div style="color:#9aa4b2; font-size:10.5px;">{{ dateLabel }}</div><div style="font-weight:800; color:#0d2640; margin-top:4px;">{{ depDateLabel }}</div></div>
+                <div style="background:#eef4fb; border:1px solid #d8e6f6; border-radius:11px; padding:11px 12px;"><div style="color:#7c95b5; font-size:10.5px;">{{ bookingRefLabel }}</div><div style="font-weight:800; color:var(--accent,#1668c4); margin-top:4px; font-family:'Roboto Mono',monospace;" dir="ltr">{{ pnr }}</div></div>
+              </div>
+            </div>
+            <div style="background:#fff; border-top:1.5px dashed #cfd8e4; padding:14px 24px; display:flex; align-items:center; justify-content:space-between; gap:14px; position:relative;">
+              <span style="position:absolute; right:-9px; top:-9px; width:18px; height:18px; border-radius:50%; background:#f6f8fb; border:1px solid #e6eaf0;"></span>
+              <span style="position:absolute; left:-9px; top:-9px; width:18px; height:18px; border-radius:50%; background:#f6f8fb; border:1px solid #e6eaf0;"></span>
+              <svg width="150" height="30" viewBox="0 0 150 30" style="flex:none;"><g fill="#0d2640"><rect x="0" width="3" height="30"></rect><rect x="6" width="1.5" height="30"></rect><rect x="11" width="4" height="30"></rect><rect x="18" width="1.5" height="30"></rect><rect x="23" width="2.5" height="30"></rect><rect x="29" width="5" height="30"></rect><rect x="37" width="1.5" height="30"></rect><rect x="42" width="3" height="30"></rect><rect x="48" width="1.5" height="30"></rect><rect x="52" width="4.5" height="30"></rect><rect x="60" width="2" height="30"></rect><rect x="65" width="1.5" height="30"></rect><rect x="70" width="4" height="30"></rect><rect x="77" width="2.5" height="30"></rect><rect x="83" width="1.5" height="30"></rect><rect x="88" width="5" height="30"></rect><rect x="96" width="2" height="30"></rect><rect x="101" width="1.5" height="30"></rect><rect x="106" width="3.5" height="30"></rect><rect x="113" width="1.5" height="30"></rect><rect x="118" width="2.5" height="30"></rect><rect x="124" width="4" height="30"></rect><rect x="131" width="1.5" height="30"></rect><rect x="136" width="3" height="30"></rect><rect x="142" width="1.5" height="30"></rect><rect x="147" width="3" height="30"></rect></g></svg>
+              <div style="font-size:10px; color:#9aa4b2; line-height:1.8; text-align:left;" dir="ltr">{{ pnr }} · IR-655<br>Gate B4 · Boarding 30 min before</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:9px; justify-content:center; margin-top:18px; flex-wrap:wrap;">
+            <span onClick="{{ printTicket }}" style="height:44px; padding:0 20px; display:flex; align-items:center; gap:7px; background:#0d2640; color:#fff; border-radius:11px; font-size:12.5px; font-weight:700; cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>{{ printPdfLabel }}</span>
+            <a href="مدیریت رزرو.dc.html" style="height:44px; padding:0 20px; display:flex; align-items:center; background:var(--accent,#1668c4); color:#fff; border-radius:11px; font-size:12.5px; font-weight:700; text-decoration:none;">{{ manageBookingLabel }}</a>
+            <a href="صفحه اصلی.dc.html" style="height:44px; padding:0 20px; display:flex; align-items:center; background:#f2f5f9; border:1px solid #e6eaf0; color:#0d2640; border-radius:11px; font-size:12.5px; font-weight:700; text-decoration:none;">{{ backToHomeLabel }}</a>
+          </div>
+        </section>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{ notMobile }}" hint-placeholder-val="{{true}}"><div></div></sc-if>
+
+    <!-- ============ SIDEBAR ============ -->
+    <aside style="background:#fff; border:1px solid #eef1f5; border-radius:18px; padding:22px; position:{{ asidePos }}; top:{{ asideTop }}; min-width:0; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:16px;">
+        <span style="font-size:16.5px; font-weight:800; color:#0d2640; white-space:nowrap;">{{ paymentDetailsLabel }}</span>
+      </div>
+
+      <div style="border:1px solid #eef1f5; border-radius:13px; overflow:hidden; margin-bottom:16px;">
+        <div style="display:grid; grid-template-columns:1fr auto; gap:8px; background:#f8fafc; padding:9px 14px; font-size:10.5px; color:#8a96a6; font-weight:700; border-bottom:1px solid #eef1f5; white-space:nowrap;"><span>{{ descriptionLabel }}</span><span>{{ amountTomanLabel }}</span></div>
+        <div style="display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center; font-size:13px; color:#5a6678; padding:11px 14px;"><span style="white-space:nowrap;">{{ ticketPriceLabel }} <span style="color:#9aa4b2; font-weight:600;">({{ adultLabel }} × {{ paxCountFa }})</span></span><span style="font-weight:700; color:#16202e; white-space:nowrap; text-align:left;">{{ fareTotalFa }}</span></div>
+        <div style="display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center; font-size:13px; color:#5a6678; padding:11px 14px; border-top:1px solid #eef1f5;"><span style="white-space:nowrap;">{{ taxesFeesLabel }}</span><span style="font-weight:700; color:#16202e; white-space:nowrap; text-align:left;">{{ taxTotalFa }}</span></div>
+        <sc-for list="{{ pickedSrvLines }}" as="sv" hint-placeholder-count="0">
+          <div style="display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center; font-size:13px; color:#5a6678; padding:11px 14px; border-top:1px solid #eef1f5;"><span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ sv.title }}</span><span style="font-weight:700; color:#16202e; white-space:nowrap; text-align:left;">{{ sv.priceFa }}</span></div>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ hasDiscLine }}" hint-placeholder-val="{{false}}">
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:12.5px; color:#1f8a5b; background:#e9f6ef; border:1px solid #cdeadb; border-radius:11px; padding:10px 13px; margin-bottom:9px; font-weight:700;"><span>{{ discountLabel }}</span><span>− {{ discFa }}</span></div>
+      </sc-if>
+      <sc-if value="{{ hasPointsLine }}" hint-placeholder-val="{{false}}">
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:12.5px; color:#96701a; background:#fff9ee; border:1px solid #f0dcae; border-radius:11px; padding:10px 13px; margin-bottom:9px; font-weight:700;"><span>{{ pointsUsedLabel }} ({{ usedPointsFa }} {{ pointsLabel }})</span><span>− {{ pointsDiscountFa }}</span></div>
+      </sc-if>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; background:#eef4fb; border-radius:13px; padding:14px 16px; margin:4px 0 14px;">
+        <span style="font-weight:800; font-size:14.5px; color:#0d2640;">{{ totalLabel }}</span>
+        <span style="font-weight:900; font-size:19px; color:var(--accent,#1668c4);">{{ grandTotalFa }}</span>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:7px; font-size:11.5px; color:#8a96a6; margin-bottom:16px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>{{ securePaymentLabel }}</div>
+      <sc-if value="{{ notDone }}" hint-placeholder-val="{{true}}">
+        <div style="margin-top:auto;">
+        <p style="font-size:12px; color:#9aa4b2; line-height:1.9; margin:0 0 16px;">{{ agreeTermsPrefix }} <a href="قوانین و مقررات.dc.html" style="text-decoration:none;">{{ siteTermsLabel }}</a> {{ agreeTermsSuffix }}</p>
+        <div onClick="{{ nextStep }}" style="height:56px; border-radius:14px; background:var(--accent,#1668c4); color:#fff; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; cursor:pointer; box-shadow:0 12px 24px -12px rgba(22,104,196,.55);">{{ nextLabel }}</div>
+        <sc-if value="{{ canBack }}" hint-placeholder-val="{{false}}">
+          <div onClick="{{ prevStep }}" style="height:48px; margin-top:10px; border-radius:14px; background:#f2f5f9; border:1px solid #e6eaf0; color:#0d2640; display:flex; align-items:center; justify-content:center; font-size:13.5px; font-weight:700; cursor:pointer;">{{ backToPrevStepLabel }}</div>
+        </sc-if>
+        <sc-if value="{{ hasErr }}" hint-placeholder-val="{{false}}"><div style="margin-top:10px; background:#fdecec; border:1px solid #f5c6c6; color:#c0343a; border-radius:10px; padding:10px 13px; font-size:12px; font-weight:600; line-height:1.8;">{{ completeAllPaxInfoLabel }}</div></sc-if>
+        </div>
+      </sc-if>
+      <sc-if value="{{ stepDone }}" hint-placeholder-val="{{false}}">
+        <div style="background:#e9f6ef; border:1px solid #cdeadb; color:#1f8a5b; border-radius:12px; padding:13px 15px; font-size:13px; font-weight:700; text-align:center;">{{ paymentSuccessCheckLabel }}</div>
+      </sc-if>
+    </aside>
+  </main>
+
+  <sc-if value="{{ showStickyBar }}" hint-placeholder-val="{{false}}">
+    <div style="position:fixed; bottom:0; left:0; right:0; z-index:80; background:#fff; border-top:1px solid #e6eaf0; box-shadow:0 -8px 24px -14px rgba(13,38,102,.3); padding:10px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <sc-if value="{{ canBack }}" hint-placeholder-val="{{false}}">
+        <span onClick="{{ prevStep }}" style="width:48px; height:48px; border-radius:12px; background:#f2f5f9; border:1px solid #e6eaf0; display:flex; align-items:center; justify-content:center; color:#0d2640; cursor:pointer; flex:none;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></span>
+      </sc-if>
+      <div style="min-width:0;"><div style="font-size:10.5px; color:#9aa4b2;">{{ totalLabel }}</div><div style="font-size:15px; font-weight:900; color:var(--accent,#1668c4); white-space:nowrap;">{{ grandTotalFa }}</div></div>
+      <div onClick="{{ nextStep }}" style="flex:1; max-width:220px; height:48px; border-radius:12px; background:var(--accent,#1668c4); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:800; cursor:pointer;">{{ nextLabel }}</div>
+    </div>
+  </sc-if>
+
+  <!-- ============ FOOTER ============ -->
+  <footer style="background:#0d2640; color:#aebfd4; margin-top:72px; padding-bottom:{{ footerStickyPad }};">
+    <sc-if value="{{ notMobile }}" hint-placeholder-val="{{true}}">
+    <div style="max-width:1180px; margin:0 auto; padding:39px 26px 20px; display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr; gap:33px;">
+      <div>
+        <div style="display:flex; align-items:center; gap:9px; margin-bottom:16px;"><div style="width:36px; height:36px; border-radius:10px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:16px;">✈</div><span style="font-weight:900; font-size:18px; color:#fff;">blujet</span></div>
+        <p style="font-size:13.5px; line-height:1.85; margin:0 0 20px; max-width:300px;">{{ footerAbout }}</p>
+        <div style="display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:16px;">
+          <span onClick="{{ dlAppStore }}" style="display:flex; align-items:center; gap:7px; background:#ffffff14; border:1px solid #ffffff1f; color:#fff; padding:8px 14px; border-radius:10px; font-size:11.5px; font-weight:700; cursor:pointer; white-space:nowrap;"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 12.5c-.03-2.36 1.93-3.5 2.02-3.55-1.1-1.6-2.8-1.82-3.4-1.85-1.44-.15-2.83.85-3.56.85-.74 0-1.87-.83-3.08-.8-1.58.02-3.05.92-3.86 2.34-1.66 2.88-.42 7.13 1.2 9.46.79 1.13 1.72 2.4 2.95 2.36 1.18-.05 1.63-.76 3.06-.76 1.42 0 1.83.76 3.08.73 1.28-.02 2.08-1.15 2.86-2.29.9-1.3 1.27-2.57 1.29-2.64-.03-.01-2.47-.95-2.5-3.76-.02-2.35 1.92-3.48 2-3.53-1.1-1.62-2.8-1.8-3.4-1.83M14.65 4.87c.66-.8 1.1-1.9.98-3.02-.95.04-2.1.63-2.78 1.43-.61.7-1.15 1.85-1 2.93 1.06.08 2.14-.53 2.8-1.34"></path></svg>App Store</span>
+          <span onClick="{{ dlGooglePlay }}" style="display:flex; align-items:center; gap:7px; background:#ffffff14; border:1px solid #ffffff1f; color:#fff; padding:8px 14px; border-radius:10px; font-size:11.5px; font-weight:700; cursor:pointer; white-space:nowrap;"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3.6 2.3c-.35.2-.6.6-.6 1.1v17.2c0 .5.25.9.6 1.1l9.6-9.7L3.6 2.3zm12.5 8.7 2.5-1.4c.7-.4.7-1.4 0-1.8l-2.6-1.5-2.7 2.8 2.8 2.9zm-2.9-2 2.7-2.8L5.1 1.7l8.1 7.3zm0 2.1-8.1 8.2 10.9-6.3-2.8-1.9z"></path></svg>Google Play</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">{{ badgeTrust }}</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">{{ badgeGuild }}</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">{{ badgeSamandehi }}</span>
+          <span style="width:66px; height:66px; border-radius:12px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5px; color:#9fb2c9; line-height:1.5; padding:6px;">{{ badgeIata }}</span>
+        </div>
+      </div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">{{ footerServicesHeading }}</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="نتایج پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerBookFlight }}</a><a href="مدیریت رزرو.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerManageBooking }}</a><a href="وضعیت پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerFlightStatus }}</a><a href="باشگاه مشتریان.dc.html" style="color:#aebfd4; text-decoration:none;">{{ navLoyalty }}</a></div></div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">{{ footerCompanyHeading }}</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="درباره ما.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerAboutUs }}</a><a href="تماس با ما.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerContactUs }}</a><a href="قوانین و مقررات.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerTerms }}</a></div></div>
+      <div><div style="font-size:14.5px; font-weight:700; color:#fff; margin-bottom:16px;">{{ navSupport }}</div><div style="display:flex; flex-direction:column; gap:11px; font-size:13.5px;"><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerHelpCenter }}</a><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerFaq }}</a></div></div>
+    </div>
+    <div style="border-top:1px solid #ffffff12;"><div style="max-width:1180px; margin:0 auto; padding:15px 26px; display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:#7d92ad;"><span>{{ copyrightLine }}</span></div></div>
+    </sc-if>
+
+    <sc-if value="{{ isMobile }}" hint-placeholder-val="{{false}}">
+    <div style="padding:34px 24px 6px; text-align:center;">
+      <div style="display:flex; align-items:center; justify-content:center; gap:9px; margin-bottom:14px;"><div style="width:34px; height:34px; border-radius:10px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:15px;">✈</div><span style="font-weight:900; font-size:17px; color:#fff;">blujet</span></div>
+      <p style="font-size:12.5px; line-height:1.8; margin:0 auto 16px; max-width:270px; color:#aebfd4;">{{ footerAbout }}</p>
+      <div style="display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+        <span onClick="{{ dlAppStore }}" style="display:flex; align-items:center; gap:6px; background:#ffffff14; border:1px solid #ffffff1f; color:#fff; padding:7px 12px; border-radius:10px; font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap;"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 12.5c-.03-2.36 1.93-3.5 2.02-3.55-1.1-1.6-2.8-1.82-3.4-1.85-1.44-.15-2.83.85-3.56.85-.74 0-1.87-.83-3.08-.8-1.58.02-3.05.92-3.86 2.34-1.66 2.88-.42 7.13 1.2 9.46.79 1.13 1.72 2.4 2.95 2.36 1.18-.05 1.63-.76 3.06-.76 1.42 0 1.83.76 3.08.73 1.28-.02 2.08-1.15 2.86-2.29.9-1.3 1.27-2.57 1.29-2.64-.03-.01-2.47-.95-2.5-3.76-.02-2.35 1.92-3.48 2-3.53-1.1-1.62-2.8-1.8-3.4-1.83M14.65 4.87c.66-.8 1.1-1.9.98-3.02-.95.04-2.1.63-2.78 1.43-.61.7-1.15 1.85-1 2.93 1.06.08 2.14-.53 2.8-1.34"></path></svg>App Store</span>
+        <span onClick="{{ dlGooglePlay }}" style="display:flex; align-items:center; gap:6px; background:#ffffff14; border:1px solid #ffffff1f; color:#fff; padding:7px 12px; border-radius:10px; font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap;"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3.6 2.3c-.35.2-.6.6-.6 1.1v17.2c0 .5.25.9.6 1.1l9.6-9.7L3.6 2.3zm12.5 8.7 2.5-1.4c.7-.4.7-1.4 0-1.8l-2.6-1.5-2.7 2.8 2.8 2.9zm-2.9-2 2.7-2.8L5.1 1.7l8.1 7.3zm0 2.1-8.1 8.2 10.9-6.3-2.8-1.9z"></path></svg>Google Play</span>
+      </div>
+      <div style="display:flex; align-items:center; justify-content:center; gap:7px; flex-wrap:wrap;">
+        <span style="width:44px; height:44px; border-radius:11px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:7px; color:#9fb2c9; line-height:1.3; padding:4px;">{{ badgeTrust }}</span>
+        <span style="width:44px; height:44px; border-radius:11px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:7px; color:#9fb2c9; line-height:1.3; padding:4px;">{{ badgeGuild }}</span>
+        <span style="width:44px; height:44px; border-radius:11px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:7px; color:#9fb2c9; line-height:1.3; padding:4px;">{{ badgeSamandehi }}</span>
+        <span style="width:44px; height:44px; border-radius:11px; background:#ffffff10; border:1px solid #ffffff14; display:flex; align-items:center; justify-content:center; text-align:center; font-size:7px; color:#9fb2c9; line-height:1.3; padding:4px;">{{ badgeIata }}</span>
+      </div>
+    </div>
+    <div style="margin-top:22px; border-top:1px solid #ffffff14;">
+      <details><summary style="display:flex; align-items:center; justify-content:space-between; padding:15px 24px; font-size:13.5px; font-weight:700; color:#fff; border-bottom:1px solid #ffffff14;">{{ footerServicesHeading }}<span class="chev" style="color:#7d92ad; font-size:12px; transition:transform .2s;">⌄</span></summary>
+        <div style="padding:14px 24px 18px; display:flex; flex-direction:column; align-items:flex-start; gap:13px; font-size:13px; border-bottom:1px solid #ffffff14;"><a href="نتایج پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerBookFlight }}</a><a href="مدیریت رزرو.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerManageBooking }}</a><a href="وضعیت پرواز.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerFlightStatus }}</a><a href="باشگاه مشتریان.dc.html" style="color:#aebfd4; text-decoration:none;">{{ navLoyalty }}</a></div>
+      </details>
+      <details><summary style="display:flex; align-items:center; justify-content:space-between; padding:15px 24px; font-size:13.5px; font-weight:700; color:#fff; border-bottom:1px solid #ffffff14;">{{ footerCompanyHeading }}<span class="chev" style="color:#7d92ad; font-size:12px; transition:transform .2s;">⌄</span></summary>
+        <div style="padding:14px 24px 18px; display:flex; flex-direction:column; align-items:flex-start; gap:13px; font-size:13px; border-bottom:1px solid #ffffff14;"><a href="درباره ما.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerAboutUs }}</a><a href="تماس با ما.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerContactUs }}</a><a href="قوانین و مقررات.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerTerms }}</a></div>
+      </details>
+      <details><summary style="display:flex; align-items:center; justify-content:space-between; padding:15px 24px; font-size:13.5px; font-weight:700; color:#fff; border-bottom:1px solid #ffffff14;">{{ navSupport }}<span class="chev" style="color:#7d92ad; font-size:12px; transition:transform .2s;">⌄</span></summary>
+        <div style="padding:14px 24px 18px; display:flex; flex-direction:column; align-items:flex-start; gap:13px; font-size:13px; border-bottom:1px solid #ffffff14;"><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerHelpCenter }}</a><a href="پشتیبانی.dc.html" style="color:#aebfd4; text-decoration:none;">{{ footerFaq }}</a></div>
+      </details>
+    </div>
+    <div style="padding:16px 24px; text-align:center; font-size:11px; color:#7d92ad;">{{ copyrightLine }}</div>
+    </sc-if>
+  </footer>
+
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{false}}">
+    <div dir="{{ pageDir }}" style="position:fixed; inset:0; z-index:9000; background:rgba(8,22,40,.6); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; padding:24px;"><div style="width:420px; max-width:100%; background:#fff; border-radius:22px; box-shadow:0 50px 120px -30px rgba(4,16,34,.7); padding:40px 32px 30px; text-align:center; position:relative; overflow:hidden;"><div style="position:absolute; top:0; left:0; right:0; height:5px; background:linear-gradient(90deg,var(--accent,#1668c4),#5ea3e8);"></div><div style="width:96px; height:96px; border-radius:50%; background:#e8f0fb; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;"><span style="width:56px; height:56px; border-radius:50%; background:var(--accent,#1668c4); color:#fff; display:flex; align-items:center; justify-content:center; font-size:26px; box-shadow:0 10px 24px -8px rgba(22,104,196,.55);">✓</span></div><div style="font-size:16.5px; font-weight:900; color:#16202e; line-height:2;">{{ toast }}</div><div style="margin-top:10px; font-size:11px; color:#9aa7b8; font-weight:600;">{{ autoCloseLabel }}</div></div></div>
+  </sc-if>
+
+  <sc-if value="{{ scanConfirmOpen }}" hint-placeholder-val="{{false}}">
+    <div style="position:fixed; inset:0; z-index:9100; background:rgba(8,22,40,.55); display:flex; align-items:center; justify-content:center; padding:24px;">
+      <div style="width:380px; max-width:100%; background:#fff; border-radius:18px; padding:26px 24px; text-align:center; box-shadow:0 30px 70px -20px rgba(0,0,0,.5);">
+        <div style="width:64px; height:64px; border-radius:50%; background:#eef4fb; color:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; margin:0 auto 16px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M20 8V5a1 1 0 0 0-1-1h-3M4 16v3a1 1 0 0 0 1 1h3M20 16v3a1 1 0 0 1-1 1h-3"></path><rect x="7" y="9" width="10" height="6" rx="1"></rect></svg></div>
+        <div style="font-size:15px; font-weight:800; color:#0d2640; margin-bottom:8px;">{{ camPermTitle }}</div>
+        <div style="font-size:12.5px; color:#6b7787; line-height:1.8; margin-bottom:22px;">{{ camPermMsg }}</div>
+        <div style="display:flex; gap:10px;">
+          <div onClick="{{ cancelScan }}" style="flex:1; height:46px; border-radius:12px; border:1.5px solid #e2e7ee; color:#3b4554; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; cursor:pointer;">{{ cancelLabel }}</div>
+          <div onClick="{{ confirmScan }}" style="flex:1; height:46px; border-radius:12px; background:var(--accent,#1668c4); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; cursor:pointer;">{{ allowLabel }}</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;setupMode&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;حالت حساب&quot;}}">
+class Component extends DCLogic {
+  state = {
+    isMobile: (typeof window !== "undefined" && window.innerWidth < 768), mobileMenuOpen: false,
+    step: 0, flight: null,
+    paxList: [{ doc: "nid", first: "", last: "", gender: "", day: "", month: "", year: "", nid: "", prevOpen: false }],
+    scanConfirmIdx: null,
+    services: { bag: false, meal: false, ins: false, cip: false },
+    seatSel: null,
+    payMethod: 0, discount: "", discApplied: false, discountInput: "",
+    formErr: false, toast: "",
+    notifOpen: false, userMenuOpen: false, srvOpen: false, langOpen: false, seatOpen: false,
+    pnr: "",
+    lang: (typeof localStorage !== "undefined" && localStorage.getItem('blujet_lang')) || "fa"
+  };
+  _toast(t){ this.setState({ toast: t }); clearTimeout(this._toastT); this._toastT = setTimeout(() => this.setState({ toast: "" }), 2600); }
+  componentDidMount(){
+    this._mq = window.matchMedia("(max-width:767px)");
+    this._mqHandler = (e) => this.setState({ isMobile: e.matches });
+    if (this._mq.addEventListener) this._mq.addEventListener("change", this._mqHandler); else this._mq.addListener(this._mqHandler);
+    try {
+      const raw = localStorage.getItem("blujet_buy_flight");
+      if (raw) this.setState({ flight: JSON.parse(raw) });
+    } catch(e) {}
+  }
+  componentWillUnmount(){ if (this._mq) { if (this._mq.removeEventListener) this._mq.removeEventListener("change", this._mqHandler); else this._mq.removeListener(this._mqHandler); } }
+  _updPax(i, patch){ this.setState(s => ({ paxList: s.paxList.map((p, j) => j === i ? Object.assign({}, p, patch) : p), formErr: false })); }
+  _latinOnly(raw, apply, isEN){
+    const lang = this.state.lang;
+    const cleaned = raw.replace(/[^a-zA-Z\s'-]/g, "");
+    if (cleaned !== raw) this._toastErr(lang === "ar" ? "يجب إدخال الاسم واللقب بحروف إنجليزية (لاتينية) فقط" : (isEN ? "First and last name must be entered in English (Latin) letters" : "نام و نام خانوادگی باید با حروف لاتین وارد شود"));
+    apply(cleaned);
+  }
+  _toastErr(t){ this.setState({ toast: t, toastKind: "err" }); clearTimeout(this._toastT); this._toastT = setTimeout(() => this.setState({ toast: "" }), 2400); }
+  _onDiscountInput(e){ this.setState({ discountInput: e.target.value }); }
+  _applyDiscount(isEN){
+    const code = (this.state.discountInput || "").trim().toUpperCase();
+    if (this.state.discApplied) return;
+    if (code === "BLUE20") { this.setState({ discApplied: true }); this._toast(isEN ? "Discount code applied successfully" : "کد تخفیف با موفقیت اعمال شد"); }
+    else this._toastErr(isEN ? "Invalid discount code" : "کد تخفیف نامعتبر است");
+  }
+  _removeDiscount(){ this.setState({ discApplied: false, discountInput: "" }); }
+  _faDigitsToEn(s){ return String(s).replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d)); }
+  _isValidNid(code){
+    if (!/^\d{10}$/.test(code)) return false;
+    if (/^(\d)\1{9}$/.test(code)) return false;
+    const d = code.split("").map(Number);
+    const check = d[9];
+    let sum = 0;
+    for (let i = 0; i < 9; i++) sum += d[i] * (10 - i);
+    const rem = sum % 11;
+    return rem < 2 ? check === rem : check === 11 - rem;
+  }
+  _nidErrMsg(lang){
+    return lang === "en" ? "The national ID entered is not valid; please double-check it."
+      : lang === "ar" ? "الرقم الوطني المُدخل غير صحيح؛ يرجى التحقق منه."
+      : "کد ملی وارد شده معتبر نیست؛ لطفاً بررسی کنید.";
+  }
+  _passErrMsg(lang){
+    return lang === "en" ? "The passport number entered is not valid; it must be 6–9 letters/digits."
+      : lang === "ar" ? "رقم جواز السفر المُدخل غير صحيح؛ يجب أن يتكون من ٦ إلى ٩ أحرف/أرقام."
+      : "شماره گذرنامه وارد شده معتبر نیست؛ باید بین ۶ تا ۹ رقم/حرف باشد.";
+  }
+  _isValidPass(code){ return /^[A-Za-z0-9]{6,9}$/.test(code); }
+  _onNidInput(i, e, doc, isEN){
+    const lang = this.state.lang;
+    let v = this._faDigitsToEn(e.target.value);
+    if (doc !== "pass") v = v.replace(/\D/g, "").slice(0, 10);
+    this._updPax(i, { nid: v });
+  }
+  _onNidBlur(i, e, doc){
+    const lang = this.state.lang;
+    const v = this._faDigitsToEn(e.target.value).replace(/\D/g, "");
+    if (doc !== "pass" && v.length > 0 && v.length !== 10) this._toastErr(this._nidErrMsg(lang));
+  }
+  _onPassInput(i, e){
+    const v = e.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 9).toUpperCase();
+    this._updPax(i, { passNo: v });
+  }
+  _onPassBlur(i, e){
+    const lang = this.state.lang;
+    const v = (e.target.value || "").trim();
+    if (v.length > 0 && !this._isValidPass(v)) this._toastErr(this._passErrMsg(lang));
+  }
+  renderVals(){ const v = this._vals(); return (this.state && this.state.lang === "ar" && typeof window !== "undefined" && window.arDeep) ? window.arDeep(v) : v; }
+  _vals(){
+    const isEN = this.state.lang === "en";
+    const isAR = this.state.lang === "ar";
+    const fa = (n) => isAR ? String(n).replace(/[0-9]/g, d => "٠١٢٣٤٥٦٧٨٩"[d]) : String(n).replace(/[0-9]/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
+    const num = (n) => isEN ? String(n) : fa(n);
+    const CITY = { Tehran: isEN?"Tehran":(isAR?"طهران":"تهران"), Dubai: isEN?"Dubai":(isAR?"دبي":"دبی"), Mashhad: isEN?"Mashhad":(isAR?"مشهد":"مشهد") };
+    const cityName = (c) => CITY[c] || c;
+    const f = this.state.flight || { airline: "blujet", dep: "08:30", arr: "10:45", priceNum: 3800000, from: "Tehran", to: "Dubai", date: "Jul 12", cabin: "Economy", aircraft: "MD-88" };
+    const TAX = 320000;
+    const step = this.state.step;
+    const T = {
+      navFlights: isEN?"Flights":(isAR?"الطيران":"پرواز"), navDestinations: isEN?"Destinations":(isAR?"الوجهات":"مقاصد پروازی"), navLoyalty: isEN?"Loyalty Club":(isAR?"نادي العملاء":"باشگاه مشتریان"), navSupport: isEN?"Support":(isAR?"الدعم":"پشتیبانی"),
+      menuLabel: isEN?"Menu":(isAR?"القائمة":"منو"), btnLoginSignup: isEN?"Log in / Sign up":(isAR?"تسجيل الدخول / إنشاء حساب":"ورود / ثبت‌نام"), btnJoinClub: isEN?"Join Club":(isAR?"الانضمام للنادي":"عضویت باشگاه"),
+      profileLabel: isEN?"View Profile":(isAR?"عرض الملف الشخصي":"مشاهده پروفایل"), tripsLabel: isEN?"Trips & Booking Management":(isAR?"الرحلات وإدارة الحجز":"سفرها و مدیریت رزرو"),
+      refundsLabel: isEN?"Refunds":(isAR?"استرداد الأموال":"استرداد وجه"), signOutLabel: isEN?"Log out":(isAR?"تسجيل الخروج":"خروج از حساب"), completeProfileLabel: isEN?"Complete your profile":(isAR?"أكمل ملفك الشخصي":"تکمیل پروفایل خود را انجام دهید"),
+      loyaltyPointsLabel: isEN?"Loyalty points":(isAR?"نقاط النادي":"امتیاز باشگاه"), notifTitle: isEN?"Notifications":(isAR?"الإشعارات":"اعلان‌ها"), notifNewLabel: isEN?"2 new":(isAR?"جديدان":"۲ جدید"),
+      completePurchaseLabel: isEN?"Complete Purchase":(isAR?"إتمام الشراء":"تکمیل خرید"),
+      enterPaxDetailsLabel: isEN?"Enter passenger details":(isAR?"إدخال بيانات المسافر":"وارد کردن اطلاعات مسافر"), nationalIdLabel: isEN?"National ID":(isAR?"الرقم الوطني":"کد ملی"), passportLabel: isEN?"Passport":"گذرنامه",
+      scanDocumentLabel: isEN?"Scan document":(isAR?"مسح المستند":"اسکن مدرک"), fromSavedPaxLabel: isEN?"From saved passengers":(isAR?"من المسافرين المحفوظين":"از مسافران ذخیره‌شده"), removeLabel: isEN?"Remove":(isAR?"إزالة":"حذف"),
+      selectSavedPaxColonLabel: isEN?"Select from saved passengers:":(isAR?"اختر من المسافرين المحفوظين:":"انتخاب از مسافران ذخیره‌شده:"),
+      firstNameLatinPlaceholder: isEN?"First name (Latin)":(isAR?"الاسم (بالإنجليزية)":"نام (لاتین)"), lastNameLatinPlaceholder: isEN?"Last name (Latin)":(isAR?"اللقب (بالإنجليزية)":"نام خانوادگی (لاتین)"),
+      genderLabel: isEN?"Gender":(isAR?"الجنس":"جنسیت"), femaleLabel: isEN?"Female":(isAR?"أنثى":"زن"), maleLabel: isEN?"Male":(isAR?"ذكر":"مرد"),
+      dateOfBirthLabel: isEN?"Date of birth":(isAR?"تاريخ الميلاد":"تاریخ تولد"), dayLabel: isEN?"Day":(isAR?"اليوم":"روز"), monthLabel: isEN?"Month":(isAR?"الشهر":"ماه"), yearLabel: isEN?"Year":(isAR?"السنة":"سال"),
+      passportIssuingCountryLabel: isEN?"Passport issuing country":(isAR?"بلد إصدار جواز السفر":"کشور صادرکننده گذرنامه"), birthCountryLabel: isEN?"Country of birth":(isAR?"بلد الميلاد":"کشور محل تولد"),
+      passportExpiryLabel: isEN?"Passport expiry date":(isAR?"تاريخ انتهاء جواز السفر":"تاریخ انقضای گذرنامه"), passportNoLabel: isEN?"Passport number":(isAR?"رقم جواز السفر":"شماره گذرنامه"),
+      addNewPaxLabel: isEN?"Add new passenger":(isAR?"إضافة مسافر جديد":"افزودن مسافر جدید"),
+      travelExtrasLabel: isEN?"Travel Extras":(isAR?"الخدمات الإضافية للسفر":"خدمات جانبی سفر"), pickServicesLabel: isEN?"Pick the services you'd like — the cost is added to your total":(isAR?"اختر الخدمات التي ترغب بها — تُضاف التكلفة إلى إجمالي الفاتورة":"خدماتی که می‌خواهید انتخاب کنید — هزینه به مجموع شما اضافه می‌شود"),
+      seatMapCaptionLabel: isEN?"Seat selection (optional) — MD-88 · Business rows 3–6 (16 seats) · Economy rows 7–32":(isAR?"اختيار المقعد (اختياري) — MD-88 · درجة الأعمال صفوف 3–6 (16 مقعدًا) · الاقتصادية صفوف 7–32":"انتخاب صندلی (اختیاری) — MD-88 · ردیف‌های بیزنس ۳ تا ۶ (۱۶ صندلی) · اکونومی ردیف ۷ تا ۳۲"),
+      bizLockedHintLabel: isEN?"Selecting a Business seat requires at least 15,000 loyalty points":(isAR?"يتطلب اختيار مقعد درجة الأعمال 15,000 نقطة ولاء على الأقل":"انتخاب صندلی بیزنس نیازمند حداقل ۱۵٬۰۰۰ امتیاز باشگاه است"),
+      businessLabel: isEN?"Business":(isAR?"درجة الأعمال":"بیزنس"), availableLabel: isEN?"Available":(isAR?"متاح":"موجود"), reservedLabel: isEN?"Reserved":(isAR?"محجوز":"رزرو شده"),
+      selectedSeatLabel: isEN?"Selected seat":(isAR?"المقعد المختار":"صندلی انتخابی"), totalSoldLabel: isEN?"Total seats sold":(isAR?"إجمالي المقاعد المباعة":"مجموع صندلی‌های فروخته‌شده"), ofLabel: isEN?"of":(isAR?"من":"از"),
+      confirmDetailsLabel: isEN?"Confirm Details":(isAR?"تأكيد البيانات":"تأیید اطلاعات"), passengerLabel: isEN?"Passenger":(isAR?"المسافر":"مسافر"), documentLabel: isEN?"Document":(isAR?"المستند":"مدرک"),
+      selectedExtrasLabel: isEN?"Selected extras":(isAR?"الخدمات الإضافية المختارة":"خدمات جانبی انتخابی"), seatLabel: isEN?"Seat":(isAR?"المقعد":"صندلی"),
+      nameChangeWarningLabel: isEN?"After confirmation and payment, passenger names cannot be changed. Please check the Latin spelling of names against ID documents.":(isAR?"بعد التأكيد والدفع، لا يمكن تغيير أسماء المسافرين. يرجى التحقق من التهجئة اللاتينية للأسماء مع مستندات الهوية.":"پس از تأیید و پرداخت، نام مسافران قابل تغییر نیست. لطفاً املای لاتین نام‌ها را با مدارک شناسایی مطابقت دهید."),
+      paymentLabel: isEN?"Payment":(isAR?"الدفع":"پرداخت"), discountCodePlaceholder: isEN?"Discount code":(isAR?"رمز الخصم":"کد تخفیف"), discAppliedLabel: isEN?"Code BLUE20 applied —":(isAR?"تم تطبيق الرمز BLUE20 —":"کد BLUE20 اعمال شد —"), offLabel: isEN?"off":(isAR?"خصم":"تخفیف"),
+      pointsCalcHintLabel: isEN?"Paying with loyalty points is calculated by selecting that method above.":(isAR?"يُحتسب الدفع بنقاط الولاء عند اختيار تلك الطريقة أعلاه.":"پرداخت با امتیاز باشگاه با انتخاب همان روش در بالا محاسبه می‌شود."),
+      ticketIssuedTitle: isEN?"Your ticket has been issued!":(isAR?"تم إصدار تذكرتك!":"بلیط شما صادر شد!"), ticketIssuedMsg: isEN?"Ticket details were sent to your email and phone number.":(isAR?"تم إرسال تفاصيل التذكرة إلى بريدك الإلكتروني ورقم هاتفك.":"جزئیات بلیط به ایمیل و شماره موبایل شما ارسال شد."),
+      boardingPassLabel: isEN?"Boarding Pass":(isAR?"بطاقة الصعود":"کارت پرواز"), nonstopFlightLabel: isEN?"Nonstop flight":(isAR?"رحلة مباشرة":"پرواز بدون توقف"),
+      dateLabel: isEN?"Date":(isAR?"التاريخ":"تاریخ"), bookingRefLabel: isEN?"Booking reference":(isAR?"رقم الحجز":"کد رزرو"),
+      printPdfLabel: isEN?"Print / Download PDF":(isAR?"طباعة / تنزيل PDF":"چاپ / دانلود PDF"), manageBookingLabel: isEN?"Manage booking":(isAR?"إدارة الحجز":"مدیریت رزرو"), backToHomeLabel: isEN?"Back to homepage":(isAR?"العودة إلى الصفحة الرئيسية":"بازگشت به صفحه اصلی"),
+      paymentDetailsLabel: isEN?"Payment details":(isAR?"تفاصيل الدفع":"جزئیات پرداخت"), adultLabel: isEN?"Adult":(isAR?"بالغ":"بزرگسال"), ticketPriceLabel: isEN?"Ticket price":(isAR?"سعر التذكرة":"قیمت بلیط"), taxesFeesLabel: isEN?"Taxes & fees":(isAR?"الضرائب والرسوم":"مالیات و عوارض"),
+      discountLabel: isEN?"Discount":(isAR?"الخصم":"تخفیف"), pointsUsedLabel: isEN?"Club points used":(isAR?"نقاط النادي المستخدمة":"امتیاز باشگاه استفاده‌شده"), pointsLabel: isEN?"points":(isAR?"نقطة":"امتیاز"),
+      totalLabel: isEN?"Total":(isAR?"المجموع":"مجموع"), securePaymentLabel: isEN?"Secure, encrypted payment":(isAR?"دفع آمن ومشفّر":"پرداخت امن و رمزگذاری‌شده"),
+      agreeTermsPrefix: isEN?"By clicking Continue you agree to the":(isAR?"بالنقر على «متابعة» فإنك توافق على":"با کلیک روی «ادامه»، شما با"), siteTermsLabel: isEN?"site terms":(isAR?"شروط الموقع":"قوانین سایت"), agreeTermsSuffix: isEN?"and the airline's fare rules.":(isAR?"وقواعد أسعار شركة الطيران.":"و قوانین نرخ ایرلاین موافقت می‌کنید."),
+      backToPrevStepLabel: isEN?"Back to previous step":(isAR?"العودة إلى المرحلة السابقة":"بازگشت به مرحله قبل"), backLabel: isEN?"Back":(isAR?"رجوع":"بازگشت"), completeAllPaxInfoLabel: isEN?"Please complete all passenger information.":(isAR?"يرجى إكمال جميع بيانات المسافر.":"لطفاً همه اطلاعات مسافر را تکمیل کنید."),
+      paymentSuccessCheckLabel: isEN?"Payment successful ✓":(isAR?"تم الدفع بنجاح ✓":"پرداخت با موفقیت انجام شد ✓"),
+      footerAbout: isEN?"Book domestic and international flight tickets online at the best prices, with loyalty club perks.":(isAR?"احجز تذاكر الطيران الداخلية والدولية عبر الإنترنت بأفضل الأسعار، مع مزايا نادي الولاء.":"رزرو آنلاین بلیط پروازهای داخلی و بین‌المللی با بهترین قیمت و امتیازهای باشگاه مشتریان."),
+      badgeTrust: isEN?"e-Trust Seal":(isAR?"ختم الثقة الإلكتروني":"نماد اعتماد الکترونیکی"), badgeGuild: isEN?"Travel Agencies Guild":(isAR?"نقابة وكالات السفر":"انجمن صنفی دفاتر خدمات مسافرتی"),
+      badgeSamandehi: isEN?"Samandehi Registered":(isAR?"مسجّل رسميًا":"ساماندهی"), badgeIata: isEN?"IATA Member":(isAR?"عضو IATA":"عضو IATA"),
+      footerServicesHeading: isEN?"Services":(isAR?"الخدمات":"خدمات"), footerCompanyHeading: isEN?"Company":(isAR?"الشركة":"شرکت"),
+      footerBookFlight: isEN?"Book a Flight":(isAR?"حجز رحلة":"رزرو پرواز"), footerManageBooking: isEN?"Manage Booking":(isAR?"إدارة الحجز":"مدیریت رزرو"), footerFlightStatus: isEN?"Flight Status":(isAR?"حالة الرحلة":"وضعیت پرواز"),
+      footerAboutUs: isEN?"About Us":(isAR?"من نحن":"درباره ما"), footerContactUs: isEN?"Contact Us":(isAR?"اتصل بنا":"تماس با ما"), footerTerms: isEN?"Terms & Conditions":(isAR?"الشروط والأحكام":"قوانین و مقررات"),
+      footerHelpCenter: isEN?"Help Center":(isAR?"مركز المساعدة":"مرکز راهنما"), footerFaq: isEN?"FAQ":(isAR?"الأسئلة الشائعة":"سوالات متداول"),
+      sitePhone: isEN ? "021 - 91000000" : "۰۲۱ - ۹۱۰۰۰۰۰۰", copyrightLine: isEN?"© 2026 blujet. All rights reserved.":(isAR?"© 2026 blujet. جميع الحقوق محفوظة.":"© ۱۴۰۵ blujet. تمامی حقوق محفوظ است."),
+      camPermTitle: isEN?"Allow camera access?":(isAR?"السماح بالوصول إلى الكاميرا؟":"اجازه دسترسی به دوربین؟"),
+      camPermMsg: isEN?"blujet needs access to your camera to scan your identity document and fill in your details automatically.":(isAR?"يحتاج blujet إلى الوصول لكاميرتك لمسح مستند هويتك وتعبئة بياناتك تلقائيًا.":"blujet برای اسکن مدرک هویتی شما و پرکردن خودکار اطلاعات، نیاز به دسترسی به دوربین دارد."),
+      allowLabel: isEN?"Allow":(isAR?"سماح":"اجازه بده"), cancelLabel: isEN?"Cancel":(isAR?"إلغاء":"انصراف"), autoCloseLabel: isEN?"This message closes automatically":(isAR?"يُغلق هذا الرسالة تلقائيًا":"این پیام به‌صورت خودکار بسته می‌شود")
+    };
+    const saved = [
+      { label: isEN?"Negar Rezaei":(isAR?"نيغار رضائي":"نگار رضایی"), first: "Negar", last: "Rezaei", gender: "female", nid: "0074185962", day: "13", month: isEN?"June":(isAR?"يونيو":"خرداد"), year: isEN?"1991":(isAR?"1991":"1370") },
+      { label: isEN?"Sadeq Kazemi":(isAR?"صادق كاظمي":"صادق کاظمی"), first: "Sadeq", last: "Kazemi", gender: "male", nid: "0060326787", day: "26", month: isEN?"August":(isAR?"أغسطس":"مرداد"), year: isEN?"1986":(isAR?"1986":"1365") },
+      { label: isEN?"Mohammad Rezaei":(isAR?"محمد رضائي":"محمد رضایی"), first: "Mohammad", last: "Rezaei", gender: "male", nid: "0012345678", day: "19", month: isEN?"January":(isAR?"يناير":"دی"), year: isEN?"1964":(isAR?"1964":"1342") }
+    ];
+    const monthNames = (isEN || isAR) ? (isAR ? ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"] : ["January","February","March","April","May","June","July","August","September","October","November","December"])
+                             : ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
+    const dayOpts = Array.from({ length: 31 }, (_, i) => num(i + 1));
+    const yearOpts = (() => {
+      if (isAR) { return Array.from({ length: 60 }, (_, i) => num(1946 + i)); }
+      if (!isEN) {
+        const now = new Date();
+        const gy = now.getFullYear(), gm = now.getMonth() + 1, gd = now.getDate();
+        const g_d_m = [0,31,59,90,120,151,181,212,243,273,304,334];
+        let jy = gy <= 1600 ? 0 : 979, gy2 = gy <= 1600 ? gy - 621 : gy - 1600;
+        let gy3 = (gm > 2) ? (gy2 + 1) : gy2;
+        let days = (365 * gy2) + (Math.floor((gy3 + 3) / 4)) - (Math.floor((gy3 + 99) / 100)) + (Math.floor((gy3 + 399) / 400)) - 80 + gd + g_d_m[gm - 1];
+        jy += 33 * Math.floor(days / 12053); days %= 12053;
+        jy += 4 * Math.floor(days / 1461); days %= 1461;
+        if (days > 365) { jy += Math.floor((days - 1) / 365); days = (days - 1) % 365; }
+        const curJalaliYear = jy;
+        return Array.from({ length: curJalaliYear - 1325 + 1 }, (_, i) => num(1325 + i));
+      }
+      return Array.from({ length: 60 }, (_, i) => num(1946 + i));
+    })();
+    const expYearOpts = Array.from({ length: 15 }, (_, i) => num(((isEN || isAR) ? 2025 : 1404) + i));
+    const countryOpts = (isEN || isAR) ? (isAR ? ["إيران","تركيا","الإمارات","العراق","أفغانستان","ألمانيا","المملكة المتحدة","كندا"] : ["Iran","Turkey","UAE","Iraq","Afghanistan","Germany","United Kingdom","Canada"])
+                              : ["ایران","ترکیه","امارات","عراق","افغانستان","آلمان","بریتانیا","کانادا"];
+
+    const paxCards = this.state.paxList.map((p, i) => ({
+      label: num(i + 1) + (isEN?". Adult":(isAR?". بالغ":". بزرگسال")),
+      canRemove: this.state.paxList.length > 1,
+      onRemove: () => this.setState(s => ({ paxList: s.paxList.filter((_, j) => j !== i) })),
+      first: p.first, last: p.last, gender: p.gender, nid: p.nid, day: p.day, month: p.month, year: p.year,
+      passNo: p.passNo || "", passCountry: p.passCountry || "", birthCountry: p.birthCountry || "",
+      expDay: p.expDay || "", expMonth: p.expMonth || "", expYear: p.expYear || "",
+      isNid: p.doc === "nid", isPass: p.doc === "pass",
+      onFirst: (e) => this._latinOnly(e.target.value, v => this._updPax(i, { first: v }), isEN),
+      onLast: (e) => this._latinOnly(e.target.value, v => this._updPax(i, { last: v }), isEN),
+      onGender: (e) => this._updPax(i, { gender: e.target.value }),
+      onNid: (e) => this._onNidInput(i, e, p.doc, isEN),
+      onNidBlur: (e) => this._onNidBlur(i, e, p.doc),
+      onPassNo: (e) => this._onPassInput(i, e),
+      onPassBlur: (e) => this._onPassBlur(i, e),
+      onPassCountry: (e) => this._updPax(i, { passCountry: e.target.value }),
+      onBirthCountry: (e) => this._updPax(i, { birthCountry: e.target.value }),
+      onDay: (e) => this._updPax(i, { day: e.target.value }),
+      onMonth: (e) => this._updPax(i, { month: e.target.value }),
+      onYear: (e) => this._updPax(i, { year: e.target.value }),
+      onExpDay: (e) => this._updPax(i, { expDay: e.target.value }),
+      onExpMonth: (e) => this._updPax(i, { expMonth: e.target.value }),
+      onExpYear: (e) => this._updPax(i, { expYear: e.target.value }),
+      dayOpts, monthOpts: monthNames, yearOpts, expYearOpts, countryOpts,
+      setDocNid: () => this._updPax(i, { doc: "nid" }),
+      setDocPass: () => this._updPax(i, { doc: "pass" }),
+      docNidBorder: p.doc === "nid" ? "var(--accent,#1668c4)" : "#cbd5e1",
+      docNidDot: p.doc === "nid" ? "var(--accent,#1668c4)" : "transparent",
+      docPassBorder: p.doc === "pass" ? "var(--accent,#1668c4)" : "#cbd5e1",
+      docPassDot: p.doc === "pass" ? "var(--accent,#1668c4)" : "transparent",
+      scanInputRef: (el) => { this._scanInputs = this._scanInputs || {}; this._scanInputs[i] = el; },
+      triggerScan: () => this.setState({ scanConfirmIdx: i }),
+      onScanFile: (e) => { if (!e.target.files || !e.target.files[0]) return; this._toast(isEN?"Analyzing photo with AI…":(isAR?"جارٍ تحليل الصورة بالذكاء الاصطناعي…":"در حال تحلیل تصویر با هوش مصنوعی…")); setTimeout(() => { this._updPax(i, p.doc === "nid" ? { first: "Sam", last: "Karimi", gender: "male", day: "14", month: isEN?"May":(isAR?"مايو":"مه"), year: "1990", nid: "0081234567" } : { first: "Sam", last: "Karimi", gender: "male", day: "14", month: isEN?"May":(isAR?"مايو":"مه"), year: "1990", passNo: "K98765432", passCountry: countryOpts[0], birthCountry: countryOpts[0], expDay: "18", expMonth: isEN?"February":(isAR?"فبراير":"فوریه"), expYear: "2030" }); this._toast(isEN?"Document scanned — details filled automatically":(isAR?"تم مسح المستند — تم ملء البيانات تلقائيًا":"مدرک اسکن شد — اطلاعات به‌صورت خودکار پر شد")); e.target.value = ""; }, 1100); },
+      prevOpen: !!p.prevOpen,
+      openPrev: () => this._updPax(i, { prevOpen: !p.prevOpen }),
+      prevChips: saved.map(sp => ({ label: sp.label, onPick: () => this._updPax(i, { first: sp.first, last: sp.last, gender: sp.gender, nid: sp.nid, day: sp.day, month: sp.month, year: sp.year, prevOpen: false }) }))
+    }));
+
+    const SVG_ICONS = {
+      bag: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/></svg>',
+      meal: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17h18"/><path d="M4 17a8 6 0 0 1 16 0"/><path d="M12 8V5"/><circle cx="12" cy="4" r="1"/></svg>',
+      ins: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>',
+      cip: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6 .7-4.4 4.2 1.1 6-5.3-3-5.3 3 1.1-6-4.4-4.2 6-.7z"/></svg>'
+    };
+    const svDefs = [
+      { key: "bag", icon: SVG_ICONS.bag, title: isEN?"Extra baggage (10 kg)":(isAR?"أمتعة إضافية (10 كجم)":"بار اضافه (۱۰ کیلوگرم)"), desc: isEN?"On top of the 20 kg allowance":(isAR?"إضافة إلى الحد المسموح 20 كجم":"علاوه بر مجاز ۲۰ کیلوگرمی"), price: 450000 },
+      { key: "meal", icon: SVG_ICONS.meal, title: isEN?"Hot in-flight meal":(isAR?"وجبة ساخنة على متن الرحلة":"غذای گرم داخل پرواز"), desc: isEN?"Iranian / international menu":(isAR?"قائمة إيرانية / عالمية":"منوی ایرانی / بین‌المللی"), price: 280000 },
+      { key: "ins", icon: SVG_ICONS.ins, title: isEN?"Travel insurance":(isAR?"تأمين السفر":"بیمه مسافرتی"), desc: isEN?"Full delay & damage coverage":(isAR?"تغطية كاملة للتأخير والأضرار":"پوشش کامل تأخیر و خسارت"), price: 120000 },
+      { key: "cip", icon: SVG_ICONS.cip, title: isEN?"Airport CIP services":(isAR?"خدمات CIP في المطار":"خدمات CIP فرودگاهی"), desc: isEN?"Dedicated check-in & gate":(isAR?"تسجيل وصول وبوابة مخصصة":"پذیرش و گیت اختصاصی"), price: 900000 }
+    ];
+    const money = (n) => isEN ? (Math.round(n).toLocaleString("en-US") + " Toman") : (fa(Math.round(n).toLocaleString("en-US").replace(/,/g,"٬")) + " تومان");
+    const services = svDefs.map(sv => {
+      const on = !!this.state.services[sv.key];
+      return { icon: { __html: sv.icon }, title: sv.title, desc: sv.desc, priceFa: money(sv.price),
+        border: on ? "var(--accent,#1668c4)" : "#e6eaf0", bg: on ? "#f6faff" : "#fff",
+        switchBg: on ? "var(--accent,#1668c4)" : "#d7dee8", knobPos: on ? "right:2px" : "left:2px",
+        onToggle: () => this.setState(s => ({ services: Object.assign({}, s.services, { [sv.key]: !s.services[sv.key] }) })) };
+    });
+    const srvTotal = svDefs.reduce((a, sv) => a + (this.state.services[sv.key] ? sv.price : 0), 0);
+
+    const CLUB_POINTS = 12450;
+    const SEAT_MIN_POINTS = 15000;
+    const canPickBiz = CLUB_POINTS >= SEAT_MIN_POINTS;
+
+    const occupied = { "3A":1,"4B":1,"5E":1,"6F":1,"7C":1,"8D":1,"9B":1,"10F":1,"11A":1,"13C":1,"14D":1,"16A":1,"17E":1,"18D":1,"20B":1,"21F":1,"22A":1,"24D":1,"25E":1,"27B":1,"28F":1,"29A":1,"31D":1,"32B":1 };
+    const seatRows = [];
+    const soldSeatsTotal = Object.keys(occupied).length;
+    for (let r = 3; r <= 32; r++) {
+      const biz = r <= 6;
+      const cols = biz ? ["F","E","B","A"] : ["F","E","D","B","A"];
+      const locked = biz && !canPickBiz;
+      seatRows.push({ num: num(r), seats: cols.map(c => {
+        const code = r + c, occ = !!occupied[code], sel = this.state.seatSel === code;
+        const gapCol = biz ? "E" : "D";
+        return { label: c, mLeft: c === gapCol ? "14px" : "0",
+          bg: sel ? "var(--accent,#1668c4)" : (occ ? "#e6eaf0" : (locked ? "#f3f0e6" : (biz ? "#fff6e3" : "#eaf4ff"))),
+          border: sel ? "var(--accent,#1668c4)" : (occ ? "#e6eaf0" : (locked ? "#ddd6c0" : (biz ? "#e6c368" : "#bcd9f5"))),
+          color: sel ? "#fff" : (occ ? "#c2c9d3" : (locked ? "#b3a679" : (biz ? "#a9781a" : "#1668c4"))),
+          cursor: occ ? "default" : (locked ? "not-allowed" : "pointer"),
+          onClick: occ ? (() => {}) : (locked ? (() => this._toastErr(isEN ? ("Selecting a Business seat requires at least " + (15000).toLocaleString("en-US") + " loyalty points (your current points: " + (12450).toLocaleString("en-US") + ").") : (isAR ? "يتطلب اختيار مقعد درجة الأعمال 15,000 نقطة ولاء على الأقل (نقاطك الحالية: 12,450)." : "انتخاب صندلی بیزنس نیازمند حداقل ۱۵٬۰۰۰ امتیاز باشگاه است (امتیاز فعلی شما: ۱۲٬۴۵۰).")) ) : (() => this.setState({ seatSel: code }))) };
+      }) });
+    }
+
+    const reviewPax = this.state.paxList.map(p => ({
+      name: (p.first || "—") + " " + (p.last || ""),
+      doc: (p.doc === "pass" ? p.passNo : p.nid) || "—",
+      birth: (p.day && p.month && p.year) ? (p.day + " " + p.month + " " + p.year) : "—",
+      gender: p.gender ? (p.gender === "male" ? (isEN?"Male":(isAR?"ذكر":"مرد")) : (isEN?"Female":(isAR?"أنثى":"زن"))) : "—"
+    }));
+    const pickedSrv = svDefs.filter(sv => this.state.services[sv.key]).map(sv => sv.title);
+    const reviewSrv = pickedSrv.length ? pickedSrv.join(isEN?", ":"، ") : (isEN?"No extra services":(isAR?"بدون خدمات إضافية":"بدون خدمات جانبی"));
+
+    const CLUB_POINTS_BALANCE = 12450;
+    const POINTS_RATE = 100;
+    const pmDefs = [
+      { iconPath: "M2 7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zM2 10h20M6 15h4", iconBg: "#eef4fb", iconColor: "#1668c4", title: isEN?"Bank gateway (Shetab)":(isAR?"بوابة بنكية (شتاب)":"درگاه بانکی (شتاب)"), desc: isEN?"Pay online with any Shetab card":(isAR?"الدفع عبر الإنترنت بأي بطاقة شتاب":"پرداخت آنلاین با هر کارت شتابی"), tag: isEN?"Recommended":(isAR?"موصى به":"پیشنهادی"), tagColor: "#1f8a5b" },
+      { iconPath: "M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M21 7h-7a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h7zM16.5 12h.01", iconBg: "#f0eefb", iconColor: "#6d5bd0", title: isEN?"blujet wallet":(isAR?"محفظة blujet":"کیف پول blujet"), desc: (isEN?"Balance: ":(isAR?"الرصيد: ":"موجودی: ")) + money(2450000), tag: "", tagColor: "#9aa4b2" },
+      { iconPath: "M12 3l2.7 5.5 6 .9-4.3 4.2 1 6L12 16.8l-5.4 2.8 1-6L3.3 9.4l6-.9z", iconBg: "#fdf3d9", iconColor: "#caa53a", title: isEN?"Pay with loyalty points":(isAR?"الدفع بنقاط الولاء":"پرداخت با امتیاز باشگاه"), desc: (isEN?"Balance: ":(isAR?"الرصيد: ":"موجودی: ")) + num(CLUB_POINTS_BALANCE) + (isEN?" points":(isAR?" نقطة":" امتیاز")), tag: "", tagColor: "#9aa4b2" }
+    ];
+    const payMethods = pmDefs.map((pm, i) => {
+      const on = this.state.payMethod === i;
+      return { ...pm, border: on ? "var(--accent,#1668c4)" : "#e6eaf0", bg: on ? "#f6faff" : "#fff",
+        dotBorder: on ? "var(--accent,#1668c4)" : "#cbd5e1", dot: on ? "var(--accent,#1668c4)" : "transparent",
+        onPick: () => this.setState({ payMethod: i }) };
+    });
+
+    const n = this.state.paxList.length;
+    const fareOnly = f.priceNum || 0;
+    const disc = this.state.discApplied ? 200000 : 0;
+    const pickedSrvLines = svDefs.filter(sv => this.state.services[sv.key]).map(sv => ({ title: sv.title, priceFa: money(sv.price) }));
+    const subtotalBeforePoints = fareOnly * n + TAX * n + srvTotal - disc;
+    const usingPoints = this.state.payMethod === 2;
+    const usedPoints = usingPoints ? Math.min(CLUB_POINTS_BALANCE, Math.floor(subtotalBeforePoints / POINTS_RATE)) : 0;
+    const pointsDiscount = usedPoints * POINTS_RATE;
+    const grand = subtotalBeforePoints - pointsDiscount;
+
+    const defs = isEN ? ["Select flight","Passenger details","Travel extras","Confirm details","Payment","Ticket issued"]
+                       : (isAR ? ["اختيار الرحلة","بيانات المسافر","الخدمات الإضافية","تأكيد البيانات","الدفع","إصدار التذكرة"]
+                       : ["انتخاب پرواز","اطلاعات مسافر","خدمات جانبی","تأیید اطلاعات","پرداخت","صدور بلیط"]);
+    const cur = step + 1;
+    const steps = defs.map((label, i) => {
+      const done = i < cur, active = i === cur;
+      return { label, mark: done ? "✓" : num(i + 1),
+        bg: done ? "#1f8a5b" : (active ? "var(--accent,#1668c4)" : "#fff"),
+        color: done || active ? "#fff" : "#9aa4b2",
+        border: done ? "#1f8a5b" : (active ? "var(--accent,#1668c4)" : "#e2e7ee"),
+        hasLine: i < defs.length - 1 };
+    });
+
+    const stepDefs = isEN ? ["Passenger Info","Travel Extras","Review","Payment"] : (isAR ? ["بيانات المسافر","الخدمات الإضافية","المراجعة","الدفع"] : ["اطلاعات مسافر","خدمات جانبی","بازبینی","پرداخت"]);
+    const nextLabels = isEN ? ["Confirm & continue","Continue to review","Confirm & pay","Pay " + money(grand)]
+                             : (isAR ? ["تأكيد ومتابعة","متابعة إلى المراجعة","تأكيد والدفع","دفع " + money(grand)]
+                             : ["تأیید و ادامه","ادامه تا بازبینی","تأیید و پرداخت","پرداخت " + money(grand)]);
+    const stepBar = stepDefs.map((label, i) => {
+      const done = step > i || step === 4;
+      const active = step === i;
+      const STEP_ICON_LIST = [
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5a3.2 3.2 0 0 1 0 6.4"/></svg>',
+        SVG_ICONS.bag,
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>'
+      ];
+      const CHECK_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+      return {
+        label,
+        icon: { __html: done ? CHECK_ICON : STEP_ICON_LIST[i] },
+        bg: done ? "var(--accent,#1668c4)" : active ? "var(--accent,#1668c4)" : "#dde2ea",
+        color: done || active ? "#fff" : "#8a96a6",
+        border: done ? "var(--accent,#1668c4)" : active ? "var(--accent,#1668c4)" : "#e2e7ee",
+        shadow: active ? "0 0 0 5px rgba(22,104,196,.14)" : "none",
+        labelWeight: active ? "800" : "600",
+        labelColor: active ? "#0d2640" : done ? "#5a6678" : "#b7c0cc"
+      };
+    });
+    const stepProgressPct = Math.round((step / 3) * 100) + "%";
+    return { ...T,
+      isMobile: this.state.isMobile,
+      notMobile: !this.state.isMobile,
+      mobDropSide: isEN ? "right:0" : "left:0",
+      pageDir: isEN ? "ltr" : "rtl",
+      langLabel: isEN ? "EN" : (this.state.lang === "ar" ? "AR" : "FA"), langOpen: this.state.langOpen, toggleLang: () => this.setState(s => ({ langOpen: !s.langOpen })),
+      enCheck: isEN ? "✓" : "", faCheck: (!isEN && this.state.lang !== "ar") ? "✓" : "", arCheck: this.state.lang === "ar" ? "✓" : "", setLangAr: () => { try { localStorage.setItem("blujet_lang","ar"); } catch(e){} this.setState({ lang:"ar", langOpen:false }); },
+      setLangEn: () => { try { localStorage.setItem("blujet_lang","en"); } catch(e){} this.setState({ lang:"en", langOpen:false }); },
+      setLangFa: () => { try { localStorage.setItem("blujet_lang","fa"); } catch(e){} this.setState({ lang:"fa", langOpen:false }); },
+      stepBar, stepProgressPct,
+      stepBarShift: this.state.isMobile ? "0" : (isEN ? "-70px" : "70px"),
+      stepBarShift2: this.state.isMobile ? "0" : (isEN ? "120px" : "-120px"),
+      mobileMenuOpen: this.state.mobileMenuOpen,
+      toggleMobileMenu: () => this.setState(s => ({ mobileMenuOpen: !s.mobileMenuOpen })),
+      navDisplay: this.state.isMobile ? "none" : "flex",
+      hamburgerDisplay: this.state.isMobile ? "flex" : "none",
+      descriptionLabel: isEN ? "Description" : (isAR?"الوصف":"شرح"),
+      amountTomanLabel: isEN ? "Amount (Toman)" : (isAR?"المبلغ (تومان)":"مبلغ (تومان)"),
+      headerH: this.state.isMobile ? "62px" : "86px",
+      navGap: isEN ? "18px" : "30px",
+      navFontSize: isEN ? "15.5px" : "17.5px",
+      headerBarBg: this.state.isMobile ? "var(--accent,#1668c4)" : "#fff",
+      headerBorderB: this.state.isMobile ? "none" : "1px solid #e6eaf0",
+      logoTextColor: this.state.isMobile ? "#fff" : "#16202e",
+      logoSquareBg: this.state.isMobile ? "#fff" : "var(--accent,#1668c4)",
+      logoIconColor: this.state.isMobile ? "var(--accent,#1668c4)" : "#fff",
+      hamburgerColor: this.state.isMobile ? "#fff" : "#0d2640",
+      userChipBg: this.state.isMobile ? "rgba(255,255,255,.16)" : "#fff",
+      userChipBorder: this.state.isMobile ? "none" : "1px solid #e6eaf0",
+      userChipTextColor: this.state.isMobile ? "#fff" : "#16202e",
+      hamburgerShown: this.state.isMobile,
+      loggedIn: (typeof localStorage !== "undefined" && (localStorage.getItem('blujet_auth') === 'in' || localStorage.getItem('blujet_auth') === 'agency')),
+      notLoggedIn: !(typeof localStorage !== "undefined" && (localStorage.getItem('blujet_auth') === 'in' || localStorage.getItem('blujet_auth') === 'agency')),
+      userDisplayName: (typeof localStorage !== "undefined" && localStorage.getItem('blujet_user_name')) || (isEN?"Negar Rezaei":"نگار رضایی"),
+      profileIncomplete: typeof localStorage !== "undefined" && localStorage.getItem('blujet_profile_complete') === '0',
+      userTierLabel: (typeof localStorage !== "undefined" && localStorage.getItem('blujet_profile_complete') === '0') ? T.completeProfileLabel : (isEN?"Gold Club Member":"عضو طلایی باشگاه"),
+      uPoints: isEN ? "12,450" : "۱۲٬۴۵۰",
+      dlAppStore: () => this._toast(isEN?"App Store download link will be texted to you ✓":"لینک دانلود اپ‌استور برایتان پیامک می‌شود ✓"),
+      dlGooglePlay: () => this._toast(isEN?"Google Play download link will be texted to you ✓":"لینک دانلود گوگل‌پلی برایتان پیامک می‌شود ✓"),
+      cols2: this.state.isMobile ? "repeat(2,1fr)" : "repeat(4,1fr)",
+      paxNameCols: this.state.isMobile ? "1fr" : "1fr 1.6fr 0.7fr",
+      dobGridCols: this.state.isMobile ? "1fr" : "1fr 1fr",
+      passportDobExpCols: this.state.isMobile ? "1fr" : "minmax(0,1fr) minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr)",
+      reviewExtraCols: this.state.isMobile ? "1fr" : "1fr 1fr",
+      servicesCols: this.state.isMobile ? "1fr" : "1fr 1fr",
+      mainCols: this.state.isMobile ? "1fr" : "minmax(0,1fr) 8px 380px",
+      asideTop: this.state.isMobile ? "auto" : "146px",
+      mainPad: this.state.isMobile ? "14px 14px 90px" : "20px",
+      asidePos: this.state.isMobile ? "static" : "sticky",
+      showStickyBar: this.state.isMobile && this.state.step < 4,
+      footerStickyPad: (this.state.isMobile && this.state.step < 4) ? "84px" : "0",
+      notifOpen: this.state.notifOpen,
+      toggleNotif: () => this.setState(s => ({ notifOpen: !s.notifOpen, userMenuOpen: false })),
+      userMenuOpen: this.state.userMenuOpen,
+      toggleUserMenu: () => this.setState(s => ({ userMenuOpen: !s.userMenuOpen, notifOpen: false })),
+      notifs: (this.props.setupMode || isAR) ? [] : [
+        { icon: "✈", title: isEN?"Trip reminder":"یادآوری سفر", body: isEN?"Your Tehran → Dubai flight is tomorrow. Online check-in is open.":"پرواز تهران ← دبی شما فردا است. چک‌این آنلاین باز است.", time: isEN?"1 hour ago":"۱ ساعت پیش", bg: "#f6faff" },
+        { icon: "★", title: isEN?"Loyalty points":"امتیاز باشگاه", body: isEN?"450 points from your last purchase were added to your account.":"۴۵۰ امتیاز از خرید اخیر شما به حسابتان اضافه شد.", time: isEN?"Yesterday":"دیروز", bg: "#fff" },
+        { icon: "🏷", title: isEN?"Discount code":"کد تخفیف", body: isEN?"Code BLUE20 is active for domestic flights until the end of the week.":"کد BLUE20 برای پروازهای داخلی تا پایان هفته فعال است.", time: isEN?"2 days ago":"۲ روز پیش", bg: "#fff" }
+      ],
+      steps,
+      goBack: () => { if (step > 0) this.setState({ step: step - 1 }); else window.location.href = "نتایج پرواز.dc.html"; },
+      backArrowPath: isAR ? "M9 18l6-6-6-6" : "M15 18l-6-6 6-6",
+      seatOpen: this.state.seatOpen,
+      onSeatToggle: () => this.setState(s => ({ seatOpen: !s.seatOpen })),
+      seatChevron: this.state.seatOpen ? "rotate(180deg)" : "rotate(0deg)",
+      routeLabel: cityName(f.from || "Tehran") + (isEN?" to ":" به ") + cityName(f.to || "Dubai"),
+      flightMeta: (f.airline || "blujet") + " · " + (f.aircraft || "MD-88") + " · " + (f.date || "") + " – " + (f.dep || "—"),
+      cabinLabel: f.cabin === "Business" ? (isEN?"Business":"بیزنس") : (isEN?"Economy":"اکونومی"),
+      stepPax: step === 0, stepSrv: step === 1, stepReview: step === 2, stepPay: step === 3, stepDone: step === 4,
+      notDone: step < 4,
+      scanConfirmOpen: this.state.scanConfirmIdx !== null,
+      cancelScan: () => this.setState({ scanConfirmIdx: null }),
+      confirmScan: () => { const idx = this.state.scanConfirmIdx; this.setState({ scanConfirmIdx: null }); if (this._scanInputs && this._scanInputs[idx]) this._scanInputs[idx].click(); },
+      paxCards, dayOpts, monthOpts: monthNames, yearOpts,
+      addPax: () => this.setState(s => ({ paxList: s.paxList.concat([{ doc: "nid", first: "", last: "", gender: "", day: "", month: "", year: "", nid: "", prevOpen: false }]) })),
+      services, srvHeadIcon: { __html: SVG_ICONS.bag }, seatRows, bizLocked: !canPickBiz, soldSeatsFa: num(soldSeatsTotal), seatCapFa: num(146),
+      srvShown: !this.state.isMobile || this.state.srvOpen,
+      srvToggleShown: this.state.isMobile,
+      srvCursor: this.state.isMobile ? "pointer" : "default",
+      onSrvToggle: () => this.setState(s => ({ srvOpen: !s.srvOpen })),
+      srvChevron: this.state.srvOpen ? "rotate(180deg)" : "rotate(0deg)",
+      seatSelLabel: this.state.seatSel ? this.state.seatSel : (isEN?"Not selected":(isAR?"لم يتم الاختيار":"انتخاب نشده")),
+      reviewPax, reviewSrv,
+      payMethods,
+      discountInput: this.state.discountInput,
+      onDiscountInput: (e) => this._onDiscountInput(e),
+      onApplyDiscount: () => this._applyDiscount(isEN),
+      onRemoveDiscount: () => this._removeDiscount(),
+      discApplied: this.state.discApplied,
+      discBtnBg: this.state.discApplied ? "#e9f6ef" : "var(--accent,#1668c4)",
+      discBtnColor: this.state.discApplied ? "#1f8a5b" : "#fff",
+      discBtnLabel: this.state.discApplied ? (isEN?"Applied ✓":"اعمال شد ✓") : (isEN?"Apply code":"اعمال کد"),
+      paxCountFa: num(n),
+      fareTotalFa: money(fareOnly * n),
+      taxTotalFa: money(TAX * n),
+      pickedSrvLines,
+      hasDiscLine: disc > 0, discFa: money(disc),
+      hasPointsLine: usedPoints > 0, usedPointsFa: num(usedPoints), pointsDiscountFa: money(pointsDiscount),
+      grandTotalFa: money(grand),
+      hasErr: this.state.formErr,
+      canBack: step > 0 && step < 4,
+      prevStep: () => this.setState(s => ({ step: Math.max(0, s.step - 1) })),
+      nextLabel: nextLabels[Math.min(step, 3)],
+      nextStep: () => {
+        if (step === 0) {
+          const lang = this.state.lang;
+          const bad = this.state.paxList.some(p => !p.first.trim() || !p.last.trim() || !p.gender || !p.nid.trim());
+          if (bad) { this.setState({ formErr: true }); return; }
+          const nidBad = this.state.paxList.some(p => p.doc !== "pass" && p.nid.length !== 10);
+          if (nidBad) { this.setState({ formErr: true }); this._toastErr(this._nidErrMsg(lang)); return; }
+          const passBad = this.state.paxList.some(p => p.doc === "pass" && !this._isValidPass(p.nid));
+          if (passBad) { this.setState({ formErr: true }); this._toastErr(this._passErrMsg(lang)); return; }
+          this.setState({ step: 1 });
+        } else if (step === 1) this.setState({ step: 2 });
+        else if (step === 2) this.setState({ step: 3 });
+        else if (step === 3) {
+          const pnr = "BJ-" + Math.random().toString(36).slice(2, 7).toUpperCase();
+          this.setState({ step: 4, pnr });
+          this._toast(isEN?"Payment successful":(isAR?"تم الدفع بنجاح":"پرداخت با موفقیت انجام شد"));
+        }
+      },
+      depTime: f.dep || "08:30", arrTime: f.arr || "10:45",
+      depDateLabel: f.date || "",
+      fromCity: cityName(f.from || "Tehran"), toCity: cityName(f.to || "Dubai"),
+      firstPaxName: (this.state.paxList[0].first || "Negar") + " " + (this.state.paxList[0].last || "Rezaei"),
+      pnr: this.state.pnr || "BJ-XXXXX",
+      printTicket: () => window.print(),
+      hasToast: !!this.state.toast, toast: this.state.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

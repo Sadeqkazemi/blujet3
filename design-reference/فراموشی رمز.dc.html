@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box;}html,body{margin:0;}</style>
+</helmet>
+
+<div dir="rtl" style="font-family:Vazirmatn,sans-serif; background:#eef3f9; color:#16202e; min-height:100vh; --accent:#1668c4; display:flex; align-items:center; justify-content:center; padding:22px;">
+  <div style="width:480px; max-width:100%; background:#fff; border-radius:20px; box-shadow:0 40px 90px -30px rgba(13,38,102,.4); padding:26px 25px;">
+
+    <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:8px; margin-bottom:8px; text-decoration:none; color:#16202e;"><div style="width:38px; height:38px; border-radius:10px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:17px;">✈</div><span style="font-weight:900; font-size:18px;">blujet</span></a>
+    <h2 style="font-size:20px; font-weight:900; margin:18px 0 6px;">{{ title }}</h2>
+    <p style="font-size:12px; color:#8a96a6; margin:0 0 24px; line-height:1.9;">{{ subtitle }}</p>
+
+    <!-- stepper -->
+    <div style="display:flex; align-items:center; gap:7px; margin-bottom:26px;">
+      <sc-for list="{{ steps }}" as="s" hint-placeholder-count="3">
+        <span style="width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:800; background:{{ s.bg }}; color:{{ s.color }}; border:1.5px solid {{ s.border }};">{{ s.n }}</span>
+        <span style="flex:1; height:2px; background:{{ s.line }};"></span>
+      </sc-for>
+    </div>
+
+    <!-- STEP 1: identifier -->
+    <sc-if value="{{ isStep1 }}" hint-placeholder-val="{{true}}">
+      <div style="display:flex; flex-direction:column; gap:13px;">
+        <div><div style="font-size:11.5px; color:#5a6678; font-weight:600; margin-bottom:7px;">موبایل یا ایمیل حساب</div><div style="height:52px; border:1.5px solid #e2e7ee; border-radius:11px; background:#fafbfd; padding:0 12px; display:flex; align-items:center; color:#b0b8c4; font-size:12.5px;" dir="ltr">۰۹xxxxxxxxx</div></div>
+        <div onClick="{{ next }}" style="height:54px; border-radius:12px; background:var(--accent,#1668c4); color:#fff; display:flex; align-items:center; justify-content:center; font-size:14.5px; font-weight:800; cursor:pointer;">ارسال کد بازیابی</div>
+      </div>
+    </sc-if>
+
+    <!-- STEP 2: OTP -->
+    <sc-if value="{{ isStep2 }}" hint-placeholder-val="{{false}}">
+      <div style="display:flex; flex-direction:column; gap:13px;">
+        <div><div style="font-size:11.5px; color:#5a6678; font-weight:600; margin-bottom:9px;">کد تأیید ۵ رقمی ارسال شد</div>
+          <div style="display:flex; gap:8px; direction:ltr;">
+            <span style="flex:1; height:54px; border:1.5px solid var(--accent,#1668c4); border-radius:11px; background:#f3f7fc; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800;">۸</span>
+            <span style="flex:1; height:54px; border:1.5px solid #e2e7ee; border-radius:11px; background:#fafbfd; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800;">۳</span>
+            <span style="flex:1; height:54px; border:1.5px solid #e2e7ee; border-radius:11px; background:#fafbfd; display:flex; align-items:center; justify-content:center; font-size:18px; color:#cdd5df;">_</span>
+            <span style="flex:1; height:54px; border:1.5px solid #e2e7ee; border-radius:11px; background:#fafbfd; display:flex; align-items:center; justify-content:center; font-size:18px; color:#cdd5df;">_</span>
+            <span style="flex:1; height:54px; border:1.5px solid #e2e7ee; border-radius:11px; background:#fafbfd; display:flex; align-items:center; justify-content:center; font-size:18px; color:#cdd5df;">_</span>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; font-size:11.5px;"><span style="color:#8a96a6;">کد را دریافت نکردید؟</span><span onClick="{{ resend }}" style="color:var(--accent,#1668c4); font-weight:700; cursor:pointer;">ارسال مجدد (۰۲:۰۰)</span></div>
+        <div onClick="{{ next }}" style="height:54px; border-radius:12px; background:var(--accent,#1668c4); color:#fff; display:flex; align-items:center; justify-content:center; font-size:14.5px; font-weight:800; cursor:pointer;">تأیید کد</div>
+      </div>
+    </sc-if>
+
+    <!-- STEP 3: new password -->
+    <sc-if value="{{ isStep3 }}" hint-placeholder-val="{{false}}">
+      <div style="display:flex; flex-direction:column; gap:13px;">
+        <div><div style="font-size:11.5px; color:#5a6678; font-weight:600; margin-bottom:7px;">رمز عبور جدید</div><div style="height:52px; border:1.5px solid #e2e7ee; border-radius:11px; background:#fafbfd; padding:0 12px; display:flex; align-items:center; color:#b0b8c4; font-size:12.5px;">حداقل ۸ کاراکتر</div></div>
+        <div><div style="font-size:11.5px; color:#5a6678; font-weight:600; margin-bottom:7px;">تکرار رمز عبور جدید</div><div style="height:52px; border:1.5px solid #e2e7ee; border-radius:11px; background:#fafbfd; padding:0 12px; display:flex; align-items:center; color:#b0b8c4; font-size:12.5px;">تکرار رمز</div></div>
+        <div onClick="{{ next }}" style="height:54px; border-radius:12px; background:#1f8a5b; color:#fff; display:flex; align-items:center; justify-content:center; font-size:14.5px; font-weight:800; cursor:pointer;">ذخیره رمز جدید</div>
+      </div>
+    </sc-if>
+
+    <!-- DONE -->
+    <sc-if value="{{ isDone }}" hint-placeholder-val="{{false}}">
+      <div style="text-align:center; padding:8px 0 5px;">
+        <div style="width:70px; height:70px; border-radius:50%; background:#e8f5ee; color:#1f8a5b; display:flex; align-items:center; justify-content:center; font-size:30.5px; margin:0 auto 16px;">✓</div>
+        <div style="font-size:16px; font-weight:800; margin-bottom:8px;">رمز عبور با موفقیت تغییر کرد</div>
+        <p style="font-size:12px; color:#5a6678; line-height:1.9; margin:0 0 20px;">اکنون می‌توانید با رمز جدید وارد حساب خود شوید.</p>
+        <a href="ورود و ثبت‌نام.dc.html" style="text-decoration:none; display:flex; height:52px; border-radius:12px; background:var(--accent,#1668c4); color:#fff; align-items:center; justify-content:center; font-size:13.5px; font-weight:800;">ورود به حساب</a>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ notDone }}" hint-placeholder-val="{{true}}">
+      <a href="ورود و ثبت‌نام.dc.html" style="text-decoration:none; display:block; text-align:center; margin-top:22px; font-size:11.5px; color:#8a96a6; font-weight:600;">‹ بازگشت به صفحه ورود</a>
+    </sc-if>
+  </div>
+</div>
+
+<!-- TOAST -->
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:9000; background:#0d2640; color:#fff; padding:12px 18px; border-radius:12px; font-size:12.5px; font-weight:700; box-shadow:0 14px 40px -10px rgba(13,38,64,.5); display:flex; align-items:center; gap:9px; max-width:90vw;"><span style="width:22px; height:22px; border-radius:50%; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; flex:none; font-size:12px;">✓</span><span>{{ toast }}</span></div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { step: 1, toast: "" };
+  toast(t){ this.setState({ toast: t }); clearTimeout(this._toastT); this._toastT = setTimeout(() => this.setState({ toast: "" }), 2800); }
+  renderVals() {
+    const st = this.state.step;
+    const dot = (n) => ({
+      n: ["۱","۲","۳"][n-1],
+      bg: st > n ? "#1f8a5b" : (st === n ? "var(--accent,#1668c4)" : "#fff"),
+      color: st >= n ? "#fff" : "#9aa4b2",
+      border: st >= n ? "transparent" : "#dde4ec",
+      line: st > n ? "#1f8a5b" : "#e6eaf0"
+    });
+    const titles = ["", "بازیابی رمز عبور", "کد تأیید را وارد کنید", "رمز عبور جدید"];
+    const subs = ["",
+      "موبایل یا ایمیل حساب خود را وارد کنید تا کد بازیابی برایتان ارسال شود.",
+      "کد ۵ رقمی ارسال‌شده به موبایل شما را وارد کنید.",
+      "یک رمز عبور جدید و امن برای حساب خود انتخاب کنید."];
+    return {
+      steps: [dot(1), dot(2), dot(3)],
+      toast: this.state.toast, hasToast: !!this.state.toast,
+      resend: () => this.toast("کد بازیابی مجدداً ارسال شد ✓"),
+      isStep1: st === 1, isStep2: st === 2, isStep3: st === 3, isDone: st === 4,
+      notDone: st !== 4,
+      title: st >= 4 ? "" : titles[st],
+      subtitle: st >= 4 ? "" : subs[st],
+      next: () => { const s = this.state.step; const msg = s===1 ? "کد بازیابی به موبایل شما پیامک شد ✓" : s===2 ? "کد تأیید شد، رمز جدید را وارد کنید ✓" : "رمز عبور شما با موفقیت تغییر کرد ✓"; this.toast(msg); this.setState(st => ({ step: st.step + 1 })); }
+    };
+  }
+}
+</script>
+</body>
+</html>

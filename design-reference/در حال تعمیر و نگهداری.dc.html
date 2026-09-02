@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box;}html,body{margin:0;}@keyframes spinM{to{transform:rotate(360deg);}}@keyframes spinMr{to{transform:rotate(-360deg);}}@keyframes pulseM{0%,100%{opacity:.5;}50%{opacity:1;}}</style>
+</helmet>
+
+<div dir="rtl" style="font-family:'Vazirmatn',sans-serif; min-height:100vh; background:#f6f8fb; color:#16202e; display:flex; flex-direction:column; --accent:#1668c4;">
+
+  <header style="border-bottom:1px solid #e9eef4; background:#fff;">
+    <div style="max-width:1180px; margin:0 auto; padding:0 26px; height:74px; display:flex; align-items:center;">
+      <div style="display:flex; align-items:center; gap:9px;">
+        <div style="width:36px; height:36px; border-radius:10px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:17px;">✈</div>
+        <span style="font-weight:900; font-size:18px;">blujet</span>
+      </div>
+    </div>
+  </header>
+
+  <main style="flex:1; display:flex; align-items:center; justify-content:center; padding:40px 24px;">
+    <div style="max-width:580px; width:100%; text-align:center;">
+      <div style="position:relative; width:150px; height:150px; margin:0 auto 26px;">
+        <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;">
+          <svg width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="var(--accent,#1668c4)" stroke-width="1.4" style="animation:spinM 9s linear infinite; transform-origin:center;"><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/><circle cx="12" cy="12" r="4.5"/></svg>
+        </div>
+        <div style="position:absolute; top:-4px; left:-2px; opacity:.55;">
+          <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#8fb4de" stroke-width="1.5" style="animation:spinMr 6s linear infinite; transform-origin:center;"><path d="M12 4v2M12 18v2M4 12h2M18 12h2"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+      </div>
+      <span style="display:inline-flex; align-items:center; gap:7px; font-size:11.5px; font-weight:800; color:#b26b00; background:#fff3dd; border:1px solid #f4dfae; padding:6px 14px; border-radius:20px; margin-bottom:18px;"><span style="width:8px; height:8px; border-radius:50%; background:#e0a020; animation:pulseM 1.4s ease-in-out infinite;"></span>در حال به‌روزرسانی</span>
+      <h1 style="font-size:25px; font-weight:900; margin:0 0 13px;">سایت در حال تعمیر و نگهداری است</h1>
+      <p style="font-size:14px; color:#5a6678; line-height:2; margin:0 0 26px;">برای بهبود سرویس و ارتقای سامانه، سایت به‌طور موقت در دسترس نیست. کمی بعد دوباره در خدمت شما خواهیم بود. از صبوری شما سپاسگزاریم.</p>
+      <div style="display:inline-flex; align-items:center; gap:16px; background:#fff; border:1px solid #e9eef4; border-radius:14px; padding:14px 22px; flex-wrap:wrap; justify-content:center;">
+        <div style="display:flex; align-items:center; gap:8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent,#1668c4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span style="font-size:12.5px; color:#5a6678;">زمان تقریبی بازگشت: <b style="color:#16202e;">حدود ۲ ساعت آینده</b></span></div>
+        <div style="width:1px; height:22px; background:#e9eef4;"></div>
+        <a href="تماس با ما.dc.html" style="font-size:12.5px; font-weight:700; color:var(--accent,#1668c4); text-decoration:none;">پشتیبانی</a>
+      </div>
+      <div style="margin-top:30px; display:flex; align-items:center; gap:16px; justify-content:center; font-size:12px; color:#9aa4b2;">
+        <span>۰۲۱-۴۸۰۰۰۰۰۰</span><span>·</span><span>support@aseman.ir</span>
+      </div>
+    </div>
+  </main>
+
+</div>
+</x-dc>
+</body>
+</html>

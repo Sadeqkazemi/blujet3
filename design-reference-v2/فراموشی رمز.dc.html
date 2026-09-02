@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box;}html,body{margin:0;}a{color:#1668c4;}a:hover{color:#0d4f9e;}
+input{font-family:inherit;}input:focus{outline:none;border-color:#1668c4 !important;background:#f3f7fc !important;}
+@keyframes cloudDrift{0%{transform:translateX(0);}50%{transform:translateX(40px);}100%{transform:translateX(0);}}
+@keyframes planeFloat{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-16px) rotate(-1.5deg);}}</style>
+</helmet>
+
+<div dir="{{ pageDir }}" style="font-family:{{ fontFam }}; color:#16202e; min-height:100vh; --accent:#1668c4; display:flex; align-items:center; justify-content:center; padding:26px; position:relative; background:#ffffff;">
+
+  <!-- CARD -->
+  <div style="width:960px; max-width:100%; background:#fff; border-radius:26px; overflow:hidden; box-shadow:0 50px 110px -38px rgba(13,38,102,.4); border:1px solid #e4edf8; display:grid; grid-template-columns:{{ cardCols }}; position:relative;">
+
+    <!-- FORM SIDE -->
+    <div style="padding:{{ formPad }}; display:flex; flex-direction:column;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:26px;">
+        <a href="صفحه اصلی.dc.html" style="display:flex; align-items:center; gap:9px; text-decoration:none; color:#16202e;"><div style="width:40px; height:40px; border-radius:11px; background:var(--accent,#1668c4); display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px;">✈</div><span style="font-weight:900; font-size:19px;">blujet</span></a>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span onClick="{{ toggleLang }}" style="display:flex; align-items:center; gap:6px; cursor:pointer; color:#5a6678; border:1.5px solid #e2e7ee; border-radius:20px; padding:7px 13px; font-size:12px; font-weight:700;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 4 5.7 4 9s-1.5 6.5-4 9c-2.5-2.5-4-5.7-4-9s1.5-6.5 4-9z"/></svg>{{ langLabel }}</span>
+          <a href="ورود و ثبتنام.dc.html" style="text-decoration:none; font-size:11.5px; color:#8a96a6; font-weight:700; border:1.5px solid #e6ebf2; border-radius:100px; padding:8px 15px; white-space:nowrap;" style-hover="color:#1668c4; border-color:#c9dcf3;">{{ backToLoginLabel }}</a>
+          <a href="صفحه اصلی.dc.html" style="display:{{ closeBtnDisplay }}; width:36px; height:36px; border-radius:50%; background:#f3f5f8; color:#5a6678; align-items:center; justify-content:center; font-size:18px; text-decoration:none;">×</a>
+        </div>
+      </div>
+
+      <!-- stepper -->
+      <div style="display:flex; gap:8px; margin-bottom:30px;">
+        <sc-for list="{{ steps }}" as="s" hint-placeholder-count="3">
+          <div style="flex:1; display:flex; flex-direction:column; gap:7px;">
+            <div style="height:5px; border-radius:100px; background:{{ s.bar }};"></div>
+            <div style="font-size:10.5px; font-weight:{{ s.w }}; color:{{ s.c }};">{{ s.label }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <h1 style="font-size:24px; font-weight:900; margin:0 0 8px;">{{ title }}</h1>
+      <p style="font-size:12.5px; color:#7d8ba0; margin:0 0 28px; line-height:2;">{{ subtitle }}</p>
+
+      <!-- ============ ENGLISH: EMAIL + CODE + NEW PASSWORD ============ -->
+      <sc-if value="{{ isENStep1 }}" hint-placeholder-val="{{false}}">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div>
+            <div style="font-size:12px; color:#42506a; font-weight:700; margin-bottom:8px;">Email address</div>
+            <input type="email" dir="ltr" value="{{ email }}" onChange="{{ setEmail }}" placeholder="you@gmail.com" style="width:100%; height:56px; border:1.5px solid #dfe6ef; border-radius:13px; background:#fafbfd; padding:0 16px; font-size:15px; font-weight:600; color:#16202e;">
+            <div style="font-size:11px; color:{{ emailHintColor }}; margin-top:7px; font-weight:600;">{{ emailHint }}</div>
+          </div>
+          <div onClick="{{ sendResetCode }}" style="height:56px; border-radius:13px; background:{{ sendBg }}; color:#fff; display:flex; align-items:center; justify-content:center; gap:8px; font-size:15px; font-weight:800; cursor:{{ sendCursor }}; box-shadow:{{ sendShadow }}; transition:background .2s;">Send reset code</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isENStep2 }}" hint-placeholder-val="{{false}}">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div>
+            <div style="font-size:12px; color:#42506a; font-weight:700; margin-bottom:10px;">5-digit code sent to <span dir="ltr" style="color:var(--accent,#1668c4);">{{ email }}</span></div>
+            <div style="display:flex; gap:10px; direction:ltr;">
+              <sc-for list="{{ otpCells }}" as="c" hint-placeholder-count="5">
+                <input type="tel" value="{{ c.v }}" onChange="{{ c.change }}" onKeyDown="{{ c.keydown }}" ref="{{ c.ref }}" maxLength="1" style="flex:1; width:100%; height:60px; border:1.5px solid {{ c.border }}; border-radius:13px; background:{{ c.bg }}; text-align:center; font-size:22px; font-weight:800; color:#16202e; padding:0;">
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; font-size:12px;">
+            <span onClick="{{ editEmail }}" style="color:#8a96a6; font-weight:700; cursor:pointer;">✎ Edit email</span>
+            <span onClick="{{ resendCode }}" style="color:var(--accent,#1668c4); font-weight:800; cursor:pointer;">Resend code</span>
+          </div>
+          <div onClick="{{ verifyCodeEN }}" style="height:56px; border-radius:13px; background:{{ verifyBg }}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; cursor:{{ verifyCursor }}; box-shadow:{{ verifyShadow }}; transition:background .2s;">Verify code</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isENStep3 }}" hint-placeholder-val="{{false}}">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div>
+            <div style="font-size:12px; color:#42506a; font-weight:700; margin-bottom:8px;">New password</div>
+            <input type="password" dir="ltr" value="{{ p1 }}" onChange="{{ setP1 }}" placeholder="At least 8 characters" style="width:100%; height:56px; border:1.5px solid #dfe6ef; border-radius:13px; background:#fafbfd; padding:0 16px; font-size:15px; color:#16202e;">
+            <div style="display:flex; gap:5px; margin-top:9px;">
+              <span style="flex:1; height:4px; border-radius:100px; background:{{ str1 }};"></span>
+              <span style="flex:1; height:4px; border-radius:100px; background:{{ str2 }};"></span>
+              <span style="flex:1; height:4px; border-radius:100px; background:{{ str3 }};"></span>
+            </div>
+            <div style="font-size:11px; color:#9aa7b8; margin-top:6px; font-weight:600;">{{ strLabelEN }}</div>
+          </div>
+          <div>
+            <div style="font-size:12px; color:#42506a; font-weight:700; margin-bottom:8px;">Confirm password</div>
+            <input type="password" dir="ltr" value="{{ p2 }}" onChange="{{ setP2 }}" placeholder="Repeat the same password" style="width:100%; height:56px; border:1.5px solid {{ p2Border }}; border-radius:13px; background:#fafbfd; padding:0 16px; font-size:15px; color:#16202e;">
+            <div style="font-size:11px; color:#d64545; margin-top:6px; font-weight:600; min-height:14px;">{{ p2ErrEN }}</div>
+          </div>
+          <div onClick="{{ savePassEN }}" style="height:56px; border-radius:13px; background:{{ saveBg }}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; cursor:{{ saveCursor }}; box-shadow:{{ saveShadow }}; transition:background .2s;">Save new password</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isENDone }}" hint-placeholder-val="{{false}}">
+        <div style="text-align:center; padding:14px 0 6px;">
+          <div style="width:78px; height:78px; border-radius:50%; background:#e8f5ee; color:#1f8a5b; display:flex; align-items:center; justify-content:center; font-size:34px; margin:0 auto 18px;">✓</div>
+          <div style="font-size:18px; font-weight:900; margin-bottom:9px;">Password changed successfully</div>
+          <p style="font-size:12.5px; color:#7d8ba0; line-height:2; margin:0 0 24px;">You can now log in to your account with your new password.</p>
+          <a href="ورود و ثبتنام.dc.html" style="text-decoration:none; display:flex; height:56px; border-radius:13px; background:var(--accent,#1668c4); color:#fff; align-items:center; justify-content:center; font-size:14.5px; font-weight:800; box-shadow:0 14px 30px -12px rgba(22,104,196,.65);">Log in</a>
+        </div>
+      </sc-if>
+
+      <!-- ============ PERSIAN: PHONE + OTP + PASSWORD ============ -->
+      <sc-if value="{{ isFAStep1 }}" hint-placeholder-val="{{true}}">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div>
+            <div style="font-size:12px; color:#42506a; font-weight:700; margin-bottom:8px;">{{ mobileLabel }}</div>
+            <div style="position:relative;">
+              <input type="tel" dir="ltr" value="{{ phone }}" onChange="{{ setPhone }}" placeholder="0912 345 6789" maxLength="{{ phoneMax }}" style="width:100%; height:56px; border:1.5px solid #dfe6ef; border-radius:13px; background:#fafbfd; padding:0 16px 0 52px; font-size:16px; font-weight:700; letter-spacing:1px; color:#16202e;">
+              <span style="position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:12px; color:#9aa7b8; font-weight:700;">+98</span>
+            </div>
+            <div style="font-size:11px; color:{{ phoneHintColor }}; margin-top:7px; font-weight:600;">{{ phoneHint }}</div>
+          </div>
+          <div onClick="{{ sendCode }}" style="height:56px; border-radius:13px; background:{{ sendBg }}; color:#fff; display:flex; align-items:center; justify-content:center; gap:8px; font-size:15px; font-weight:800; cursor:{{ sendCursor }}; box-shadow:{{ sendShadow }}; transition:background .2s;">{{ sendResetLabel }}</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isFAStep2 }}" hint-placeholder-val="{{false}}">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div>
+            <div style="font-size:12px; color:#42506a; font-weight:700; margin-bottom:10px;">{{ otpSentPrefix }} <span dir="ltr" style="color:var(--accent,#1668c4);">{{ phoneFa }}</span></div>
+            <div style="display:flex; gap:10px; direction:ltr;">
+              <sc-for list="{{ otpCells }}" as="c" hint-placeholder-count="5">
+                <input type="tel" value="{{ c.v }}" onChange="{{ c.change }}" onKeyDown="{{ c.keydown }}" ref="{{ c.ref }}" maxLength="1" style="flex:1; width:100%; height:60px; border:1.5px solid {{ c.border }}; border-radius:13px; background:{{ c.bg }}; text-align:center; font-size:22px; font-weight:800; color:#16202e; padding:0;">
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; font-size:12px;">
+            <span onClick="{{ editPhone }}" style="color:#8a96a6; font-weight:700; cursor:pointer;">{{ editPhoneLabel }}</span>
+            <span onClick="{{ resend }}" style="color:var(--accent,#1668c4); font-weight:800; cursor:pointer;">{{ resendLabel }}</span>
+          </div>
+          <div onClick="{{ verifyCode }}" style="height:56px; border-radius:13px; background:{{ verifyBg }}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; cursor:{{ verifyCursor }}; box-shadow:{{ verifyShadow }}; transition:background .2s;">{{ verifyCodeLabel }}</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isFAStep3 }}" hint-placeholder-val="{{false}}">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div>
+            <div style="font-size:12px; color:#42506a; font-weight:700; margin-bottom:8px;">{{ newPassLabel }}</div>
+            <input type="password" dir="ltr" value="{{ p1 }}" onChange="{{ setP1 }}" placeholder="{{ newPassPlaceholder }}" style="width:100%; height:56px; border:1.5px solid #dfe6ef; border-radius:13px; background:#fafbfd; padding:0 16px; font-size:15px; color:#16202e;">
+            <div style="display:flex; gap:5px; margin-top:9px;">
+              <span style="flex:1; height:4px; border-radius:100px; background:{{ str1 }};"></span>
+              <span style="flex:1; height:4px; border-radius:100px; background:{{ str2 }};"></span>
+              <span style="flex:1; height:4px; border-radius:100px; background:{{ str3 }};"></span>
+            </div>
+            <div style="font-size:11px; color:#9aa7b8; margin-top:6px; font-weight:600;">{{ strLabel }}</div>
+          </div>
+          <div>
+            <div style="font-size:12px; color:#42506a; font-weight:700; margin-bottom:8px;">{{ confirmPassLabel }}</div>
+            <input type="password" dir="ltr" value="{{ p2 }}" onChange="{{ setP2 }}" placeholder="{{ confirmPassPlaceholder }}" style="width:100%; height:56px; border:1.5px solid {{ p2Border }}; border-radius:13px; background:#fafbfd; padding:0 16px; font-size:15px; color:#16202e;">
+            <div style="font-size:11px; color:#d64545; margin-top:6px; font-weight:600; min-height:14px;">{{ p2Err }}</div>
+          </div>
+          <div onClick="{{ savePass }}" style="height:56px; border-radius:13px; background:{{ saveBg }}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; cursor:{{ saveCursor }}; box-shadow:{{ saveShadow }}; transition:background .2s;">{{ saveNewPassLabel }}</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isFADone }}" hint-placeholder-val="{{false}}">
+        <div style="text-align:center; padding:14px 0 6px;">
+          <div style="width:78px; height:78px; border-radius:50%; background:#e8f5ee; color:#1f8a5b; display:flex; align-items:center; justify-content:center; font-size:34px; margin:0 auto 18px;">✓</div>
+          <div style="font-size:18px; font-weight:900; margin-bottom:9px;">{{ doneTitle }}</div>
+          <p style="font-size:12.5px; color:#7d8ba0; line-height:2; margin:0 0 24px;">{{ doneSub }}</p>
+          <a href="ورود و ثبتنام.dc.html" style="text-decoration:none; display:flex; height:56px; border-radius:13px; background:var(--accent,#1668c4); color:#fff; align-items:center; justify-content:center; font-size:14.5px; font-weight:800; box-shadow:0 14px 30px -12px rgba(22,104,196,.65);">{{ doneLoginLabel }}</a>
+        </div>
+      </sc-if>
+
+      <div style="margin-top:auto; padding-top:26px; display:flex; align-items:center; gap:7px; font-size:11px; color:#9aa7b8; font-weight:600;"><span style="width:7px; height:7px; border-radius:50%; background:#1f8a5b;"></span>{{ secureNote }}</div>
+    </div>
+
+    <!-- VISUAL SIDE -->
+    <div style="background:linear-gradient(160deg,#0d2640,var(--accent,#1668c4)); position:relative; overflow:hidden; display:{{ visualDisplay }}; flex-direction:column; justify-content:flex-end; padding:30px 28px;">
+      <div style="position:absolute; top:-80px; left:-60px; width:260px; height:260px; border-radius:50%; background:#ffffff14;"></div>
+      <div style="position:absolute; top:130px; right:-50px; width:150px; height:150px; border-radius:50%; background:#ffffff0d;"></div>
+      <svg viewBox="0 0 400 600" preserveAspectRatio="none" style="position:absolute; inset:0; width:100%; height:100%; opacity:.5;">
+        <path d="M 430 560 C 300 430, 210 320, 60 150" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2" stroke-dasharray="2 12" stroke-linecap="round"></path>
+      </svg>
+      <img src="uploads/Picture1.png" alt="blujet aircraft" style="position:absolute; top:11%; left:-24%; width:150%; animation:planeFloat 7s ease-in-out infinite; filter:drop-shadow(0 30px 40px rgba(5,18,36,.45)); pointer-events:none;">
+      <div style="position:relative; color:#fff;">
+        <div style="font-size:21px; font-weight:900; line-height:1.7; margin-bottom:10px;">{{ visualTitle }}</div>
+        <p style="font-size:12px; color:#d6e4f7; line-height:2.1; margin:0;">{{ visualSub }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATION MODAL -->
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+  <div dir="{{ pageDir }}" style="position:fixed; inset:0; z-index:9000; background:rgba(13,38,64,.55); display:flex; align-items:center; justify-content:center; padding:24px; font-family:{{ fontFam }};">
+    <div style="width:480px; max-width:100%; background:#fff; border-radius:18px; box-shadow:0 40px 100px -30px rgba(4,16,34,.6); padding:38px 34px 30px; text-align:center;">
+      <div style="width:110px; height:110px; border-radius:50%; background:{{ toastTint }}; color:{{ toastColor }}; display:flex; align-items:center; justify-content:center; font-size:48px; margin:0 auto 24px;">{{ toastIcon }}</div>
+      <div style="font-size:19px; font-weight:900; color:#16202e; margin-bottom:12px;">{{ toastTitle }}</div>
+      <p style="font-size:13px; color:#5a6678; line-height:2.1; margin:0 0 28px;">{{ toast }}</p>
+      <div style="display:flex; gap:12px; justify-content:center;">
+        <div onClick="{{ closeToast }}" style="flex:1; max-width:220px; height:50px; border-radius:11px; background:{{ toastColor }}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13.5px; font-weight:800; cursor:pointer;">{{ toastOkLabel }}</div>
+        <a href="صفحه اصلی.dc.html" style="flex:1; max-width:220px; height:50px; border-radius:11px; border:1.5px solid #dfe6ef; color:#42506a; display:flex; align-items:center; justify-content:center; font-size:13.5px; font-weight:800; text-decoration:none; background:#fff;">{{ toastHomeLabel }}</a>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { lang: "fa", step: 1, toast: "", toastKind: "ok", toastTitle: "", phone: "", email: "", otp: ["","","","",""], p1: "", p2: "", isMobile: (typeof window !== "undefined" && window.innerWidth < 768) };
+  constructor(p){ super(p); this.otpRefs = [0,1,2,3,4].map(() => React.createRef()); }
+  componentDidMount() {
+    try { const l = localStorage.getItem("blujet_lang"); if (l === "en" || l === "fa" || l === "ar") this.setState({ lang: l }); } catch(e) {}
+    this._mq = window.matchMedia("(max-width:767px)");
+    this._mqHandler = (e) => this.setState({ isMobile: e.matches });
+    if (this._mq.addEventListener) this._mq.addEventListener("change", this._mqHandler); else this._mq.addListener(this._mqHandler);
+  }
+  componentWillUnmount() {
+    if (this._mq) { if (this._mq.removeEventListener) this._mq.removeEventListener("change", this._mqHandler); else this._mq.removeListener(this._mqHandler); }
+  }
+  toast(t, kind, title){ this.setState({ toast: t, toastKind: kind || "ok", toastTitle: title }); }
+  fa(s){ return String(s).replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]); }
+  renderVals() {
+    const isEN = this.state.lang === "en", isAR = this.state.lang === "ar", isFA = !isEN && !isAR;
+    const st = this.state.step;
+    const { phone, email, otp, p1, p2 } = this.state;
+    const phoneOk = /^09\d{9}$/.test(phone);
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const otpOk = otp.every(v => v !== "");
+    const strength = (p1.length >= 8 ? 1 : 0) + (/[A-Za-z]/.test(p1) && /\d/.test(p1) ? 1 : 0) + (p1.length >= 12 || /[^A-Za-z0-9]/.test(p1) ? 1 : 0);
+    const passOk = p1.length >= 8 && p1 === p2;
+    const labelsFA = ["شماره موبایل", "کد تأیید", "رمز جدید"];
+    const labelsAR = ["رقم الجوال", "رمز التحقق", "كلمة مرور جديدة"];
+    const labelsEN = ["Email", "Code", "New password"];
+    const steps = (isEN ? labelsEN : (isAR ? labelsAR : labelsFA)).map((label, i) => ({ label, bar: st > i + 1 ? "#1f8a5b" : (st === i + 1 ? "var(--accent,#1668c4)" : "#e8edf4"), c: st === i + 1 ? "#16202e" : (st > i + 1 ? "#1f8a5b" : "#9aa7b8"), w: st === i + 1 ? 800 : 600 }));
+    const btn = (ok, green) => ({ bg: ok ? (green ? "#1f8a5b" : "var(--accent,#1668c4)") : "#c3cedd", cursor: ok ? "pointer" : "not-allowed", shadow: ok ? (green ? "0 14px 30px -12px rgba(31,138,91,.6)" : "0 14px 30px -12px rgba(22,104,196,.65)") : "none" });
+    const b1 = btn(phoneOk), b2 = btn(otpOk), b3 = btn(passOk, true), bE = btn(emailOk);
+    const titlesFA = ["", "بازیابی رمز عبور", "کد تأیید را وارد کن", "رمز عبور جدید بساز"];
+    const titlesAR = ["", "استعادة تعيين كلمة المرور", "أدخل رمز التحقق", "أنشئ كلمة مرور جديدة"];
+    const subsFA = ["", "شماره موبایل حساب‌ات را وارد کن تا کد بازیابی برایت پیامک شود.", "کد ۵ رقمی به موبایلت ارسال شد. وارد کردن کد، هویتت را تأیید می‌کند.", "یک رمز قوی انتخاب کن؛ ترکیبی از حرف، عدد و نماد بهترین است."];
+    const subsAR = ["", "أدخل رقم جوالك لنرسل لك رمز استعادة عبر رسالة نصية.", "تم إرسال رمز مكوّن من 5 أرقام إلى جوالك. أدخله لتأكيد هويتك.", "اختر كلمة مرور قوية؛ مزيج من الأحرف والأرقام والرموز أفضل."];
+    return {
+      isEN, isFA, isAR, pageDir: isEN ? "ltr" : "rtl", fontFam: isEN ? "Inter, sans-serif" : "Vazirmatn, sans-serif",
+      langLabel: isEN ? "EN" : (isAR ? "AR" : "FA"),
+      toggleLang: () => { const nl = isEN ? "fa" : (isAR ? "en" : "ar"); try { localStorage.setItem("blujet_lang", nl); } catch(e) {} this.setState({ lang: nl, step: 1 }); },
+      backToLoginLabel: isEN ? "‹ Log in" : (isAR ? "‹ تسجيل الدخول" : "‹ صفحه ورود"),
+      closeBtnDisplay: this.state.isMobile ? "flex" : "none",
+      cardCols: this.state.isMobile ? "1fr" : "1fr 400px",
+      visualDisplay: this.state.isMobile ? "none" : "flex",
+      formPad: this.state.isMobile ? "26px 22px 22px" : "36px 40px 30px",
+      steps,
+      title: isEN ? (["", "Reset your password", "Enter the verification code", "Create a new password"][st] || "") : (isAR ? (st >= 4 ? "" : titlesAR[st]) : (st >= 4 ? "" : titlesFA[st])),
+      subtitle: isEN ? (["", "Enter the email on your account and we'll send you a 5-digit code.", "We emailed a 5-digit code to " + (email || "your email") + ". Enter it to verify it's you.", "Choose a strong password — a mix of letters, numbers and symbols works best."][st] || "") : (isAR ? (st >= 4 ? "" : subsAR[st]) : (st >= 4 ? "" : subsFA[st])),
+      isENStep1: isEN && st === 1, isENStep2: isEN && st === 2, isENStep3: isEN && st === 3, isENDone: isEN && st === 4,
+      isFAStep1: !isEN && st === 1, isFAStep2: !isEN && st === 2, isFAStep3: !isEN && st === 3, isFADone: !isEN && st === 4,
+      mobileLabel: isAR ? "رقم الجوال" : "شماره موبایل",
+      sendResetLabel: isAR ? "إرسال رمز الاستعادة" : "ارسال کد بازیابی",
+      otpSentPrefix: isAR ? "تم إرسال رمز مكوّن من 5 أرقام إلى" : "کد ۵ رقمی پیامک‌شده به",
+      editPhoneLabel: isAR ? "✎ تعديل الرقم" : "✎ ویرایش شماره",
+      resendLabel: isAR ? "إعادة إرسال الرمز" : "ارسال مجدد کد",
+      verifyCodeLabel: isAR ? "تأكيد الرمز" : "تأیید کد",
+      newPassLabel: isAR ? "كلمة مرور جديدة" : "رمز عبور جدید",
+      newPassPlaceholder: isAR ? "8 أحرف على الأقل" : "حداقل ۸ کاراکتر",
+      confirmPassLabel: isAR ? "تأكيد كلمة المرور" : "تکرار رمز عبور",
+      confirmPassPlaceholder: isAR ? "أعد كتابة نفس كلمة المرور" : "تکرار همان رمز",
+      saveNewPassLabel: isAR ? "حفظ كلمة المرور الجديدة" : "ذخیره رمز جدید",
+      doneTitle: isAR ? "تم تغيير كلمة المرور بنجاح" : "رمز عبور با موفقیت تغییر کرد",
+      doneSub: isAR ? "يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة." : "اکنون می‌توانید با رمز جدید وارد حساب خود شوید.",
+      doneLoginLabel: isAR ? "تسجيل الدخول" : "ورود به حساب",
+      email, setEmail: e => this.setState({ email: e.target.value }),
+      emailHint: email === "" ? "" : (emailOk ? "✓ Looks good" : "Enter a valid email address"),
+      emailHintColor: email === "" ? "#9aa7b8" : (emailOk ? "#1f8a5b" : "#d64545"),
+      sendBg: isEN ? bE.bg : b1.bg, sendCursor: isEN ? bE.cursor : b1.cursor, sendShadow: isEN ? bE.shadow : b1.shadow,
+      sendResetCode: () => { if (!emailOk) { this.toast("Please enter a valid email address.", "err", "Check your email"); return; } this.toast("A 5-digit reset code was sent to " + email + ".", "ok", "Code sent"); this.setState({ step: 2 }, () => this.otpRefs[0].current && this.otpRefs[0].current.focus()); },
+      editEmail: () => this.setState({ step: 1 }),
+      resendCode: () => this.toast("A new code was sent to " + email + ".", "ok", "Code resent"),
+      verifyCodeEN: () => { if (!otpOk) { this.toast("Please enter the full 5-digit code.", "err", "Incomplete code"); return; } this.toast("Your identity is verified. Now create a new password.", "ok", "Code verified"); this.setState({ step: 3 }); },
+      strLabelEN: p1 === "" ? "Password strength" : ["Weak — at least 8 characters", "Fair", "Good", "Great"][strength],
+      p2ErrEN: p2 && p1 !== p2 ? "Passwords don't match" : "",
+      savePassEN: () => { if (!passOk) { this.toast(p1.length < 8 ? "Password must be at least 8 characters." : "Passwords don't match.", "err", "Check password"); return; } this.toast("You can now log in with your new password.", "ok", "Password changed"); this.setState({ step: 4 }); },
+      phone, phoneMax: 11, phoneFa: this.fa(phone),
+      phoneHint: phone === "" ? (isAR ? "مثال: 09123456789" : "مثال: ۰۹۱۲۳۴۵۶۷۸۹") : (phoneOk ? (isAR ? "✓ الرقم صحيح" : "✓ شماره معتبر است") : (isAR ? "يجب أن يبدأ الرقم بـ 09 ويتكون من 11 رقمًا" : "شماره باید با ۰۹ شروع شود و ۱۱ رقم باشد")),
+      phoneHintColor: phone === "" ? "#9aa7b8" : (phoneOk ? "#1f8a5b" : "#d64545"),
+      setPhone: e => this.setState({ phone: e.target.value.replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/\D/g, "").slice(0, 11) }),
+      sendCode: () => { if (!phoneOk) { this.toast(isAR ? "رقم الهاتف غير صالح" : "شماره موبایل معتبر نیست", "err"); return; } this.toast((isAR ? "تم إرسال رمز استعادة مكوّن من 5 أرقام إلى " : "کد ۵ رقمی بازیابی به شماره ") + this.fa(phone) + (isAR ? ". أدخله في الخطوة التالية." : " پیامک شد. آن را در گام بعد وارد کنید."), "ok", isAR ? "تم إرسال رمز الاستعادة" : "کد بازیابی ارسال شد"); this.setState({ step: 2 }, () => this.otpRefs[0].current && this.otpRefs[0].current.focus()); },
+      otpCells: otp.map((v, i) => ({
+        v, ref: this.otpRefs[i], border: v ? "var(--accent,#1668c4)" : "#dfe6ef", bg: v ? "#f3f7fc" : "#fafbfd",
+        change: e => { const d = e.target.value.replace(/[۰-۹]/g, x => "۰۱۲۳۴۵۶۷۸۹".indexOf(x)).replace(/\D/g, "").slice(-1); const next = otp.slice(); next[i] = d; this.setState({ otp: next }); if (d && i < 4 && this.otpRefs[i+1].current) this.otpRefs[i+1].current.focus(); },
+        keydown: e => { if (e.key === "Backspace" && !otp[i] && i > 0 && this.otpRefs[i-1].current) this.otpRefs[i-1].current.focus(); }
+      })),
+      editPhone: () => this.setState({ step: 1 }),
+      resend: () => this.toast((isAR ? "تم إرسال رمز جديد إلى " : "کد جدید به شماره ") + this.fa(phone) + (isAR ? "." : " پیامک شد."), "ok", isAR ? "إعادة إرسال الرمز" : "ارسال مجدد کد"),
+      verifyBg: b2.bg, verifyCursor: b2.cursor, verifyShadow: b2.shadow,
+      verifyCode: () => { if (!otpOk) { this.toast(isAR ? "أدخل الرمز المكوّن من 5 أرقام كاملًا" : "کد ۵ رقمی را کامل وارد کن", "err"); return; } this.toast(isAR ? "تم التحقق من هويتك. الآن أنشئ كلمة مرور جديدة." : "هویت شما تأیید شد. اکنون رمز عبور جدید بسازید.", "ok", isAR ? "تم التحقق من الرمز" : "کد تأیید شد"); this.setState({ step: 3 }); },
+      p1, p2, setP1: e => this.setState({ p1: e.target.value }), setP2: e => this.setState({ p2: e.target.value }),
+      str1: strength >= 1 ? "#d69b45" : "#e8edf4", str2: strength >= 2 ? "#d6c245" : "#e8edf4", str3: strength >= 3 ? "#1f8a5b" : "#e8edf4",
+      strLabel: p1 === "" ? (isAR ? "قوة كلمة المرور" : "قدرت رمز") : (isAR ? ["ضعيف — 8 أحرف على الأقل","مقبول","جيد","ممتاز"][strength] : ["ضعیف — حداقل ۸ کاراکتر", "قابل قبول", "خوب", "عالی"][strength]),
+      p2Border: p2 && p1 !== p2 ? "#d64545" : "#dfe6ef",
+      p2Err: p2 && p1 !== p2 ? (isAR ? "كلمتا المرور غير متطابقتين" : "رمزها یکسان نیستند") : "",
+      saveBg: b3.bg, saveCursor: b3.cursor, saveShadow: b3.shadow,
+      savePass: () => { if (!passOk) { this.toast(isAR ? (p1.length < 8 ? "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل" : "كلمتا المرور غير متطابقتين") : (p1.length < 8 ? "رمز باید حداقل ۸ کاراکتر باشد" : "تکرار رمز یکسان نیست"), "err"); return; } this.toast(isAR ? "يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة." : "از این پس با رمز جدید وارد حساب خود شوید.", "ok", isAR ? "تم تغيير كلمة المرور" : "رمز عبور تغییر کرد"); this.setState({ step: 4 }); },
+      secureNote: isEN ? "Secure connection — your information is encrypted" : (isAR ? "اتصال آمن — معلوماتك مشفرة" : "ارتباط امن — اطلاعات شما رمزنگاری می‌شود"),
+      visualTitle: isEN ? "Fast, secure account\nrecovery" : (isAR ? "استعادة سريعة وآمنة\nللحساب" : "بازیابی سریع و امن\nحساب کاربری"),
+      visualSub: isEN ? "Get back to your trips in a few steps — enter your email, verify the code, and set a new password." : (isAR ? "ارجع إلى رحلاتك في خطوات قليلة — أدخل رقمك، تحقق من الرمز، وأنشئ كلمة مرور جديدة." : "در سه گام کوتاه، دوباره به سفرهایت برگرد — شماره‌ات را بده، کد را تأیید کن و رمز تازه بساز."),
+      toast: this.state.toast, hasToast: !!this.state.toast,
+      toastTitle: this.state.toastTitle || (isEN ? "Done" : "انجام شد"),
+      toastColor: this.state.toastKind === "err" ? "#b8452f" : "var(--accent,#1668c4)",
+      toastTint: this.state.toastKind === "err" ? "#faeae6" : "#e8f0fb",
+      toastIcon: this.state.toastKind === "err" ? "!" : "✓",
+      toastOkLabel: isEN ? "Got it" : (isAR ? "حسنًا" : "متوجه شدم"),
+      toastHomeLabel: isEN ? "Back to home" : (isAR ? "العودة إلى الصفحة الرئيسية" : "بازگشت به صفحه اصلی"),
+      closeToast: () => this.setState({ toast: "" })
+    };
+  }
+}
+</script>
+</body>
+</html>

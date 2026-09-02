@@ -1,0 +1,577 @@
+@import "tailwindcss";
+@import "@fontsource/roboto-mono/400.css";
+@import "@fontsource/roboto-mono/700.css";
+
+@font-face {
+  font-family: 'Vazirmatn Variable';
+  src: url('/fonts/Vazirmatn-v33.003.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans: 'Vazirmatn Variable', Vazirmatn, sans-serif;
+  --font-mono: 'Roboto Mono', monospace;
+
+  --color-accent: #1668c4;
+  --color-navy: #0d2640;
+  --color-navy-2: #0d3b66;
+  --color-ink: #16202e;
+  --color-body: #f6f8fb;
+  --color-muted: #9aa4b2;
+  --color-muted-2: #6b7585;
+  --color-text-2: #3b4554;
+  --color-text-3: #5a6678;
+  --color-border: #e6eaf0;
+  --color-border-2: #e2e7ee;
+  --color-surface: #eef1f5;
+  --color-surface-2: #eef4fb;
+  --color-danger: #e5484d;
+
+  /* Shared light management-panel palette.  All staff roles consume the
+     same tokens so the shell, cards, dialogs and nested controls switch as
+     one coherent surface instead of mixing dark and light fragments. */
+  --color-panel-canvas: #f4f7fb;
+  --color-panel-bg: #f4f7fb;
+  --color-panel-surface: #ffffff;
+  --color-panel-card: #ffffff;
+  --color-panel-surface-2: #eef4fb;
+  --color-panel-elevated: #e9f1fb;
+  --color-panel-ink: #16233a;
+  --color-panel-text: #16233a;
+  --color-panel-muted: #65758b;
+  --color-panel-muted-2: #7e8da3;
+  --color-panel-border: #dbe5f2;
+  --color-panel-border-2: #c7d5e6;
+  --color-panel-accent: #1668c4;
+  --color-panel-link: #1668c4;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--color-body);
+  color: var(--color-ink);
+}
+
+/* Management pages historically mixed central panel tokens with many local
+   dark utility colours.  Scope the compatibility layer to PanelShell so the
+   public site and agency/customer portals keep their own approved themes. */
+.management-panel-light :is(
+  [class*="bg-[#070b14]"], [class*="bg-[#07111a]"],
+  [class*="bg-[#07182c]"], [class*="bg-[#0a1220]"],
+  [class*="bg-[#0b111d]"], [class*="bg-[#0b1220]"],
+  [class*="bg-[#0b1526]"], [class*="bg-[#0b1f35]"],
+  [class*="bg-[#0d1625]"], [class*="bg-[#0d1729]"],
+  [class*="bg-[#0d1b33]"], [class*="bg-[#0d2640]"],
+  [class*="bg-[#0e1624]"], [class*="bg-[#0e1625]"],
+  [class*="bg-[#0f1623]"], [class*="bg-[#0f1626]"],
+  [class*="bg-[#0f1725]"], [class*="bg-[#0f1726]"],
+  [class*="bg-[#0f172a]"], [class*="bg-[#0f192a]"],
+  [class*="bg-[#101827]"], [class*="bg-[#101829]"],
+  [class*="bg-[#101a2b]"], [class*="bg-[#101a2c]"],
+  [class*="bg-[#111a2a]"], [class*="bg-[#111a2b]"],
+  [class*="bg-[#111b30]"], [class*="bg-[#121c2e]"],
+  [class*="bg-[#121d31]"], [class*="bg-[#122033]"],
+  [class*="bg-[#131d2d]"], [class*="bg-[#132033]"],
+  [class*="bg-[#13233d]"], [class*="bg-[#141d2e]"],
+  [class*="bg-[#142743]"], [class*="bg-[#151e2d]"],
+  [class*="bg-[#151e31]"], [class*="bg-[#152033]"],
+  [class*="bg-[#152136]"], [class*="bg-[#152848]"],
+  [class*="bg-[#161f31]"], [class*="bg-[#171d29]"],
+  [class*="bg-[#172238]"], [class*="bg-[#18223a]"],
+  [class*="bg-[#18243b]"], [class*="bg-[#1a2435]"],
+  [class*="bg-[#1a2438]"], [class*="bg-[#1a2944]"],
+  [class*="bg-[#1a2a42]"], [class*="bg-[#1a2a46]"],
+  [class*="bg-[#1b2740]"], [class*="bg-[#1b2945]"],
+  [class*="bg-[#1b355a]"], [class*="bg-[#1c2740]"],
+  [class*="bg-[#1d2a40]"], [class*="bg-[#1d2a43]"],
+  [class*="bg-[#1d2b45]"], [class*="bg-[#1f2a3d]"],
+  [class*="bg-[#202b43]"], [class*="bg-[#21324f]"],
+  [class*="bg-[#22304a]"], [class*="bg-[#233453]"],
+  [class*="bg-[#23395f]"], [class*="bg-[#243047]"],
+  [class*="bg-[#24344c]"], [class*="bg-[#28344c]"],
+  [class*="bg-[#29313f]"], [class*="bg-[#334155]"],
+  [class*="bg-[#344158]"], [class*="bg-[#3a4459]"],
+  [class*="bg-[#3a4a63]"], [class*="bg-[#465168]"]
+) {
+  background-color: var(--color-panel-surface) !important;
+  color: var(--color-panel-ink) !important;
+}
+
+.management-panel-light :is(
+  [class*="border-[#1a2436]"], [class*="border-[#1b2536]"],
+  [class*="border-[#1c2740]"], [class*="border-[#1c293b]"],
+  [class*="border-[#1d2738]"], [class*="border-[#1d283b]"],
+  [class*="border-[#1e293b]"], [class*="border-[#1f2a3d]"],
+  [class*="border-[#202a3c]"], [class*="border-[#202b40]"],
+  [class*="border-[#222e43]"], [class*="border-[#22304a]"],
+  [class*="border-[#24304a]"], [class*="border-[#243149]"],
+  [class*="border-[#24324a]"], [class*="border-[#24324b]"],
+  [class*="border-[#24344c]"], [class*="border-[#253149]"],
+  [class*="border-[#26324a]"], [class*="border-[#26334b]"],
+  [class*="border-[#27334a]"], [class*="border-[#27344a]"],
+  [class*="border-[#27344c]"], [class*="border-[#273755]"],
+  [class*="border-[#274166]"], [class*="border-[#27416c]"],
+  [class*="border-[#28344c]"], [class*="border-[#29354d]"],
+  [class*="border-[#2a3550]"], [class*="border-[#2a3953]"],
+  [class*="border-[#2a3a55]"], [class*="border-[#2a4060]"],
+  [class*="border-[#2b3850]"], [class*="border-[#2b3852]"],
+  [class*="border-[#2d3a51]"], [class*="border-[#2f3f5c]"],
+  [class*="border-[#30405f]"], [class*="border-[#31405d]"],
+  [class*="border-[#33415b]"], [class*="border-[#33415c]"],
+  [class*="border-[#33435e]"], [class*="border-[#34415a]"],
+  [class*="border-[#34435d]"], [class*="border-[#34435f]"],
+  [class*="border-[#364052]"], [class*="border-[#3a4963]"],
+  [class*="border-[#3a4a63]"], [class*="border-[#3a4a68]"]
+) {
+  border-color: var(--color-panel-border) !important;
+}
+
+.management-panel-light :is(
+  [class*="text-[#e7ecf3]"], [class*="text-[#dbe7fb]"],
+  [class*="text-[#dce8f8]"], [class*="text-[#dce5f2]"],
+  [class*="text-[#dbe6f5]"], [class*="text-[#dbe6f7]"],
+  [class*="text-[#d7dfeb]"], [class*="text-[#cdd6e3]"],
+  [class*="text-[#cdd7e5]"], [class*="text-[#cdd9ec]"],
+  [class*="text-[#c7d2e2]"], [class*="text-[#c7d2e3]"],
+  [class*="text-[#c7d4e8]"], [class*="text-[#c3cfe3]"],
+  [class*="text-[#b7c3d6]"], [class*="text-[#aebbd0]"]
+) {
+  color: var(--color-panel-ink) !important;
+}
+
+.management-panel-light :is(
+  [class*="text-[#9fb0c7]"], [class*="text-[#94a3b8]"],
+  [class*="text-[#93a5c2]"], [class*="text-[#91a1bb]"],
+  [class*="text-[#8fa1bb]"], [class*="text-[#8c9bb2]"],
+  [class*="text-[#8796aa]"], [class*="text-[#8494ac]"],
+  [class*="text-[#8494ad]"], [class*="text-[#8291a8]"],
+  [class*="text-[#7c8aa2]"], [class*="text-[#7b8b9d]"],
+  [class*="text-[#7b8b9e]"], [class*="text-[#718198]"],
+  [class*="text-[#6b7b94]"], [class*="text-[#63738b]"]
+) {
+  color: var(--color-panel-muted) !important;
+}
+
+/* Legacy dark pages used pale blue/purple accents as body copy. They wash
+   out on white after the surface is converted, so use accessible light-mode
+   accents while retaining semantic colour. */
+.management-panel-light :is(
+  [class*="text-[#93c5fd]"], [class*="text-[#8fb4f5]"],
+  [class*="text-[#7da7ff]"], [class*="text-[#c4b5fd]"]
+) {
+  color: #1d4ed8 !important;
+}
+
+/* In light mode, legacy pages can still carry `text-white` from their former
+   dark layout. Convert only non-interactive copy and numeric values. Buttons,
+   links, badges and elements with their own coloured/gradient background keep
+   white text for accessible contrast. */
+.management-panel-light :is(
+  h1, h2, h3, h4, h5, h6, p, div, span, label, dt, dd, td, th, strong, b
+):is([class~="text-white"], [class*="text-white/"]):not([class*="bg-"]):not([class*="from-"]):not([class*="to-"]) {
+  color: var(--color-panel-ink) !important;
+}
+
+.management-panel-light :is(
+  h1, h2, h3, h4, h5, h6, p, div, span, label, dt, dd, td, th, strong, b
+)[style*="color: rgb(255, 255, 255)"]:not([style*="background"]) {
+  color: var(--color-panel-ink) !important;
+}
+
+.management-panel-light :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
+  background-color: #fff !important;
+  border-color: var(--color-panel-border-2) !important;
+  color: var(--color-panel-ink) !important;
+}
+
+.management-panel-light :is(input, textarea)::placeholder {
+  color: var(--color-panel-muted-2) !important;
+}
+
+/* Unified panel theming. The management shell owns all management/employee
+   routes, while agency and customer portals share the same persisted choice. */
+.management-panel-dark {
+  --color-panel-canvas: #0b1220;
+  --color-panel-bg: #0b1220;
+  --color-panel-surface: #131d2d;
+  --color-panel-card: #131d2d;
+  --color-panel-surface-2: #1c2940;
+  --color-panel-elevated: #22324d;
+  --color-panel-ink: #f1f5fb;
+  --color-panel-text: #f1f5fb;
+  --color-panel-muted: #a8b5c8;
+  --color-panel-muted-2: #8292aa;
+  --color-panel-border: #293852;
+  --color-panel-border-2: #354967;
+  --color-panel-accent: #60a5fa;
+  --color-panel-link: #60a5fa;
+  color-scheme: dark;
+}
+
+/* The inverse compatibility layer prevents older light-only cards and dark
+   text from leaving white islands or invisible copy in a dark staff panel. */
+.management-panel-dark :is(
+  [class~="bg-white"], [class*="bg-[#fff]"], [class*="bg-[#fafbfd]"],
+  [class*="bg-[#f8fafc]"], [class*="bg-[#f7faff]"], [class*="bg-[#eef4fb]"],
+  [class*="bg-[#f4f7fb]"]
+) {
+  background-color: var(--color-panel-surface) !important;
+  border-color: var(--color-panel-border) !important;
+  color: var(--color-panel-ink) !important;
+}
+
+.management-panel-dark :is(
+  [class*="text-[#0d2640]"], [class*="text-[#16202e]"],
+  [class*="text-[#16233a]"], [class*="text-[#1a2d42]"],
+  [class*="text-[#3b4554]"], [class*="text-[#536274]"],
+  [class*="text-[#687587]"]
+) {
+  color: var(--color-panel-ink) !important;
+}
+
+/* Shared card recipe used by every staff role.  The one-pixel outline and
+   theme-aware outer shadow keep adjacent cards distinct without introducing
+   a dark block in light mode or a glowing white block in dark mode. */
+.panel-surface-card {
+  color: var(--color-panel-ink);
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / .05),
+    0 8px 24px rgb(15 23 42 / .045);
+}
+
+.management-panel-dark .panel-surface-card {
+  box-shadow:
+    0 1px 1px rgb(0 0 0 / .24),
+    0 10px 28px rgb(0 0 0 / .18);
+}
+
+.management-panel-dark :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
+  background-color: var(--color-panel-surface-2);
+  border-color: var(--color-panel-border-2);
+  color: var(--color-panel-ink);
+}
+
+.management-panel-light .finance-partial-alert {
+  color: #92400e;
+}
+
+.management-panel-dark .finance-partial-alert {
+  color: #fde68a;
+}
+
+.panel-theme-toggle {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--color-panel-border, var(--portal-border, #dbe5f2));
+  border-radius: 10px;
+  background: var(--color-panel-surface-2, var(--portal-surface-2, #eef4fb));
+  color: var(--color-panel-ink, var(--portal-ink, #16233a));
+  padding: 0 12px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: border-color .18s ease, background-color .18s ease, color .18s ease;
+}
+
+.panel-theme-toggle:hover {
+  border-color: var(--color-panel-accent, var(--portal-accent, #1668c4));
+  color: var(--color-panel-accent, var(--portal-accent, #1668c4));
+}
+
+.panel-theme-toggle--compact {
+  width: 42px;
+  height: 42px;
+  min-height: 42px;
+  padding: 0;
+}
+
+.portal-panel-theme {
+  --portal-canvas: #f6f8fb;
+  --portal-surface: #ffffff;
+  --portal-surface-2: #eef4fb;
+  --portal-ink: #16202e;
+  --portal-muted: #66768b;
+  --portal-border: #dfe7f0;
+  --portal-accent: #1668c4;
+  --portal-shadow: 0 1px 2px rgb(15 23 42 / .05), 0 8px 24px rgb(15 23 42 / .045);
+}
+
+.portal-panel-theme--dark {
+  --portal-canvas: #0b1220;
+  --portal-surface: #131d2d;
+  --portal-surface-2: #1c2940;
+  --portal-ink: #f1f5fb;
+  --portal-muted: #a8b5c8;
+  --portal-border: #2b3a54;
+  --portal-accent: #60a5fa;
+  --portal-shadow: 0 1px 1px rgb(0 0 0 / .24), 0 10px 28px rgb(0 0 0 / .18);
+  color-scheme: dark;
+}
+
+/* Portal equivalent of PanelCard.  New agency/customer surfaces should use
+   this class instead of embedding literal white/navy colours. */
+.portal-surface-card {
+  background: var(--portal-surface);
+  border: 1px solid var(--portal-border);
+  color: var(--portal-ink);
+  box-shadow: var(--portal-shadow);
+}
+
+.portal-surface-subtle {
+  background: var(--portal-surface-2);
+  border: 1px solid var(--portal-border);
+  color: var(--portal-ink);
+}
+
+.portal-copy { color: var(--portal-ink); }
+.portal-copy-muted { color: var(--portal-muted); }
+
+/* Light portal compatibility for legacy agency pages that were authored as
+   permanently-dark mockups.  This is intentionally scoped to the portal
+   shell so public pages and coloured action buttons are unaffected. */
+.portal-panel-theme:not(.portal-panel-theme--dark) :is(
+  [class*="bg-[#070b14]"], [class*="bg-[#0b1220]"],
+  [class*="bg-[#0f1623]"], [class*="bg-[#0f1726]"],
+  [class*="bg-[#101827]"], [class*="bg-[#121c2e]"],
+  [class*="bg-[#131d2d]"], [class*="bg-[#141d2e]"],
+  [class*="bg-[#151e31]"], [class*="bg-[#161f31]"],
+  [class*="bg-[#172339]"], [class*="bg-[#18223a]"],
+  [class*="bg-[#1c2940]"], [class*="bg-[#1d2a40]"],
+  [class*="bg-[#1d2a44]"]
+) {
+  background-color: var(--portal-surface) !important;
+  color: var(--portal-ink) !important;
+}
+
+.portal-panel-theme:not(.portal-panel-theme--dark) :is(
+  [class*="border-[#1f2a3d]"], [class*="border-[#22304a]"],
+  [class*="border-[#28344c]"], [class*="border-[#2a3550]"],
+  [class*="border-[#2f3f5c]"]
+) {
+  border-color: var(--portal-border) !important;
+}
+
+.portal-panel-theme:not(.portal-panel-theme--dark) :is(
+  [class*="text-white"], [class*="text-[#e7ecf3]"],
+  [class*="text-[#f2f5f9]"], [class*="text-[#cdd6e3]"],
+  [class*="text-[#cdd7e5]"]
+):not([class*="bg-[#1668c4]"]):not([class*="bg-[#3b82f6]"]):not([class*="bg-[#16a34a]"]) {
+  color: var(--portal-ink) !important;
+}
+
+.portal-panel-theme:not(.portal-panel-theme--dark) :is(
+  [class*="text-[#6b7b94]"], [class*="text-[#7a8696]"],
+  [class*="text-[#7d8ba0]"], [class*="text-[#8a97ab]"],
+  [class*="text-[#9fb0c7]"]
+) {
+  color: var(--portal-muted) !important;
+}
+
+.portal-panel-theme--dark :is(
+  [class*="bg-white"], [class*="bg-[#fff]"], [class*="bg-[#fafbfd]"],
+  [class*="bg-[#fbfcfe]"], [class*="bg-[#f8fafc]"], [class*="bg-[#f7faff]"],
+  [class*="bg-[#eef4fb]"], [class*="bg-[#eef5fd]"], [class*="bg-[#eef6ff]"],
+  [class*="bg-[#f1f5fa]"], [class*="bg-[#f4f6f9]"], [class*="bg-[#f7f9fc]"],
+  [class*="bg-[#f8fbff]"]
+) {
+  background-color: var(--portal-surface) !important;
+  color: var(--portal-ink) !important;
+}
+
+.portal-panel-theme--dark :is(
+  [class*="text-[#0d2640]"], [class*="text-[#16202e]"],
+  [class*="text-[#163552]"], [class*="text-[#19334e]"], [class*="text-[#30465d]"],
+  [class*="text-[#3f546b]"], [class*="text-[#5d6c80]"], [class*="text-[#687587]"]
+) {
+  color: var(--portal-ink) !important;
+}
+
+.portal-panel-theme--dark :is(input, select, textarea) {
+  background-color: var(--portal-surface-2) !important;
+  border-color: var(--portal-border) !important;
+  color: var(--portal-ink) !important;
+}
+
+.account-panel-theme {
+  color: var(--portal-ink);
+}
+
+.account-panel-theme.portal-panel-theme--dark :is(main > div, main > form, main > section) {
+  color: var(--portal-ink);
+}
+
+.account-panel-theme.portal-panel-theme--dark :is(
+  [data-testid="account-trip"], [data-testid="account-price-lock"],
+  [data-testid="account-password-card"], [data-testid="wallet-history"] > div,
+  #wallet-topup-form
+) {
+  background: var(--portal-surface) !important;
+  border-color: var(--portal-border) !important;
+  color: var(--portal-ink) !important;
+}
+
+.portal-panel-theme--dark [data-testid="agency-portal-header"] > div,
+.portal-panel-theme--dark [data-testid="account-sidebar"] {
+  background: var(--portal-surface) !important;
+  border-color: var(--portal-border) !important;
+  color: var(--portal-ink) !important;
+}
+
+.portal-panel-theme--dark :is(h1, h2, h3, h4, strong, b) {
+  color: var(--portal-ink);
+}
+
+/* Several legacy agency/customer cards still use React inline light colours.
+   Normalized CSS-value selectors keep those pages on the shared dark palette
+   until each feature is incrementally migrated to portal tokens. */
+.portal-panel-theme--dark :is(
+  [style*="background: rgb(255, 255, 255)"],
+  [style*="background-color: rgb(255, 255, 255)"],
+  [style*="background: white"]
+) {
+  background: var(--portal-surface) !important;
+  border-color: var(--portal-border) !important;
+  color: var(--portal-ink) !important;
+}
+
+.portal-panel-theme--dark :is(
+  [style*="background: rgb(246, 248, 251)"],
+  [style*="background: rgb(240, 245, 251)"],
+  [style*="background: rgb(238, 244, 251)"],
+  [style*="background: rgb(250, 251, 253)"]
+) {
+  background: var(--portal-surface-2) !important;
+  border-color: var(--portal-border) !important;
+}
+
+.portal-panel-theme--dark :is(
+  [style*="color: rgb(13, 38, 64)"],
+  [style*="color: rgb(22, 32, 46)"],
+  [style*="color: rgb(25, 51, 78)"],
+  [style*="color: rgb(59, 69, 84)"],
+  [style*="color: rgb(90, 102, 120)"],
+  [style*="color: rgb(102, 117, 138)"]
+) {
+  color: var(--portal-ink) !important;
+}
+
+.portal-panel-theme--dark [data-testid="agency-portal-header"] :is(
+  [style*="background: rgb(243, 245, 248)"],
+  [style*="background: rgb(244, 248, 255)"],
+  [style*="background: rgb(242, 244, 247)"],
+  [data-testid="agency-user-menu-toggle"]
+) {
+  background: var(--portal-surface-2) !important;
+  border-color: var(--portal-border) !important;
+}
+
+.portal-panel-theme--dark [data-testid="agency-portal-header"] [style*="color: rgb(22, 32, 46)"] {
+  color: var(--portal-ink) !important;
+}
+
+/* Isolated LTR spans for flight/airport codes, Latin names, emails. */
+.ltr {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.font-num {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+
+.font-num.ltr {
+  font-family: var(--font-mono);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Horizontal scroll strips (home services / destinations / routes).
+   Must stay width-constrained (`min-width: 0`) so the track scrolls
+   instead of growing the page and getting clipped by the viewport. */
+.hscroll {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-wrap: nowrap;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+  cursor: grab;
+}
+
+.hscroll:active {
+  cursor: grabbing;
+}
+
+.hscroll::-webkit-scrollbar {
+  display: none;
+}
+
+.hscroll > * {
+  flex: none;
+  touch-action: pan-x;
+}
+@keyframes price-calendar-enter-from-left {
+  from {
+    opacity: 0.52;
+    transform: translateX(-28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes price-calendar-enter-from-right {
+  from {
+    opacity: 0.52;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.price-calendar-slide-from-left {
+  animation: price-calendar-enter-from-left 190ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.price-calendar-slide-from-right {
+  animation: price-calendar-enter-from-right 190ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .price-calendar-slide-from-left,
+  .price-calendar-slide-from-right {
+    animation: none;
+  }
+}
