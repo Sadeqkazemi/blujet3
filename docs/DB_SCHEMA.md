@@ -3294,3 +3294,9 @@ document changes.
   requires an owner-approved reconciliation decision.
 - Cutover uses shadow reads and reconciliation first, then a single writer flag.
   Dual writes to website and PSS inventory are forbidden.
+
+### Microservices architecture v1.1 — identity foundation
+
+This foundation slice introduces no database tables or migrations. Existing
+authentication tables remain owned by the monolithic backend until the approved
+identity persistence/token-issuance cutover; no dual-write path is introduced.
