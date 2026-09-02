@@ -58,6 +58,7 @@ import { ManagerReferral } from './entities/manager-referral.entity';
 import { ManagerReferralRecipient } from './entities/manager-referral-recipient.entity';
 import { ManagerReferralReport } from './entities/manager-referral-report.entity';
 import { Notification } from './entities/notification.entity';
+import { NotifyOutboxEvent } from './entities/notify-outbox-event.entity';
 import { PanelAccessFlag } from './entities/panel-access-flag.entity';
 import { Passenger } from './entities/passenger.entity';
 import { PasswordResetEvent } from './entities/password-reset-event.entity';
@@ -95,7 +96,7 @@ import { WalletEntry } from './entities/wallet-entry.entity';
 import { TravelExtraSetting } from './entities/travel-extra-setting.entity';
 
 /**
- * All 77 entities, mirroring prisma/schema.prisma's 77 models exactly (see
+ * Domain entities plus the phase-1 notify delivery outbox (see
  * docs/features/typeorm-migration-phase-0.md for the entity-authoring
  * conventions this follows). `synchronize` stays false forever: schema
  * changes only ever happen through hand-run migrations (mirrors
@@ -169,6 +170,7 @@ export const dataSourceOptions: DataSourceOptions = {
     ManagerReferralRecipient,
     ManagerReferralReport,
     Notification,
+    NotifyOutboxEvent,
     PanelAccessFlag,
     Passenger,
     PasswordResetEvent,

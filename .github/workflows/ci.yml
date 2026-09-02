@@ -13,6 +13,55 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  notify-service:
+    name: Notify service
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: blujet
+          POSTGRES_PASSWORD: blujet
+          POSTGRES_DB: blujet_notify_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U blujet -d blujet_notify_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            notify-service/package-lock.json
+      - name: Apply shared-cluster schema migrations
+        working-directory: backend
+        run: |
+          npm ci
+          cp .env.test .env
+          DATABASE_URL=postgresql://blujet:blujet@localhost:5432/blujet_notify_test npm run migration:run
+      - name: Validate notify service
+        working-directory: notify-service
+        env:
+          NODE_ENV: test
+          PORT: 3201
+          NOTIFY_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_notify_test
+          NOTIFY_INTERNAL_TOKEN: test-notify-internal-token-at-least-32-characters
+          PII_ENCRYPTION_KEY: 3a6dfd91b775e9cd09be8a576889adfe518a31ad1064af3d63c21ce9aadbdf10
+        run: |
+          npm ci
+          npm run lint:check
+          npm run typecheck
+          npm run build
+          npm test
+          npm run test:e2e
+
   backend-migration-compatibility:
     name: Backend migration compatibility
     if: github.event_name == 'pull_request'

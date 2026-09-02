@@ -33,5 +33,6 @@ check_service() {
 
 check_service backend http://localhost:3000/health blujet-backend
 check_service pss-service http://localhost:3100/health blujet-pss
+check_service notify-service http://localhost:3200/health/ready blujet-notify
 
 echo "Service health and deploy identity verified"

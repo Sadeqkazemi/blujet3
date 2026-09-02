@@ -316,6 +316,18 @@ export class RefundsService {
         { id: request.bookingId },
         { status: 'REFUNDED' },
       );
+      const refundRecipientId =
+        request.booking?.userId ?? request.booking?.agencyId ?? null;
+      if (refundRecipientId) {
+        await this.notifications.notify(
+          refundPaidNotificationInput({
+            recipientId: refundRecipientId,
+            refundId: id,
+            pnr: request.booking.pnr,
+          }),
+          tx,
+        );
+      }
     });
     await this.search.invalidateForInstance(request.booking.flightInstanceId);
 
@@ -339,18 +351,6 @@ export class RefundsService {
         bookingId: request.bookingId,
       },
     });
-
-    const refundRecipientId =
-      request.booking?.userId ?? request.booking?.agencyId ?? null;
-    if (refundRecipientId) {
-      await this.notifications.notify(
-        refundPaidNotificationInput({
-          recipientId: refundRecipientId,
-          refundId: id,
-          pnr: request.booking.pnr,
-        }),
-      );
-    }
 
     return toListRow(updated);
   }
@@ -527,6 +527,14 @@ export class RefundsService {
             }),
           );
           saved.booking = booking;
+          await this.notifications.notify(
+            refundSubmittedNotificationInput({
+              recipientId: actor.id,
+              refundId: saved.id,
+              pnr: booking.pnr,
+            }),
+            tx,
+          );
           return saved;
         });
       } catch (err) {
@@ -563,14 +571,6 @@ export class RefundsService {
       entityId: request.id,
     });
 
-    await this.notifications.notify(
-      refundSubmittedNotificationInput({
-        recipientId: actor.id,
-        refundId: request.id,
-        pnr: request.booking.pnr,
-      }),
-    );
-
     return toCustomerRow(request);
   }
 
@@ -606,37 +606,41 @@ export class RefundsService {
     const preview = this.assertRefundable(booking, rules, existing);
     for (let attempt = 0; attempt < 3; attempt += 1) {
       try {
-        const saved = await this.refundRepo.save(
-          this.refundRepo.create({
-            trackingCode: newTrackingCode(),
-            bookingId: booking.id,
-            passengerName: matchedPassenger.fullName,
-            nidEnc: matchedPassenger.nationalIdEnc,
-            mobileEnc: matchedPassenger.mobileEnc,
-            ibanEnc: encryptPii(iban),
-            totalPaidIrr: preview.totalPaidIrr,
-            penaltyPct: preview.penaltyPct,
-            penaltyAmountIrr: preview.penaltyAmountIrr,
-            refundableIrr: preview.refundableIrr,
-            history: [
-              {
-                step: 'submitted',
-                labelFa: 'ثبت درخواست استرداد توسط مشتری',
-                at: new Date().toISOString(),
-              },
-            ],
-          }),
-        );
-        saved.booking = booking;
-        if (booking.userId) {
-          await this.notifications.notify(
-            refundSubmittedNotificationInput({
-              recipientId: booking.userId,
-              refundId: saved.id,
-              pnr: booking.pnr,
+        const saved = await this.refundRepo.manager.transaction(async (tx) => {
+          const created = await tx.save(
+            tx.create(RefundRequest, {
+              trackingCode: newTrackingCode(),
+              bookingId: booking.id,
+              passengerName: matchedPassenger.fullName,
+              nidEnc: matchedPassenger.nationalIdEnc,
+              mobileEnc: matchedPassenger.mobileEnc,
+              ibanEnc: encryptPii(iban),
+              totalPaidIrr: preview.totalPaidIrr,
+              penaltyPct: preview.penaltyPct,
+              penaltyAmountIrr: preview.penaltyAmountIrr,
+              refundableIrr: preview.refundableIrr,
+              history: [
+                {
+                  step: 'submitted',
+                  labelFa: 'ثبت درخواست استرداد توسط مشتری',
+                  at: new Date().toISOString(),
+                },
+              ],
             }),
           );
-        }
+          if (booking.userId) {
+            await this.notifications.notify(
+              refundSubmittedNotificationInput({
+                recipientId: booking.userId,
+                refundId: created.id,
+                pnr: booking.pnr,
+              }),
+              tx,
+            );
+          }
+          return created;
+        });
+        saved.booking = booking;
         return toCustomerRow(saved);
       } catch (err) {
         if (isUniqueViolation(err, 'refund_requests_trackingCode_key')) {

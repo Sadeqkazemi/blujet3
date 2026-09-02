@@ -14,6 +14,8 @@ const compose = readFileSync(
   join(backendRoot, '..', 'docker-compose.prod.yml'),
   'utf8',
 );
+const notifyComposeSection =
+  compose.split('\n  notify-service:')[1]?.split('\n  ml-service:')[0] ?? '';
 const deployWorkflow = readFileSync(
   join(backendRoot, '..', '.github', 'workflows', 'deploy.yml'),
   'utf8',
@@ -24,6 +26,20 @@ const ciWorkflow = readFileSync(
 );
 const smokeScript = readFileSync(
   join(backendRoot, '..', 'scripts', 'smoke-service-health.sh'),
+  'utf8',
+);
+const notifyDockerfile = readFileSync(
+  join(backendRoot, '..', 'notify-service', 'Dockerfile'),
+  'utf8',
+);
+const notifyFeature = readFileSync(
+  join(
+    backendRoot,
+    '..',
+    'docs',
+    'features',
+    'microservices-phase-1-notify.md',
+  ),
   'utf8',
 );
 const migrationGate = readFileSync(
@@ -126,6 +142,8 @@ describe('production backend artifacts', () => {
     expect(smokeScript).toContain('actualCommit !== expectedCommit');
     expect(smokeScript).toContain('blujet-backend');
     expect(smokeScript).toContain('blujet-pss');
+    expect(smokeScript).toContain('blujet-notify');
+    expect(notifyDockerfile).toContain('ARG GIT_COMMIT_SHA=unknown');
     expect(frontendDockerfile).toContain('ARG VITE_GIT_COMMIT_SHA=unknown');
     expect(frontendIndex).toContain(
       'name="blujet-build-service" content="blujet-frontend"',
@@ -133,6 +151,24 @@ describe('production backend artifacts', () => {
     expect(frontendIndex).toContain(
       'name="blujet-build-commit" content="%VITE_GIT_COMMIT_SHA%"',
     );
+  });
+
+  it('keeps notify internal, asynchronous, authenticated and rollback-safe', () => {
+    expect(compose).toContain('notify-service:');
+    expect(compose).toContain("NOTIFY_INTEGRATION_ENABLED: 'true'");
+    expect(compose).toContain(
+      'NOTIFY_INTERNAL_TOKEN: ${NOTIFY_INTERNAL_TOKEN}',
+    );
+    expect(compose).toContain('NOTIFY_SERVICE_URL: http://notify-service:3200');
+    expect(notifyComposeSection).toContain("expose:\n      - '3200'");
+    expect(notifyComposeSection).not.toContain('\n    ports:');
+    expect(ciWorkflow).toContain('Notify service');
+    expect(ciWorkflow).toContain('npm run test:e2e');
+    expect(deployWorkflow).toContain(
+      'ensure_server_secret NOTIFY_INTERNAL_TOKEN',
+    );
+    expect(notifyFeature).toContain('notify_outbox_events');
+    expect(notifyFeature).toContain('NOTIFY_INTEGRATION_ENABLED=false');
   });
 
   it('keeps Swagger private and search invalidation generation-based', () => {

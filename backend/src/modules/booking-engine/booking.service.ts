@@ -1707,8 +1707,27 @@ export class BookingService {
       const finalRaw = await this.bookingWithFlightQuery(tx)
         .where('b.id = :id', { id })
         .getOneOrFail();
+      const finalBooking = await this.loadBookingRelations(finalRaw, tx);
+      if (finalBooking.userId) {
+        const origin =
+          finalBooking.flightInstance?.flight?.route?.originCode ?? '';
+        const dest = finalBooking.flightInstance?.flight?.route?.destCode ?? '';
+        const routeLabel =
+          origin && dest
+            ? `${origin} → ${dest}`
+            : (finalBooking.flightInstance?.flight?.flightNo ?? '');
+        await this.notifications.notify(
+          ticketedNotificationInput({
+            recipientId: finalBooking.userId,
+            bookingId: finalBooking.id,
+            pnr: finalBooking.pnr,
+            routeLabel: routeLabel || undefined,
+          }),
+          tx,
+        );
+      }
       return {
-        booking: await this.loadBookingRelations(finalRaw, tx),
+        booking: finalBooking,
         discountIrr,
         walletEntryId,
         ledgerEntryId: ledgerEntry.id,
@@ -1732,24 +1751,6 @@ export class BookingService {
         ledgerEntryId: paid.ledgerEntryId,
       },
     });
-
-    if (paid.booking.userId) {
-      const origin =
-        paid.booking.flightInstance?.flight?.route?.originCode ?? '';
-      const dest = paid.booking.flightInstance?.flight?.route?.destCode ?? '';
-      const routeLabel =
-        origin && dest
-          ? `${origin} → ${dest}`
-          : (paid.booking.flightInstance?.flight?.flightNo ?? '');
-      await this.notifications.notify(
-        ticketedNotificationInput({
-          recipientId: paid.booking.userId,
-          bookingId: paid.booking.id,
-          pnr: paid.booking.pnr,
-          routeLabel: routeLabel || undefined,
-        }),
-      );
-    }
 
     return {
       priceChanged: false as const,

@@ -19,6 +19,35 @@ tables/columns/indexes, but may not drop or rename data required by the running
 release. Constraint tightening and removal happen in later releases after
 backfill and compatibility evidence.
 
+## Microservices phase 1 — notify ownership and core outbox
+
+The `notify-service` becomes the sole production runtime writer for existing
+`notifications` and `sms_logs` rows when `NOTIFY_INTEGRATION_ENABLED=true`.
+Both tables remain physically in `public` in this phase so rollback is an
+application switch, not a destructive schema rollback. Moving them to schema
+`notify` is intentionally deferred to phase 4's expand/contract migration.
+
+New additive core table `notify_outbox_events`:
+
+- `id` UUID-text primary key and `eventType` text
+  (`NOTIFICATION_CREATED` or `SMS_REQUESTED`).
+- `payloadEncrypted` is AES-256-GCM ciphertext. It is the only persisted event
+  payload; phone, message, OTP, temporary password, title/body, and provider
+  credentials never appear as plaintext outbox columns or logs.
+- `dedupeKey` is unique and makes logical notification enqueue retry-safe.
+- `attempts`, `nextAttemptAt`, `claimedAt`, `claimToken`, `deliveredAt`, and
+  `lastError` implement multi-replica claim/retry without holding a database
+  lock during network I/O. `lastError` is sanitized and contains no payload.
+- Index `(deliveredAt, nextAttemptAt)` selects due work. Stale claims become
+  eligible again after the dispatcher lease expires.
+
+`sms_logs.sourceEventId` is a nullable unique text column added expand-first.
+Legacy rows stay null. New notify-service deliveries reserve the row before the
+vendor call, giving outbox replay at-most-once vendor invocation for one event.
+`notifications.dedupeKey` continues to provide idempotent in-app delivery.
+
+The migration is additive only: no table/column is renamed, moved, or dropped.
+
 Source of truth: `backend/prisma/schema.prisma` (generated from this doc once
 approved). This file groups entities by the phase that introduces them, per
 `CLAUDE.md`'s workflow rule ("one feature = backend endpoint + tests +

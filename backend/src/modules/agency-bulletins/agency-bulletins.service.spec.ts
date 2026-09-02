@@ -43,15 +43,14 @@ const profiles = [
 
 function buildService(notificationRows: unknown[] = []) {
   const profileRepo = { find: jest.fn().mockResolvedValue(profiles) };
-  const notificationRepo = {
-    find: jest.fn().mockResolvedValue(notificationRows),
+  const notifications = {
+    notify: jest.fn().mockResolvedValue({}),
+    listByEntityType: jest.fn().mockResolvedValue(notificationRows),
   };
-  const notifications = { notify: jest.fn().mockResolvedValue({}) };
   const audit = { record: jest.fn().mockResolvedValue(undefined) };
   return {
     service: new AgencyBulletinsService(
       profileRepo as never,
-      notificationRepo as never,
       notifications as never,
       audit as never,
     ),

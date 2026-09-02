@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Query,
   UseGuards,
@@ -11,7 +12,7 @@ import { NotificationsService } from './notifications.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../../common/types/authenticated-user';
-import type { NotificationCategory } from '../../database/enums';
+import { NotificationListQueryDto } from './dto/notification-query.dto';
 
 /** Available to every authenticated role (staff, agency, customer) —
  * each notification is already scoped to `recipientId = actor.id` at the
@@ -26,16 +27,13 @@ export class NotificationsController {
   @ApiOperation({ summary: 'فهرست اعلان‌های کاربر جاری (جدیدترین ابتدا)' })
   async list(
     @CurrentUser() actor: AuthenticatedUser,
-    @Query('category') category?: NotificationCategory,
-    @Query('unreadOnly') unreadOnly?: string,
-    @Query('limit') limit?: string,
-    @Query('offset') offset?: string,
+    @Query() query: NotificationListQueryDto,
   ) {
     const data = await this.notifications.list(actor, {
-      category,
-      unreadOnly: unreadOnly === 'true',
-      limit: limit ? Number(limit) : undefined,
-      offset: offset ? Number(offset) : undefined,
+      category: query.category,
+      unreadOnly: query.unreadOnly === 'true',
+      limit: query.limit,
+      offset: query.offset,
     });
     return { success: true, data };
   }
@@ -56,7 +54,7 @@ export class NotificationsController {
   })
   async markRead(
     @CurrentUser() actor: AuthenticatedUser,
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
   ) {
     const data = await this.notifications.markRead(actor, id);
     return { success: true, data };

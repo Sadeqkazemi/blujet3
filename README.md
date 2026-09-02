@@ -51,9 +51,9 @@ cd ml-service && pytest
 ## Delivery
 
 Feature work is submitted through a pull request. `main` is protected and must
-remain deployable. A push to `main` or an authorized manual dispatch runs the
-same required CI workflow, waits for approval in the GitHub `uat` environment,
-and deploys the exact reviewed commit SHA through GitHub Actions.
+remain deployable. Deployment starts only from an authorized manual dispatch,
+runs the required CI workflow, waits for approval in the GitHub `uat`
+environment, and deploys the exact reviewed commit SHA through GitHub Actions.
 
 Operational procedures, health checks, backups, and rollback guidance are in
 `docs/RUNBOOK.md`. Repository secrets belong in GitHub Actions or the protected

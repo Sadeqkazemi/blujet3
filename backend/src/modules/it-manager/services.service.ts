@@ -12,6 +12,7 @@ import type {
   CreateExternalServiceDto,
   UpdateExternalServiceDto,
 } from './dto/services.dtos';
+import { NotifyInternalClient } from '../notify-outbox/notify-internal.client';
 
 function toExternalView(s: ExternalServiceConfig) {
   const { apiKeyEncrypted, ...rest } = s;
@@ -35,6 +36,7 @@ export class ItServicesService {
     @InjectRepository(SmsLog)
     private readonly smsLogRepo: Repository<SmsLog>,
     private readonly audit: AuditService,
+    private readonly notifyClient: NotifyInternalClient,
   ) {}
 
   async list() {
@@ -265,6 +267,14 @@ export class ItServicesService {
   async smsLog() {
     const dayStart = new Date();
     dayStart.setHours(0, 0, 0, 0);
+
+    if (this.notifyClient.enabled()) {
+      const [service, report] = await Promise.all([
+        this.internalServiceRepo.findOneBy({ key: 'sms' }),
+        this.notifyClient.smsLog(),
+      ]);
+      return { enabled: service?.enabled ?? false, ...report };
+    }
 
     const [service, todaySuccessCount, todayFailedCount, recent] =
       await Promise.all([

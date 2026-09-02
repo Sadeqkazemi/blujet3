@@ -477,8 +477,9 @@ Unchecked items = feature not done. Never mark a feature done by
   postgres (internal only) + redis (internal only) + ml-service (internal
   only) + backend + frontend + Caddy (auto-SSL).
 - Deploys happen ONLY through GitHub Actions (`.github/workflows/deploy.yml`):
-  push to `main` -> tests must pass -> SSH deploy -> `npm run migration:run:prod`
-  (TypeORM). Never deploy by hand-editing files on the server.
+  authorized manual dispatch on `main` -> tests must pass -> UAT environment
+  approval -> SSH deploy -> `npm run migration:run:prod` (TypeORM). Merging to
+  `main` alone must not deploy. Never deploy by hand-editing files on the server.
 - `main` is always deployable. Feature work happens on branches; merge to
   `main` only when the phase is complete and tests pass.
 - Secrets live in GitHub Actions Secrets and in `/opt/app/.env` on the

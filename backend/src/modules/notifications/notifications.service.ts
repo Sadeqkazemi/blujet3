@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { EntityManager, Repository, SelectQueryBuilder } from 'typeorm';
 import { Notification } from '../../database/entities/notification.entity';
 import { ErrorCode } from '../../common/errors';
 import type { NotificationCategory } from '../../database/enums';
@@ -9,6 +9,10 @@ import {
   EXTERNAL_NOTIFICATION_ENTITIES,
   notificationEntityVisibleToRole,
 } from './notification-audience';
+import { NotifyInternalClient } from '../notify-outbox/notify-internal.client';
+import { NotifyOutboxService } from '../notify-outbox/notify-outbox.service';
+import { NotifyOutboxEventType } from '../notify-outbox/notify-outbox.contract';
+import type { NotificationView } from '../notify-outbox/notify-outbox.contract';
 
 export interface NotifyInput {
   recipientId: string;
@@ -40,6 +44,8 @@ export class NotificationsService {
   constructor(
     @InjectRepository(Notification)
     private readonly repo: Repository<Notification>,
+    private readonly outbox: NotifyOutboxService,
+    private readonly notifyClient: NotifyInternalClient,
   ) {}
 
   private applyAudienceScope(
@@ -60,15 +66,27 @@ export class NotificationsService {
   /** The single write path every event source (cartable, referrals,
    * pricing approval, commitments, access revocation, ...) calls through —
    * idempotent when `dedupeKey` is supplied. */
-  async notify(input: NotifyInput): Promise<Notification> {
+  async notify(
+    input: NotifyInput,
+    manager?: EntityManager,
+  ): Promise<Notification | { eventId: string; queued: true }> {
+    if (this.notifyClient.enabled()) {
+      return this.outbox.enqueue(
+        NotifyOutboxEventType.NOTIFICATION_CREATED,
+        input,
+        input.dedupeKey,
+        manager,
+      );
+    }
+    const repo = manager?.getRepository(Notification) ?? this.repo;
     if (input.dedupeKey) {
-      const existing = await this.repo.findOneBy({
+      const existing = await repo.findOneBy({
         dedupeKey: input.dedupeKey,
       });
       if (existing) return existing;
     }
-    return this.repo.save(
-      this.repo.create({
+    return repo.save(
+      repo.create({
         recipientId: input.recipientId,
         category: input.category,
         action: input.action,
@@ -91,6 +109,9 @@ export class NotificationsService {
       offset?: number;
     },
   ) {
+    if (this.notifyClient.enabled()) {
+      return this.notifyClient.list(actor, query);
+    }
     const qb = this.applyAudienceScope(
       this.repo
         .createQueryBuilder('n')
@@ -116,6 +137,9 @@ export class NotificationsService {
   ): Promise<
     { total: number } & Record<(typeof CATEGORY_KEYS)[number], number>
   > {
+    if (this.notifyClient.enabled()) {
+      return this.notifyClient.unreadCount(actor);
+    }
     const qb = this.applyAudienceScope(
       this.repo
         .createQueryBuilder('n')
@@ -141,7 +165,13 @@ export class NotificationsService {
     return { total, ...counts };
   }
 
-  async markRead(actor: AuthenticatedUser, id: string): Promise<Notification> {
+  async markRead(
+    actor: AuthenticatedUser,
+    id: string,
+  ): Promise<Notification | NotificationView> {
+    if (this.notifyClient.enabled()) {
+      return this.notifyClient.markRead(actor, id);
+    }
     const existing = await this.repo.findOneBy({
       id,
       recipientId: actor.id,
@@ -164,6 +194,9 @@ export class NotificationsService {
   }
 
   async markAllRead(actor: AuthenticatedUser): Promise<{ updated: number }> {
+    if (this.notifyClient.enabled()) {
+      return this.notifyClient.markAllRead(actor);
+    }
     const qb = this.repo
       .createQueryBuilder()
       .update(Notification)
@@ -180,5 +213,17 @@ export class NotificationsService {
     }
     const result = await qb.execute();
     return { updated: result.affected ?? 0 };
+  }
+
+  async listByEntityType(
+    entityType: string,
+  ): Promise<Notification[] | NotificationView[]> {
+    if (this.notifyClient.enabled()) {
+      return this.notifyClient.listByEntityType(entityType);
+    }
+    return this.repo.find({
+      where: { entityType },
+      order: { createdAt: 'DESC' },
+    });
   }
 }
