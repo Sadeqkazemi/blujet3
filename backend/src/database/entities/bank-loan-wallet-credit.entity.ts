@@ -13,7 +13,7 @@ import { bigintTransformer } from '../transformers/bigint.transformer';
  * per bank reference across concurrent loans/webhooks — no 23505 aborts.
  */
 @Index('bank_loan_wallet_credits_loanApplicationId_idx', ['loanApplicationId'])
-@Entity('bank_loan_wallet_credits')
+@Entity('bank_loan_wallet_credits', { schema: 'payments' })
 export class BankLoanWalletCredit {
   @PrimaryColumn({
     type: 'text',

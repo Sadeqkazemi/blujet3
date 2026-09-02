@@ -7,7 +7,7 @@ import {
   PrimaryColumn,
 } from 'typeorm';
 
-@Entity('survey_settings')
+@Entity('survey_settings', { schema: 'experience' })
 export class SurveySettings {
   @PrimaryColumn({ type: 'text' })
   id!: string;

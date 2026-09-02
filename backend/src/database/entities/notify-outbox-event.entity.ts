@@ -11,7 +11,7 @@ import type { NotifyOutboxEventType } from '../../modules/notify-outbox/notify-o
 
 @Index('notify_outbox_events_delivery_idx', ['deliveredAt', 'nextAttemptAt'])
 @Index('notify_outbox_events_dedupeKey_key', ['dedupeKey'], { unique: true })
-@Entity('notify_outbox_events')
+@Entity('notify_outbox_events', { schema: 'ops' })
 export class NotifyOutboxEvent {
   @PrimaryColumn({
     type: 'text',

@@ -425,7 +425,7 @@ export class RefundsService {
           statuses: ['TICKETED', 'PAID'],
         })
         .andWhere(
-          'NOT EXISTS (SELECT 1 FROM refund_requests rr WHERE rr."bookingId" = b.id)',
+          'NOT EXISTS (SELECT 1 FROM payments.refund_requests rr WHERE rr."bookingId" = b.id)',
         )
         .orderBy('flightInstance.departureAt', 'ASC')
         .getMany(),

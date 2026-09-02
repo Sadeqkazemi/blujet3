@@ -22,7 +22,7 @@ import { AgencyProfile } from './agency-profile.entity';
 @Index('seat_locks_bookingId_key', ['bookingId'], { unique: true })
 @Index('seat_locks_flightInstanceId_idx', ['flightInstanceId'])
 @Index('seat_locks_agencyId_idx', ['agencyId'])
-@Entity('seat_locks')
+@Entity('seat_locks', { schema: 'inventory' })
 export class SeatLock {
   @PrimaryColumn({ type: 'text', primaryKeyConstraintName: 'seat_locks_pkey' })
   id!: string;

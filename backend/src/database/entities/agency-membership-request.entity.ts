@@ -14,7 +14,7 @@ import type { JsonValue } from '../json-types';
 import { User } from './user.entity';
 
 @Index('agency_membership_requests_status_idx', ['status'])
-@Entity('agency_membership_requests')
+@Entity('agency_membership_requests', { schema: 'agency' })
 export class AgencyMembershipRequest {
   @PrimaryColumn({
     type: 'text',

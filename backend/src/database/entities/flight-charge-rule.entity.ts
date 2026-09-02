@@ -26,7 +26,7 @@ import { FlightInstance } from './flight-instance.entity';
   'isActive',
   'isPendingRevision',
 ])
-@Entity('flight_charge_rules')
+@Entity('flight_charge_rules', { schema: 'inventory' })
 export class FlightChargeRule {
   @PrimaryColumn({
     type: 'text',

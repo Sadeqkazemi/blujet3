@@ -11,7 +11,7 @@ import {
 import { BackupStatus } from '../enums';
 import { User } from './user.entity';
 
-@Entity('backup_records')
+@Entity('backup_records', { schema: 'ops' })
 export class BackupRecord {
   @PrimaryColumn({
     type: 'text',

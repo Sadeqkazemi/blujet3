@@ -17,7 +17,7 @@ const bigintTransformer = {
   unique: true,
 })
 @Index('site_destination_highlights_sortOrder_idx', ['sortOrder'])
-@Entity('site_destination_highlights')
+@Entity('site_destination_highlights', { schema: 'experience' })
 export class SiteDestinationHighlight {
   @PrimaryColumn({ type: 'text' })
   id!: string;

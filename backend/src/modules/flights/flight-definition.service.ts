@@ -984,7 +984,7 @@ export class FlightDefinitionService {
           generatedAt: new Date().toISOString(),
         };
         await this.dataSource.query(
-          `UPDATE "flight_instances" SET "aiSuggestion" = $1::jsonb WHERE "id" = $2`,
+          `UPDATE "inventory"."flight_instances" SET "aiSuggestion" = $1::jsonb WHERE "id" = $2`,
           [JSON.stringify(suggestion), createdId],
         );
       }

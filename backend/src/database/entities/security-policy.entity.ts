@@ -1,7 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 import { User } from './user.entity';
 
-@Entity('security_policy')
+@Entity('security_policy', { schema: 'identity' })
 export class SecurityPolicy {
   @PrimaryColumn({
     type: 'int',

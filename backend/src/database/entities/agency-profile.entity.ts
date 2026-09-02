@@ -9,7 +9,7 @@ import {
 import { AgencyTier } from '../enums';
 import { User } from './user.entity';
 
-@Entity('agency_profiles')
+@Entity('agency_profiles', { schema: 'agency' })
 export class AgencyProfile {
   @PrimaryColumn({
     type: 'text',

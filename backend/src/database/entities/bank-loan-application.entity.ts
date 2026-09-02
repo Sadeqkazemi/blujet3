@@ -31,8 +31,10 @@ import { User } from './user.entity';
   },
 )
 @Index('bank_loan_applications_userId_createdAt_idx', ['userId', 'createdAt'])
-@Index('bank_loan_applications_initiationLeaseUntil_idx', ['initiationLeaseUntil'])
-@Entity('bank_loan_applications')
+@Index('bank_loan_applications_initiationLeaseUntil_idx', [
+  'initiationLeaseUntil',
+])
+@Entity('bank_loan_applications', { schema: 'payments' })
 export class BankLoanApplication {
   @PrimaryColumn({
     type: 'text',

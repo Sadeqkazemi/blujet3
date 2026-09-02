@@ -401,7 +401,7 @@ export class LoansService {
     const { startedAt, leaseUntil } = this.leaseTimestamps();
     const rows: Array<{ id: string }> = await this.dataSource.query(
       `
-      INSERT INTO "bank_loan_applications"
+      INSERT INTO "payments"."bank_loan_applications"
         ("id", "userId", "idempotencyKey", "requestedAmountIrr", "bankStatus",
          "initiationStartedAt", "initiationLeaseUntil", "createdAt", "updatedAt")
       VALUES ($1, $2, $3, $4, 'INITIATING', $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
@@ -421,7 +421,7 @@ export class LoansService {
     const { startedAt, leaseUntil } = this.leaseTimestamps();
     const rows: Array<{ id: string }> = await this.dataSource.query(
       `
-      UPDATE "bank_loan_applications"
+      UPDATE "payments"."bank_loan_applications"
       SET "bankStatus" = 'INITIATING',
           "initiationStartedAt" = $3,
           "initiationLeaseUntil" = $4,
@@ -444,7 +444,7 @@ export class LoansService {
   private async expireInitiationLease(id: string, userId: string) {
     await this.dataSource.query(
       `
-      UPDATE "bank_loan_applications"
+      UPDATE "payments"."bank_loan_applications"
       SET "initiationLeaseUntil" = CURRENT_TIMESTAMP,
           "updatedAt" = CURRENT_TIMESTAMP
       WHERE "id" = $1 AND "userId" = $2 AND "bankReferenceId" IS NULL
@@ -897,7 +897,7 @@ export class LoansService {
     const redacted = redactWebhookPayload(args.payload);
     const rows: Array<{ id: string }> = await manager.query(
       `
-      INSERT INTO "bank_loan_webhook_events"
+      INSERT INTO "payments"."bank_loan_webhook_events"
         ("id", "provider", "eventId", "bankReferenceId", "loanApplicationId",
          "bankStatus", "occurredAt", "payloadRedacted", "processingResult", "createdAt")
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, 'CLAIMED', CURRENT_TIMESTAMP)
@@ -925,7 +925,7 @@ export class LoansService {
   ) {
     await manager.query(
       `
-      UPDATE "bank_loan_webhook_events"
+      UPDATE "payments"."bank_loan_webhook_events"
       SET "processingResult" = $2
       WHERE "id" = $1
       `,
@@ -1040,7 +1040,7 @@ export class LoansService {
 
     const claimed: Array<{ creditReference: string }> = await manager.query(
       `
-      INSERT INTO "bank_loan_wallet_credits"
+      INSERT INTO "payments"."bank_loan_wallet_credits"
         ("creditReference", "loanApplicationId", "userId", "amountIrr", "createdAt")
       VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
       ON CONFLICT ("creditReference") DO NOTHING
@@ -1064,7 +1064,7 @@ export class LoansService {
 
     await manager.query(
       `
-      UPDATE "bank_loan_wallet_credits"
+      UPDATE "payments"."bank_loan_wallet_credits"
       SET "walletEntryId" = $2
       WHERE "creditReference" = $1
       `,
@@ -1073,7 +1073,7 @@ export class LoansService {
 
     await manager.query(
       `
-      UPDATE "bank_loan_applications"
+      UPDATE "payments"."bank_loan_applications"
       SET "walletCreditReference" = $2, "updatedAt" = CURRENT_TIMESTAMP
       WHERE "id" = $1 AND "walletCreditReference" IS NULL
       `,

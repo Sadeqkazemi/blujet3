@@ -24,7 +24,7 @@ import { User } from './user.entity';
 
 @Index('agency_seat_requests_agencyId_status_idx', ['agencyId', 'status'])
 @Index('agency_seat_requests_status_createdAt_idx', ['status', 'createdAt'])
-@Entity('agency_seat_requests')
+@Entity('agency_seat_requests', { schema: 'agency' })
 export class AgencySeatRequest {
   @PrimaryColumn({
     type: 'text',

@@ -13,7 +13,7 @@ import { bigintTransformer } from '../transformers/bigint.transformer';
 import { User } from './user.entity';
 
 @Index('ancillary_services_category_enabled_idx', ['category', 'enabled'])
-@Entity('ancillary_services')
+@Entity('ancillary_services', { schema: 'inventory' })
 export class AncillaryService {
   @PrimaryColumn({
     type: 'text',

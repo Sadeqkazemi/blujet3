@@ -13,7 +13,7 @@ export class HealthController {
   async check() {
     try {
       await this.dataSource.query(
-        'WITH notification_contract AS (SELECT n."id" FROM "notifications" n LIMIT 0), sms_contract AS (SELECT s."sourceEventId" FROM "sms_logs" s LIMIT 0) SELECT 1 FROM notification_contract, sms_contract LIMIT 0',
+        'WITH notification_contract AS (SELECT n."id" FROM "notify"."notifications" n LIMIT 0), sms_contract AS (SELECT s."sourceEventId" FROM "notify"."sms_logs" s LIMIT 0) SELECT 1 FROM notification_contract, sms_contract LIMIT 0',
       );
       return {
         status: 'ok',

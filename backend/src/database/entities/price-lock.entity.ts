@@ -22,7 +22,7 @@ import { User } from './user.entity';
   'status',
 ])
 @Index('price_locks_userId_status_idx', ['userId', 'status'])
-@Entity('price_locks')
+@Entity('price_locks', { schema: 'loyalty' })
 export class PriceLock {
   @PrimaryColumn({ type: 'text', primaryKeyConstraintName: 'price_locks_pkey' })
   id!: string;

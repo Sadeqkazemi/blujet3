@@ -18,7 +18,7 @@ import { User } from './user.entity';
 @Index('refund_requests_bookingId_key', ['bookingId'], { unique: true })
 @Index('refund_requests_status_idx', ['status'])
 @Index('refund_requests_trackingCode_key', ['trackingCode'], { unique: true })
-@Entity('refund_requests')
+@Entity('refund_requests', { schema: 'payments' })
 export class RefundRequest {
   @PrimaryColumn({
     type: 'text',

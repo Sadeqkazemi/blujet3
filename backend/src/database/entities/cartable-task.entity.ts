@@ -19,7 +19,7 @@ import { User } from './user.entity';
   'conversationId',
   'createdAt',
 ])
-@Entity('cartable_tasks')
+@Entity('cartable_tasks', { schema: 'ops' })
 export class CartableTask {
   @PrimaryColumn({
     type: 'text',

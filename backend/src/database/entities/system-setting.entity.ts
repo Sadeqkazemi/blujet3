@@ -2,7 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 import type { JsonValue } from '../json-types';
 import { User } from './user.entity';
 
-@Entity('system_settings')
+@Entity('system_settings', { schema: 'ops' })
 export class SystemSetting {
   @PrimaryColumn({
     type: 'text',

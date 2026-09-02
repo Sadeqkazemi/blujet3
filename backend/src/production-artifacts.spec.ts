@@ -256,7 +256,7 @@ describe('production backend artifacts', () => {
       'UAT_FLIGHT_CATALOG_DELETE_ROUTES_CONFIRM',
     );
     expect(uatFlightCatalogCleanupSource).toContain(
-      'TRUNCATE TABLE "routes", "airports" RESTART IDENTITY CASCADE',
+      'TRUNCATE TABLE "inventory"."routes", "inventory"."airports" RESTART IDENTITY CASCADE',
     );
     expect(deployWorkflow).toContain('redis-cli FLUSHDB');
   });

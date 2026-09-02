@@ -14,7 +14,7 @@ import type { JsonValue } from '../json-types';
 import { User } from './user.entity';
 
 @Index('manager_messages_fromId_createdAt_idx', ['fromId', 'createdAt'])
-@Entity('manager_messages')
+@Entity('manager_messages', { schema: 'ops' })
 export class ManagerMessage {
   @PrimaryColumn({
     type: 'text',

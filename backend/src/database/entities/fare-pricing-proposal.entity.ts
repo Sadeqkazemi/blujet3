@@ -19,7 +19,7 @@ import { User } from './user.entity';
   unique: true,
 })
 @Index('fare_pricing_proposals_status_idx', ['status'])
-@Entity('fare_pricing_proposals')
+@Entity('fare_pricing_proposals', { schema: 'ops' })
 export class FarePricingProposal {
   @PrimaryColumn({
     type: 'text',

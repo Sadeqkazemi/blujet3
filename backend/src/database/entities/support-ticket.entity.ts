@@ -20,7 +20,7 @@ import { User } from './user.entity';
 @Index('support_tickets_createdAt_idx', ['createdAt'])
 @Index('support_tickets_status_idx', ['status'])
 @Index('support_tickets_trackingCode_key', ['trackingCode'], { unique: true })
-@Entity('support_tickets')
+@Entity('support_tickets', { schema: 'experience' })
 export class SupportTicket {
   @PrimaryColumn({
     type: 'text',

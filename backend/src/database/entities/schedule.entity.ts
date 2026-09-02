@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { Flight } from './flight.entity';
 
-@Entity('schedules')
+@Entity('schedules', { schema: 'inventory' })
 export class Schedule {
   @PrimaryColumn({ type: 'text', primaryKeyConstraintName: 'schedules_pkey' })
   id!: string;

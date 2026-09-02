@@ -11,7 +11,7 @@ import {
 import { Route } from './route.entity';
 
 @Index('flights_flightNo_key', ['flightNo'], { unique: true })
-@Entity('flights')
+@Entity('flights', { schema: 'inventory' })
 export class Flight {
   @PrimaryColumn({ type: 'text', primaryKeyConstraintName: 'flights_pkey' })
   id!: string;

@@ -13,7 +13,7 @@ import { StepUpScope, TwoFactorPurpose } from '../enums';
 import { User } from './user.entity';
 
 @Index('two_factor_challenges_userId_idx', ['userId'])
-@Entity('two_factor_challenges')
+@Entity('two_factor_challenges', { schema: 'identity' })
 export class TwoFactorChallenge {
   @PrimaryColumn({
     type: 'text',

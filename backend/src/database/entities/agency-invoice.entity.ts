@@ -18,7 +18,7 @@ import { User } from './user.entity';
 @Index('agency_invoices_agencyId_status_idx', ['agencyId', 'status'])
 @Index('agency_invoices_invoiceNo_key', ['invoiceNo'], { unique: true })
 @Index('agency_invoices_bookingId_key', ['bookingId'], { unique: true })
-@Entity('agency_invoices')
+@Entity('agency_invoices', { schema: 'agency' })
 export class AgencyInvoice {
   @PrimaryColumn({
     type: 'text',

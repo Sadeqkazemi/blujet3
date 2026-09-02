@@ -11,7 +11,7 @@ type CountRow = { count: string };
 
 async function count(dataSource: DataSource, table: string): Promise<number> {
   const [row] = await dataSource.query<CountRow[]>(
-    `SELECT COUNT(*)::text AS count FROM "${table}"`,
+    `SELECT COUNT(*)::text AS count FROM "inventory"."${table}"`,
   );
   return Number(row?.count ?? 0);
 }
@@ -71,7 +71,7 @@ async function main() {
 
     await dataSource.transaction(async (manager) => {
       await manager.query(
-        'TRUNCATE TABLE "routes", "airports" RESTART IDENTITY CASCADE',
+        'TRUNCATE TABLE "inventory"."routes", "inventory"."airports" RESTART IDENTITY CASCADE',
       );
     });
     console.log(

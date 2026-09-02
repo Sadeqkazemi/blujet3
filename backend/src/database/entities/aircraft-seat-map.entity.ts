@@ -4,7 +4,7 @@ import { BeforeInsert, Column, Entity, Index, PrimaryColumn } from 'typeorm';
 @Index('aircraft_seat_maps_aircraftType_key', ['aircraftType'], {
   unique: true,
 })
-@Entity('aircraft_seat_maps')
+@Entity('aircraft_seat_maps', { schema: 'inventory' })
 export class AircraftSeatMap {
   @PrimaryColumn({
     type: 'text',

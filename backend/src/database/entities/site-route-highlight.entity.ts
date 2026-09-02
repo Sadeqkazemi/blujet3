@@ -10,7 +10,7 @@ import {
 import { bigintTransformer } from '../transformers/bigint.transformer';
 
 @Index('site_route_highlights_sortOrder_idx', ['sortOrder'])
-@Entity('site_route_highlights')
+@Entity('site_route_highlights', { schema: 'experience' })
 export class SiteRouteHighlight {
   @PrimaryColumn({
     type: 'text',

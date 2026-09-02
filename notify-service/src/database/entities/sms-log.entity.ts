@@ -25,7 +25,7 @@ export type SmsStatus = (typeof SmsStatus)[keyof typeof SmsStatus];
 
 @Index('sms_logs_createdAt_idx', ['createdAt'])
 @Index('sms_logs_sourceEventId_key', ['sourceEventId'], { unique: true })
-@Entity('sms_logs')
+@Entity('sms_logs', { schema: 'notify' })
 export class SmsLog {
   @PrimaryColumn({ type: 'text', primaryKeyConstraintName: 'sms_logs_pkey' })
   id!: string;

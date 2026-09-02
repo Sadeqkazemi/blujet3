@@ -21,7 +21,7 @@ import type { JsonValue } from '../json-types';
   },
 )
 @Index('bank_loan_webhook_events_bankReferenceId_idx', ['bankReferenceId'])
-@Entity('bank_loan_webhook_events')
+@Entity('bank_loan_webhook_events', { schema: 'payments' })
 export class BankLoanWebhookEvent {
   @PrimaryColumn({
     type: 'text',

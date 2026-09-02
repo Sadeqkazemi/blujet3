@@ -13,7 +13,7 @@ import { AgencyProfile } from './agency-profile.entity';
 import { User } from './user.entity';
 
 @Index('agency_messages_agencyId_createdAt_idx', ['agencyId', 'createdAt'])
-@Entity('agency_messages')
+@Entity('agency_messages', { schema: 'agency' })
 export class AgencyMessage {
   @PrimaryColumn({
     type: 'text',

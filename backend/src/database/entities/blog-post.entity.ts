@@ -18,7 +18,7 @@ import { User } from './user.entity';
 @Index('blog_posts_coverFileId_key', ['coverFileId'], { unique: true })
 @Index('blog_posts_slug_key', ['slug'], { unique: true })
 @Index('blog_posts_status_deletedAt_idx', ['status', 'deletedAt'])
-@Entity('blog_posts')
+@Entity('blog_posts', { schema: 'experience' })
 export class BlogPost {
   @PrimaryColumn({ type: 'text', primaryKeyConstraintName: 'blog_posts_pkey' })
   id!: string;

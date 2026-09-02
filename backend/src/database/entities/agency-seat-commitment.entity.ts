@@ -22,7 +22,7 @@ import { bigintTransformer } from '../transformers/bigint.transformer';
 @Index('agency_seat_commitments_idempotencyKey_key', ['idempotencyKey'], {
   unique: true,
 })
-@Entity('agency_seat_commitments')
+@Entity('agency_seat_commitments', { schema: 'agency' })
 export class AgencySeatCommitment {
   @PrimaryColumn({
     type: 'text',

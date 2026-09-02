@@ -16,7 +16,7 @@ import { bigintTransformer } from '../transformers/bigint.transformer';
 @Index('charter_commitments_idempotencyKey_key', ['idempotencyKey'], {
   unique: true,
 })
-@Entity('charter_commitments')
+@Entity('charter_commitments', { schema: 'inventory' })
 export class CharterCommitment {
   @PrimaryColumn({
     type: 'text',

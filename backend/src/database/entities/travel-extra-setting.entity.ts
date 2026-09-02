@@ -44,7 +44,7 @@ export type TravelExtraBillingUnit =
 
 @Index('travel_extra_settings_code_key', ['code'], { unique: true })
 @Index('travel_extra_settings_active_sortOrder_idx', ['active', 'sortOrder'])
-@Entity('travel_extra_settings')
+@Entity('travel_extra_settings', { schema: 'inventory' })
 export class TravelExtraSetting {
   @PrimaryColumn({
     type: 'text',

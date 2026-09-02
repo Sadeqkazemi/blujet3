@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 
-@Entity('club_tier_rules')
+@Entity('club_tier_rules', { schema: 'loyalty' })
 export class ClubTierRule {
   @PrimaryColumn({
     type: 'text',

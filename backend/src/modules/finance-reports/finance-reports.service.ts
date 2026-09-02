@@ -441,15 +441,15 @@ export class FinanceReportsService {
       .addSelect('COALESCE(u."fullName", :fallbackName)', 'name')
       .addSelect('COALESCE(SUM(b."priceIrr"), 0)', 'totalIrr')
       .addSelect(
-        `COALESCE((SELECT GREATEST(SUM(le."signedAmountIrr"), 0) FROM ledger_entries le WHERE le."agencyId" = ap."userId" AND le.type IN ('SALE','SETTLEMENT')), 0)`,
+        `COALESCE((SELECT GREATEST(SUM(le."signedAmountIrr"), 0) FROM payments.ledger_entries le WHERE le."agencyId" = ap."userId" AND le.type IN ('SALE','SETTLEMENT')), 0)`,
         'agencyOutstandingIrr',
       )
       .addSelect(
-        `COALESCE((SELECT SUM(ABS(le."signedAmountIrr")) FROM ledger_entries le WHERE le."agencyId" = ap."userId" AND le.type = 'SALE'), 0)`,
+        `COALESCE((SELECT SUM(ABS(le."signedAmountIrr")) FROM payments.ledger_entries le WHERE le."agencyId" = ap."userId" AND le.type = 'SALE'), 0)`,
         'agencySalesIrr',
       )
       .addSelect(
-        'COALESCE(SUM((SELECT COUNT(*) FROM passengers p WHERE p."bookingId" = b.id AND p."deletedAt" IS NULL AND p."occupiesSeat" = true)), 0)',
+        'COALESCE(SUM((SELECT COUNT(*) FROM orders.passengers p WHERE p."bookingId" = b.id AND p."deletedAt" IS NULL AND p."occupiesSeat" = true)), 0)',
         'soldSeats',
       )
       .from('bookings', 'b')
@@ -542,19 +542,19 @@ export class FinanceReportsService {
       .addSelect('da."cityFa"', 'destCityFa')
       .addSelect('fi.capacity', 'capacity')
       .addSelect(
-        `(SELECT COUNT(*) FROM passengers p INNER JOIN bookings b ON b.id = p."bookingId" WHERE b."flightInstanceId" = fi.id AND b.status IN ('PAID','TICKETED') AND b."deletedAt" IS NULL AND p."deletedAt" IS NULL AND p."occupiesSeat" = true)`,
+        `(SELECT COUNT(*) FROM orders.passengers p INNER JOIN orders.bookings b ON b.id = p."bookingId" WHERE b."flightInstanceId" = fi.id AND b.status IN ('PAID','TICKETED') AND b."deletedAt" IS NULL AND p."deletedAt" IS NULL AND p."occupiesSeat" = true)`,
         'soldSeats',
       )
       .addSelect(
-        `(SELECT COALESCE(SUM(b."priceIrr"), 0) FROM bookings b WHERE b."flightInstanceId" = fi.id AND b.status IN ('PAID','TICKETED') AND b."deletedAt" IS NULL)`,
+        `(SELECT COALESCE(SUM(b."priceIrr"), 0) FROM orders.bookings b WHERE b."flightInstanceId" = fi.id AND b.status IN ('PAID','TICKETED') AND b."deletedAt" IS NULL)`,
         'totalIrr',
       )
       .addSelect(
-        `(SELECT COUNT(DISTINCT b."agencyId") FROM bookings b WHERE b."flightInstanceId" = fi.id AND b.status IN ('PAID','TICKETED') AND b."agencyId" IS NOT NULL AND b."deletedAt" IS NULL)`,
+        `(SELECT COUNT(DISTINCT b."agencyId") FROM orders.bookings b WHERE b."flightInstanceId" = fi.id AND b.status IN ('PAID','TICKETED') AND b."agencyId" IS NOT NULL AND b."deletedAt" IS NULL)`,
         'agencyCount',
       )
       .addSelect(
-        `(SELECT COUNT(*) FROM passengers p INNER JOIN bookings b ON b.id = p."bookingId" WHERE b."flightInstanceId" = fi.id AND b.status IN ('PAID','TICKETED') AND b."agencyId" IS NOT NULL AND b."deletedAt" IS NULL AND p."deletedAt" IS NULL AND p."occupiesSeat" = true)`,
+        `(SELECT COUNT(*) FROM orders.passengers p INNER JOIN orders.bookings b ON b.id = p."bookingId" WHERE b."flightInstanceId" = fi.id AND b.status IN ('PAID','TICKETED') AND b."agencyId" IS NOT NULL AND b."deletedAt" IS NULL AND p."deletedAt" IS NULL AND p."occupiesSeat" = true)`,
         'agencySeats',
       )
       .from('flight_instances', 'fi')
@@ -625,16 +625,16 @@ export class FinanceReportsService {
       .select('ap."userId"', 'agencyId')
       .addSelect('u."fullName"', 'agencyName')
       .addSelect(
-        'COALESCE(SUM((SELECT COUNT(*) FROM passengers p WHERE p."bookingId" = b.id AND p."deletedAt" IS NULL AND p."occupiesSeat" = true)), 0)',
+        'COALESCE(SUM((SELECT COUNT(*) FROM orders.passengers p WHERE p."bookingId" = b.id AND p."deletedAt" IS NULL AND p."occupiesSeat" = true)), 0)',
         'soldSeats',
       )
       .addSelect('COALESCE(SUM(b."priceIrr"), 0)', 'salesIrr')
       .addSelect(
-        `COALESCE((SELECT GREATEST(SUM(le."signedAmountIrr"), 0) FROM ledger_entries le WHERE le."agencyId" = ap."userId" AND le.type IN ('SALE','SETTLEMENT')), 0)`,
+        `COALESCE((SELECT GREATEST(SUM(le."signedAmountIrr"), 0) FROM payments.ledger_entries le WHERE le."agencyId" = ap."userId" AND le.type IN ('SALE','SETTLEMENT')), 0)`,
         'agencyOutstandingIrr',
       )
       .addSelect(
-        `COALESCE((SELECT SUM(ABS(le."signedAmountIrr")) FROM ledger_entries le WHERE le."agencyId" = ap."userId" AND le.type = 'SALE'), 0)`,
+        `COALESCE((SELECT SUM(ABS(le."signedAmountIrr")) FROM payments.ledger_entries le WHERE le."agencyId" = ap."userId" AND le.type = 'SALE'), 0)`,
         'agencySalesIrr',
       )
       .from('bookings', 'b')
@@ -726,7 +726,7 @@ export class FinanceReportsService {
       .addSelect('b.cabin', 'cabin')
       .addSelect('b."fareClassCode"', 'fareClassCode')
       .addSelect(
-        '(SELECT COUNT(*) FROM passengers p WHERE p."bookingId" = b.id AND p."deletedAt" IS NULL)',
+        '(SELECT COUNT(*) FROM orders.passengers p WHERE p."bookingId" = b.id AND p."deletedAt" IS NULL)',
         'passengerCount',
       )
       // Booking.priceIrr is the immutable all-in amount captured by checkout;

@@ -15,7 +15,7 @@ import { StoredFile } from './stored-file.entity';
 
 @Index('agency_documents_agencyId_idx', ['agencyId'])
 @Index('agency_documents_fileId_key', ['fileId'], { unique: true })
-@Entity('agency_documents')
+@Entity('agency_documents', { schema: 'agency' })
 export class AgencyDocument {
   @PrimaryColumn({
     type: 'text',

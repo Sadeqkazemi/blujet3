@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { BeforeInsert, Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
 @Index('internal_services_key_key', ['key'], { unique: true })
-@Entity('internal_services')
+@Entity('internal_services', { schema: 'ops' })
 export class InternalService {
   @PrimaryColumn({
     type: 'text',

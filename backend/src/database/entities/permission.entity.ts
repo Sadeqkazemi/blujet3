@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 
 @Index('permissions_dept_key_key', ['dept', 'key'], { unique: true })
-@Entity('permissions')
+@Entity('permissions', { schema: 'ops' })
 export class Permission {
   @PrimaryColumn({ type: 'text', primaryKeyConstraintName: 'permissions_pkey' })
   id!: string;

@@ -1,7 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 import { User } from './user.entity';
 
-@Entity('panel_access_flags')
+@Entity('panel_access_flags', { schema: 'ops' })
 export class PanelAccessFlag {
   @PrimaryColumn({
     type: 'text',

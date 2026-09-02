@@ -24,7 +24,7 @@ export type PassengerType = 'ADULT' | 'CHILD' | 'INFANT';
   'passengers_gender_check',
   `"gender" IS NULL OR "gender" IN ('male', 'female')`,
 )
-@Entity('passengers')
+@Entity('passengers', { schema: 'orders' })
 export class Passenger {
   @PrimaryColumn({ type: 'text', primaryKeyConstraintName: 'passengers_pkey' })
   id!: string;

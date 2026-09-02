@@ -22,7 +22,7 @@ import { RefreshToken } from './refresh-token.entity';
   unique: true,
   where: '"isSuperAdmin" = true AND "deletedAt" IS NULL',
 })
-@Entity('users')
+@Entity('users', { schema: 'identity' })
 export class User {
   @PrimaryColumn({ type: 'text', primaryKeyConstraintName: 'users_pkey' })
   id!: string;

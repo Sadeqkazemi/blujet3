@@ -10,7 +10,7 @@ import { AircraftStatus } from '../enums';
  * aircraft-type.util.ts) while this table becomes the authoritative source
  * for new aircraft going forward. */
 @Index('aircraft_definitions_code_key', ['code'], { unique: true })
-@Entity('aircraft_definitions')
+@Entity('aircraft_definitions', { schema: 'inventory' })
 export class AircraftDefinition {
   @PrimaryColumn({
     type: 'text',

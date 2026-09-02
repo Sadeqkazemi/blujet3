@@ -11,7 +11,7 @@ import { CabinClass, PromoType } from '../enums';
 import { bigintTransformer } from '../transformers/bigint.transformer';
 
 @Index('promo_codes_code_key', ['code'], { unique: true })
-@Entity('promo_codes')
+@Entity('promo_codes', { schema: 'payments' })
 export class PromoCode {
   @PrimaryColumn({ type: 'text', primaryKeyConstraintName: 'promo_codes_pkey' })
   id!: string;

@@ -15,7 +15,7 @@ import { AgencyProfile } from './agency-profile.entity';
 import { User } from './user.entity';
 
 @Index('agency_webservice_requests_agencyId_status_idx', ['agencyId', 'status'])
-@Entity('agency_webservice_requests')
+@Entity('agency_webservice_requests', { schema: 'agency' })
 export class AgencyWebserviceRequest {
   @PrimaryColumn({
     type: 'text',

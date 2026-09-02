@@ -17,7 +17,7 @@ import { User } from './user.entity';
 
 @Index('ledger_entries_agencyId_type_idx', ['agencyId', 'type'])
 @Index('ledger_entries_occurredAt_type_idx', ['occurredAt', 'type'])
-@Entity('ledger_entries')
+@Entity('ledger_entries', { schema: 'payments' })
 export class LedgerEntry {
   @PrimaryColumn({
     type: 'text',

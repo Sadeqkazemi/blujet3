@@ -16,7 +16,7 @@ import {
   'routes_distanceSource_check',
   `"distanceSource" IS NULL OR "distanceSource" IN ('AI', 'MANUAL')`,
 )
-@Entity('routes')
+@Entity('routes', { schema: 'inventory' })
 export class Route {
   @PrimaryColumn({ type: 'text', primaryKeyConstraintName: 'routes_pkey' })
   id!: string;

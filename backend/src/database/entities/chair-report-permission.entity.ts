@@ -16,7 +16,7 @@ import { User } from './user.entity';
   'requesterId',
   'status',
 ])
-@Entity('chair_report_permissions')
+@Entity('chair_report_permissions', { schema: 'ops' })
 export class ChairReportPermission {
   @PrimaryColumn({
     type: 'text',

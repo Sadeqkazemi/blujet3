@@ -13,7 +13,7 @@ import { User } from './user.entity';
 
 @Index('saved_bank_accounts_userId_createdAt_idx', ['userId', 'createdAt'])
 @Index('saved_bank_accounts_userId_shebaHash_idx', ['userId', 'shebaHash'])
-@Entity('saved_bank_accounts')
+@Entity('saved_bank_accounts', { schema: 'payments' })
 export class SavedBankAccount {
   @PrimaryColumn({
     type: 'text',

@@ -21,17 +21,17 @@ async function run(): Promise<void> {
       capturedAt: new Date().toISOString(),
       website: {
         orders: await count(
-          'SELECT count(*) FROM bookings WHERE "deletedAt" IS NULL',
+          'SELECT count(*) FROM orders.bookings WHERE "deletedAt" IS NULL',
         ),
         travellers: await count(
-          'SELECT count(*) FROM passengers p JOIN bookings b ON b.id = p."bookingId" WHERE b."deletedAt" IS NULL',
+          'SELECT count(*) FROM orders.passengers p JOIN orders.bookings b ON b.id = p."bookingId" WHERE b."deletedAt" IS NULL',
         ),
         heldOrders: await count(
-          'SELECT count(*) FROM bookings WHERE "deletedAt" IS NULL AND status = $1',
+          'SELECT count(*) FROM orders.bookings WHERE "deletedAt" IS NULL AND status = $1',
           ['HELD'],
         ),
         ticketedOrders: await count(
-          'SELECT count(*) FROM bookings WHERE "deletedAt" IS NULL AND status = $1',
+          'SELECT count(*) FROM orders.bookings WHERE "deletedAt" IS NULL AND status = $1',
           ['TICKETED'],
         ),
         // The legacy website has no immutable inventory-transaction table.

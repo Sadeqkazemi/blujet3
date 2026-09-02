@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 
 @Index('contact_messages_createdAt_idx', ['createdAt'])
-@Entity('contact_messages')
+@Entity('contact_messages', { schema: 'experience' })
 export class ContactMessage {
   @PrimaryColumn({
     type: 'text',

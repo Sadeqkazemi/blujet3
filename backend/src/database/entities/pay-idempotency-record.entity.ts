@@ -16,7 +16,7 @@ import { User } from './user.entity';
 @Index('pay_idempotency_records_idempotencyKey_key', ['idempotencyKey'], {
   unique: true,
 })
-@Entity('pay_idempotency_records')
+@Entity('pay_idempotency_records', { schema: 'payments' })
 export class PayIdempotencyRecord {
   @PrimaryColumn({
     type: 'text',

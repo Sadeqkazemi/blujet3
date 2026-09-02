@@ -13,7 +13,7 @@ import { JobType } from '../enums';
 import { StoredFile } from './stored-file.entity';
 
 @Index('job_postings_imageFileId_key', ['imageFileId'], { unique: true })
-@Entity('job_postings')
+@Entity('job_postings', { schema: 'experience' })
 export class JobPosting {
   @PrimaryColumn({
     type: 'text',

@@ -30,7 +30,7 @@ import { AircraftDefinition } from './aircraft-definition.entity';
   'aircraft_cabins_defaultClassCode_check',
   `"defaultClassCode" ~ '^[A-Z0-9]{1,3}$'`,
 )
-@Entity('aircraft_cabins')
+@Entity('aircraft_cabins', { schema: 'inventory' })
 export class AircraftCabin {
   @PrimaryColumn({
     type: 'text',

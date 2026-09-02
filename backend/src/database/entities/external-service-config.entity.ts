@@ -10,7 +10,7 @@ import {
 import { ExternalServiceMethod } from '../enums';
 
 @Index('external_service_configs_key_key', ['key'], { unique: true })
-@Entity('external_service_configs')
+@Entity('external_service_configs', { schema: 'ops' })
 export class ExternalServiceConfig {
   @PrimaryColumn({
     type: 'text',

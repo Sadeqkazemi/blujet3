@@ -165,7 +165,7 @@ export class PnrService {
       .take(200);
     if (query.q) {
       qb.andWhere(
-        `(b.pnr ILIKE :q OR EXISTS (SELECT 1 FROM passengers p WHERE p."bookingId" = b.id AND p."fullName" ILIKE :q))`,
+        `(b.pnr ILIKE :q OR EXISTS (SELECT 1 FROM orders.passengers p WHERE p."bookingId" = b.id AND p."fullName" ILIKE :q))`,
         { q: `%${query.q}%` },
       );
     }

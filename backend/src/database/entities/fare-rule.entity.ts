@@ -17,7 +17,7 @@ import { FlightInstance } from './flight-instance.entity';
   ['flightInstanceId', 'cabin', 'classCode'],
   { unique: true },
 )
-@Entity('fare_rules')
+@Entity('fare_rules', { schema: 'inventory' })
 export class FareRule {
   @PrimaryColumn({ type: 'text', primaryKeyConstraintName: 'fare_rules_pkey' })
   id!: string;

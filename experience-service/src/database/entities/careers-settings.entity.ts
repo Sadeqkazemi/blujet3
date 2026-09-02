@@ -7,7 +7,7 @@ import {
   PrimaryColumn,
 } from 'typeorm';
 
-@Entity('careers_settings')
+@Entity('careers_settings', { schema: 'experience' })
 export class CareersSettings {
   @PrimaryColumn({ type: 'text' })
   id!: string;

@@ -15,7 +15,7 @@ import { AgencyProfile } from './agency-profile.entity';
 import { FlightInstance } from './flight-instance.entity';
 import { User } from './user.entity';
 
-@Entity('agency_allotments')
+@Entity('agency_allotments', { schema: 'agency' })
 @Index(
   'agency_allotments_seatRequestId_flightInstanceId_key',
   ['seatRequestId', 'flightInstanceId'],

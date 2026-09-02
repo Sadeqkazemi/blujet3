@@ -13,7 +13,7 @@ import { bigintTransformer } from '../transformers/bigint.transformer';
 import { User } from './user.entity';
 
 @Index('ai_usage_logs_provider_createdAt_idx', ['provider', 'createdAt'])
-@Entity('ai_usage_logs')
+@Entity('ai_usage_logs', { schema: 'audit' })
 export class AiUsageLog {
   @PrimaryColumn({
     type: 'text',
