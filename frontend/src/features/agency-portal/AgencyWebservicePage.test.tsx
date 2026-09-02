@@ -65,6 +65,7 @@ describe('AgencyWebservicePage', () => {
 
     renderPage();
     await screen.findByTestId('ws-buy');
+    expect(screen.getByText('۴۵٬۰۰۰٬۰۰۰ ریال')).toBeInTheDocument();
 
     const user = userEvent.setup();
     await user.click(screen.getByTestId('ws-type-FULL'));

@@ -20,10 +20,10 @@ import { remindAgencyInvoice } from '../../api/agencies';
 import { fetchReconciliationQueue, resolveReconciliation } from '../../api/reconciliation';
 import {
   faDigits,
-  faMoney,
-  faMoneyCompact,
-  faMoneyCompactNumber,
   faPercent,
+  faRial,
+  faRialCompact,
+  faRialCompactNumber,
   latinDigits,
 } from '../../lib/fa-format';
 import { dayjs, formatJalaliDate, formatJalaliDateTime } from '../../lib/jalali';
@@ -63,13 +63,7 @@ const MIX_COLORS_DARK: Record<string, string> = {
 };
 
 function compactFinanceMoney(amountIrr: number | string): string {
-  const toman = Number(amountIrr) / 10;
-  const format = (value: number, maximumFractionDigits: number) =>
-    faDigits(value.toLocaleString('en-US', { maximumFractionDigits }).replace(/,/g, '٬').replace('.', '٫'));
-
-  if (Math.abs(toman) >= 1_000_000_000) return `${format(toman / 1_000_000_000, 1)} میلیارد`;
-  if (Math.abs(toman) >= 1_000_000) return `${format(toman / 1_000_000, 0)} میلیون`;
-  return `${format(toman, 0)} تومان`;
+  return `${faRialCompact(amountIrr)} ریال`;
 }
 
 function agencyInitials(name: string): string {
@@ -111,10 +105,10 @@ function RevenueMixCard({ mix, theme = 'light' }: { mix: RevenueMixResult; theme
             }`}
           >
             <span className={`font-num text-xs font-black ${dark ? 'text-white' : 'text-ink'}`}>
-              {dark ? faMoneyCompact(mix.totalIrr) : faMoney(mix.totalIrr)}
+              {dark ? faRialCompact(mix.totalIrr) : faRial(mix.totalIrr)}
             </span>
             <span className={`text-[9px] ${dark ? 'text-[#6b7b94]' : 'text-muted'}`}>
-              {dark ? 'کل' : 'کل (تومان)'}
+              کل (ریال)
             </span>
           </div>
         </div>
@@ -131,7 +125,7 @@ function RevenueMixCard({ mix, theme = 'light' }: { mix: RevenueMixResult; theme
             </span>
             <span className="flex items-center gap-2">
               <span className={`font-num font-bold ${dark ? 'text-white' : ''}`}>
-                {dark ? faMoneyCompact(c.amountIrr) : faMoney(c.amountIrr)}
+                {dark ? faRialCompact(c.amountIrr) : faRial(c.amountIrr)} ریال
               </span>
               <span
                 className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
@@ -302,7 +296,7 @@ function ReconciliationQueueCard({
               </div>
               <div className="min-w-[110px] text-xs">
                 <div className="text-[9px] text-panel-muted">مبلغ</div>
-                <div className="font-num font-bold text-[#cdd7e5]">{faMoney(item.amountIrr)} تومان</div>
+                <div className="font-num font-bold text-[#cdd7e5]">{faRial(item.amountIrr)} ریال</div>
               </div>
               <div className="min-w-[110px] text-xs">
                 <div className="text-[9px] text-panel-muted">تاریخ</div>
@@ -512,7 +506,7 @@ function FinanceOpsView() {
                     Number(t.signedAmountIrr) >= 0 && t.type !== 'REFUND' ? 'text-[#34d399]' : 'text-[#f87171]'
                   }`}
                 >
-                  {Number(t.signedAmountIrr) >= 0 ? '+' : '−'} {faMoney(Math.abs(Number(t.signedAmountIrr)))}
+                  {BigInt(t.signedAmountIrr) >= 0n ? '+' : '−'} {faRial(BigInt(t.signedAmountIrr) < 0n ? -BigInt(t.signedAmountIrr) : BigInt(t.signedAmountIrr))} ریال
                 </span>
               </div>
             ))}
@@ -534,7 +528,7 @@ function FinanceOpsView() {
             <p className="mt-1 text-[11px] text-panel-muted">وضعیت پرداخت دوره‌ای و مطالبات معوق</p>
           </div>
           <span className="rounded-full bg-[#f871711f] px-3 py-1.5 text-[11px] font-extrabold text-[#f87171]">
-            مجموع مطالبات: {faMoney(settlements.outstandingIrr)} تومان
+            مجموع مطالبات: {faRial(settlements.outstandingIrr)} ریال
           </span>
         </div>
         <div className="flex flex-col gap-3">
@@ -555,7 +549,7 @@ function FinanceOpsView() {
                 </div>
                 <div className="min-w-[110px] text-xs">
                   <div className="text-[9px] text-panel-muted">مبلغ دوره</div>
-                  <div className="font-num mt-0.5 font-bold text-panel-ink">{faMoney(s.totalIrr)} تومان</div>
+                  <div className="font-num mt-0.5 font-bold text-panel-ink">{faRial(s.totalIrr)} ریال</div>
                 </div>
                 <div className="min-w-[100px] text-xs">
                   <div className="text-[9px] text-panel-muted">سررسید</div>
@@ -656,7 +650,7 @@ function EmployeeFinanceView() {
       {stats && (
         <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
-            ['درآمد ماه جاری', `${faMoney(stats.revenueThisMonthIrr)} تومان`],
+            ['درآمد ماه جاری', `${faRial(stats.revenueThisMonthIrr)} ریال`],
             ['آژانس فعال', faDigits(stats.activeAgencies)],
             ['مسافر ماه جاری', faDigits(stats.passengersThisMonth)],
             ['بلیط فروخته‌شده', faDigits(stats.ticketsSoldThisMonth)],
@@ -676,7 +670,7 @@ function EmployeeFinanceView() {
             {tx.rows.map((row) => (
               <div key={row.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-xs">
                 <span className="font-bold text-panel-ink">{row.titleFa} · {row.party}</span>
-                <span className="font-num text-panel-muted">{faMoney(row.signedAmountIrr)} تومان</span>
+                <span className="font-num text-panel-muted">{faRial(row.signedAmountIrr)} ریال</span>
               </div>
             ))}
           </div>
@@ -690,7 +684,7 @@ function EmployeeFinanceView() {
             {settlements.rows.map((row) => (
               <div key={row.agencyId} className="flex flex-wrap items-center justify-between gap-2 py-3 text-xs">
                 <span className="font-bold text-panel-ink">{row.agencyName}</span>
-                <span className="font-num text-panel-muted">{faMoney(row.totalIrr)} تومان</span>
+                <span className="font-num text-panel-muted">{faRial(row.totalIrr)} ریال</span>
               </div>
             ))}
           </div>
@@ -832,10 +826,10 @@ function ChannelSummaryTiles({
 }) {
   const total = Number(totalIrr);
   const useBillionUnit = total >= 10_000_000_000;
-  const viewUnit = useBillionUnit ? 'میلیارد تومان' : 'تومان';
-  const totalDisplay = useBillionUnit ? faMoneyCompactNumber(total) : faMoneyCompact(total);
+  const viewUnit = useBillionUnit ? 'میلیارد ریال' : 'ریال';
+  const totalDisplay = useBillionUnit ? faRialCompactNumber(total) : faRial(total);
   const channelDisplay = (n: number | string) =>
-    useBillionUnit ? faMoneyCompactNumber(n) : faMoneyCompact(n);
+    useBillionUnit ? faRialCompactNumber(n) : faRial(n);
 
   return (
     <div className="mb-3.5 flex flex-wrap gap-2.5">
@@ -1179,7 +1173,7 @@ function FlightSalesPicker({
                     </div>
                     {sug && (
                       <div className="mt-1 text-[10px] font-bold text-[#34d399]">
-                        پیشنهاد: {faMoney(sug.suggestedIrr)} تومان
+                        پیشنهاد: {faRial(sug.suggestedIrr)} ریال
                         {sug.deltaPct != null && (
                           <span className={sug.deltaPct >= 0 ? ' text-[#34d399]' : ' text-[#f87171]'}>
                             {' '}
@@ -1191,7 +1185,7 @@ function FlightSalesPicker({
                   </div>
                   <div className="shrink-0 text-left whitespace-nowrap">
                     <div className="font-num text-xs font-extrabold text-[#60a5fa]">
-                      {faMoneyCompact(r.totalIrr)}
+                      {faRialCompact(r.totalIrr)} ریال
                     </div>
                     <div className="text-[9px] text-[#6b7b94]">فروش</div>
                   </div>
@@ -1365,7 +1359,7 @@ function FinanceAnalyticView() {
           <div>
             <h2 className="m-0 text-[14.5px] font-extrabold text-panel-ink">نمودار فروش</h2>
             <p className="mt-[3px] text-[11px] text-panel-muted">
-              {chartCaption(chart.granularity)} · میلیارد تومان
+              {chartCaption(chart.granularity)} · میلیارد ریال
             </p>
           </div>
           <SalesChartControls
@@ -1442,7 +1436,7 @@ function FinanceAnalyticView() {
         <div className="grid grid-cols-2 gap-[13px] md:grid-cols-4">
           <AnalyticKpiCard
             label={`کل درآمد · ${kpiPeriodLabel(isFlightMode ? 'year' : chart.granularity)}`}
-            value={faMoneyCompact(kpis.revenueIrr)}
+            value={`${faRialCompact(kpis.revenueIrr)} ریال`}
             badge={trendBadge(kpis.trends.revenuePct)}
             badgeTone="good"
             iconClass="bg-[rgba(52,211,153,.14)] text-[#34d399]"
@@ -1455,7 +1449,7 @@ function FinanceAnalyticView() {
           />
           <AnalyticKpiCard
             label={`سود خالص · حاشیه ${faPercent(kpis.marginPct)}`}
-            value={faMoneyCompact(kpis.profitIrr)}
+            value={`${faRialCompact(kpis.profitIrr)} ریال`}
             badge={trendBadge(kpis.trends.profitPct)}
             badgeTone="good"
             iconClass="bg-[rgba(59,130,246,.14)] text-[#60a5fa]"
@@ -1468,7 +1462,7 @@ function FinanceAnalyticView() {
           />
           <AnalyticKpiCard
             label="هزینه عملیاتی"
-            value={faMoneyCompact(kpis.operatingCostIrr)}
+            value={`${faRialCompact(kpis.operatingCostIrr)} ریال`}
             badge={trendBadge(kpis.trends.operatingCostPct)}
             badgeTone="warn"
             iconClass="bg-[rgba(245,158,11,.14)] text-[#f59e0b]"
@@ -1481,7 +1475,7 @@ function FinanceAnalyticView() {
           />
           <AnalyticKpiCard
             label="مطالبات معوق آژانس‌ها"
-            value={faMoneyCompact(kpis.agencyDebtIrr)}
+            value={`${faRialCompact(kpis.agencyDebtIrr)} ریال`}
             badge={`${faDigits(kpis.agencyDebtCount)} آژانس`}
             badgeTone="danger"
             iconClass="bg-[rgba(248,113,113,.14)] text-[#f87171]"

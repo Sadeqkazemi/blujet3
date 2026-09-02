@@ -51,7 +51,7 @@ describe('AgencyCreditPage', () => {
     await waitFor(() => expect(paySpy).toHaveBeenCalledWith('inv1'));
   });
 
-  it('opens the credit-increase request modal and submits a toman amount converted to rial', async () => {
+  it('submits a rial credit limit without multiplying it by ten', async () => {
     mockLoads();
     const requestSpy = vi.spyOn(portalApi, 'requestCreditIncrease').mockResolvedValue({
       id: 'r1',
@@ -67,10 +67,10 @@ describe('AgencyCreditPage', () => {
 
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: 'افزایش اعتبار' }));
-    await user.type(screen.getByLabelText('سقف درخواستی (تومان)'), '200000000');
+    await user.type(screen.getByLabelText('سقف درخواستی (ریال)'), '2000000000');
     await user.click(screen.getByRole('button', { name: 'ارسال درخواست' }));
 
-    await waitFor(() => expect(requestSpy).toHaveBeenCalledWith(2_000_000_000, undefined));
+    await waitFor(() => expect(requestSpy).toHaveBeenCalledWith('2000000000', undefined));
   });
 
   it('renders translated headings and the pay button in English', async () => {

@@ -7,7 +7,7 @@ import {
   payInvoice,
   requestCreditIncrease,
 } from '../../api/agency-portal';
-import { localeMoney, parseTomanToRial } from '../../lib/fa-format';
+import { localeRial, parseRialInputString } from '../../lib/fa-format';
 import { formatLocaleDate, formatLocaleDateTime, localeDigits } from '../../lib/locale-format';
 import { ApiRequestError } from '../../api/envelope';
 import Modal from '../../components/Modal';
@@ -68,7 +68,7 @@ const STR: Record<StoredLocale, {
   loading: string;
   errorFallback: string;
   payErrorFallback: string;
-  toman: string;
+  rial: string;
   creditLimitLabel: string;
   creditUsedLabel: string;
   creditRemainingLabel: string;
@@ -99,7 +99,7 @@ const STR: Record<StoredLocale, {
     loading: 'در حال بارگذاری…',
     errorFallback: 'خطا در دریافت اطلاعات اعتبار.',
     payErrorFallback: 'خطا در پرداخت فاکتور.',
-    toman: 'تومان',
+    rial: 'ریال',
     creditLimitLabel: 'سقف اعتبار',
     creditUsedLabel: 'مصرف‌شده',
     creditRemainingLabel: 'باقیمانده',
@@ -116,7 +116,7 @@ const STR: Record<StoredLocale, {
     ledgerEmpty: 'تراکنشی ثبت نشده است.',
     modalTitle: 'درخواست افزایش اعتبار',
     modalDesc: 'درخواست شما برای بررسی به واحد بازرگانی/مالی ارسال می‌شود و تنها پس از تأیید، سقف اعتبار تغییر می‌کند.',
-    requestedLimitLabel: 'سقف درخواستی (تومان)',
+    requestedLimitLabel: 'سقف درخواستی (ریال)',
     noteLabel: 'یادداشت (اختیاری)',
     requestedLimitRequired: 'سقف درخواستی را وارد کنید.',
     requestSubmitFallback: 'خطا در ثبت درخواست.',
@@ -130,7 +130,7 @@ const STR: Record<StoredLocale, {
     loading: 'Loading…',
     errorFallback: 'Error loading credit information.',
     payErrorFallback: 'Error paying the invoice.',
-    toman: 'Toman',
+    rial: 'Rial',
     creditLimitLabel: 'Credit Limit',
     creditUsedLabel: 'Used',
     creditRemainingLabel: 'Remaining',
@@ -147,7 +147,7 @@ const STR: Record<StoredLocale, {
     ledgerEmpty: 'No transactions recorded yet.',
     modalTitle: 'Credit Increase Request',
     modalDesc: 'Your request is sent to the commercial/finance team for review; the credit limit only changes once approved.',
-    requestedLimitLabel: 'Requested Limit (Toman)',
+    requestedLimitLabel: 'Requested Limit (Rial)',
     noteLabel: 'Note (optional)',
     requestedLimitRequired: 'Enter the requested limit.',
     requestSubmitFallback: 'Error submitting the request.',
@@ -161,7 +161,7 @@ const STR: Record<StoredLocale, {
     loading: 'جارٍ التحميل…',
     errorFallback: 'خطأ في تحميل معلومات الرصيد.',
     payErrorFallback: 'خطأ في دفع الفاتورة.',
-    toman: 'تومان',
+    rial: 'ريال',
     creditLimitLabel: 'سقف الائتمان',
     creditUsedLabel: 'المستخدم',
     creditRemainingLabel: 'المتبقي',
@@ -178,7 +178,7 @@ const STR: Record<StoredLocale, {
     ledgerEmpty: 'لا توجد معاملات مسجّلة بعد.',
     modalTitle: 'طلب زيادة الرصيد',
     modalDesc: 'يُرسل طلبك إلى فريق المبيعات/المالية للمراجعة؛ لا يتغيّر سقف الرصيد إلا بعد الموافقة عليه.',
-    requestedLimitLabel: 'الحد المطلوب (تومان)',
+    requestedLimitLabel: 'الحد المطلوب (ريال)',
     noteLabel: 'ملاحظة (اختياري)',
     requestedLimitRequired: 'أدخل الحد المطلوب.',
     requestSubmitFallback: 'خطأ في إرسال الطلب.',
@@ -231,8 +231,8 @@ export default function AgencyCreditPage() {
   }
 
   async function onSubmitRequest() {
-    const limitIrr = parseTomanToRial(requestedLimit);
-    if (!limitIrr || limitIrr <= 0) {
+    const limitIrr = parseRialInputString(requestedLimit);
+    if (!limitIrr || BigInt(limitIrr) <= 0n) {
       setRequestError(t.requestedLimitRequired);
       return;
     }
@@ -282,15 +282,15 @@ export default function AgencyCreditPage() {
       <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="rounded-2xl border border-[#edf0f5] bg-white p-5">
           <div className="text-[11px] text-muted">{t.creditLimitLabel}</div>
-          <div className="mt-2 text-xl font-black text-[#0d2640]">{localeMoney(credit.limitIrr, locale)} {t.toman}</div>
+          <div className="mt-2 text-xl font-black text-[#0d2640]">{localeRial(credit.limitIrr, locale)} {t.rial}</div>
         </div>
         <div className="rounded-2xl border border-[#edf0f5] bg-white p-5">
           <div className="text-[11px] text-muted">{t.creditUsedLabel}</div>
-          <div className="mt-2 text-xl font-black text-[#e2583e]">{localeMoney(credit.usedIrr, locale)} {t.toman}</div>
+          <div className="mt-2 text-xl font-black text-[#e2583e]">{localeRial(credit.usedIrr, locale)} {t.rial}</div>
         </div>
         <div className="rounded-2xl border border-[#edf0f5] bg-white p-5">
           <div className="text-[11px] text-muted">{t.creditRemainingLabel}</div>
-          <div className="mt-2 text-xl font-black text-[#23895f]">{localeMoney(credit.remainingIrr, locale)} {t.toman}</div>
+          <div className="mt-2 text-xl font-black text-[#23895f]">{localeRial(credit.remainingIrr, locale)} {t.rial}</div>
         </div>
       </div>
 
@@ -323,7 +323,7 @@ export default function AgencyCreditPage() {
                 return (
                   <div key={entry.id} className="flex items-center justify-between gap-4 border-b border-[#edf0f5] px-4 py-4 last:border-0">
                     <div><div className="text-xs font-bold text-[#1a2d42]">{EVENT_LABEL[entry.type][locale]}</div><div className="mt-1 text-[10px] text-muted">{formatLocaleDateTime(entry.occurredAt, locale)}{entry.reference ? ` · ${entry.reference}` : ''}</div></div>
-                    {entry.amountIrr != null && <span className={`text-xs font-black ${informational ? 'text-[#1668c4]' : creditEntry ? 'text-[#23895f]' : 'text-[#e2583e]'}`}>{informational ? '' : creditEntry ? '+' : '−'}{localeMoney(entry.amountIrr, locale)} {t.toman}</span>}
+                    {entry.amountIrr != null && <span className={`text-xs font-black ${informational ? 'text-[#1668c4]' : creditEntry ? 'text-[#23895f]' : 'text-[#e2583e]'}`}>{informational ? '' : creditEntry ? '+' : '−'}{localeRial(entry.amountIrr, locale)} {t.rial}</span>}
                   </div>
                 );
               })}
@@ -345,7 +345,7 @@ export default function AgencyCreditPage() {
                       <div className="mt-1 text-[10px] text-muted">{t.colDueDate}: {formatLocaleDate(inv.dueAt, locale)}</div>
                     </div>
                   </div>
-                  <div className="text-sm font-black text-[#0d2640]">{localeMoney(inv.amountIrr, locale)} {t.toman}<div className={`mt-1 text-[10px] ${st.className.split(' ').at(-1)}`}>{st.label[locale]}</div></div>
+                  <div className="text-sm font-black text-[#0d2640]">{localeRial(inv.amountIrr, locale)} {t.rial}<div className={`mt-1 text-[10px] ${st.className.split(' ').at(-1)}`}>{st.label[locale]}</div></div>
                   {inv.status !== 'PAID' ? (
                     <button disabled={payingId === inv.id} onClick={() => void onPay(inv.id)} className="h-11 rounded-xl bg-[#1668c4] px-5 text-xs font-black text-white disabled:opacity-60">{payingId === inv.id ? t.payingBtn : t.payBtn}</button>
                   ) : <span className="rounded-xl bg-[#e9f7f0] px-4 py-3 text-xs font-bold text-[#23895f]">✓ {st.label[locale]}</span>}
@@ -356,7 +356,7 @@ export default function AgencyCreditPage() {
         )}
       </div>
 
-      {creditRequests.length > 0 && <div className="mt-4 rounded-2xl border border-[#edf0f5] bg-white p-4"><div className="mb-3 text-sm font-black text-[#0d2640]">{t.creditRequestsHeading}</div><div className="space-y-2">{creditRequests.map((request) => { const st = CREDIT_REQUEST_STATUS[request.status]; return <div key={request.id} className="flex items-center justify-between rounded-xl bg-[#fafbfd] px-4 py-3 text-xs"><span className="font-black">{localeMoney(request.requestedLimitIrr, locale)} {t.toman}</span><span className={`rounded-full px-3 py-1 text-[10px] font-bold ${st.className}`}>{st.label[locale]}</span></div>; })}</div></div>}
+      {creditRequests.length > 0 && <div className="mt-4 rounded-2xl border border-[#edf0f5] bg-white p-4"><div className="mb-3 text-sm font-black text-[#0d2640]">{t.creditRequestsHeading}</div><div className="space-y-2">{creditRequests.map((request) => { const st = CREDIT_REQUEST_STATUS[request.status]; return <div key={request.id} className="flex items-center justify-between rounded-xl bg-[#fafbfd] px-4 py-3 text-xs"><span className="font-black">{localeRial(request.requestedLimitIrr, locale)} {t.rial}</span><span className={`rounded-full px-3 py-1 text-[10px] font-bold ${st.className}`}>{st.label[locale]}</span></div>; })}</div></div>}
 
       {requestOpen && (
         <Modal title={t.modalTitle} onClose={() => setRequestOpen(false)}>

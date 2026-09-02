@@ -132,7 +132,6 @@ describe('AgencyDetailPage', () => {
         paidAt: null,
       },
     ]);
-
     renderPage();
 
     expect(await screen.findByRole('button', { name: 'نمای کلی' })).toBeInTheDocument();
@@ -188,6 +187,17 @@ describe('AgencyDetailPage', () => {
         createdAt: '2026-07-01T10:00:00.000Z',
       },
     ]);
+    const issueInvoice = vi.spyOn(agenciesApi, 'issueAgencyInvoice').mockResolvedValue({
+      id: 'inv2',
+      agencyId: 'a1',
+      invoiceNo: 'INV-1003',
+      issuedById: 'u9',
+      issuedAt: '2026-07-20T00:00:00.000Z',
+      dueAt: '2026-07-21T00:00:00.000Z',
+      amountIrr: '900000000',
+      status: 'UNPAID',
+      paidAt: null,
+    });
 
     const { default: userEvent } = await import('@testing-library/user-event');
     renderPage();
@@ -201,11 +211,20 @@ describe('AgencyDetailPage', () => {
     expect(await screen.findByText('فاکتورهای صادرشده')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'صدور فاکتور' })).toBeInTheDocument();
     expect(screen.getAllByText('INV-1002').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('۸۰۰٬۰۰۰٬۰۰۰ ریال').length).toBeGreaterThan(0);
     expect(screen.getAllByText('در انتظار پرداخت').length).toBeGreaterThan(0);
     // Jalali due date rendered with Persian digits, not the raw ISO string
     expect(screen.queryByText('2026-07-05T00:00:00.000Z')).not.toBeInTheDocument();
     // Commercial settles via invoices — no manual settle button
     expect(screen.queryByRole('button', { name: 'ثبت تسویه' })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'صدور فاکتور' }));
+    await userEvent.type(screen.getByLabelText('مبلغ فاکتور (ریال)'), '۹۰۰٬۰۰۰٬۰۰۰');
+    await userEvent.type(screen.getByLabelText('تاریخ سررسید'), '۱۴۰۵/۰۴/۳۰');
+    await userEvent.click(screen.getByRole('button', { name: 'صدور و ثبت فاکتور' }));
+    await waitFor(() =>
+      expect(issueInvoice).toHaveBeenCalledWith('a1', '900000000', expect.any(String)),
+    );
 
     await userEvent.click(screen.getByRole('button', { name: 'مکاتبه‌ها' }));
     expect(await screen.findByText('لطفاً فاکتور را تسویه بفرمایید.')).toBeInTheDocument();
@@ -323,7 +342,7 @@ describe('AgencyDetailPage', () => {
     await waitFor(() => expect(suspend).toHaveBeenCalledWith('a1', 'بدهی معوق'));
   });
 
-  it('the credit modal parses a toman amount (Persian digits allowed) into rial', async () => {
+  it('the credit modal submits a rial amount unchanged (Persian digits allowed)', async () => {
     mockRole('FINANCE_MANAGER');
     vi.spyOn(agenciesApi, 'fetchAgencyDetail').mockResolvedValue(DETAIL);
     stubStaffReviewFetches();
@@ -337,11 +356,10 @@ describe('AgencyDetailPage', () => {
     await screen.findByRole('button', { name: 'تعیین اعتبار' });
 
     await userEvent.click(screen.getByRole('button', { name: 'تعیین اعتبار' }));
-    await userEvent.type(screen.getByLabelText('سقف اعتبار جدید (تومان)'), '۲۰۰٬۰۰۰٬۰۰۰');
+    await userEvent.type(screen.getByLabelText('سقف اعتبار جدید (ریال)'), '۲٬۰۰۰٬۰۰۰٬۰۰۰');
     await userEvent.click(screen.getByRole('button', { name: 'ثبت اعتبار' }));
 
-    // 200,000,000 toman -> 2,000,000,000 rial
-    await waitFor(() => expect(update).toHaveBeenCalledWith('a1', 2_000_000_000));
+    await waitFor(() => expect(update).toHaveBeenCalledWith('a1', '2000000000'));
   });
 
   it('Finance Manager can review an uploaded document and approve it', async () => {

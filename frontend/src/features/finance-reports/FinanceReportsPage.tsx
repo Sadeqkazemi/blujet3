@@ -18,7 +18,7 @@ import type {
   FinanceSalesResult,
 } from '../../types/finance-manager';
 import { dayjs, formatJalaliDate } from '../../lib/jalali';
-import { faDigits, faMoney, faMoneyCompact } from '../../lib/fa-format';
+import { faDigits, faRial, faRialCompact } from '../../lib/fa-format';
 
 const MONTHS = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
 const PERIODS: { key: FinanceReportPeriod; label: string }[] = [
@@ -176,9 +176,9 @@ function PartnerTable({ result }: { result: Extract<FinanceReportResult, { kind:
         <tbody>{paging.pageRows.map((row) => (
           <tr key={row.id} className="border-t border-[#222e43] text-white">
             <td className="px-4 py-4 font-extrabold">{row.name}</td>
-            <td className="font-num px-4 py-4">{faMoney(row.totalIrr)} تومان</td>
-            <td className="font-num px-4 py-4">{faMoney(row.paidIrr)} تومان</td>
-            <td className={`font-num px-4 py-4 font-bold ${BigInt(row.outstandingIrr) > 0n ? 'text-[#f59e0b]' : 'text-[#34d399]'}`}>{BigInt(row.outstandingIrr) > 0n ? `${faMoney(row.outstandingIrr)} تومان` : 'تسویه‌شده'}</td>
+            <td className="font-num px-4 py-4">{faRial(row.totalIrr)} ریال</td>
+            <td className="font-num px-4 py-4">{faRial(row.paidIrr)} ریال</td>
+            <td className={`font-num px-4 py-4 font-bold ${BigInt(row.outstandingIrr) > 0n ? 'text-[#f59e0b]' : 'text-[#34d399]'}`}>{BigInt(row.outstandingIrr) > 0n ? `${faRial(row.outstandingIrr)} ریال` : 'تسویه‌شده'}</td>
           </tr>
         ))}</tbody>
       </table></div>
@@ -221,7 +221,7 @@ function FlightTable({
           <div>
             <div className="text-[10px] text-[#6b7b94]">جمع فروش مشتریان — {periodLabel}</div>
             <div className="font-num mt-1 text-lg font-black text-white">
-              {faMoneyCompact(summary.totalIrr)} تومان
+              {faRialCompact(summary.totalIrr)} ریال
             </div>
           </div>
           <div className="text-[11px] text-[#9fb0c7]">
@@ -260,7 +260,7 @@ function FlightTable({
                     {row.originCityFa} ← {row.destCityFa}
                   </td>
                   <td className="px-4 py-4 text-[#9fb0c7]">{formatJalaliDate(row.departureAt)}</td>
-                  <td className="font-num px-4 py-4">{faMoneyCompact(row.totalIrr)} تومان</td>
+                  <td className="font-num px-4 py-4">{faRialCompact(row.totalIrr)} ریال</td>
                   {rich ? (
                     <>
                       <td className="font-num px-4 py-4">{faDigits(direct)}</td>
@@ -297,7 +297,7 @@ function AgencySalesTable({ agencies }: { agencies: FinanceFlightDetail['agencie
   if (!agencies.length) return <EmptyState text="این پرواز فروش آژانسی ندارد." />;
   return (
     <div className="rounded-xl border border-[#26334b]">
-      <div className="overflow-x-auto"><table className="w-full min-w-[650px] text-right text-xs"><thead className="text-[10px] text-[#6b7b94]"><tr><th className="p-3">نام آژانس</th><th className="p-3">تعداد صندلی</th><th className="p-3">مبلغ فروش</th><th className="p-3">پرداخت‌شده</th><th className="p-3">بدهی</th></tr></thead><tbody>{paging.pageRows.map((agency) => <tr key={agency.agencyId} className="border-t border-[#222e43]"><td className="p-3 font-bold">{agency.agencyName}</td><td className="font-num p-3">{faDigits(agency.soldSeats)}</td><td className="font-num p-3">{faMoney(agency.salesIrr)} تومان</td><td className="font-num p-3 text-[#34d399]">{faMoney(agency.paidIrr)} تومان</td><td className="font-num p-3 text-[#f59e0b]">{faMoney(agency.outstandingIrr)} تومان</td></tr>)}</tbody></table></div>
+      <div className="overflow-x-auto"><table className="w-full min-w-[650px] text-right text-xs"><thead className="text-[10px] text-[#6b7b94]"><tr><th className="p-3">نام آژانس</th><th className="p-3">تعداد صندلی</th><th className="p-3">مبلغ فروش</th><th className="p-3">پرداخت‌شده</th><th className="p-3">بدهی</th></tr></thead><tbody>{paging.pageRows.map((agency) => <tr key={agency.agencyId} className="border-t border-[#222e43]"><td className="p-3 font-bold">{agency.agencyName}</td><td className="font-num p-3">{faDigits(agency.soldSeats)}</td><td className="font-num p-3">{faRial(agency.salesIrr)} ریال</td><td className="font-num p-3 text-[#34d399]">{faRial(agency.paidIrr)} ریال</td><td className="font-num p-3 text-[#f59e0b]">{faRial(agency.outstandingIrr)} ریال</td></tr>)}</tbody></table></div>
       <TablePagination page={paging.page} totalPages={paging.totalPages} start={paging.start} total={agencies.length} onPage={paging.setPage} />
     </div>
   );
@@ -308,7 +308,7 @@ function BookingSalesTable({ bookings }: { bookings: FinanceFlightDetail['bookin
   if (!bookings.length) return <EmptyState text="برای این پرواز رزرو قطعی ثبت نشده است." />;
   return (
     <div className="rounded-xl border border-[#26334b]">
-      <div className="overflow-x-auto"><table className="w-full min-w-[1050px] text-right text-[10px]"><thead className="text-[#6b7b94]"><tr>{['PNR','تاریخ رزرو','وضعیت','پرداخت','کانال','کلاس','مسافر','پایه','مالیات','خدمات','جمع'].map((header) => <th key={header} className="px-3 py-3">{header}</th>)}</tr></thead><tbody>{paging.pageRows.map((row) => <tr key={row.bookingId} className="border-t border-[#222e43] text-[#e7ecf3]"><td dir="ltr" className="px-3 py-3 font-bold text-[#7da7ff]">{row.pnr}</td><td className="px-3 py-3">{formatJalaliDate(row.bookedAt)}</td><td className="px-3 py-3">{row.bookingStatus}</td><td className="px-3 py-3">{row.paymentStatus}</td><td className="px-3 py-3">{row.channel}</td><td dir="ltr" className="px-3 py-3">{row.cabin}{row.fareClassCode ? `/${row.fareClassCode}` : ''}</td><td className="px-3 py-3">{faDigits(row.passengerCount)}</td><td className="font-num px-3 py-3">{faMoney(row.baseFareIrr)}</td><td className="font-num px-3 py-3">{faMoney(row.taxIrr)}</td><td className="font-num px-3 py-3">{faMoney(row.extrasIrr)}</td><td className="font-num px-3 py-3 font-bold">{faMoney(row.totalIrr)}</td></tr>)}</tbody></table></div>
+      <div className="overflow-x-auto"><table className="w-full min-w-[1050px] text-right text-[10px]"><thead className="text-[#6b7b94]"><tr>{['PNR','تاریخ رزرو','وضعیت','پرداخت','کانال','کلاس','مسافر','پایه (ریال)','مالیات (ریال)','خدمات (ریال)','جمع (ریال)'].map((header) => <th key={header} className="px-3 py-3">{header}</th>)}</tr></thead><tbody>{paging.pageRows.map((row) => <tr key={row.bookingId} className="border-t border-[#222e43] text-[#e7ecf3]"><td dir="ltr" className="px-3 py-3 font-bold text-[#7da7ff]">{row.pnr}</td><td className="px-3 py-3">{formatJalaliDate(row.bookedAt)}</td><td className="px-3 py-3">{row.bookingStatus}</td><td className="px-3 py-3">{row.paymentStatus}</td><td className="px-3 py-3">{row.channel}</td><td dir="ltr" className="px-3 py-3">{row.cabin}{row.fareClassCode ? `/${row.fareClassCode}` : ''}</td><td className="px-3 py-3">{faDigits(row.passengerCount)}</td><td className="font-num px-3 py-3">{faRial(row.baseFareIrr)}</td><td className="font-num px-3 py-3">{faRial(row.taxIrr)}</td><td className="font-num px-3 py-3">{faRial(row.extrasIrr)}</td><td className="font-num px-3 py-3 font-bold">{faRial(row.totalIrr)}</td></tr>)}</tbody></table></div>
       <TablePagination page={paging.page} totalPages={paging.totalPages} start={paging.start} total={bookings.length} onPage={paging.setPage} />
     </div>
   );
@@ -324,7 +324,7 @@ function FlightDetailDialog({ target, detail, loading, error, busy, onClose, onR
         </header>
         {loading ? <EmptyState text="در حال دریافت جزئیات فروش…" /> : error ? <ErrorState onRetry={onRetry} /> : detail ? (
           <div className="space-y-5 p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3"><div className="grid flex-1 grid-cols-2 gap-3 md:grid-cols-4">{[['فروش مستقیم', detail.summary.soldSeats - detail.summary.agencySeats], ['فروش آژانس', detail.summary.agencySeats], ['فروش‌نرفته', detail.summary.unsoldSeats], ['فروش کل', `${faMoney(detail.summary.totalIrr)} تومان`]].map(([label, value]) => <div key={label} className="rounded-xl border border-[#26334b] bg-[#141d2e] p-3"><span className="block text-[9px] text-[#6b7b94]">{label}</span><strong className="font-num mt-1 block text-sm text-white">{typeof value === 'number' ? faDigits(value) : value}</strong></div>)}</div><ExportButtons busy={busy} onExport={onExport} /></div>
+            <div className="flex flex-wrap items-center justify-between gap-3"><div className="grid flex-1 grid-cols-2 gap-3 md:grid-cols-4">{[['فروش مستقیم', detail.summary.soldSeats - detail.summary.agencySeats], ['فروش آژانس', detail.summary.agencySeats], ['فروش‌نرفته', detail.summary.unsoldSeats], ['فروش کل', `${faRial(detail.summary.totalIrr)} ریال`]].map(([label, value]) => <div key={label} className="rounded-xl border border-[#26334b] bg-[#141d2e] p-3"><span className="block text-[9px] text-[#6b7b94]">{label}</span><strong className="font-num mt-1 block text-sm text-white">{typeof value === 'number' ? faDigits(value) : value}</strong></div>)}</div><ExportButtons busy={busy} onExport={onExport} /></div>
             <section><h3 className="mb-2 text-sm font-extrabold text-white">فروش مشتریان و رزروها</h3><BookingSalesTable bookings={detail.bookings} /></section>
             <section><h3 className="mb-2 text-sm font-extrabold text-white">تفکیک فروش آژانس‌ها</h3><AgencySalesTable agencies={detail.agencies} /></section>
           </div>
@@ -391,13 +391,13 @@ function SalesEngineView({
             {[
               ['سفارش', faDigits(result.summary.orderCount)],
               ['مسافر', faDigits(result.summary.passengerCount)],
-              ['فروش ناخالص', `${faMoney(result.summary.grossIrr)} تومان`],
-              ['درآمد خالص', `${faMoney(result.summary.netRevenueIrr)} تومان`],
-              ['میانگین سفارش', `${faMoney(result.summary.averageOrderIrr)} تومان`],
+              ['فروش ناخالص', `${faRial(result.summary.grossIrr)} ریال`],
+              ['درآمد خالص', `${faRial(result.summary.netRevenueIrr)} ریال`],
+              ['میانگین سفارش', `${faRial(result.summary.averageOrderIrr)} ریال`],
             ].map(([label, value]) => <div key={label} className="rounded-xl border border-[#26334b] bg-[#111a2b] p-3"><span className="block text-[9px] text-[#6b7b94]">{label}</span><strong className="font-num mt-1 block text-sm text-white">{value}</strong></div>)}
           </div>
           <div className="overflow-x-auto border-t border-[#222e43]">
-            <table className="w-full min-w-[1250px] text-right text-[10px]"><thead className="text-[#6b7b94]"><tr>{['PNR','تاریخ رزرو','وضعیت','پرداخت','کانال','پرواز','مسیر','تاریخ پرواز','کلاس','مسافر','پایه','مالیات','خدمات','جمع'].map((h) => <th key={h} className="px-3 py-3">{h}</th>)}</tr></thead><tbody>{paging.pageRows.map((row) => <tr key={row.bookingId} className="border-t border-[#222e43] text-[#e7ecf3]"><td dir="ltr" className="px-3 py-3 font-bold text-[#7da7ff]">{row.pnr}</td><td className="px-3 py-3">{formatJalaliDate(row.bookedAt)}</td><td className="px-3 py-3">{row.bookingStatus}</td><td className="px-3 py-3">{row.paymentStatus}</td><td className="px-3 py-3">{row.channel}</td><td dir="ltr" className="px-3 py-3">{row.flightNo}</td><td dir="ltr" className="px-3 py-3">{row.originCode}-{row.destCode}</td><td className="px-3 py-3">{formatJalaliDate(row.departureAt)}</td><td dir="ltr" className="px-3 py-3">{row.cabin}{row.fareClassCode ? `/${row.fareClassCode}` : ''}</td><td className="px-3 py-3">{faDigits(row.passengerCount)}</td><td className="font-num px-3 py-3">{faMoney(row.baseFareIrr)}</td><td className="font-num px-3 py-3">{faMoney(row.taxIrr)}</td><td className="font-num px-3 py-3">{faMoney(row.extrasIrr)}</td><td className="font-num px-3 py-3 font-bold">{faMoney(row.totalIrr)}</td></tr>)}</tbody></table>
+            <table className="w-full min-w-[1250px] text-right text-[10px]"><thead className="text-[#6b7b94]"><tr>{['PNR','تاریخ رزرو','وضعیت','پرداخت','کانال','پرواز','مسیر','تاریخ پرواز','کلاس','مسافر','پایه (ریال)','مالیات (ریال)','خدمات (ریال)','جمع (ریال)'].map((h) => <th key={h} className="px-3 py-3">{h}</th>)}</tr></thead><tbody>{paging.pageRows.map((row) => <tr key={row.bookingId} className="border-t border-[#222e43] text-[#e7ecf3]"><td dir="ltr" className="px-3 py-3 font-bold text-[#7da7ff]">{row.pnr}</td><td className="px-3 py-3">{formatJalaliDate(row.bookedAt)}</td><td className="px-3 py-3">{row.bookingStatus}</td><td className="px-3 py-3">{row.paymentStatus}</td><td className="px-3 py-3">{row.channel}</td><td dir="ltr" className="px-3 py-3">{row.flightNo}</td><td dir="ltr" className="px-3 py-3">{row.originCode}-{row.destCode}</td><td className="px-3 py-3">{formatJalaliDate(row.departureAt)}</td><td dir="ltr" className="px-3 py-3">{row.cabin}{row.fareClassCode ? `/${row.fareClassCode}` : ''}</td><td className="px-3 py-3">{faDigits(row.passengerCount)}</td><td className="font-num px-3 py-3">{faRial(row.baseFareIrr)}</td><td className="font-num px-3 py-3">{faRial(row.taxIrr)}</td><td className="font-num px-3 py-3">{faRial(row.extrasIrr)}</td><td className="font-num px-3 py-3 font-bold">{faRial(row.totalIrr)}</td></tr>)}</tbody></table>
           </div>
           <TablePagination page={paging.page} totalPages={paging.totalPages} start={paging.start} total={salesRows.length} onPage={paging.setPage} />
         </>
@@ -612,7 +612,7 @@ export default function FinanceReportsPage() {
                     <div className="rounded-xl border border-[#26334b] bg-[#111a2b] p-4">
                       <span className="block text-[10px] text-[#6b7b94]">فروش مشتریان</span>
                       <strong className="font-num mt-2 block text-lg text-white">
-                        {faMoneyCompact(result.summary.totalIrr)} تومان
+                        {faRialCompact(result.summary.totalIrr)} ریال
                       </strong>
                     </div>
                     <div className="rounded-xl border border-[#26334b] bg-[#111a2b] p-4">
@@ -668,7 +668,7 @@ export default function FinanceReportsPage() {
                     busy={exportBusy}
                     onExport={(format) => void exportSelectedFlight(format)}
                   />
-                  <span className="font-num text-lg font-black">{faMoney(selectedFlight.summary.totalIrr)} تومان</span>
+                  <span className="font-num text-lg font-black">{faRial(selectedFlight.summary.totalIrr)} ریال</span>
                 </div>
               </div>
               <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4">{[['مسافران عادی', selectedFlight.summary.soldSeats - selectedFlight.summary.agencySeats], ['صندلی آژانس‌ها', selectedFlight.summary.agencySeats], ['تعداد آژانس‌ها', selectedFlight.summary.agencyCount], ['صندلی فروش‌نرفته', selectedFlight.summary.unsoldSeats]].map(([label, value]) => <div key={label} className="rounded-xl border border-[#26334b] bg-[#111a2b] p-4"><span className="block text-[10px] text-[#6b7b94]">{label}</span><strong className="font-num mt-2 block text-lg text-white">{faDigits(value)}</strong></div>)}</div>

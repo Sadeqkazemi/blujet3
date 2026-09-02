@@ -19,6 +19,17 @@ below for what's landed from that port so far.
 
 ## Status
 
+- [x] **Currency display policy: public toman, finance and agency rial
+  (2026-09-02)** — retained integer IRR storage and API contracts while making
+  the public/customer experience continue to display toman. Finance dashboards,
+  operations, reports, agency finance/invoices, and every agency-portal money
+  surface now display raw IRR with an explicit rial unit. Credit-limit and
+  invoice inputs in finance/agency workflows submit IRR decimal strings without
+  a hidden ×10 conversion. Verification: 90 focused tests, all 976 frontend
+  tests, lint and production build. Acceptance:
+  `docs/features/currency-display-policy.md`. Owner approved commit/push/merge;
+  deployment remains separately gated and deferred.
+
 - [x] **Responsive search + agency sales/notices isolation QA (2026-08-29)** —
   redesigned the results edit-search mobile sheet, lowered the expanded flight
   metadata cards, and exposed authenticated agency registration values as

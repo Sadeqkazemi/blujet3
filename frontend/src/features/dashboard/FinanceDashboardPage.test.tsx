@@ -71,7 +71,7 @@ describe('FinanceDashboardPage', () => {
     expect(await screen.findByText('آژانس فعال')).toBeInTheDocument();
     expect(screen.getByText('مسافر این ماه')).toBeInTheDocument();
     expect(screen.getByText('بلیط فروخته‌شده')).toBeInTheDocument();
-    expect(screen.getByText('درآمد (تومان)')).toBeInTheDocument();
+    expect(screen.getByText('درآمد (ریال)')).toBeInTheDocument();
     expect(screen.getByText('نمودار فروش')).toBeInTheDocument();
     expect(screen.getByText('کارتابل')).toBeInTheDocument();
     expect(screen.getByText('بررسی تسویه آژانس')).toBeInTheDocument();

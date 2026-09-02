@@ -50,7 +50,7 @@ export function reactivateAgency(id: string) {
   return apiPatch<AgencyDetail>(`/agencies/${id}/reactivate`);
 }
 
-export function updateAgencyCredit(id: string, limitIrr: number) {
+export function updateAgencyCredit(id: string, limitIrr: string) {
   return apiPatch<AgencyCredit>(`/agencies/${id}/credit`, { limitIrr });
 }
 
@@ -116,7 +116,7 @@ export function fetchAgencyInvoices(id: string) {
   return apiGet<AgencyInvoice[]>(`/agencies/${id}/invoices`);
 }
 
-export function issueAgencyInvoice(id: string, amountIrr: number, dueAt: string) {
+export function issueAgencyInvoice(id: string, amountIrr: string, dueAt: string) {
   return apiPost<AgencyInvoice>(`/agencies/${id}/invoices`, {
     amountIrr,
     dueAt,

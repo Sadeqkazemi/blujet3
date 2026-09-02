@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchAllotments, fetchDashboard } from '../../api/agency-portal';
-import { localeMoney } from '../../lib/fa-format';
+import { localeRial } from '../../lib/fa-format';
 import { localeDigits } from '../../lib/locale-format';
 import { useLocale, type StoredLocale } from '../../hooks/useLocale';
 import { useIsMobile } from '../../hooks/useIsMobile';
@@ -20,9 +20,9 @@ function monthLabel(monthKey: string, locale: StoredLocale): string {
 }
 
 function formatChartValue(irr: string, locale: StoredLocale): string {
-  const toman = Math.round(Number(irr) / 10 / 1_000_000);
-  if (locale === 'en') return `${toman}M`;
-  return localeDigits(toman, locale);
+  const millionRial = Math.round(Number(irr) / 1_000_000);
+  if (locale === 'en') return `${millionRial}M`;
+  return localeDigits(millionRial, locale);
 }
 
 const STR: Record<StoredLocale, {
@@ -39,7 +39,7 @@ const STR: Record<StoredLocale, {
   creditLimitOf: (limit: string) => string;
   usedLabel: string;
   viewStatement: string;
-  toman: string;
+  rial: string;
 }> = {
   fa: {
     errorFallback: 'خطا در دریافت داشبورد.',
@@ -49,13 +49,13 @@ const STR: Record<StoredLocale, {
     kpiAllocated: 'صندلی تخصیص‌یافته',
     kpiSold: 'صندلی فروخته‌شده',
     chartTitle: 'روند فروش آژانس',
-    chartSub: '۶ ماه اخیر · تومان',
+    chartSub: '۶ ماه اخیر · میلیون ریال',
     chartAriaLabel: 'نمودار فروش ۶ ماه اخیر',
     creditCardLabel: 'اعتبار باقیمانده',
     creditLimitOf: (limit) => `از سقف ${limit}`,
     usedLabel: 'مصرف‌شده:',
     viewStatement: 'مشاهده صورت‌حساب',
-    toman: 'تومان',
+    rial: 'ریال',
   },
   en: {
     errorFallback: 'Error loading the dashboard.',
@@ -65,13 +65,13 @@ const STR: Record<StoredLocale, {
     kpiAllocated: 'Seats allocated',
     kpiSold: 'Seats sold',
     chartTitle: 'Agency sales trend',
-    chartSub: 'Last 6 months · Toman',
+    chartSub: 'Last 6 months · million Rial',
     chartAriaLabel: 'Last 6 months sales chart',
     creditCardLabel: 'Credit remaining',
     creditLimitOf: (limit) => `of ${limit} limit`,
     usedLabel: 'Used:',
     viewStatement: 'View statement',
-    toman: 'Toman',
+    rial: 'Rial',
   },
   ar: {
     errorFallback: 'خطأ في تحميل لوحة التحكم.',
@@ -81,13 +81,13 @@ const STR: Record<StoredLocale, {
     kpiAllocated: 'المقاعد المخصصة',
     kpiSold: 'المقاعد المباعة',
     chartTitle: 'اتجاه مبيعات الوكالة',
-    chartSub: 'آخر 6 أشهر · تومان',
+    chartSub: 'آخر 6 أشهر · مليون ريال',
     chartAriaLabel: 'مخطط مبيعات آخر 6 أشهر',
     creditCardLabel: 'الرصيد المتبقي',
     creditLimitOf: (limit) => `من سقف ${limit}`,
     usedLabel: 'المستخدم:',
     viewStatement: 'عرض كشف الحساب',
-    toman: 'تومان',
+    rial: 'ريال',
   },
 };
 
@@ -155,7 +155,7 @@ export default function AgencyDashboardPage() {
   const pct = limitNum > 0 ? Math.round((usedNum / limitNum) * 100) : 0;
   const pctLabel = locale === 'en' ? `${pct}%` : `${localeDigits(pct, locale)}٪`;
 
-  const moneyWithUnit = (irr: string) => `${localeMoney(irr, locale)} ${t.toman}`;
+  const moneyWithUnit = (irr: string) => `${localeRial(irr, locale)} ${t.rial}`;
 
   const kpis = [
     {
@@ -234,7 +234,7 @@ export default function AgencyDashboardPage() {
                     background: 'linear-gradient(180deg,#3b8ae0,#1668c4)',
                     borderRadius: '7px 7px 0 0',
                   }}
-                  aria-label={`${monthLabel(m.month, locale)} — ${localeMoney(m.salesIrr, locale)} ${t.toman}`}
+                  aria-label={`${monthLabel(m.month, locale)} — ${localeRial(m.salesIrr, locale)} ${t.rial}`}
                 />
                 <div style={{ fontSize: 10.5, color: '#8a96a6', fontWeight: 600 }}>{monthLabel(m.month, locale)}</div>
               </div>

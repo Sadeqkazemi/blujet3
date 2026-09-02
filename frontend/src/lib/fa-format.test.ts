@@ -8,11 +8,16 @@ import {
   faMoneyCompact,
   faMoneyCompactNumber,
   faPercent,
+  faRial,
+  faRialCompact,
+  faRialCompactNumber,
   formatLocalePercent,
   formatToman,
   irrPercentDelta,
   irrToTomanInput,
   localeMoney,
+  localeRial,
+  parseRialInputString,
   parseTomanToRialString,
 } from './fa-format';
 
@@ -115,6 +120,19 @@ describe('localeMoney', () => {
   });
 });
 
+describe('rial display formatters', () => {
+  it('keeps the original IRR value without dividing by ten', () => {
+    expect(faRial('380000000')).toBe('۳۸۰٬۰۰۰٬۰۰۰');
+    expect(localeRial('380000000', 'en')).toBe('380,000,000');
+    expect(localeRial('380000000', 'ar')).toBe('٣٨٠٬٠٠٠٬٠٠٠');
+  });
+
+  it('uses IRR scale for compact finance labels', () => {
+    expect(faRialCompact('3320000000000')).toBe('۳٬۳۲۰ میلیارد');
+    expect(faRialCompactNumber('90000000')).toBe('۹۰');
+  });
+});
+
 describe('parseTomanToRialString / irrToTomanInput', () => {
   it('multiplies toman by 10 as a BigInt decimal string', () => {
     expect(parseTomanToRialString('3850000')).toBe('38500000');
@@ -134,5 +152,13 @@ describe('parseTomanToRialString / irrToTomanInput', () => {
     expect(compareIrrStrings('200', '200')).toBe(0);
     expect(irrPercentDelta('103', '100')).toBe(3);
     expect(irrPercentDelta('97', '100')).toBe(-3);
+  });
+});
+
+describe('parseRialInputString', () => {
+  it('normalizes localized IRR input without multiplying it by ten', () => {
+    expect(parseRialInputString('۲۰۰٬۰۰۰٬۰۰۰')).toBe('200000000');
+    expect(parseRialInputString('200,000,000')).toBe('200000000');
+    expect(parseRialInputString('12.5')).toBeNull();
   });
 });

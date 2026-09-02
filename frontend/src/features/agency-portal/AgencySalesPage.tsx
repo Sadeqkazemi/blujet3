@@ -8,7 +8,7 @@ import {
 } from '../../api/agency-portal';
 import { useLocale, type StoredLocale } from '../../hooks/useLocale';
 import { AIRPORT_REFERENCE_CATALOG } from '../../lib/airport-reference-catalog';
-import { localeMoney } from '../../lib/fa-format';
+import { localeRial } from '../../lib/fa-format';
 import { formatLocaleDate, localeDigits } from '../../lib/locale-format';
 import type {
   AgencyCredit,
@@ -95,7 +95,7 @@ const COPY: Record<StoredLocale, {
   next: string;
   page: string;
   of: string;
-  toman: string;
+  rial: string;
 }> = {
   fa: {
     title: 'جزئیات گزارش فروش', subtitle: 'تطبیق فروش، پرداخت و استرداد آژانس', back: 'بازگشت به گزارش فروش',
@@ -112,7 +112,7 @@ const COPY: Record<StoredLocale, {
     tax: 'مالیات', crcn: 'CRCN', commissionPct: 'درصد کمیسیون', commission: 'کمیسیون', refundable: 'قابل استرداد',
     routeType: 'نوع مسیر', route: 'مسیر', rbd: 'RBD', date: 'تاریخ', status: 'وضعیت',
     domestic: 'داخلی', international: 'بین‌المللی', unknown: 'نامشخص', sale: 'فروش', refund: 'استرداد', empty: 'ردیفی برای نمایش وجود ندارد.',
-    total: 'جمع', previous: 'قبلی', next: 'بعدی', page: 'صفحه', of: 'از', toman: 'تومان',
+    total: 'جمع', previous: 'قبلی', next: 'بعدی', page: 'صفحه', of: 'از', rial: 'ریال',
   },
   en: {
     title: 'Sales Report Details', subtitle: 'Agency sales, payment, and refund reconciliation', back: 'Back to sales report',
@@ -129,7 +129,7 @@ const COPY: Record<StoredLocale, {
     tax: 'Tax', crcn: 'CRCN', commissionPct: 'Commission %', commission: 'Commission', refundable: 'Refundable',
     routeType: 'Route type', route: 'Route', rbd: 'RBD', date: 'Date', status: 'Status',
     domestic: 'Domestic', international: 'International', unknown: 'Unknown', sale: 'Sale', refund: 'Refund', empty: 'No rows to display.',
-    total: 'Total', previous: 'Previous', next: 'Next', page: 'Page', of: 'of', toman: 'Toman',
+    total: 'Total', previous: 'Previous', next: 'Next', page: 'Page', of: 'of', rial: 'Rial',
   },
   ar: {
     title: 'تفاصيل تقرير المبيعات', subtitle: 'مطابقة مبيعات الوكالة والمدفوعات والاستردادات', back: 'العودة إلى تقرير المبيعات',
@@ -146,7 +146,7 @@ const COPY: Record<StoredLocale, {
     tax: 'الضريبة', crcn: 'CRCN', commissionPct: 'نسبة العمولة', commission: 'العمولة', refundable: 'قابل للاسترداد',
     routeType: 'نوع المسار', route: 'المسار', rbd: 'RBD', date: 'التاريخ', status: 'الحالة',
     domestic: 'داخلي', international: 'دولي', unknown: 'غير معروف', sale: 'بيع', refund: 'استرداد', empty: 'لا توجد صفوف للعرض.',
-    total: 'المجموع', previous: 'السابق', next: 'التالي', page: 'صفحة', of: 'من', toman: 'تومان',
+    total: 'المجموع', previous: 'السابق', next: 'التالي', page: 'صفحة', of: 'من', rial: 'ريال',
   },
 };
 
@@ -250,7 +250,7 @@ export default function AgencySalesPage() {
   if (!bundle || !derived) return <div className="grid min-h-[320px] place-items-center text-sm text-[#718198]">{t.loading}</div>;
 
   const { report, profile, credit } = bundle;
-  const money = (value: string) => `${localeMoney(value, locale)} ${t.toman}`;
+  const money = (value: string) => `${localeRial(value, locale)} ${t.rial}`;
   const summaryFields = [
     [t.currency, 'IRR'], [t.period, derived.period], [t.reportDate, formatLocaleDate(new Date(), locale)], [t.salesAmount, money(report.summary.totalSalesIrr)],
     [t.creditLimit, money(credit.limitIrr)], [t.creditUsed, money(credit.usedIrr)], [t.creditRemaining, money(credit.remainingIrr)],
