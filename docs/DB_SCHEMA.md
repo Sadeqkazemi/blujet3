@@ -3300,3 +3300,14 @@ document changes.
 This foundation slice introduces no database tables or migrations. Existing
 authentication tables remain owned by the monolithic backend until the approved
 identity persistence/token-issuance cutover; no dual-write path is introduced.
+
+### Microservices architecture v1.1 — identity token/session cutover
+
+The phase-4 strangler slice does not add or migrate Core authentication tables.
+When `IDENTITY_INTEGRATION_ENABLED=true`, Identity is the sole writer and
+owner of access/refresh token sessions in its Redis-backed session store; the
+Backend only keeps its compatibility facade and delegates through authenticated
+internal HTTP. Legacy database refresh sessions are not written on this path,
+so there is no dual-write or table ownership ambiguity. Rollback uses the
+documented `dual` verification bridge and does not copy Identity sessions back
+into Core tables.

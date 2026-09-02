@@ -22,9 +22,13 @@ describe('Identity key-discovery contract (e2e)', () => {
   const server = () => app.getHttpServer() as unknown as App;
 
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
     app = moduleRef.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+    );
     await app.init();
   });
 
@@ -68,5 +72,76 @@ describe('Identity key-discovery contract (e2e)', () => {
     );
     expect(body.keys[0]).not.toHaveProperty('d');
     expect(body.keys[0]).not.toHaveProperty('p');
+  });
+
+  it('owns refresh rotation and sessions without writing backend tables', async () => {
+    const issue = await request(server())
+      .post('/internal/v1/identity/tokens')
+      .set('x-internal-token', token())
+      .send({
+        userId: 'user-1',
+        role: 'USER',
+        fullName: 'Test User',
+        userAgent: 'e2e',
+        ip: '127.0.0.1',
+      })
+      .expect(200);
+    const issued = issue.body as { accessToken: string; refreshToken: string };
+    expect(issued.accessToken.split('.')).toHaveLength(3);
+
+    const sessions = await request(server())
+      .post('/internal/v1/identity/sessions/list')
+      .set('x-internal-token', token())
+      .send({ userId: 'user-1', currentRefreshToken: issued.refreshToken })
+      .expect(200);
+    const sessionBody = sessions.body as Array<{ isCurrent: boolean }>;
+    expect(sessionBody).toHaveLength(1);
+    expect(sessionBody[0]).toEqual(expect.objectContaining({ isCurrent: true }));
+
+    const rotated = await request(server())
+      .post('/internal/v1/identity/sessions/refresh')
+      .set('x-internal-token', token())
+      .send({ refreshToken: issued.refreshToken })
+      .expect(200);
+    const next = rotated.body as { refreshToken: string };
+    expect(next.refreshToken).not.toBe(issued.refreshToken);
+    await request(server())
+      .post('/internal/v1/identity/sessions/refresh')
+      .set('x-internal-token', token())
+      .send({ refreshToken: issued.refreshToken })
+      .expect(401);
+
+    const secondIssue = await request(server())
+      .post('/internal/v1/identity/tokens')
+      .set('x-internal-token', token())
+      .send({ userId: 'user-1', role: 'USER', fullName: 'Test User' })
+      .expect(200);
+    const second = secondIssue.body as { refreshToken: string };
+    const activeSessions = await request(server())
+      .post('/internal/v1/identity/sessions/list')
+      .set('x-internal-token', token())
+      .send({ userId: 'user-1', currentRefreshToken: second.refreshToken })
+      .expect(200);
+    const activeBody = activeSessions.body as Array<{
+      id: string;
+      isCurrent: boolean;
+    }>;
+    expect(activeBody).toHaveLength(2);
+    const previousSession = activeBody.find((session) => !session.isCurrent);
+    expect(previousSession).toBeDefined();
+    await request(server())
+      .post('/internal/v1/identity/sessions/revoke')
+      .set('x-internal-token', token())
+      .send({
+        userId: 'user-1',
+        sessionId: previousSession!.id,
+        currentRefreshToken: second.refreshToken,
+      })
+      .expect(200, { revoked: true });
+    await request(server())
+      .post('/internal/v1/identity/sessions/logout')
+      .set('x-internal-token', token())
+      .send({ refreshToken: second.refreshToken })
+      .expect(204);
   });
 });

@@ -3,6 +3,8 @@ import {
   IsIn,
   IsNotEmpty,
   IsNumberString,
+  IsOptional,
+  ValidateIf,
   MinLength,
   validateSync,
 } from 'class-validator';
@@ -30,6 +32,13 @@ class EnvironmentVariables {
   @IsNotEmpty()
   @MinLength(128)
   IDENTITY_JWT_PRIVATE_KEY!: string;
+
+  @ValidateIf((config: EnvironmentVariables) => config.NODE_ENV === 'production')
+  @IsNotEmpty()
+  IDENTITY_REDIS_URL?: string;
+
+  @IsOptional()
+  IDENTITY_JWT_PREVIOUS_PUBLIC_JWKS?: string;
 }
 
 export function validateEnv(config: Record<string, unknown>): Record<string, unknown> {
@@ -42,6 +51,14 @@ export function validateEnv(config: Record<string, unknown>): Record<string, unk
       `Invalid identity-service environment: ${errors
         .flatMap((error) => Object.values(error.constraints ?? {}))
         .join(', ')}`,
+    );
+  }
+  if (
+    validated.NODE_ENV === 'production' &&
+    validated.IDENTITY_REDIS_URL?.startsWith('memory://')
+  ) {
+    throw new Error(
+      'Invalid identity-service environment: IDENTITY_REDIS_URL must point to Redis in production',
     );
   }
   return config;

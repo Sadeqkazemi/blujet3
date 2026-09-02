@@ -13,6 +13,7 @@ import { SKIP_MUST_CHANGE_PASSWORD } from '../decorators/skip-must-change-passwo
 import type { AuthenticatedUser } from '../types/authenticated-user';
 import { User } from '../../database/entities/user.entity';
 import { AgencyProfile } from '../../database/entities/agency-profile.entity';
+import { IdentityJwtVerifierService } from '../../modules/identity-cutover/identity-jwt-verifier.service';
 
 const PASSWORD_CHANGE_ROLES: Role[] = [
   'EMPLOYEE',
@@ -35,17 +36,27 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     private readonly userRepo: Repository<User>,
     @InjectRepository(AgencyProfile)
     private readonly agencyProfileRepo: Repository<AgencyProfile>,
+    private readonly identityVerifier: IdentityJwtVerifierService,
   ) {
     super();
   }
 
   override async canActivate(context: ExecutionContext): Promise<boolean> {
-    const activated = await super.canActivate(context);
-    if (!activated) return false;
-
-    const request = context
-      .switchToHttp()
-      .getRequest<{ user?: AuthenticatedUser }>();
+    const request = context.switchToHttp().getRequest<{
+      user?: AuthenticatedUser;
+      headers: Record<string, string | string[] | undefined>;
+    }>();
+    const authorization = request.headers.authorization;
+    const token =
+      typeof authorization === 'string' && authorization.startsWith('Bearer ')
+        ? authorization.slice(7)
+        : undefined;
+    if (token && this.identityVerifier.requiresIdentityToken(token)) {
+      request.user = await this.identityVerifier.verify(token);
+    } else {
+      const activated = await super.canActivate(context);
+      if (!activated) return false;
+    }
     const user = request.user;
     if (!user) return true;
 

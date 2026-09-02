@@ -9,15 +9,20 @@ import { RefreshToken } from '../../database/entities/refresh-token.entity';
 import { ErrorCode } from '../../common/errors';
 import { formatSessionDevice, hashRefreshToken } from './auth-token.util';
 import type { AuthenticatedUser } from '../../common/types/authenticated-user';
+import { IdentityTokenClient } from './identity-token.client';
 
 @Injectable()
 export class MySessionsService {
   constructor(
     @InjectRepository(RefreshToken)
     private readonly refreshTokenRepo: Repository<RefreshToken>,
+    private readonly identityTokens: IdentityTokenClient,
   ) {}
 
   async listMine(user: AuthenticatedUser, currentRefreshToken?: string) {
+    if (this.identityTokens.enabled()) {
+      return this.identityTokens.listSessions(user.id, currentRefreshToken);
+    }
     const currentHash = currentRefreshToken
       ? hashRefreshToken(currentRefreshToken)
       : null;
@@ -45,6 +50,13 @@ export class MySessionsService {
     sessionId: string,
     currentRefreshToken?: string,
   ) {
+    if (this.identityTokens.enabled()) {
+      return this.identityTokens.revokeSession(
+        user.id,
+        sessionId,
+        currentRefreshToken,
+      );
+    }
     const row = await this.refreshTokenRepo.findOneBy({ id: sessionId });
     if (!row || row.userId !== user.id || row.revokedAt) {
       throw new NotFoundException({

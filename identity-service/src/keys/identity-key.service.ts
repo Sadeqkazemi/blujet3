@@ -24,9 +24,9 @@ export class IdentityKeyService {
   private readonly privateKey: KeyObject;
   private readonly publicJwk: IdentityPublicJwk;
 
-  constructor(config: ConfigService) {
+  constructor(private readonly config: ConfigService) {
     const privateKeyPem = normalizePem(
-      config.getOrThrow<string>('IDENTITY_JWT_PRIVATE_KEY'),
+      this.config.getOrThrow<string>('IDENTITY_JWT_PRIVATE_KEY'),
     );
     if (!privateKeyPem.includes('-----BEGIN PRIVATE KEY-----')) {
       throw new Error('IDENTITY_JWT_PRIVATE_KEY must be a PKCS#8 PEM key');
@@ -34,11 +34,7 @@ export class IdentityKeyService {
     this.privateKey = createPrivateKey(privateKeyPem);
     const publicKey = createPublicKey(this.privateKey);
     const jwk = publicKey.export({ format: 'jwk' });
-    if (
-      jwk.kty !== 'RSA' ||
-      typeof jwk.n !== 'string' ||
-      typeof jwk.e !== 'string'
-    ) {
+    if (jwk.kty !== 'RSA' || typeof jwk.n !== 'string' || typeof jwk.e !== 'string') {
       throw new Error('IDENTITY_JWT_PRIVATE_KEY must contain an RSA key');
     }
     this.publicJwk = {
@@ -47,7 +43,7 @@ export class IdentityKeyService {
       e: jwk.e,
       use: 'sig',
       alg: 'RS256',
-      kid: config.getOrThrow<string>('IDENTITY_JWT_KID'),
+      kid: this.config.getOrThrow<string>('IDENTITY_JWT_KID'),
     };
   }
 
@@ -56,7 +52,7 @@ export class IdentityKeyService {
   }
 
   getJwks(): IdentityJwksDocument {
-    return { keys: [this.publicJwk] };
+    return { keys: [this.publicJwk, ...this.previousPublicKeys()] };
   }
 
   getMetadata(): Pick<IdentityPublicJwk, 'kid' | 'alg' | 'use'> {
@@ -65,5 +61,36 @@ export class IdentityKeyService {
       alg: this.publicJwk.alg,
       use: this.publicJwk.use,
     };
+  }
+
+  private previousPublicKeys(): IdentityPublicJwk[] {
+    const raw = this.config.get<string>('IDENTITY_JWT_PREVIOUS_PUBLIC_JWKS');
+    if (!raw) return [];
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw) as unknown;
+    } catch {
+      throw new Error('IDENTITY_JWT_PREVIOUS_PUBLIC_JWKS must be valid JSON');
+    }
+    if (!Array.isArray(parsed)) {
+      throw new Error('IDENTITY_JWT_PREVIOUS_PUBLIC_JWKS must be a JSON array');
+    }
+    return parsed.map((value) => {
+      const key = value as Partial<IdentityPublicJwk>;
+      if (
+        key.kty !== 'RSA' ||
+        key.alg !== 'RS256' ||
+        key.use !== 'sig' ||
+        typeof key.kid !== 'string' ||
+        typeof key.n !== 'string' ||
+        typeof key.e !== 'string' ||
+        key.kid === this.publicJwk.kid
+      ) {
+        throw new Error(
+          'IDENTITY_JWT_PREVIOUS_PUBLIC_JWKS contains an invalid or duplicate key',
+        );
+      }
+      return key as IdentityPublicJwk;
+    });
   }
 }
