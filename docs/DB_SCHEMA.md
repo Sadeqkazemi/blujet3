@@ -24,6 +24,39 @@ integer `bigint` IRR and every wire value stays an IRR decimal string. Toman is
 only a public/customer presentation conversion. Finance, invoice, report and
 agency-portal presentation uses the unconverted IRR value with a rial unit.
 
+## Commerce B3.2 — accountable e-ticket documents
+
+Two additive Core-owned tables live in the `orders` schema:
+
+- `ticket_document_stocks`: UUID-text `id`, `documentType=ETICKET`, three-digit
+  `airlineNumericCode`, inclusive bigint `startSerial`/`endSerial`, bigint
+  `nextSerial`, lifecycle `ACTIVE | EXHAUSTED | QUARANTINED`, non-secret
+  `sourceAuthority`, and UTC creation/update timestamps. Allocation locks one
+  active row and increments `nextSerial` in the same local transaction. Range
+  loading is not exposed until the operator authority is approved.
+- `ticket_documents`: UUID-text `id`, indexed Booking reference, unique
+  Passenger reference, nullable stock reference, unique 13-digit
+  `documentNumber`, lifecycle
+  `ISSUED`, accountability `ACCOUNTABLE | QUARANTINED`, nullable payment
+  reference, immutable non-PII issue snapshot, and UTC issue/create timestamps.
+  `passengerId` is unique, which is the database idempotency boundary for
+  retry/recovery. Booking/Passenger hard deletion cascades to this child only
+  through the existing explicit purge/GDPR path; normal lifecycle changes never
+  delete or overwrite document history.
+
+The migration classifies every pre-existing non-null `Passenger.ticketNo` as a
+quarantined legacy document. It does not infer a stock range or certify an old
+number. New issuance writes the ticket document and the existing passenger
+ticket projection atomically. A transaction that cannot allocate all passenger
+documents rolls back all document, booking, inventory and financial changes.
+
+Production receives no seeded stock and therefore fails closed. The normal
+development/test seed may create a sandbox-only range; seed execution remains
+forbidden in production. Rollback is application-compatible by leaving the
+additive tables and compatibility passenger columns in place; migration down is
+only for isolated tests because deleting document evidence is not an
+operational rollback.
+
 ## Commerce B3.1 — durable hold expiry lifecycle
 
 New Core-owned `orders.booking_lifecycle_events` records materialized booking

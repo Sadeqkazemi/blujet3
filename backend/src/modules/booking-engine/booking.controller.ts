@@ -76,7 +76,7 @@ export class BookingController {
   @ApiResponse({
     status: 503,
     description:
-      'درگاه واقعی پیکربندی نشده و هیچ درخواست بانکی ارسال نشده است.',
+      'درگاه واقعی پیکربندی نشده یا stock معتبر بلیت کافی نیست؛ پیش از dispatch بانکی fail-closed می‌شود.',
   })
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @ApiHeader({

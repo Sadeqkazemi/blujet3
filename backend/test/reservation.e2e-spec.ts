@@ -12,6 +12,7 @@ import { Passenger } from '../src/database/entities/passenger.entity';
 import { PaymentReconciliation } from '../src/database/entities/payment-reconciliation.entity';
 import { PaymentAttempt } from '../src/database/entities/payment-attempt.entity';
 import { SeatLock } from '../src/database/entities/seat-lock.entity';
+import { TicketDocument } from '../src/database/entities/ticket-document.entity';
 import { loginAs } from './helpers/login.helper';
 import { createTestApp } from './helpers/app.helper';
 
@@ -352,6 +353,19 @@ describe('Reservation (e2e)', () => {
       .where('b.pnr = :pnr', { pnr: issued.body.data.pnr })
       .getOneOrFail();
     expect(booking.status).toBe('TICKETED');
+    const issuedPassenger = await dataSource
+      .getRepository(Passenger)
+      .findOneByOrFail({ bookingId: booking.id });
+    expect(issuedPassenger.ticketNo).toMatch(/^780\d{10}$/);
+    expect(
+      await dataSource
+        .getRepository(TicketDocument)
+        .findOneByOrFail({ passengerId: issuedPassenger.id }),
+    ).toMatchObject({
+      documentNumber: issuedPassenger.ticketNo,
+      accountabilityStatus: 'ACCOUNTABLE',
+      issueSource: 'STAFF_MANUAL',
+    });
     const ledger = await dataSource
       .getRepository(LedgerEntry)
       .findOneBy({ bookingId: booking.id, type: 'SALE' });

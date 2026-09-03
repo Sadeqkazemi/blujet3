@@ -108,6 +108,7 @@ import { SurveyQuestion } from './entities/survey-question.entity';
 import { SurveySettings } from './entities/survey-settings.entity';
 import { User } from './entities/user.entity';
 import { WalletEntry } from './entities/wallet-entry.entity';
+import { TicketDocumentStock } from './entities/ticket-document-stock.entity';
 import type { JsonValue } from './json-types';
 import { ANCILLARY_BUILT_IN_SERVICES } from '../modules/ancillary-services/ancillary-services.catalog';
 import { standardClassCode } from '../modules/flights/aircraft-class-code';
@@ -292,6 +293,22 @@ async function main() {
   const securityPolicyRepo = dataSource.getRepository(SecurityPolicy);
   const employeePermissionRepo = dataSource.getRepository(EmployeePermission);
   const airportRepo = dataSource.getRepository(Airport);
+  const ticketDocumentStockRepo = dataSource.getRepository(TicketDocumentStock);
+
+  await upsertBy(
+    ticketDocumentStockRepo,
+    { id: 'sandbox-eticket-stock-780' },
+    {
+      id: 'sandbox-eticket-stock-780',
+      documentType: 'ETICKET',
+      airlineNumericCode: '780',
+      startSerial: 9_000_000_000n,
+      endSerial: 9_999_999_999n,
+      nextSerial: 9_000_000_000n,
+      status: 'ACTIVE',
+      sourceAuthority: 'NON_PRODUCTION_SEED_DO_NOT_USE_FOR_ACCOUNTING',
+    },
+  );
 
   const passwordHash = await argon2.hash(STAFF_PASSWORD);
 

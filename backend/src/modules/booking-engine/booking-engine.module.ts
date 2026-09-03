@@ -28,6 +28,8 @@ import { AgencyAllotment } from '../../database/entities/agency-allotment.entity
 import { AgencyCreditLine } from '../../database/entities/agency-credit-line.entity';
 import { AgencyInvoice } from '../../database/entities/agency-invoice.entity';
 import { TravelExtraSetting } from '../../database/entities/travel-extra-setting.entity';
+import { TicketDocument } from '../../database/entities/ticket-document.entity';
+import { TicketDocumentStock } from '../../database/entities/ticket-document-stock.entity';
 import { SearchController } from './search.controller';
 import { SearchService } from './search.service';
 import { SearchAdvisoryService } from './search-advisory.service';
@@ -35,6 +37,7 @@ import { BookingController } from './booking.controller';
 import { BookingService } from './booking.service';
 import { BookingHoldExpiryWorker } from './booking-hold-expiry.worker';
 import { BookingHoldExpiryService } from './booking-hold-expiry.service';
+import { TicketingService } from './ticketing.service';
 import { WalletPointsLockController } from './wallet-points-lock.controller';
 import { WalletService } from './wallet.service';
 import { ClubPointsService } from './club-points.service';
@@ -85,6 +88,8 @@ import {
       AgencyCreditLine,
       AgencyInvoice,
       TravelExtraSetting,
+      TicketDocument,
+      TicketDocumentStock,
     ]),
     AuditModule,
     CustomerReferralsModule,
@@ -105,6 +110,7 @@ import {
     BookingService,
     BookingHoldExpiryService,
     BookingHoldExpiryWorker,
+    TicketingService,
     WalletService,
     ClubPointsService,
     PriceLockService,
@@ -129,6 +135,6 @@ import {
       },
     },
   ],
-  exports: [SearchService, BookingService],
+  exports: [SearchService, BookingService, TicketingService],
 })
 export class BookingEngineModule {}

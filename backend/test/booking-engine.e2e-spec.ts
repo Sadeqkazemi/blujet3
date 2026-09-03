@@ -35,6 +35,7 @@ import { loginAsCustomer } from './helpers/login.helper';
 import { createTestApp } from './helpers/app.helper';
 import { BookingHoldExpiryWorker } from '../src/modules/booking-engine/booking-hold-expiry.worker';
 import { BookingHoldExpiryService } from '../src/modules/booking-engine/booking-hold-expiry.service';
+import { TicketDocumentStock } from '../src/database/entities/ticket-document-stock.entity';
 
 async function upsertSeatMap(
   ds: DataSource,
@@ -734,6 +735,43 @@ describe('Booking engine (e2e)', () => {
           .getRepository(LedgerEntry)
           .countBy({ bookingId: booking.id, type: 'SALE' }),
       ).toBe(1);
+    });
+
+    it('fails before gateway dispatch when accountable ticket stock is unavailable', async () => {
+      const booking = await heldBooking();
+      const gateway = app.get<PaymentGateway>(PAYMENT_GATEWAY);
+      const dispatch = jest.spyOn(gateway, 'request');
+      const stockRepo = dataSource.getRepository(TicketDocumentStock);
+      const stocks = await stockRepo.find();
+      try {
+        await stockRepo
+          .createQueryBuilder()
+          .update(TicketDocumentStock)
+          .set({ status: 'QUARANTINED' })
+          .execute();
+
+        const response = await pay(booking, crypto.randomUUID());
+
+        expect(response.status).toBe(503);
+        expect(response.body.error.code).toBe('TICKET_STOCK_UNAVAILABLE');
+        expect(dispatch).not.toHaveBeenCalled();
+        expect(
+          await dataSource
+            .getRepository(PaymentAttempt)
+            .countBy({ bookingId: booking.id }),
+        ).toBe(0);
+        expect(
+          await dataSource
+            .getRepository(Booking)
+            .findOneByOrFail({ id: booking.id }),
+        ).toMatchObject({ status: 'HELD' });
+      } finally {
+        await Promise.all(
+          stocks.map((stock) =>
+            stockRepo.update({ id: stock.id }, { status: stock.status }),
+          ),
+        );
+      }
     });
 
     it('replays a concurrent gateway payment with the same key', async () => {

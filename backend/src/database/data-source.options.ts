@@ -96,6 +96,8 @@ import { TwoFactorChallenge } from './entities/two-factor-challenge.entity';
 import { User } from './entities/user.entity';
 import { WalletEntry } from './entities/wallet-entry.entity';
 import { TravelExtraSetting } from './entities/travel-extra-setting.entity';
+import { TicketDocument } from './entities/ticket-document.entity';
+import { TicketDocumentStock } from './entities/ticket-document-stock.entity';
 
 /**
  * Domain entities plus the phase-1 notify delivery outbox (see
@@ -210,6 +212,8 @@ export const dataSourceOptions: DataSourceOptions = {
     User,
     WalletEntry,
     TravelExtraSetting,
+    TicketDocument,
+    TicketDocumentStock,
   ],
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
 };
