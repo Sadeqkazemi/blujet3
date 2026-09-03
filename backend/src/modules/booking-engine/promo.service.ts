@@ -14,13 +14,10 @@ import {
 } from '../../common/money';
 
 /**
- * Validates + computes the discount for a promo code and records the
- * redemption — CLAUDE.md: "entered on the پرداخت page (NOT checkout)", with
- * "full audit of redemptions" via the unique-per-booking PromoRedemption
- * row. Must run inside BookingService.pay()'s transaction so a failed
- * payment never leaves an orphaned redemption.
+ * Read-only quote before dispatch. Final redemption revalidates under a promo
+ * row lock inside the ticketing transaction; failed fulfillment rolls it back.
  */
-export async function applyPromoCode(
+export async function quotePromoCode(
   manager: EntityManager,
   params: {
     code: string;
@@ -31,8 +28,14 @@ export async function applyPromoCode(
     cabin: CabinClass;
     priceIrr: Irr;
   },
-): Promise<{ discountIrr: Irr; finalPriceIrr: Irr }> {
-  const promo = await manager.findOneBy(PromoCode, { code: params.code });
+  lockForRedemption = false,
+): Promise<{ promoCodeId: string; discountIrr: Irr; finalPriceIrr: Irr }> {
+  const promo = await manager.findOne(PromoCode, {
+    where: { code: params.code },
+    ...(lockForRedemption
+      ? { lock: { mode: 'pessimistic_write' as const } }
+      : {}),
+  });
   if (!promo || !promo.active) {
     throw new BadRequestException({
       code: ErrorCode.VALIDATION_FAILED,
@@ -100,14 +103,26 @@ export async function applyPromoCode(
       : minIrr(promo.value, params.priceIrr);
   const finalPriceIrr = maxIrr(subIrr(params.priceIrr, discountIrr), ZERO_IRR);
 
+  return { promoCodeId: promo.id, discountIrr, finalPriceIrr };
+}
+
+export async function applyPromoCode(
+  manager: EntityManager,
+  params: Parameters<typeof quotePromoCode>[1],
+): Promise<{ discountIrr: Irr; finalPriceIrr: Irr }> {
+  // Hold the promo row until commit so concurrent redemptions cannot exceed caps.
+  const result = await quotePromoCode(manager, params, true);
   await manager.save(
     manager.create(PromoRedemption, {
-      promoCodeId: promo.id,
+      promoCodeId: result.promoCodeId,
       bookingId: params.bookingId,
       userId: params.userId,
-      discountIrr,
+      discountIrr: result.discountIrr,
     }),
   );
 
-  return { discountIrr, finalPriceIrr };
+  return {
+    discountIrr: result.discountIrr,
+    finalPriceIrr: result.finalPriceIrr,
+  };
 }

@@ -16,6 +16,72 @@ across primary databases. Extraction proceeds only in the documented order:
 phase 0 deployment safety, then `notify`, `experience`, `identity`, domain
 schemas, `loyalty`/`agency`, `intelligence`, and `warehouse`.
 
+### Commerce B2.1 — payment preparation and uncertain outcomes
+
+`POST /api/v1/bookings/:id/pay` keeps its DTO, optional idempotency header,
+IRR strings and successful response. Repricing still requires explicit approval
+of a changed pre-discount fare. A promo is validated before gateway dispatch;
+the quoted discounted total is used for both request and verify. The final
+transaction must produce exactly that total or leave the capture for review.
+
+Gateway attempts are committed before calling the adapter. Only one active
+attempt per booking is allowed, including requests without keys or with a new
+key. A concurrent caller with the same key and payload waits for at most five
+seconds and replays the completed booking without another gateway dispatch.
+Different-key/no-key callers, or a same-key caller whose first attempt remains
+in flight/uncertain after that bound, receive `409 PAYMENT_STATUS_UNKNOWN`;
+they must not create a replacement booking or payment. After successful
+completion, an identical keyed retry returns the booking.
+Changed payment method, promo or confirmed price under the same key returns
+`409 IDEMPOTENCY_PAYLOAD_MISMATCH`; another owner/resource receives generic
+`409 CONFLICT`. Legacy completed keys without a fingerprint fail closed.
+
+Timeout, a lost response or unverifiable result is not proof that no money was
+taken. Such attempts block gateway retry AND wallet/points fallback. Confirmed
+capture with failed fulfillment, or a legacy reconciliation row, returns
+`409 PAYMENT_RECONCILIATION_REQUIRED` on retry. Captured funds must never be
+reused at another price, after manual reconciliation, or after hold expiry.
+Only the explicit local adapter error proving that nothing was dispatched may
+mark an attempt FAILED and permit a fresh attempt. Unconfigured production
+gateway still returns `503 PAYMENT_GATEWAY_UNAVAILABLE`.
+
+No PSP callback, automatic refund, unknown-attempt expiry or real redirect
+protocol is invented here. Unknown/verified attempts are quarantined pending
+reconciliation; automated recovery awaits the PSP contract. Promo capacity is
+locked at final redemption, not reserved across a network call: if capacity or
+terms change after capture, fulfillment fails closed with a PENDING capture.
+See [B2.1 acceptance and rollout gates](features/commerce-payment-safety.md).
+
+### Commerce B1 — booking creation replay contract
+
+The combined execution roadmap is in
+[`architecture/commerce-execution-roadmap.md`](architecture/commerce-execution-roadmap.md).
+Existing `POST /api/v1/bookings` and
+`POST /api/v1/agency-portal/allotments/:id/bookings` keep their paths, DTOs,
+optional `Idempotency-Key`, success envelopes and IRR money representation.
+
+- A key may replay only within the original owner and sales channel. A key
+  belonging to another owner/channel returns `409 CONFLICT`, without booking
+  identifiers or passenger data.
+- For newly created keyed bookings, reuse with a changed flight/allotment,
+  cabin, passenger manifest or extras returns
+  `409 IDEMPOTENCY_PAYLOAD_MISMATCH`. Identical validated input returns the
+  existing booking; it does not create another hold, ticket or agency debit.
+- Omitted passenger defaults and their explicit equivalents compare equally;
+  JSON object property order is irrelevant. Passenger and extras array order
+  remains significant. Replay returns current booking state, not a frozen
+  HTTP response; it never extends an expired hold.
+- Legacy rows without a request fingerprint fail closed on replay with
+  `409 IDEMPOTENCY_PAYLOAD_MISMATCH`. Clients must retrieve the existing booking
+  through their authorized booking list/detail APIs, not automatically submit
+  a new key. Historical payloads cannot safely be reconstructed or backfilled.
+- Transaction-scoped key serialization precedes flight/allotment locks and
+  rechecks the completed booking before capacity or credit mutations. The
+  unique database key remains the final uniqueness constraint.
+
+Payment request/callback idempotency is a separate B2 milestone; B1 does not
+claim gateway exactly-once charging or change payment behavior.
+
 ### Microservices phase 5 — domain-schema compatibility contract
 
 Architecture phase 4 changes PostgreSQL ownership only. It does not add,

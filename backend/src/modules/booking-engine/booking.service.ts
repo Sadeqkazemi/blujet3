@@ -12,6 +12,7 @@ import {
   EntityManager,
   In,
   IsNull,
+  Not,
   Repository,
   type UpdateResult,
 } from 'typeorm';
@@ -22,6 +23,7 @@ import { AircraftSeatMap } from '../../database/entities/aircraft-seat-map.entit
 import { User } from '../../database/entities/user.entity';
 import { PriceLock } from '../../database/entities/price-lock.entity';
 import { PaymentReconciliation } from '../../database/entities/payment-reconciliation.entity';
+import { PaymentAttempt } from '../../database/entities/payment-attempt.entity';
 import { PayIdempotencyRecord } from '../../database/entities/pay-idempotency-record.entity';
 import { LedgerEntry } from '../../database/entities/ledger-entry.entity';
 import { AgencyAllotment } from '../../database/entities/agency-allotment.entity';
@@ -61,7 +63,13 @@ import {
 } from './commercial-cabin-capacity';
 import type { Irr } from '../../common/money';
 import type { CabinClass } from '../../database/enums';
-import { PAYMENT_GATEWAY, type PaymentGateway } from './payment-gateway';
+import {
+  PAYMENT_GATEWAY,
+  GatewayNotDispatchedError,
+  type PaymentGateway,
+  type GatewayRequestResult,
+  type GatewayVerifyResult,
+} from './payment-gateway';
 import { SearchService } from './search.service';
 import { PriceLockService } from './price-lock.service';
 import { WalletService } from './wallet.service';
@@ -70,9 +78,19 @@ import { CustomerReferralsService } from '../customer-referrals/customer-referra
 import { NotificationsService } from '../notifications/notifications.service';
 import { ticketedNotificationInput } from '../notifications/customer-notification-copy';
 import { assertNationalIdSeatLimitForFlight } from './national-id-seat-limit';
-import { applyPromoCode } from './promo.service';
+import { applyPromoCode, quotePromoCode } from './promo.service';
+import {
+  assertPaymentReplay,
+  paymentRequestHash,
+  type PaymentRequestScope,
+} from './payment-request';
 import type { AuthenticatedUser } from '../../common/types/authenticated-user';
 import type { CreateBookingDto } from './dto/create-booking.dto';
+import {
+  assertBookingReplay,
+  bookingRequestHash,
+  type BookingReplayScope,
+} from './booking-idempotency';
 import type { CreateAllotmentBookingDto } from '../agency-portal/dto/create-allotment-booking.dto';
 import {
   passengerFareRows,
@@ -181,10 +199,6 @@ export class BookingService {
     private readonly userRepo: Repository<User>,
     @InjectRepository(PriceLock)
     private readonly priceLockRepo: Repository<PriceLock>,
-    @InjectRepository(PaymentReconciliation)
-    private readonly reconciliationRepo: Repository<PaymentReconciliation>,
-    @InjectRepository(PayIdempotencyRecord)
-    private readonly payIdempotencyRepo: Repository<PayIdempotencyRecord>,
     @InjectRepository(LedgerEntry)
     private readonly ledgerRepo: Repository<LedgerEntry>,
     @InjectRepository(AgencyAllotment)
@@ -297,6 +311,7 @@ export class BookingService {
     if (where.id) qb.andWhere('b.id = :id', { id: where.id });
     if (where.pnr) qb.andWhere('b.pnr = :pnr', { pnr: where.pnr });
     if (where.idempotencyKey) {
+      qb.addSelect('b.idempotencyRequestHash');
       qb.andWhere('b.idempotencyKey = :idempotencyKey', {
         idempotencyKey: where.idempotencyKey,
       });
@@ -382,16 +397,48 @@ export class BookingService {
     };
   }
 
+  private async lockedCreationReplay(
+    tx: EntityManager,
+    idempotencyKey: string | undefined,
+    scope: BookingReplayScope,
+    requestHash: string | null,
+  ): Promise<Booking | null> {
+    if (!idempotencyKey) return null;
+    // Shared by both sales channels, matching the existing global unique key.
+    // Acquire before flight/credit locks; release automatically at transaction end.
+    await tx.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [
+      `booking-create:${idempotencyKey}`,
+    ]);
+    const existing = await tx
+      .createQueryBuilder(Booking, 'b')
+      .addSelect('b.idempotencyRequestHash')
+      .where('b.idempotencyKey = :idempotencyKey', { idempotencyKey })
+      .getOne();
+    if (existing) assertBookingReplay(existing, scope, requestHash);
+    return existing;
+  }
+
   async createBooking(
     user: AuthenticatedUser,
     dto: CreateBookingDto,
     idempotencyKey?: string,
   ) {
+    const replayScope: BookingReplayScope = {
+      channel: 'SYSTEM',
+      ownerId: user.id,
+      resourceId: dto.flightInstanceId,
+    };
+    const requestHash = idempotencyKey
+      ? bookingRequestHash(replayScope, dto)
+      : null;
     if (idempotencyKey) {
       const existing = await this.findBookingWithRelations({
         idempotencyKey,
       });
-      if (existing) return this.toDetail(existing);
+      if (existing) {
+        assertBookingReplay(existing, replayScope, requestHash);
+        return this.toDetail(existing);
+      }
     }
 
     const instance = await this.flightInstanceRepo
@@ -613,7 +660,14 @@ export class BookingService {
     // attempts for the same flight — CLAUDE.md: "Prevent double-booking with
     // SELECT ... FOR UPDATE ... Exactly one of two concurrent buyers of the
     // last seat may succeed."
-    const booking = await this.bookingRepo.manager.transaction(async (tx) => {
+    const result = await this.bookingRepo.manager.transaction(async (tx) => {
+      const existing = await this.lockedCreationReplay(
+        tx,
+        idempotencyKey,
+        replayScope,
+        requestHash,
+      );
+      if (existing) return { booking: existing, created: false };
       await tx
         .createQueryBuilder(FlightInstance, 'fi')
         .setLock('pessimistic_write')
@@ -778,6 +832,7 @@ export class BookingService {
           contactPhone: contactUser.phone ?? null,
           holdExpiresAt: new Date(Date.now() + HOLD_TTL_MS),
           idempotencyKey: idempotencyKey ?? null,
+          idempotencyRequestHash: requestHash,
         }),
       );
 
@@ -818,8 +873,15 @@ export class BookingService {
         );
       }
 
-      return created;
+      return { booking: created, created: true };
     });
+
+    const booking = result.booking;
+    if (!result.created) {
+      return this.toDetail(
+        (await this.findBookingWithRelations({ id: booking.id }))!,
+      );
+    }
 
     // The just-consumed seat/fare-bucket must not keep showing as available
     // on a cached search result for the rest of the cache TTL.
@@ -953,19 +1015,18 @@ export class BookingService {
     dto: CreateAllotmentBookingDto,
     idempotencyKey?: string,
   ) {
+    const replayScope: BookingReplayScope = {
+      channel: 'AGENCY',
+      ownerId: actor.id,
+      resourceId: allotmentId,
+    };
+    const requestHash = idempotencyKey
+      ? bookingRequestHash(replayScope, dto)
+      : null;
     if (idempotencyKey) {
       const existing = await this.findBookingWithRelations({ idempotencyKey });
       if (existing) {
-        if (
-          existing.channel !== 'AGENCY' ||
-          existing.agencyId !== actor.id ||
-          existing.allotmentId !== allotmentId
-        ) {
-          throw new ConflictException({
-            code: ErrorCode.CONFLICT,
-            message: 'کلید تکرار برای درخواست دیگری استفاده شده است.',
-          });
-        }
+        assertBookingReplay(existing, replayScope, requestHash);
         return this.toDetail(existing);
       }
     }
@@ -1107,6 +1168,13 @@ export class BookingService {
 
     const transactionResult = await this.bookingRepo.manager.transaction(
       async (tx) => {
+        const existing = await this.lockedCreationReplay(
+          tx,
+          idempotencyKey,
+          replayScope,
+          requestHash,
+        );
+        if (existing) return { booking: existing, created: false };
         await tx
           .createQueryBuilder(FlightInstance, 'fi')
           .setLock('pessimistic_write')
@@ -1134,25 +1202,6 @@ export class BookingService {
             code: ErrorCode.CONFLICT,
             message: 'سهمیه دیگر فعال نیست.',
           });
-        }
-
-        if (idempotencyKey) {
-          const concurrentExisting = await tx.findOne(Booking, {
-            where: { idempotencyKey },
-          });
-          if (concurrentExisting) {
-            if (
-              concurrentExisting.channel !== 'AGENCY' ||
-              concurrentExisting.agencyId !== actor.id ||
-              concurrentExisting.allotmentId !== allotmentId
-            ) {
-              throw new ConflictException({
-                code: ErrorCode.CONFLICT,
-                message: 'کلید تکرار برای درخواست دیگری استفاده شده است.',
-              });
-            }
-            return { booking: concurrentExisting, created: false };
-          }
         }
 
         const taken = await this.search.takenSeatCodes(instance.id);
@@ -1236,6 +1285,7 @@ export class BookingService {
             contactPhone: contactUser.phone ?? null,
             holdExpiresAt: null,
             idempotencyKey: idempotencyKey ?? null,
+            idempotencyRequestHash: requestHash,
           }),
         );
         await tx.save(
@@ -1304,6 +1354,229 @@ export class BookingService {
     return this.toDetail(saved!);
   }
 
+  private unknownPayment(): ConflictException {
+    return new ConflictException({
+      code: ErrorCode.PAYMENT_STATUS_UNKNOWN,
+      message:
+        'نتیجه پرداخت هنوز قطعی نیست؛ از پرداخت مجدد یا تغییر روش پرداخت خودداری کنید و وضعیت را پیگیری کنید.',
+    });
+  }
+
+  private reconciliationRequired(): ConflictException {
+    return new ConflictException({
+      code: ErrorCode.PAYMENT_RECONCILIATION_REQUIRED,
+      message:
+        'پرداخت قبلی نیازمند تطبیق است؛ تا تعیین تکلیف، پرداخت جدید انجام ندهید.',
+    });
+  }
+
+  private async completedPaymentKey(manager: EntityManager, key: string) {
+    return manager
+      .createQueryBuilder(PayIdempotencyRecord, 'record')
+      .addSelect('record.requestHash')
+      .where('record.idempotencyKey = :key', { key })
+      .getOne();
+  }
+
+  private async replayCompletedPayment(
+    record: PayIdempotencyRecord,
+    user: AuthenticatedUser,
+  ) {
+    const booking = await this.findBookingWithRelations({
+      id: record.bookingId,
+    });
+    return {
+      priceChanged: false as const,
+      booking: this.toDetail(await this.materializeExpiry(booking!)),
+      walletBalanceIrr: await this.wallet.getBalance(user.id),
+    };
+  }
+
+  private async awaitConcurrentPayment(
+    scope: PaymentRequestScope,
+  ): Promise<PayIdempotencyRecord> {
+    const key = scope.idempotencyKey;
+    if (!key) throw this.unknownPayment();
+    const deadline = Date.now() + 5_000;
+    let status: PaymentAttempt['status'] = 'REQUESTING';
+    let delayMs = 25;
+    while (Date.now() < deadline) {
+      const completed = await this.completedPaymentKey(
+        this.bookingRepo.manager,
+        key,
+      );
+      if (completed) {
+        assertPaymentReplay(completed, scope);
+        return completed;
+      }
+      const attempt = await this.bookingRepo.manager
+        .createQueryBuilder(PaymentAttempt, 'attempt')
+        .addSelect('attempt.requestHash')
+        .where('attempt.idempotencyKey = :key', { key })
+        .getOne();
+      if (!attempt) throw this.unknownPayment();
+      assertPaymentReplay(attempt, scope);
+      status = attempt.status;
+      if (status === 'UNKNOWN') throw this.unknownPayment();
+      if (status === 'FAILED') throw new GatewayNotDispatchedError();
+      await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
+      delayMs = Math.min(delayMs * 2, 250);
+    }
+    if (status === 'VERIFIED') throw this.reconciliationRequired();
+    throw this.unknownPayment();
+  }
+
+  private async lockPaymentKey(tx: EntityManager, scope: PaymentRequestScope) {
+    if (!scope.idempotencyKey) return null;
+    await tx.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [
+      `booking-pay:${scope.idempotencyKey}`,
+    ]);
+    const completed = await this.completedPaymentKey(tx, scope.idempotencyKey);
+    if (completed) assertPaymentReplay(completed, scope);
+    const attempt = await tx
+      .createQueryBuilder(PaymentAttempt, 'attempt')
+      .addSelect('attempt.requestHash')
+      .where('attempt.idempotencyKey = :key', { key: scope.idempotencyKey })
+      .getOne();
+    if (attempt) assertPaymentReplay(attempt, scope);
+    return attempt;
+  }
+
+  private async assertGatewayQuarantine(
+    manager: EntityManager,
+    bookingId: string,
+    allowedAttemptId?: string,
+  ) {
+    const attempt = await manager.findOne(PaymentAttempt, {
+      where: { bookingId, status: Not('FAILED') },
+    });
+    if (!attempt || attempt.status === 'COMPLETED') return;
+    if (attempt.id === allowedAttemptId && attempt.status === 'VERIFIED')
+      return;
+    if (attempt.status === 'VERIFIED') throw this.reconciliationRequired();
+    throw this.unknownPayment();
+  }
+
+  private assertPayableHold(
+    booking: Pick<Booking, 'userId' | 'status' | 'holdExpiresAt'>,
+    userId: string,
+  ): void {
+    if (booking.userId !== userId) {
+      throw new ForbiddenException({
+        code: ErrorCode.FORBIDDEN,
+        message: 'این رزرو متعلق به شما نیست.',
+      });
+    }
+    if (
+      booking.status !== 'HELD' ||
+      !booking.holdExpiresAt ||
+      booking.holdExpiresAt <= new Date()
+    ) {
+      throw new ConflictException({
+        code: ErrorCode.CONFLICT,
+        message: 'رزرو قابل پرداخت نیست یا مهلت نگهداری آن پایان یافته است.',
+      });
+    }
+  }
+
+  private async captureGatewayPayment(
+    scope: PaymentRequestScope,
+    amountIrr: Irr,
+  ) {
+    const manager = this.bookingRepo.manager;
+    const attempt = await manager.transaction(async (tx) => {
+      const priorKey = await this.lockPaymentKey(tx, scope);
+      if (priorKey && priorKey.status !== 'FAILED') return null;
+      const booking = await tx.findOneOrFail(Booking, {
+        where: { id: scope.bookingId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      this.assertPayableHold(booking, scope.userId);
+      await this.assertGatewayQuarantine(tx, scope.bookingId);
+      if (
+        await tx.exists(PaymentReconciliation, {
+          where: { bookingId: scope.bookingId },
+        })
+      ) {
+        throw this.reconciliationRequired();
+      }
+      // A proved non-dispatch can retry its own key; uncertain attempts never do.
+      return tx.save(
+        tx.create(PaymentAttempt, {
+          ...(priorKey?.status === 'FAILED' ? { id: priorKey.id } : {}),
+          bookingId: scope.bookingId,
+          userId: scope.userId,
+          idempotencyKey: scope.idempotencyKey ?? null,
+          requestHash: scope.requestHash,
+          amountIrr,
+          status: 'REQUESTING',
+          authority: null,
+          gatewayRefId: null,
+        }),
+      );
+    });
+    if (!attempt) return null;
+
+    let requested: GatewayRequestResult;
+    try {
+      requested = await this.gateway.request(amountIrr, scope.bookingId);
+    } catch (error) {
+      const notDispatched = error instanceof GatewayNotDispatchedError;
+      await manager.update(
+        PaymentAttempt,
+        { id: attempt.id },
+        { status: notDispatched ? 'FAILED' : 'UNKNOWN' },
+      );
+      if (notDispatched) throw error;
+      throw this.unknownPayment();
+    }
+    // A DB failure here leaves REQUESTING durable and blocks any second charge.
+    await manager.update(
+      PaymentAttempt,
+      { id: attempt.id },
+      { authority: requested.authority },
+    );
+    let verified: GatewayVerifyResult;
+    try {
+      verified = await this.gateway.verify(requested.authority, amountIrr);
+    } catch {
+      await manager.update(
+        PaymentAttempt,
+        { id: attempt.id },
+        { status: 'UNKNOWN' },
+      );
+      throw this.unknownPayment();
+    }
+    if (!verified.ok || !verified.refId) {
+      await manager.update(
+        PaymentAttempt,
+        { id: attempt.id },
+        { status: 'UNKNOWN' },
+      );
+      throw this.unknownPayment();
+    }
+    const reconciliation = await manager.transaction(async (tx) => {
+      const saved = await tx.save(
+        tx.create(PaymentReconciliation, {
+          bookingId: scope.bookingId,
+          gatewayRefId: verified.refId,
+          amountIrr,
+        }),
+      );
+      await tx.update(
+        PaymentAttempt,
+        { id: attempt.id },
+        { status: 'VERIFIED', gatewayRefId: verified.refId },
+      );
+      return saved;
+    });
+    return {
+      attemptId: attempt.id,
+      gatewayRefId: verified.refId,
+      reconciliationId: reconciliation.id,
+    };
+  }
+
   async pay(
     id: string,
     user: AuthenticatedUser,
@@ -1314,25 +1587,20 @@ export class BookingService {
     } = {},
     idempotencyKey?: string,
   ) {
+    const paymentScope: PaymentRequestScope = {
+      bookingId: id,
+      userId: user.id,
+      idempotencyKey,
+      requestHash: paymentRequestHash(id, user.id, options),
+    };
     if (idempotencyKey) {
-      const prior = await this.payIdempotencyRepo.findOneBy({
+      const prior = await this.completedPaymentKey(
+        this.bookingRepo.manager,
         idempotencyKey,
-      });
+      );
       if (prior) {
-        if (prior.bookingId !== id || prior.userId !== user.id) {
-          throw new ConflictException({
-            code: ErrorCode.CONFLICT,
-            message: 'کلید یکتایی پرداخت برای رزرو دیگری استفاده شده است.',
-          });
-        }
-        const priorBooking = await this.findBookingWithRelations({
-          id: prior.bookingId,
-        });
-        return {
-          priceChanged: false as const,
-          booking: this.toDetail(await this.materializeExpiry(priorBooking!)),
-          walletBalanceIrr: await this.wallet.getBalance(user.id),
-        };
+        assertPaymentReplay(prior, paymentScope);
+        return this.replayCompletedPayment(prior, user);
       }
     }
 
@@ -1346,11 +1614,19 @@ export class BookingService {
     }
     if (booking.status === 'TICKETED' || booking.status === 'PAID') {
       if (idempotencyKey) {
-        return {
-          priceChanged: false as const,
-          booking: this.toDetail(await this.materializeExpiry(booking)),
-          walletBalanceIrr: await this.wallet.getBalance(user.id),
-        };
+        // A concurrent completion may have committed after the initial lookup.
+        const completed = await this.completedPaymentKey(
+          this.bookingRepo.manager,
+          idempotencyKey,
+        );
+        if (completed) {
+          assertPaymentReplay(completed, paymentScope);
+          return {
+            priceChanged: false as const,
+            booking: this.toDetail(booking),
+            walletBalanceIrr: await this.wallet.getBalance(user.id),
+          };
+        }
       }
       throw new ConflictException({
         code: ErrorCode.CONFLICT,
@@ -1362,6 +1638,21 @@ export class BookingService {
         code: ErrorCode.CONFLICT,
         message: 'این رزرو قابل پرداخت نیست.',
       });
+    }
+
+    try {
+      await this.assertGatewayQuarantine(this.bookingRepo.manager, id);
+    } catch (error: unknown) {
+      if (!idempotencyKey) throw error;
+      const sameRequest = await this.bookingRepo.manager
+        .createQueryBuilder(PaymentAttempt, 'attempt')
+        .addSelect('attempt.requestHash')
+        .where('attempt.idempotencyKey = :key', { key: idempotencyKey })
+        .getOne();
+      if (!sameRequest || sameRequest.status === 'FAILED') throw error;
+      assertPaymentReplay(sameRequest, paymentScope);
+      const completed = await this.awaitConcurrentPayment(paymentScope);
+      return this.replayCompletedPayment(completed, user);
     }
 
     const isLocked =
@@ -1433,306 +1724,312 @@ export class BookingService {
     const paymentMethod: PaymentMethod = options.paymentMethod ?? 'GATEWAY';
     const member = await this.clubPoints.findMemberByUserId(user.id);
 
-    // Shetab/IPG handshake happens BEFORE the DB transaction (a real driver
-    // is a network call; sandbox approves synchronously). Wallet/points pay
-    // internally, so no gateway round-trip for them.
+    const promoParams = {
+      code: options.promoCode ?? '',
+      userId: user.id,
+      bookingId: id,
+      originCode: booking.flightInstance.flight.route.originCode,
+      destCode: booking.flightInstance.flight.route.destCode,
+      cabin: booking.cabin,
+      priceIrr: currentPriceIrr,
+    };
+    const quoted = options.promoCode
+      ? await quotePromoCode(this.bookingRepo.manager, promoParams)
+      : { finalPriceIrr: currentPriceIrr, discountIrr: 0n };
+
     let gatewayRefId: string | null = null;
-    // Phase 13 Part E: written the instant the gateway confirms capture,
-    // before the ticketing transaction below even starts — if that
-    // transaction later fails for any reason (bad promo, DB hiccup, crash),
-    // this PENDING row is the only durable proof the money was taken. See
-    // docs/DB_SCHEMA.md.
     let reconciliationId: string | null = null;
+    let paymentAttemptId: string | undefined;
     if (paymentMethod === 'GATEWAY') {
-      const existingRecon = await this.reconciliationRepo.findOne({
-        where: { bookingId: id },
-        order: { createdAt: 'DESC' },
-      });
-      if (existingRecon) {
-        gatewayRefId = existingRecon.gatewayRefId;
-        reconciliationId = existingRecon.id;
-      } else {
-        const { authority } = await this.gateway.request(currentPriceIrr, id);
-        const verified = await this.gateway.verify(authority, currentPriceIrr);
-        if (!verified.ok) {
-          throw new ConflictException({
-            code: ErrorCode.CONFLICT,
-            message: 'پرداخت از سوی درگاه تأیید نشد. مبلغی کسر نشده است.',
-          });
-        }
-        gatewayRefId = verified.refId;
-        const reconciliation = await this.reconciliationRepo.save(
-          this.reconciliationRepo.create({
-            bookingId: id,
-            gatewayRefId: verified.refId,
-            amountIrr: currentPriceIrr,
-          }),
-        );
-        reconciliationId = reconciliation.id;
+      const capture = await this.captureGatewayPayment(
+        paymentScope,
+        quoted.finalPriceIrr,
+      );
+      if (!capture) {
+        const completed = await this.awaitConcurrentPayment(paymentScope);
+        return this.replayCompletedPayment(completed, user);
       }
+      gatewayRefId = capture.gatewayRefId;
+      reconciliationId = capture.reconciliationId;
+      paymentAttemptId = capture.attemptId;
     }
 
-    const paid = await this.bookingRepo.manager.transaction(async (tx) => {
-      await tx.findOneOrFail(Booking, {
-        where: { id },
-        lock: { mode: 'pessimistic_write' },
-      });
-      const lockedRaw = await this.bookingWithFlightQuery(tx)
-        .where('b.id = :id', { id })
-        .getOneOrFail();
-      const lockedBooking = await this.loadBookingRelations(lockedRaw, tx);
-
-      // Acquire the wallet lock before inserting idempotency/promo rows that
-      // reference this user. This establishes one lock order for concurrent
-      // purchases and avoids PostgreSQL FK-lock upgrade deadlocks.
-      if (paymentMethod === 'WALLET') {
-        await this.wallet.lockForDebit(tx, user.id);
-      }
-
-      if (idempotencyKey) {
-        const claimed = await tx.findOneBy(PayIdempotencyRecord, {
-          idempotencyKey,
+    const paid = await this.bookingRepo.manager
+      .transaction(async (tx) => {
+        await this.lockPaymentKey(tx, paymentScope);
+        await tx.findOneOrFail(Booking, {
+          where: { id },
+          lock: { mode: 'pessimistic_write' },
         });
-        if (claimed) {
-          if (claimed.bookingId !== id || claimed.userId !== user.id) {
-            throw new ConflictException({
-              code: ErrorCode.CONFLICT,
-              message: 'کلید یکتایی پرداخت برای رزرو دیگری استفاده شده است.',
-            });
-          }
-          return {
-            booking: lockedBooking,
-            discountIrr: 0n,
-            walletEntryId: null,
-            ledgerEntryId: null,
-          };
-        }
-      }
-
-      if (
-        lockedBooking.status === 'TICKETED' ||
-        lockedBooking.status === 'PAID'
-      ) {
-        return {
-          booking: lockedBooking,
-          discountIrr: 0n,
-          walletEntryId: null,
-          ledgerEntryId: null,
-        };
-      }
-      if (lockedBooking.status !== 'HELD') {
-        throw new ConflictException({
-          code: ErrorCode.CONFLICT,
-          message: 'این رزرو قابل پرداخت نیست.',
-        });
-      }
-
-      if (idempotencyKey) {
-        await tx.save(
-          tx.create(PayIdempotencyRecord, {
-            idempotencyKey,
-            bookingId: id,
-            userId: user.id,
-          }),
-        );
-      }
-
-      let finalPriceIrr = currentPriceIrr;
-      let discountIrr: Irr = 0n;
-      let walletEntryId: string | null = null;
-      if (options.promoCode) {
-        const result = await applyPromoCode(tx, {
-          code: options.promoCode,
-          userId: user.id,
-          bookingId: id,
-          originCode: booking.flightInstance.flight.route.originCode,
-          destCode: booking.flightInstance.flight.route.destCode,
-          cabin: booking.cabin,
-          priceIrr: currentPriceIrr,
-        });
-        finalPriceIrr = result.finalPriceIrr;
-        discountIrr = result.discountIrr;
-      }
-
-      if (paymentMethod === 'WALLET') {
-        const walletEntry = await this.wallet.charge(
-          tx,
-          user.id,
-          finalPriceIrr,
-          id,
-          true,
-        );
-        walletEntryId = walletEntry.id;
-      } else if (paymentMethod === 'POINTS') {
-        if (!member) {
-          throw new BadRequestException({
-            code: ErrorCode.VALIDATION_FAILED,
-            message: 'پرداخت با امتیاز فقط برای اعضای باشگاه مشتریان است.',
-          });
-        }
-        await this.clubPoints.redeemForPayment(
-          tx,
-          member.id,
-          finalPriceIrr,
-          id,
-        );
-      }
-
-      // Explicit state machine: payment capture flips HELD→PAID, ticket
-      // issuance then flips PAID→TICKETED — both inside this transaction,
-      // each guarded so a concurrent double-pay hits affected===0 and 409s.
-      let captured: UpdateResult;
-      if (isLocked) {
-        captured = await tx.update(
-          Booking,
-          { id, status: 'HELD' },
-          { status: 'PAID', priceIrr: finalPriceIrr },
-        );
-      } else {
-        captured = await tx
-          .createQueryBuilder()
-          .update(Booking)
-          .set({
-            status: 'PAID',
-            priceIrr: finalPriceIrr,
-            taxIrr: currentTaxIrr,
-            chargeSnapshot: currentChargeSnapshot,
-          })
-          .where('id = :id AND status = :status', { id, status: 'HELD' })
-          .execute();
-      }
-      if ((captured.affected ?? 0) === 0) {
-        const latestRaw = await this.bookingWithFlightQuery(tx)
+        const lockedRaw = await this.bookingWithFlightQuery(tx)
           .where('b.id = :id', { id })
           .getOneOrFail();
-        const latest = await this.loadBookingRelations(latestRaw, tx);
-        if (latest.status === 'TICKETED' || latest.status === 'PAID') {
-          return {
-            booking: latest,
-            discountIrr: 0n,
-            walletEntryId: null,
-            ledgerEntryId: null,
-          };
+        const lockedBooking = await this.loadBookingRelations(lockedRaw, tx);
+        await this.assertGatewayQuarantine(tx, id, paymentAttemptId);
+        // Legacy capture rows also prohibit a fallback debit, even after manual resolution.
+        if (
+          paymentMethod !== 'GATEWAY' &&
+          lockedBooking.status === 'HELD' &&
+          (await tx.exists(PaymentReconciliation, { where: { bookingId: id } }))
+        ) {
+          throw this.reconciliationRequired();
         }
-        throw new ConflictException({
-          code: ErrorCode.CONFLICT,
-          message: 'این رزرو قبلاً پرداخت شده است.',
-        });
-      }
-      const issued = await tx.update(
-        Booking,
-        { id, status: 'PAID' },
-        { status: 'TICKETED' },
-      );
-      if ((issued.affected ?? 0) === 0) {
-        throw new ConflictException({
-          code: ErrorCode.CONFLICT,
-          message: 'صدور بلیط ناموفق بود.',
-        });
-      }
 
-      const issuedAt = new Date();
-      const passengerTickets = await tx.find(Passenger, {
-        where: { bookingId: id },
-        order: { id: 'ASC' },
-      });
-      for (const passenger of passengerTickets) {
-        if (passenger.ticketNo) continue;
-        passenger.ticketNo = generateTicketNo();
-        passenger.ticketIssuedAt = issuedAt;
-      }
-      await tx.save(passengerTickets);
+        // Every method takes the user lock before the promo lock/FK inserts.
+        // Otherwise a gateway redemption can deadlock with a wallet purchase
+        // of another booking by the same user (promo -> user vs user -> promo).
+        await this.wallet.lockForDebit(tx, user.id);
 
-      if (isLocked) {
-        await tx.update(
-          PriceLock,
-          { id: booking.priceLock!.id },
-          { status: 'USED' },
+        if (idempotencyKey) {
+          const claimed = await this.completedPaymentKey(tx, idempotencyKey);
+          if (claimed) {
+            assertPaymentReplay(claimed, paymentScope);
+            return {
+              booking: lockedBooking,
+              discountIrr: 0n,
+              walletEntryId: null,
+              ledgerEntryId: null,
+            };
+          }
+        }
+
+        if (
+          lockedBooking.status === 'TICKETED' ||
+          lockedBooking.status === 'PAID'
+        ) {
+          throw new ConflictException({
+            code: ErrorCode.CONFLICT,
+            message: 'این رزرو قبلاً پرداخت شده است.',
+          });
+        }
+        this.assertPayableHold(lockedBooking, user.id);
+
+        if (idempotencyKey) {
+          await tx.save(
+            tx.create(PayIdempotencyRecord, {
+              idempotencyKey,
+              bookingId: id,
+              userId: user.id,
+              requestHash: paymentScope.requestHash,
+            }),
+          );
+        }
+
+        let finalPriceIrr = currentPriceIrr;
+        let discountIrr: Irr = 0n;
+        let walletEntryId: string | null = null;
+        if (options.promoCode) {
+          const result = await applyPromoCode(tx, promoParams);
+          finalPriceIrr = result.finalPriceIrr;
+          discountIrr = result.discountIrr;
+        }
+        if (finalPriceIrr !== quoted.finalPriceIrr) {
+          if (paymentMethod === 'GATEWAY') throw this.reconciliationRequired();
+          throw new ConflictException({
+            code: ErrorCode.CONFLICT,
+            message: 'شرایط تخفیف تغییر کرده است؛ قیمت را دوباره بررسی کنید.',
+          });
+        }
+
+        if (paymentMethod === 'WALLET') {
+          const walletEntry = await this.wallet.charge(
+            tx,
+            user.id,
+            finalPriceIrr,
+            id,
+            true,
+          );
+          walletEntryId = walletEntry.id;
+        } else if (paymentMethod === 'POINTS') {
+          if (!member) {
+            throw new BadRequestException({
+              code: ErrorCode.VALIDATION_FAILED,
+              message: 'پرداخت با امتیاز فقط برای اعضای باشگاه مشتریان است.',
+            });
+          }
+          await this.clubPoints.redeemForPayment(
+            tx,
+            member.id,
+            finalPriceIrr,
+            id,
+          );
+        }
+
+        // Explicit state machine: payment capture flips HELD→PAID, ticket
+        // issuance then flips PAID→TICKETED — both inside this transaction,
+        // each guarded so a concurrent double-pay hits affected===0 and 409s.
+        let captured: UpdateResult;
+        if (isLocked) {
+          captured = await tx.update(
+            Booking,
+            { id, status: 'HELD' },
+            { status: 'PAID', priceIrr: finalPriceIrr },
+          );
+        } else {
+          captured = await tx
+            .createQueryBuilder()
+            .update(Booking)
+            .set({
+              status: 'PAID',
+              priceIrr: finalPriceIrr,
+              taxIrr: currentTaxIrr,
+              chargeSnapshot: currentChargeSnapshot,
+            })
+            .where('id = :id AND status = :status', { id, status: 'HELD' })
+            .execute();
+        }
+        if ((captured.affected ?? 0) === 0) {
+          const latestRaw = await this.bookingWithFlightQuery(tx)
+            .where('b.id = :id', { id })
+            .getOneOrFail();
+          const latest = await this.loadBookingRelations(latestRaw, tx);
+          if (latest.status === 'TICKETED' || latest.status === 'PAID') {
+            return {
+              booking: latest,
+              discountIrr: 0n,
+              walletEntryId: null,
+              ledgerEntryId: null,
+            };
+          }
+          throw new ConflictException({
+            code: ErrorCode.CONFLICT,
+            message: 'این رزرو قبلاً پرداخت شده است.',
+          });
+        }
+        const issued = await tx.update(
+          Booking,
+          { id, status: 'PAID' },
+          { status: 'TICKETED' },
         );
-      }
+        if ((issued.affected ?? 0) === 0) {
+          throw new ConflictException({
+            code: ErrorCode.CONFLICT,
+            message: 'صدور بلیط ناموفق بود.',
+          });
+        }
 
-      if (reconciliationId) {
-        await tx.update(
-          PaymentReconciliation,
-          { id: reconciliationId },
-          { status: 'RESOLVED', resolvedAt: new Date() },
-        );
-      }
+        const issuedAt = new Date();
+        const passengerTickets = await tx.find(Passenger, {
+          where: { bookingId: id },
+          order: { id: 'ASC' },
+        });
+        for (const passenger of passengerTickets) {
+          if (passenger.ticketNo) continue;
+          passenger.ticketNo = generateTicketNo();
+          passenger.ticketIssuedAt = issuedAt;
+        }
+        await tx.save(passengerTickets);
 
-      const ledgerEntry = await tx.save(
-        tx.create(LedgerEntry, {
-          bookingId: id,
-          type: 'SALE',
-          signedAmountIrr: finalPriceIrr,
-          createdById: user.id,
-          agencyId: booking.agencyId,
-        }),
-      );
+        if (isLocked) {
+          await tx.update(
+            PriceLock,
+            { id: booking.priceLock!.id },
+            { status: 'USED' },
+          );
+        }
 
-      // Public-inventory purchases made by an authenticated agency are still
-      // agency-owned financial sales. Materialize the paid invoice in the
-      // same transaction as wallet debit, ticket issuance and SALE ledger so
-      // every projection either sees the complete purchase or none of it.
-      if (lockedBooking.agencyId) {
-        const paidAt = new Date();
-        await tx.save(
-          tx.create(AgencyInvoice, {
-            agencyId: lockedBooking.agencyId,
+        if (reconciliationId) {
+          await tx.update(
+            PaymentReconciliation,
+            { id: reconciliationId },
+            { status: 'RESOLVED', resolvedAt: new Date() },
+          );
+        }
+        if (paymentAttemptId) {
+          await tx.update(
+            PaymentAttempt,
+            { id: paymentAttemptId },
+            { status: 'COMPLETED' },
+          );
+        }
+
+        const ledgerEntry = await tx.save(
+          tx.create(LedgerEntry, {
             bookingId: id,
-            invoiceNo: `SALE-${lockedBooking.pnr}`,
-            issuedById: user.id,
-            dueAt: paidAt,
-            amountIrr: finalPriceIrr,
-            descriptionFa: `فاکتور فروش بلیط ${lockedBooking.pnr}`,
-            status: 'PAID',
-            paidAt,
+            type: 'SALE',
+            signedAmountIrr: finalPriceIrr,
+            createdById: user.id,
+            agencyId: booking.agencyId,
           }),
         );
-      }
 
-      // Real money spent (gateway/wallet) earns points; redeeming points to
-      // pay never earns points back (no redeem-to-earn loophole).
-      if (member && paymentMethod !== 'POINTS') {
-        await this.clubPoints.earnForPurchase(tx, member.id, finalPriceIrr, id);
-      }
+        // Public-inventory purchases made by an authenticated agency are still
+        // agency-owned financial sales. Materialize the paid invoice in the
+        // same transaction as wallet debit, ticket issuance and SALE ledger so
+        // every projection either sees the complete purchase or none of it.
+        if (lockedBooking.agencyId) {
+          const paidAt = new Date();
+          await tx.save(
+            tx.create(AgencyInvoice, {
+              agencyId: lockedBooking.agencyId,
+              bookingId: id,
+              invoiceNo: `SALE-${lockedBooking.pnr}`,
+              issuedById: user.id,
+              dueAt: paidAt,
+              amountIrr: finalPriceIrr,
+              descriptionFa: `فاکتور فروش بلیط ${lockedBooking.pnr}`,
+              status: 'PAID',
+              paidAt,
+            }),
+          );
+        }
 
-      if (booking.userId) {
-        await this.customerReferrals.processFirstTicketedBooking(
-          tx,
-          booking.userId,
-          id,
-        );
-      }
+        // Real money spent (gateway/wallet) earns points; redeeming points to
+        // pay never earns points back (no redeem-to-earn loophole).
+        if (member && paymentMethod !== 'POINTS') {
+          await this.clubPoints.earnForPurchase(
+            tx,
+            member.id,
+            finalPriceIrr,
+            id,
+          );
+        }
 
-      const finalRaw = await this.bookingWithFlightQuery(tx)
-        .where('b.id = :id', { id })
-        .getOneOrFail();
-      const finalBooking = await this.loadBookingRelations(finalRaw, tx);
-      if (finalBooking.userId) {
-        const origin =
-          finalBooking.flightInstance?.flight?.route?.originCode ?? '';
-        const dest = finalBooking.flightInstance?.flight?.route?.destCode ?? '';
-        const routeLabel =
-          origin && dest
-            ? `${origin} → ${dest}`
-            : (finalBooking.flightInstance?.flight?.flightNo ?? '');
-        await this.notifications.notify(
-          ticketedNotificationInput({
-            recipientId: finalBooking.userId,
-            bookingId: finalBooking.id,
-            pnr: finalBooking.pnr,
-            routeLabel: routeLabel || undefined,
-          }),
-          tx,
-        );
-      }
-      return {
-        booking: finalBooking,
-        discountIrr,
-        walletEntryId,
-        ledgerEntryId: ledgerEntry.id,
-      };
-    });
+        if (booking.userId) {
+          await this.customerReferrals.processFirstTicketedBooking(
+            tx,
+            booking.userId,
+            id,
+          );
+        }
+
+        const finalRaw = await this.bookingWithFlightQuery(tx)
+          .where('b.id = :id', { id })
+          .getOneOrFail();
+        const finalBooking = await this.loadBookingRelations(finalRaw, tx);
+        if (finalBooking.userId) {
+          const origin =
+            finalBooking.flightInstance?.flight?.route?.originCode ?? '';
+          const dest =
+            finalBooking.flightInstance?.flight?.route?.destCode ?? '';
+          const routeLabel =
+            origin && dest
+              ? `${origin} → ${dest}`
+              : (finalBooking.flightInstance?.flight?.flightNo ?? '');
+          await this.notifications.notify(
+            ticketedNotificationInput({
+              recipientId: finalBooking.userId,
+              bookingId: finalBooking.id,
+              pnr: finalBooking.pnr,
+              routeLabel: routeLabel || undefined,
+            }),
+            tx,
+          );
+        }
+        return {
+          booking: finalBooking,
+          discountIrr,
+          walletEntryId,
+          ledgerEntryId: ledgerEntry.id,
+        };
+      })
+      .catch((error: unknown) => {
+        // Once verify confirmed capture, no downstream validation/DB error is
+        // safe to present as an ordinary rejection. Durable evidence remains
+        // VERIFIED + PENDING for finance reconciliation.
+        if (paymentAttemptId) throw this.reconciliationRequired();
+        throw error;
+      });
 
     await this.audit.record({
       actorId: user.id,

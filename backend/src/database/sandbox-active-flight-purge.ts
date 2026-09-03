@@ -208,6 +208,7 @@ export async function runSandboxActiveFlightPurge(
             );
           }
           break;
+        case 'payment_attempts':
         case 'pay_idempotency_records':
         case 'payment_reconciliations':
         case 'promo_redemptions':

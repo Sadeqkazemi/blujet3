@@ -114,6 +114,14 @@ describe('Sandbox active-flight purge policy', () => {
       );
     });
 
+    it('deletes payment attempts before bookings (RESTRICT chain)', () => {
+      const order = SANDBOX_FLIGHT_PURGE_TABLE_ORDER;
+      expect(order.indexOf('payment_attempts')).toBeGreaterThanOrEqual(0);
+      expect(order.indexOf('payment_attempts')).toBeLessThan(
+        order.indexOf('bookings'),
+      );
+    });
+
     it('never touches routes, ledger_entries, wallet_entries, or club_points_entries', () => {
       expect(SANDBOX_FLIGHT_PURGE_TABLE_ORDER).not.toContain('routes');
       expect(SANDBOX_FLIGHT_PURGE_TABLE_ORDER).not.toContain('ledger_entries');

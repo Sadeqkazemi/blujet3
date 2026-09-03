@@ -10,6 +10,7 @@ import { FlightInstance } from '../src/database/entities/flight-instance.entity'
 import { LedgerEntry } from '../src/database/entities/ledger-entry.entity';
 import { Passenger } from '../src/database/entities/passenger.entity';
 import { PaymentReconciliation } from '../src/database/entities/payment-reconciliation.entity';
+import { PaymentAttempt } from '../src/database/entities/payment-attempt.entity';
 import { SeatLock } from '../src/database/entities/seat-lock.entity';
 import { loginAs } from './helpers/login.helper';
 import { createTestApp } from './helpers/app.helper';
@@ -42,6 +43,9 @@ describe('Reservation (e2e)', () => {
         .getMany();
       const bookingIds = passengers.map((p) => p.bookingId);
       if (bookingIds.length) {
+        await dataSource
+          .getRepository(PaymentAttempt)
+          .delete({ bookingId: In(bookingIds) });
         await dataSource
           .getRepository(PaymentReconciliation)
           .delete({ bookingId: In(bookingIds) });

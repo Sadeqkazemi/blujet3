@@ -19,6 +19,23 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-03 — combined microservices and commerce execution
+
+- Baseline: project phase 5 merged in PR #12 (`feffb7f`); no deployment inferred.
+- One incremental programme combines the existing extraction roadmap and the
+  airline execution document; NestJS, PostgreSQL and TypeORM remain in place.
+- B1 booking replay safety: implemented and locally verified (25 unit tests,
+  59 e2e tests, typecheck, build and scoped lint). CI/UAT remain pending.
+- B2.1 internal payment safety: durable attempts, final-price preflight,
+  fail-closed unknown/capture reconciliation and payment-payload replay guards
+  are implemented. All 447 backend unit tests, 120 relevant E2E tests,
+  typecheck, build and scoped lint pass locally. Real PSP callback/recovery/
+  refund work, PostgreSQL 16 CI and UAT remain pending.
+- Phase 6 agency/loyalty extraction has not started. See
+  [execution roadmap](docs/architecture/commerce-execution-roadmap.md) for
+  dependencies, acceptance evidence and deferred external integrations.
+- No push, merge, production migration or deployment is authorized by this task.
+
 - [x] **Currency display policy: public toman, finance and agency rial
   (2026-09-02)** — retained integer IRR storage and API contracts while making
   the public/customer experience continue to display toman. Finance dashboards,

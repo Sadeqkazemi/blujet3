@@ -118,6 +118,9 @@ export class Booking {
   @Column({ type: 'text', nullable: true })
   idempotencyKey!: string | null;
 
+  @Column({ type: 'text', nullable: true, select: false })
+  idempotencyRequestHash!: string | null;
+
   @Column({ type: 'text', nullable: true })
   userId!: string | null;
 

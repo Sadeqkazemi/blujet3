@@ -26,17 +26,21 @@ describe('domain schema ownership', () => {
     // Importing dataSourceOptions registers all backend entity decorators.
     expect(dataSourceOptions.entities).toBeDefined();
 
-    const expectedTables = new Set(expectedEntries.map(({ table }) => table));
+    const currentEntries = [
+      ...expectedEntries,
+      { schema: 'payments', table: 'payment_attempts' },
+    ];
+    const expectedTables = new Set(currentEntries.map(({ table }) => table));
     const entityTables = getMetadataArgsStorage().tables.filter(
       ({ name, type }) =>
         type === 'regular' && name && expectedTables.has(name),
     );
 
-    expect(entityTables).toHaveLength(expectedEntries.length);
+    expect(entityTables).toHaveLength(currentEntries.length);
     expect(
       entityTables.map(({ name, schema }) => `${schema}.${name}`).sort(),
     ).toEqual(
-      expectedEntries.map(({ schema, table }) => `${schema}.${table}`).sort(),
+      currentEntries.map(({ schema, table }) => `${schema}.${table}`).sort(),
     );
   });
 

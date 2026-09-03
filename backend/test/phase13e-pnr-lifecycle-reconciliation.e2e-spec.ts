@@ -2,6 +2,7 @@ import type { INestApplication } from '@nestjs/common';
 import type { App } from 'supertest/types';
 import request from 'supertest';
 import { DataSource, In } from 'typeorm';
+import type { Irr } from '../src/common/money';
 import { AircraftSeatMap } from '../src/database/entities/aircraft-seat-map.entity';
 import { Booking } from '../src/database/entities/booking.entity';
 import { Flight } from '../src/database/entities/flight.entity';
@@ -9,6 +10,13 @@ import { FlightInstance } from '../src/database/entities/flight-instance.entity'
 import { LedgerEntry } from '../src/database/entities/ledger-entry.entity';
 import { Passenger } from '../src/database/entities/passenger.entity';
 import { PaymentReconciliation } from '../src/database/entities/payment-reconciliation.entity';
+import { PaymentAttempt } from '../src/database/entities/payment-attempt.entity';
+import { PromoCode } from '../src/database/entities/promo-code.entity';
+import {
+  PAYMENT_GATEWAY,
+  type GatewayVerifyResult,
+  type PaymentGateway,
+} from '../src/modules/booking-engine/payment-gateway';
 import { Route } from '../src/database/entities/route.entity';
 import { FlightInstanceStatus } from '../src/database/enums';
 import { createTestApp } from './helpers/app.helper';
@@ -84,6 +92,9 @@ describe('Phase 13 Part E — PNR lifecycle + payment reconciliation', () => {
 
   afterAll(async () => {
     if (createdBookingIds.length > 0) {
+      await dataSource
+        .getRepository(PaymentAttempt)
+        .delete({ bookingId: In(createdBookingIds) });
       await dataSource
         .getRepository(PaymentReconciliation)
         .delete({ bookingId: In(createdBookingIds) });
@@ -251,7 +262,7 @@ describe('Phase 13 Part E — PNR lifecycle + payment reconciliation', () => {
     );
   });
 
-  it('a GATEWAY payment whose ticketing transaction fails (bad promo) leaves a PENDING reconciliation row — the real mismatch queue', async () => {
+  it('a GATEWAY payment whose promo becomes invalid after capture leaves a PENDING reconciliation row', async () => {
     const instance = await makeInstance(46);
     const phone = `0914${Math.floor(1_000_000 + Math.random() * 8_999_999)}`;
     const { accessToken } = await loginAsCustomer(app, phone);
@@ -268,14 +279,32 @@ describe('Phase 13 Part E — PNR lifecycle + payment reconciliation', () => {
     const bookingId = created.body.data.id as string;
     createdBookingIds.push(bookingId);
 
-    // The gateway is asked for and confirms payment before this promo code
-    // is validated inside the ticketing transaction — a real ordering bug
-    // this phase fixes the tracking for, not something contrived for the test.
+    const code = `CAPTURE-${bookingId}`;
+    const promos = dataSource.getRepository(PromoCode);
+    await promos.save(
+      promos.create({ code, type: 'FIXED', value: 100n, active: true }),
+    );
+    const gateway = app.get<PaymentGateway>(PAYMENT_GATEWAY);
+    const verify: PaymentGateway['verify'] = gateway.verify.bind(gateway);
+    const verifySpy = jest
+      .spyOn(gateway, 'verify')
+      .mockImplementationOnce(
+        async (
+          authority: string,
+          amount: Irr,
+        ): Promise<GatewayVerifyResult> => {
+          // The quote was valid before dispatch; simulate a terms change in flight.
+          await promos.update({ code }, { active: false });
+          return verify(authority, amount);
+        },
+      );
     const paid = await request(app.getHttpServer())
       .post(`/bookings/${bookingId}/pay`)
       .set(auth(accessToken!))
-      .send({ promoCode: 'THIS-CODE-DOES-NOT-EXIST' });
-    expect(paid.status).toBe(400);
+      .send({ promoCode: code });
+    verifySpy.mockRestore();
+    expect(paid.status).toBe(409);
+    expect(paid.body.error.code).toBe('PAYMENT_RECONCILIATION_REQUIRED');
 
     const stillHeld = await dataSource
       .getRepository(Booking)
@@ -313,6 +342,12 @@ describe('Phase 13 Part E — PNR lifecycle + payment reconciliation', () => {
       .send({ resolutionNote: 'بلیط به‌صورت دستی صادر و بررسی شد.' });
     expect(resolved.status).toBe(200);
     expect(resolved.body.data.status).toBe('RESOLVED');
+    const retry = await request(app.getHttpServer())
+      .post(`/bookings/${bookingId}/pay`)
+      .set(auth(accessToken!))
+      .send({});
+    expect(retry.status).toBe(409);
+    expect(retry.body.error.code).toBe('PAYMENT_RECONCILIATION_REQUIRED');
 
     const resolvedAgain = await request(app.getHttpServer())
       .patch(`/reconciliation/${reconciliation!.id}/resolve`)

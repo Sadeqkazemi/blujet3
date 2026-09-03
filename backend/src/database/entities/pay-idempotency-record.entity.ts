@@ -32,6 +32,9 @@ export class PayIdempotencyRecord {
   @Column({ type: 'text' })
   idempotencyKey!: string;
 
+  @Column({ type: 'text', nullable: true, select: false })
+  requestHash!: string | null;
+
   @Column({ type: 'text' })
   bookingId!: string;
 
