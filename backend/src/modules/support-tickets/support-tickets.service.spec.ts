@@ -175,6 +175,38 @@ describe('SupportTicketsService conversations', () => {
     expect(ticketRepo.save).toHaveBeenCalledWith(ticket);
   });
 
+  it('waits for an active lifecycle sweep during shutdown and prevents overlap', async () => {
+    jest.useFakeTimers();
+    const { service, ticketRepo } = buildService(null);
+    let finishSweep!: (tickets: []) => void;
+    const pendingSweep = new Promise<[]>((resolve) => {
+      finishSweep = resolve;
+    });
+    ticketRepo.find.mockReturnValueOnce(pendingSweep);
+
+    try {
+      service.onApplicationBootstrap();
+      expect(ticketRepo.find).toHaveBeenCalledTimes(1);
+
+      jest.advanceTimersByTime(60 * 60 * 1000);
+      expect(ticketRepo.find).toHaveBeenCalledTimes(1);
+
+      let shutdownSettled = false;
+      const shutdown = service.onModuleDestroy().then(() => {
+        shutdownSettled = true;
+      });
+      await Promise.resolve();
+      expect(shutdownSettled).toBe(false);
+
+      finishSweep([]);
+      await shutdown;
+      expect(shutdownSettled).toBe(true);
+    } finally {
+      await service.onModuleDestroy();
+      jest.useRealTimers();
+    }
+  });
+
   it('records a staff reply and marks the ticket answered', async () => {
     const ticket = baseTicket();
     const { service } = buildService(ticket);
