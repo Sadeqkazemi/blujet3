@@ -13,6 +13,7 @@ import { PaymentAttempt } from '../src/database/entities/payment-attempt.entity'
 import { Route } from '../src/database/entities/route.entity';
 import { SeatLock } from '../src/database/entities/seat-lock.entity';
 import { User } from '../src/database/entities/user.entity';
+import { TicketDocument } from '../src/database/entities/ticket-document.entity';
 import { FlightInstanceStatus } from '../src/database/enums';
 import { createTestApp } from './helpers/app.helper';
 import { loginAs } from './helpers/login.helper';
@@ -326,6 +327,19 @@ describe('Phase 13 Part D — managerial lock governance', () => {
       .createQueryBuilder('b')
       .where('b.pnr = :pnr', { pnr: free.body.data.pnr })
       .getOneOrFail();
+    const issuedPassenger = await dataSource
+      .getRepository(Passenger)
+      .findOneByOrFail({ bookingId: booking.id });
+    expect(issuedPassenger.ticketNo).toMatch(/^780\d{10}$/);
+    expect(
+      await dataSource
+        .getRepository(TicketDocument)
+        .findOneByOrFail({ passengerId: issuedPassenger.id }),
+    ).toMatchObject({
+      documentNumber: issuedPassenger.ticketNo,
+      accountabilityStatus: 'ACCOUNTABLE',
+      issueSource: 'MANAGERIAL_LOCK',
+    });
     const lock = await dataSource
       .getRepository(SeatLock)
       .findOneBy({ bookingId: booking.id });

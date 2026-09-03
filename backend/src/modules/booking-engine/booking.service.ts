@@ -102,6 +102,7 @@ import {
   type OccupiedSeatContext,
 } from './seat-assignment-policy';
 import { BookingHoldExpiryService } from './booking-hold-expiry.service';
+import { TicketingService } from './ticketing.service';
 
 export type PaymentMethod = 'GATEWAY' | 'WALLET' | 'POINTS';
 
@@ -176,10 +177,6 @@ function generatePnr(): string {
   return `BJ${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 }
 
-function generateTicketNo(): string {
-  return `780${String(crypto.randomInt(0, 10_000_000_000)).padStart(10, '0')}`;
-}
-
 type BookingWithRelations = Omit<Booking, 'generateId' | 'defaultTaxIrr'> & {
   passengers: Passenger[];
   priceLock: PriceLock | null;
@@ -217,6 +214,7 @@ export class BookingService {
     @Inject(PAYMENT_GATEWAY)
     private readonly gateway: PaymentGateway,
     private readonly holdExpiry: BookingHoldExpiryService,
+    private readonly ticketing: TicketingService,
   ) {}
 
   private bookingWithFlightQuery(manager: EntityManager) {
@@ -1321,11 +1319,14 @@ export class BookingService {
                 mobileEnc: passenger.mobile
                   ? encryptPii(passenger.mobile)
                   : null,
-                ticketNo: generateTicketNo(),
-                ticketIssuedAt: new Date(),
               });
             },
           ),
+        );
+        await this.ticketing.issueBookingTickets(
+          tx,
+          created.id,
+          'AGENCY_ALLOTMENT',
         );
         await tx.save(
           tx.create(LedgerEntry, {
@@ -1741,6 +1742,11 @@ export class BookingService {
       ? await quotePromoCode(this.bookingRepo.manager, promoParams)
       : { finalPriceIrr: currentPriceIrr, discountIrr: 0n };
 
+    await this.ticketing.assertStockAvailable(
+      this.bookingRepo.manager,
+      booking.passengers.length,
+    );
+
     let gatewayRefId: string | null = null;
     let reconciliationId: string | null = null;
     let paymentAttemptId: string | undefined;
@@ -1912,17 +1918,12 @@ export class BookingService {
           });
         }
 
-        const issuedAt = new Date();
-        const passengerTickets = await tx.find(Passenger, {
-          where: { bookingId: id },
-          order: { id: 'ASC' },
-        });
-        for (const passenger of passengerTickets) {
-          if (passenger.ticketNo) continue;
-          passenger.ticketNo = generateTicketNo();
-          passenger.ticketIssuedAt = issuedAt;
-        }
-        await tx.save(passengerTickets);
+        await this.ticketing.issueBookingTickets(
+          tx,
+          id,
+          'PUBLIC_PAYMENT',
+          gatewayRefId ?? walletEntryId,
+        );
 
         if (isLocked) {
           await tx.update(

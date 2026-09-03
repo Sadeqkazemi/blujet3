@@ -32,17 +32,24 @@ below for what's landed from that port so far.
   are merged in PR #13. All 447 backend unit tests, 120 relevant E2E tests and
   PostgreSQL 16 CI passed. Real PSP callback/recovery/refund and UAT remain
   pending.
-- B3.1 durable hold expiry: implemented locally on
-  `codex/commerce-b3-hold-expiry`. PostgreSQL owns restart-safe batch expiry;
-  expiry/payment serialize on the Booking row and every materialized expiry has
-  one lifecycle event. Verification: 115 unit suites / 453 tests, 42 focused
-  E2E tests, migration down/up, schema parity, typecheck, build and scoped lint.
-  B3.2 ticket stock/partial issuance and late-capture compensation remain gated
-  by approved airline/PSP rules. Nothing from B3.1 is pushed or merged yet.
+- B3.1 durable hold expiry is merged in PR #14 and its CI is green. PostgreSQL
+  owns restart-safe batch expiry; expiry/payment serialize on the Booking row
+  and every materialized expiry has one lifecycle event. No server migration or
+  deployment was performed.
+- B3.2 accountable ticketing is implemented locally on
+  `codex/commerce-b3-accountable-ticketing`: one transactional allocator now
+  covers public gateway/wallet/points, agency allotment, staff manual and
+  managerial-lock issuance. Legacy numbers are quarantined, production has no
+  seeded stock, and insufficient stock fails closed. Verification: 116 unit
+  suites / 455 tests; direct allocator/migration/schema-parity E2E; complete
+  public-booking, agency, reservation and managerial-lock suites; typecheck,
+  build, Prettier check and scoped read-only lint. Real stock authority/ranges, EMD servicing,
+  Nira and PSP late-capture compensation remain input-gated. Nothing from B3.2
+  has been pushed, merged, migrated on a server or deployed.
 - Phase 6 agency/loyalty extraction has not started. See
   [execution roadmap](docs/architecture/commerce-execution-roadmap.md) for
   dependencies, acceptance evidence and deferred external integrations.
-- No B3.1 push, merge, production migration or deployment has occurred.
+- No B3.2 push, merge, production migration or deployment has occurred.
 
 - [x] **Currency display policy: public toman, finance and agency rial
   (2026-09-02)** — retained integer IRR storage and API contracts while making

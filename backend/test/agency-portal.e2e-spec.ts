@@ -856,6 +856,7 @@ describe('Agency Portal (e2e)', () => {
     expect(first.status).toBe(201);
     expect(first.body.data.status).toBe('TICKETED');
     expect(first.body.data.allotmentId).toBe(allotment.id);
+    expect(first.body.data.passengers[0].ticketNo).toMatch(/^780\d{10}$/);
 
     expect(second.status).toBe(201);
     expect(second.body.data.id).toBe(first.body.data.id);

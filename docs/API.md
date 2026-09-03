@@ -16,6 +16,37 @@ across primary databases. Extraction proceeds only in the documented order:
 phase 0 deployment safety, then `notify`, `experience`, `identity`, domain
 schemas, `loyalty`/`agency`, `intelligence`, and `warehouse`.
 
+### Commerce B3.2 — accountable e-ticket issuance
+
+No public route, DTO or successful response shape changes. Every existing
+public, agency and staff issuance path delegates to one Core ticketing service
+inside the same PostgreSQL transaction that changes the booking to `TICKETED`.
+The service allocates one 13-digit document number per passenger from an
+approved `ETICKET` stock row under a pessimistic row lock, persists the
+immutable ticket record, and updates the legacy passenger fields as a
+compatibility projection. A retry finds the passenger's existing document and
+returns the same number; it never consumes another serial.
+
+If enough accountable stock is not available, issuance fails with HTTP `503`
+and stable code `TICKET_STOCK_UNAVAILABLE`. Wallet, points, agency-credit and
+staff issuance then roll back entirely. Gateway payment performs a preflight
+stock check before dispatch; a race that exhausts stock after a successful
+external capture remains in the existing durable reconciliation path and is
+never reported as an ordinary payment rejection.
+
+There is intentionally no stock-management HTTP endpoint in this slice:
+operator roles, approval authority and the real airline numeric accounting
+code/ranges have not been supplied. Production migrations create no stock.
+Only the existing non-production seed creates a clearly labelled sandbox
+range. Loading a production range requires a separately reviewed, audited
+operator workflow and airline-approved values.
+
+Existing `Passenger.ticketNo` values are backfilled into ticket documents with
+`accountabilityStatus=QUARANTINED`; they remain readable but are not silently
+declared accountable stock. New stock-backed documents are `ACCOUNTABLE`.
+EMD, exchange, void/refund coupon transitions and Nira/DCS integration remain
+separate, input-gated slices.
+
 ### Commerce B3.1 — durable hold expiry
 
 No public route or response shape changes. The existing 15-minute `HELD`

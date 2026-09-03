@@ -48,6 +48,7 @@ import type {
   ListReservationFlightsQueryDto,
   SearchFlightsQueryDto,
 } from './dto/reservation.dtos';
+import { TicketingService } from '../booking-engine/ticketing.service';
 
 /** No canonical public-site fare table exists yet — a documented flat
  * fallback (never invented dynamic pricing) when a flight instance has no
@@ -91,6 +92,7 @@ export class PnrService {
     private readonly dataSource: DataSource,
     private readonly audit: AuditService,
     private readonly searchService: SearchService,
+    private readonly ticketing: TicketingService,
   ) {}
 
   private async findSoldConflict(
@@ -564,6 +566,7 @@ export class PnrService {
             : null,
         }),
       );
+      await this.ticketing.issueBookingTickets(tx, created.id, 'STAFF_MANUAL');
       await tx.save(
         tx.create(LedgerEntry, {
           bookingId: created.id,
@@ -684,6 +687,11 @@ export class PnrService {
             ? encryptPii(dto.passengerMobile)
             : null,
         }),
+      );
+      await this.ticketing.issueBookingTickets(
+        tx,
+        created.id,
+        'MANAGERIAL_LOCK',
       );
       await tx.save(
         tx.create(LedgerEntry, {

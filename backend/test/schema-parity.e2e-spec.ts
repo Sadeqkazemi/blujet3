@@ -41,6 +41,12 @@ const KNOWN_BENIGN_DIFF_PATTERNS: RegExp[] = [
   // TypeORM's enum-relocation proposal consequently churns the unchanged PK.
   /ALTER TABLE "experience"\."site_content_blocks" DROP CONSTRAINT "site_content_blocks_pkey"$/,
   /ALTER TABLE "experience"\."site_content_blocks" ADD CONSTRAINT "site_content_blocks_pkey" PRIMARY KEY \("key"\)$/,
+  // The stock overlap guard is an expression-based native PostgreSQL
+  // exclusion constraint. Mapping it with TypeORM's @Exclusion makes the
+  // driver execute CREATE EXTENSION btree_gist during ordinary DataSource
+  // initialization even though this int8range-only constraint needs no
+  // extension. Keep DDL migration-owned and reject every other unknown diff.
+  /ALTER TABLE "orders"\."ticket_document_stocks" DROP CONSTRAINT "ticket_document_stocks_no_overlap"$/,
 ];
 
 type EnumCatalogRow = {
