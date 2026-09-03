@@ -101,6 +101,7 @@ import {
   SeatAssignmentPolicyError,
   type OccupiedSeatContext,
 } from './seat-assignment-policy';
+import { BookingHoldExpiryService } from './booking-hold-expiry.service';
 
 export type PaymentMethod = 'GATEWAY' | 'WALLET' | 'POINTS';
 
@@ -215,6 +216,7 @@ export class BookingService {
     private readonly notifications: NotificationsService,
     @Inject(PAYMENT_GATEWAY)
     private readonly gateway: PaymentGateway,
+    private readonly holdExpiry: BookingHoldExpiryService,
   ) {}
 
   private bookingWithFlightQuery(manager: EntityManager) {
@@ -334,11 +336,13 @@ export class BookingService {
     ) {
       return booking;
     }
-    await this.bookingRepo.update(
-      { id: booking.id, status: 'HELD' },
-      { status: 'EXPIRED' },
-    );
-    return { ...booking, status: 'EXPIRED' };
+    const expired = await this.holdExpiry.expireOne(booking.id);
+    if (expired) return { ...booking, status: 'EXPIRED' };
+    const current = await this.bookingRepo
+      .createQueryBuilder('booking')
+      .where('booking.id = :id', { id: booking.id })
+      .getOneOrFail();
+    return { ...booking, status: current.status };
   }
 
   private toDetail(b: BookingWithRelations) {

@@ -141,6 +141,14 @@ class EnvironmentVariables {
 
   @IsOptional()
   @IsIn(['true', 'false'])
+  BOOKING_EXPIRY_WORKER_ENABLED?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  BOOKING_EXPIRY_POLL_MS?: string;
+
+  @IsOptional()
+  @IsIn(['true', 'false'])
   EXPERIENCE_INTEGRATION_ENABLED?: string;
 
   @ValidateIf(

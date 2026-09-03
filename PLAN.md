@@ -21,20 +21,28 @@ below for what's landed from that port so far.
 
 ### 2026-09-03 — combined microservices and commerce execution
 
-- Baseline: project phase 5 merged in PR #12 (`feffb7f`); no deployment inferred.
+- Baseline: project phase 5 merged in PR #12 (`feffb7f`), then commerce B1/B2.1
+  merged in PR #13 (`a8fcef7`); no deployment inferred.
 - One incremental programme combines the existing extraction roadmap and the
   airline execution document; NestJS, PostgreSQL and TypeORM remain in place.
-- B1 booking replay safety: implemented and locally verified (25 unit tests,
-  59 e2e tests, typecheck, build and scoped lint). CI/UAT remain pending.
+- B1 booking replay safety: merged in PR #13; local evidence and PostgreSQL 16
+  CI passed. Environment UAT remains pending.
 - B2.1 internal payment safety: durable attempts, final-price preflight,
   fail-closed unknown/capture reconciliation and payment-payload replay guards
-  are implemented. All 447 backend unit tests, 120 relevant E2E tests,
-  typecheck, build and scoped lint pass locally. Real PSP callback/recovery/
-  refund work, PostgreSQL 16 CI and UAT remain pending.
+  are merged in PR #13. All 447 backend unit tests, 120 relevant E2E tests and
+  PostgreSQL 16 CI passed. Real PSP callback/recovery/refund and UAT remain
+  pending.
+- B3.1 durable hold expiry: implemented locally on
+  `codex/commerce-b3-hold-expiry`. PostgreSQL owns restart-safe batch expiry;
+  expiry/payment serialize on the Booking row and every materialized expiry has
+  one lifecycle event. Verification: 115 unit suites / 453 tests, 42 focused
+  E2E tests, migration down/up, schema parity, typecheck, build and scoped lint.
+  B3.2 ticket stock/partial issuance and late-capture compensation remain gated
+  by approved airline/PSP rules. Nothing from B3.1 is pushed or merged yet.
 - Phase 6 agency/loyalty extraction has not started. See
   [execution roadmap](docs/architecture/commerce-execution-roadmap.md) for
   dependencies, acceptance evidence and deferred external integrations.
-- No push, merge, production migration or deployment is authorized by this task.
+- No B3.1 push, merge, production migration or deployment has occurred.
 
 - [x] **Currency display policy: public toman, finance and agency rial
   (2026-09-02)** — retained integer IRR storage and API contracts while making

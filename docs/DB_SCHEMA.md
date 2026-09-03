@@ -24,6 +24,31 @@ integer `bigint` IRR and every wire value stays an IRR decimal string. Toman is
 only a public/customer presentation conversion. Finance, invoice, report and
 agency-portal presentation uses the unconverted IRR value with a rial unit.
 
+## Commerce B3.1 — durable hold expiry lifecycle
+
+New Core-owned `orders.booking_lifecycle_events` records materialized booking
+state transitions. B3.1 writes `HOLD_EXPIRED` with UUID-text `id`, Booking FK
+(`RESTRICT`), `fromStatus=HELD`, `toStatus=EXPIRED`, authoritative UTC
+`occurredAt`, and UTC `createdAt`. `(bookingId, eventType)` is unique, making
+worker restart and multi-replica replay observable exactly once. The event has
+no passenger PII, payment reference or mutable delivery state.
+
+An additive partial index on `orders.bookings(holdExpiresAt, id) WHERE
+status='HELD'` supports ordered due-work claims. The worker selects a bounded
+batch under `FOR UPDATE SKIP LOCKED`, conditionally updates the same locked row,
+and inserts its lifecycle event in one local Core transaction. Payment already
+uses a pessimistic Booking lock and validates `holdExpiresAt` again before
+`HELD -> PAID`; therefore expiry and confirmation have one database-serialized
+winner. No Redis lock or network call participates in this decision.
+
+Rollout is expand-first: apply the table/index migration, then start compatible
+Core workers. Application rollback disables the worker and leaves the table,
+events and index intact; lazy expiry remains compatible. Migration down is for
+isolated tests only because deleting lifecycle evidence is not an operational
+rollback. B3.1 does not choose a ticket-number stock, PSP recovery timeout or
+late-capture refund policy; those remain gated by the documented operational
+and provider decisions.
+
 ## Commerce B2.1 — durable gateway attempts
 
 New Core-owned `payments.payment_attempts`: UUID text `id`, booking/user FKs

@@ -26,9 +26,9 @@
 | شناسه | کار | وضعیت و شرط عبور |
 | --- | --- | --- |
 | A0–A5 | ایمنی استخراج، Notify، Experience، Identity، اسکیماها | در مبنای مرج‌شده؛ کنترل دوبارهٔ قراردادها هنگام تغییر |
-| B1 | مالکیت و تطابق payload در تکرار ایجاد رزرو عمومی/سهمیه‌ای | پیاده‌سازی و تست محلی کامل؛ CI و UAT باقی است |
-| B2 | intent پرداخت پایدار، قیمت نهایی پیش از PSP، وضعیت نامعلوم و reconciliation، callback/refund تکرارپذیر | برش داخلی B2.1 پیاده و تست محلی شد؛ callback/recovery/refund و تأیید درگاه واقعی منتظر مستندات و برش‌های بعدی |
-| B3 | عمر hold و رقابت expiry/confirm، صدور بلیت قابل‌حسابرسی و recovery | بعد از B2؛ stock و قواعد صدور نیازمند تصمیم کسب‌وکار |
+| B1 | مالکیت و تطابق payload در تکرار ایجاد رزرو عمومی/سهمیه‌ای | مرج‌شده در PR #13؛ CI PostgreSQL 16 سبز، UAT محیط باقی است |
+| B2 | intent پرداخت پایدار، قیمت نهایی پیش از PSP، وضعیت نامعلوم و reconciliation، callback/refund تکرارپذیر | برش داخلی B2.1 در PR #13 مرج و CI سبز شد؛ callback/recovery/refund و تأیید درگاه واقعی منتظر مستندات است |
+| B3 | عمر hold و رقابت expiry/confirm، صدور بلیت قابل‌حسابرسی و recovery | B3.1 expiry/confirm محلی کامل؛ stock و قواعد صدور برای B3.2 نیازمند تصمیم کسب‌وکار |
 | A6 | استخراج تدریجی Agency/Loyalty با مالک نویسندهٔ واحد | پس از کنترل وابستگی‌های تراکنشی B1–B3؛ برابر فاز ۵ در ADR، نه فاز پروژهٔ ۵ |
 | B4 | دفتر مالی/تطبیق، دسترسی tenant و API آژانس، outbox و inbox قابل‌بازیابی | برش‌های مستقل همراه A6؛ بدون انتقال تراکنش فروش به چند primary |
 | B5 | آداپتور نیرا و چرخهٔ کارت پرواز | منتظر مستندات؛ وضعیت check-in و مجوز refund باید قراردادی شوند |
@@ -122,3 +122,33 @@ rollback برنامه باید ستون افزوده و داده‌ها را ح�
   PostgreSQL محلی 18.2 جای baseline CI روی PostgreSQL 16 یا UAT را نمی‌گیرد.
 - هیچ callback واقعی، recovery خودکار، refund، قرارداد PSP/نیرا، push، merge،
   migration سرور یا deploy در این برش انجام نشده است.
+
+### وضعیت انتشار B1/B2.1
+
+هر دو برش با PR #13 در `main` مرج شدند. اجرای CI شمارهٔ `33720580276` روی
+PostgreSQL 16 و CodeQL اجرای `33721406680` سبز شدند. این شواهد به معنی deploy،
+migration سرور یا قبولی UAT محیط عملیاتی نیست؛ هیچ‌کدام اجرا نشدند.
+
+## برش B3.1 و شواهد پذیرش
+
+این برش فقط عمر hold و رقابت expiry/confirm را بدون قرارداد خارجی تکمیل
+می‌کند. worker داخلی Core، holdهای منقضی را در batch محدود با قفل ردیفی و
+`SKIP LOCKED` به `EXPIRED` می‌برد. همان تراکنش یک رویداد یکتای
+`HOLD_EXPIRED` ثبت می‌کند؛ مسیر lazy نیز از همان انتقال استفاده می‌کند.
+پرداخت و worker روی یک Booking row سریال می‌شوند و capture دیرهنگام همچنان
+در صف reconciliation می‌ماند، بدون بلیت، برداشت دوم یا refund فرضی.
+
+- migration افزایشی `1790784000000-BookingHoldLifecycle`، جدول رویداد و index
+  جزئی due-hold را به schema `orders` اضافه می‌کند؛ down/up روی `blujet_test`
+  تمرین و schema parity سبز شد.
+- ۱۱۵ مجموعهٔ unit شامل ۴۵۳ تست و ۴۲ تست E2E متمرکز رزرو، reconciliation و
+  schema parity پاس شدند. typecheck، Nest build و ESLint بدون `--fix` نیز سبز
+  هستند.
+- flagهای `BOOKING_EXPIRY_WORKER_ENABLED` و `BOOKING_EXPIRY_POLL_MS` validate
+  می‌شوند. خاموش‌کردن worker فقط rollback polling است و deadline تجاری را
+  تغییر نمی‌دهد.
+- CI PostgreSQL 16، UAT محیط، push، merge، migration سرور و deploy هنوز برای
+  B3.1 انجام نشده‌اند.
+
+B3 کامل اعلام نمی‌شود: ticket-number/EMD stock، قواعد صدور جزئی و مسیر جبران
+capture دیرهنگام به تصمیم‌های D-04 تا D-06 و مستند PSP/عملیات نیاز دارند.

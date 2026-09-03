@@ -33,6 +33,8 @@ import { SearchService } from './search.service';
 import { SearchAdvisoryService } from './search-advisory.service';
 import { BookingController } from './booking.controller';
 import { BookingService } from './booking.service';
+import { BookingHoldExpiryWorker } from './booking-hold-expiry.worker';
+import { BookingHoldExpiryService } from './booking-hold-expiry.service';
 import { WalletPointsLockController } from './wallet-points-lock.controller';
 import { WalletService } from './wallet.service';
 import { ClubPointsService } from './club-points.service';
@@ -101,6 +103,8 @@ import {
     SearchService,
     SearchAdvisoryService,
     BookingService,
+    BookingHoldExpiryService,
+    BookingHoldExpiryWorker,
     WalletService,
     ClubPointsService,
     PriceLockService,
