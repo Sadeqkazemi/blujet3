@@ -31,6 +31,10 @@ const smokeScript = readFileSync(
   join(backendRoot, '..', 'scripts', 'smoke-service-health.sh'),
   'utf8',
 );
+const localStartScript = readFileSync(
+  join(backendRoot, '..', 'scripts', 'start-local.sh'),
+  'utf8',
+);
 const notifyDockerfile = readFileSync(
   join(backendRoot, '..', 'notify-service', 'Dockerfile'),
   'utf8',
@@ -127,6 +131,10 @@ describe('production backend artifacts', () => {
     ].join('\n');
 
     expect(productionCommands).not.toContain('dist/src/');
+    expect(localStartScript).toContain(
+      'node --enable-source-maps dist/main.js',
+    );
+    expect(localStartScript).not.toContain('dist/src/');
   });
 
   it('keeps the v1.1 transactional core boundary authoritative', () => {

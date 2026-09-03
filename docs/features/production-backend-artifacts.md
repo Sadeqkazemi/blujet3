@@ -5,11 +5,11 @@ the JavaScript layout emitted by `nest build`.
 
 ## Acceptance checklist
 
-- [x] The production container starts `dist/main.js`.
+- [x] The production container and local stack start `dist/main.js`.
 - [x] Production migration and seed commands target the emitted files under
   `dist/database/`.
-- [x] A regression test fails if any production command returns to the stale
-  `dist/src/` layout.
+- [x] A regression test fails if any production or local start command returns
+  to the stale `dist/src/` layout.
 - [x] Backend tests, lint, and production build pass.
 - [ ] The rebuilt backend becomes healthy on the deployment server without
   replacing `.env` or Docker volumes.
