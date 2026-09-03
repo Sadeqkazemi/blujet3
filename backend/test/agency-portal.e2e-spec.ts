@@ -826,8 +826,7 @@ describe('Agency Portal (e2e)', () => {
     const commercial = await dataSource
       .getRepository(User)
       .findOneByOrFail({ username: 'comm' });
-    const { instance, freeSeats } =
-      await findSellableInstanceWithFreeSeats(1);
+    const { instance, freeSeats } = await findSellableInstanceWithFreeSeats(1);
     const allotmentRepo = dataSource.getRepository(AgencyAllotment);
     const allotment = await allotmentRepo.save(
       allotmentRepo.create({
@@ -847,22 +846,29 @@ describe('Agency Portal (e2e)', () => {
       cabin: seat.cabin,
       passengers: [{ fullName: 'مسافر واقعی تست', seatCode: seat.seatCode }],
     };
-    const first = await request(app.getHttpServer())
-      .post(`/agency-portal/allotments/${allotment.id}/bookings`)
-      .set('Authorization', auth(agencyLogin.accessToken))
-      .set('Idempotency-Key', key)
-      .send(body);
+    const send = () =>
+      request(app.getHttpServer())
+        .post(`/agency-portal/allotments/${allotment.id}/bookings`)
+        .set('Authorization', auth(agencyLogin.accessToken))
+        .set('Idempotency-Key', key)
+        .send(body);
+    const [first, second] = await Promise.all([send(), send()]);
     expect(first.status).toBe(201);
     expect(first.body.data.status).toBe('TICKETED');
     expect(first.body.data.allotmentId).toBe(allotment.id);
 
-    const second = await request(app.getHttpServer())
+    expect(second.status).toBe(201);
+    expect(second.body.data.id).toBe(first.body.data.id);
+    const changed = await request(app.getHttpServer())
       .post(`/agency-portal/allotments/${allotment.id}/bookings`)
       .set('Authorization', auth(agencyLogin.accessToken))
       .set('Idempotency-Key', key)
-      .send(body);
-    expect(second.status).toBe(201);
-    expect(second.body.data.id).toBe(first.body.data.id);
+      .send({
+        ...body,
+        passengers: [{ ...body.passengers[0], fullName: 'مسافر متفاوت' }],
+      });
+    expect(changed.status).toBe(409);
+    expect(changed.body.error.code).toBe('IDEMPOTENCY_PAYLOAD_MISMATCH');
     expect(
       await dataSource.getRepository(LedgerEntry).countBy({
         bookingId: first.body.data.id as string,
@@ -879,8 +885,7 @@ describe('Agency Portal (e2e)', () => {
     const commercial = await dataSource
       .getRepository(User)
       .findOneByOrFail({ username: 'comm' });
-    const { instance, freeSeats } =
-      await findSellableInstanceWithFreeSeats(1);
+    const { instance, freeSeats } = await findSellableInstanceWithFreeSeats(1);
     const allotmentRepo = dataSource.getRepository(AgencyAllotment);
     const allotment = await allotmentRepo.save(
       allotmentRepo.create({
@@ -948,8 +953,7 @@ describe('Agency Portal (e2e)', () => {
     const commercial = await dataSource
       .getRepository(User)
       .findOneByOrFail({ username: 'comm' });
-    const { instance, freeSeats } =
-      await findSellableInstanceWithFreeSeats(2);
+    const { instance, freeSeats } = await findSellableInstanceWithFreeSeats(2);
 
     const allotmentRepo = dataSource.getRepository(AgencyAllotment);
     const allotment = await allotmentRepo.save(

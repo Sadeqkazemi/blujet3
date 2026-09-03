@@ -24,6 +24,68 @@ integer `bigint` IRR and every wire value stays an IRR decimal string. Toman is
 only a public/customer presentation conversion. Finance, invoice, report and
 agency-portal presentation uses the unconverted IRR value with a rial unit.
 
+## Commerce B2.1 — durable gateway attempts
+
+New Core-owned `payments.payment_attempts`: UUID text `id`, booking/user FKs
+(RESTRICT), nullable unique `idempotencyKey`, internal versioned `requestHash`,
+nonnegative bigint `amountIrr`, text `status`, internal nullable `authority`
+and `gatewayRefId`, UTC `createdAt`/`updatedAt`. Allowed states are REQUESTING,
+UNKNOWN, VERIFIED, COMPLETED, FAILED. A partial unique booking index excludes
+FAILED only. No money/PII payload or card data is stored. Unknown attempts have
+no automatic TTL; elapsed time cannot prove non-payment. The phase-5 map still
+describes its original 95 moved tables; this additive table is created directly
+in payments, without a legacy public view or second writer.
+
+`payments.pay_idempotency_records.requestHash` is nullable internal text for
+completed keyed requests; existing rows remain null. Request hashes bind owner,
+booking and normalized payment options, not floating-point amounts. Gateway
+attempts use the same fingerprint. Completed payment records still mean success;
+they are not reused as in-progress reservations.
+
+Lock order: payment-key advisory lock (when present), Booking row, then existing
+wallet/user and promo locks. A short preparation transaction claims the gateway
+attempt. Network I/O happens after commit, with no booking lock held. Authority
+is persisted before verification; VERIFIED + PENDING PaymentReconciliation
+commit atomically. Completion marks attempt COMPLETED, resolves reconciliation,
+and writes booking/tickets/ledger/outbox in one Core transaction. Wallet/points
+must check active gateway attempts under the same Booking lock before debit.
+Existing reconciliation rows are never blindly reused as new payment proof.
+Same-key concurrent callers poll the durable attempt with bounded exponential
+backoff; they replay only a committed completed-payment record and never infer
+success from REQUESTING/VERIFIED alone.
+
+Additive migration must precede code. No historical backfill or production seed.
+New attempt rows are created only by actual payment use cases, including tests.
+Application rollback retains all attempt metadata: stop payment writers before
+rolling back to old code, which does not understand pending-attempt quarantine.
+Do not reopen payments until pending attempts are reconciled and a compatible
+writer is selected. Migration down drops attempt evidence and is test-only;
+it is not an operational rollback path.
+
+## Commerce B1 — replay fingerprint (expand only)
+
+`orders.bookings.idempotencyRequestHash` is nullable `text`. New public and
+allotment bookings carrying an idempotency key store a versioned HMAC-SHA256
+of their canonical request, operation and owner. The existing PII key protects
+the manifest fingerprint; no plaintext request or new secret is stored.
+Never log fingerprints or passenger payloads. Rotating `PII_ENCRYPTION_KEY`
+requires a coordinated fingerprint compatibility plan: old fingerprints fail
+closed, not silently rebound to a new request. B1 does not implement key rings.
+
+The column is internal and absent from public response serializers. Existing
+rows and unkeyed bookings remain null, with the legacy API behavior documented
+in `API.md`. No backfill, table copy, new writer or cross-service database is
+introduced. The global unique `idempotencyKey` index remains unchanged.
+Both creation paths take the same transaction-scoped advisory key lock before
+flight row locks. Hash collisions only serialize unrelated requests; full keys
+still determine identity. All Core mutations remain in the local transaction.
+
+Apply this additive migration before the new application. Application rollback
+retains the column and all rows; old code may create null fingerprints, which
+the new code must reject on replay. Old `public.bookings` compatibility views
+keep their existing column list. Migration `down` drops only the new metadata
+column and is for isolated testing, not a production rollback procedure.
+
 ## Microservices phase 5 — physical domain ownership
 
 Architecture phase 4 moves all mapped business tables from `public` into

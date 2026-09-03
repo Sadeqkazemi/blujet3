@@ -64,6 +64,7 @@ import { Passenger } from './entities/passenger.entity';
 import { PasswordResetEvent } from './entities/password-reset-event.entity';
 import { PayIdempotencyRecord } from './entities/pay-idempotency-record.entity';
 import { PaymentReconciliation } from './entities/payment-reconciliation.entity';
+import { PaymentAttempt } from './entities/payment-attempt.entity';
 import { Permission } from './entities/permission.entity';
 import { PriceLock } from './entities/price-lock.entity';
 import { PromoCode } from './entities/promo-code.entity';
@@ -176,6 +177,7 @@ export const dataSourceOptions: DataSourceOptions = {
     PasswordResetEvent,
     PayIdempotencyRecord,
     PaymentReconciliation,
+    PaymentAttempt,
     Permission,
     PriceLock,
     PromoCode,

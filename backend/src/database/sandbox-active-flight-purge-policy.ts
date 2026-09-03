@@ -82,6 +82,7 @@ export function assertSandboxPurgeEnvironmentAllowed(env: {
 export const SANDBOX_FLIGHT_PURGE_TABLE_ORDER = [
   'survey_responses',
   'survey_invites',
+  'payment_attempts',
   'pay_idempotency_records',
   'payment_reconciliations',
   'promo_redemptions',

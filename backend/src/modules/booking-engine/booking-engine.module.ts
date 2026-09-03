@@ -9,6 +9,7 @@ import { SeatLock } from '../../database/entities/seat-lock.entity';
 import { User } from '../../database/entities/user.entity';
 import { PriceLock } from '../../database/entities/price-lock.entity';
 import { PaymentReconciliation } from '../../database/entities/payment-reconciliation.entity';
+import { PaymentAttempt } from '../../database/entities/payment-attempt.entity';
 import { PayIdempotencyRecord } from '../../database/entities/pay-idempotency-record.entity';
 import { LedgerEntry } from '../../database/entities/ledger-entry.entity';
 import { PromoCode } from '../../database/entities/promo-code.entity';
@@ -63,6 +64,7 @@ import {
       User,
       PriceLock,
       PaymentReconciliation,
+      PaymentAttempt,
       PayIdempotencyRecord,
       LedgerEntry,
       PromoCode,

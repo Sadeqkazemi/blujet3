@@ -11,6 +11,7 @@ import { FlightInstance } from '../src/database/entities/flight-instance.entity'
 import { LedgerEntry } from '../src/database/entities/ledger-entry.entity';
 import { Passenger } from '../src/database/entities/passenger.entity';
 import { PaymentReconciliation } from '../src/database/entities/payment-reconciliation.entity';
+import { PaymentAttempt } from '../src/database/entities/payment-attempt.entity';
 import { PayIdempotencyRecord } from '../src/database/entities/pay-idempotency-record.entity';
 import { Route } from '../src/database/entities/route.entity';
 import { WalletEntry } from '../src/database/entities/wallet-entry.entity';
@@ -134,6 +135,9 @@ describe('Phase 13 — reservation engine completion', () => {
     // aggregates (which sum LedgerEntry directly) even after the Booking
     // row itself is gone.
     if (bids.length > 0) {
+      await dataSource
+        .getRepository(PaymentAttempt)
+        .delete({ bookingId: In(bids) });
       await dataSource
         .getRepository(PayIdempotencyRecord)
         .delete({ bookingId: In(bids) });

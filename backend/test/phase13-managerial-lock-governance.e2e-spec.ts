@@ -9,6 +9,7 @@ import { FlightInstance } from '../src/database/entities/flight-instance.entity'
 import { LedgerEntry } from '../src/database/entities/ledger-entry.entity';
 import { Passenger } from '../src/database/entities/passenger.entity';
 import { PaymentReconciliation } from '../src/database/entities/payment-reconciliation.entity';
+import { PaymentAttempt } from '../src/database/entities/payment-attempt.entity';
 import { Route } from '../src/database/entities/route.entity';
 import { SeatLock } from '../src/database/entities/seat-lock.entity';
 import { User } from '../src/database/entities/user.entity';
@@ -111,6 +112,9 @@ describe('Phase 13 Part D — managerial lock governance', () => {
       .getMany();
     const bookingIds = passengers.map((p) => p.bookingId);
     if (bookingIds.length > 0) {
+      await dataSource
+        .getRepository(PaymentAttempt)
+        .delete({ bookingId: In(bookingIds) });
       await dataSource
         .getRepository(PaymentReconciliation)
         .delete({ bookingId: In(bookingIds) });

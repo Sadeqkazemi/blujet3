@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import type { Irr } from '../../common/money';
+import { ErrorCode } from '../../common/errors';
 
 /**
  * Shetab/IPG abstraction (CLAUDE.md Financial Rules): request → redirect →
@@ -32,14 +33,22 @@ export interface PaymentGateway {
 
 export const PAYMENT_GATEWAY = Symbol('PAYMENT_GATEWAY');
 
+/** Only a local adapter that has NOT dispatched anything may emit this error.
+ * A network timeout or a PSP response is never evidence of non-dispatch. */
+export class GatewayNotDispatchedError extends ServiceUnavailableException {
+  constructor() {
+    super({
+      code: ErrorCode.PAYMENT_GATEWAY_UNAVAILABLE,
+      message:
+        'درگاه پرداخت واقعی هنوز پیکربندی نشده است؛ هیچ درخواستی ارسال نشده است.',
+    });
+  }
+}
+
 @Injectable()
 export class UnavailablePaymentGateway implements PaymentGateway {
   private unavailable(): ServiceUnavailableException {
-    return new ServiceUnavailableException({
-      code: 'PAYMENT_GATEWAY_UNAVAILABLE',
-      message:
-        'درگاه پرداخت واقعی هنوز پیکربندی نشده است؛ هیچ مبلغی کسر نشده است.',
-    });
+    return new GatewayNotDispatchedError();
   }
 
   request(): Promise<GatewayRequestResult> {

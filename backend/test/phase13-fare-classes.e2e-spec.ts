@@ -12,6 +12,7 @@ import { FlightInstance } from '../src/database/entities/flight-instance.entity'
 import { LedgerEntry } from '../src/database/entities/ledger-entry.entity';
 import { Passenger } from '../src/database/entities/passenger.entity';
 import { PaymentReconciliation } from '../src/database/entities/payment-reconciliation.entity';
+import { PaymentAttempt } from '../src/database/entities/payment-attempt.entity';
 import { Route } from '../src/database/entities/route.entity';
 import { WalletEntry } from '../src/database/entities/wallet-entry.entity';
 import { FlightInstanceStatus } from '../src/database/enums';
@@ -104,6 +105,9 @@ describe('Phase 13 Part B — fare-class management', () => {
         : [];
     const bids = bookings.map((b) => b.id);
     if (bids.length > 0) {
+      await dataSource
+        .getRepository(PaymentAttempt)
+        .delete({ bookingId: In(bids) });
       await dataSource
         .getRepository(PaymentReconciliation)
         .delete({ bookingId: In(bids) });

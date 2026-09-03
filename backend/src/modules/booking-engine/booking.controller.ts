@@ -7,7 +7,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiTags, ApiHeader } from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiHeader, ApiResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { BookingService } from './booking.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
@@ -30,6 +30,12 @@ export class BookingController {
 
   @Post()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    required: false,
+    description:
+      'تکرار امن همان درخواست؛ تغییر مالک یا ورودی با کلید یکسان خطای 409 دارد',
+  })
   @ApiOperation({ summary: 'رزرو صندلی و شروع نگهداری ۱۵ دقیقه‌ای (HELD)' })
   async create(
     @CurrentUser() user: AuthenticatedUser,
@@ -62,6 +68,16 @@ export class BookingController {
   }
 
   @Post(':id/pay')
+  @ApiResponse({
+    status: 409,
+    description:
+      'تعارض رزرو، تغییر درخواست تکراری، نتیجه نامعلوم پرداخت یا نیاز به تطبیق؛ پرداخت مجدد خودکار ممنوع است.',
+  })
+  @ApiResponse({
+    status: 503,
+    description:
+      'درگاه واقعی پیکربندی نشده و هیچ درخواست بانکی ارسال نشده است.',
+  })
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @ApiHeader({
     name: 'idempotency-key',

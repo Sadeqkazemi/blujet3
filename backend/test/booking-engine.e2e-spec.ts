@@ -4,6 +4,7 @@ import * as crypto from 'node:crypto';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { DataSource } from 'typeorm';
+import type { Irr } from '../src/common/money';
 import { dataSourceOptions } from '../src/database/data-source.options';
 import { AircraftSeatMap } from '../src/database/entities/aircraft-seat-map.entity';
 import { AgencyProfile } from '../src/database/entities/agency-profile.entity';
@@ -19,6 +20,16 @@ import { TravelExtraSetting } from '../src/database/entities/travel-extra-settin
 import { AncillaryService } from '../src/database/entities/ancillary-service.entity';
 import { WalletEntry } from '../src/database/entities/wallet-entry.entity';
 import { User } from '../src/database/entities/user.entity';
+import { PromoCode } from '../src/database/entities/promo-code.entity';
+import { PaymentAttempt } from '../src/database/entities/payment-attempt.entity';
+import { PayIdempotencyRecord } from '../src/database/entities/pay-idempotency-record.entity';
+import {
+  PAYMENT_GATEWAY,
+  GatewayNotDispatchedError,
+  type GatewayRequestResult,
+  type GatewayVerifyResult,
+  type PaymentGateway,
+} from '../src/modules/booking-engine/payment-gateway';
 import { loginAsCustomer } from './helpers/login.helper';
 import { createTestApp } from './helpers/app.helper';
 
@@ -111,6 +122,7 @@ describe('Booking engine (e2e)', () => {
   });
 
   afterEach(async () => {
+    jest.restoreAllMocks();
     await app.close();
   });
 
@@ -624,6 +636,328 @@ describe('Booking engine (e2e)', () => {
       .update({ key: 'baggage' }, { priceIrr: 2_000_000n, enabled: true });
   });
 
+  describe('payment safety', () => {
+    async function heldBooking() {
+      const instance = await freshInstance();
+      const phone = `0913${crypto.randomInt(1_000_000, 10_000_000)}`;
+      const { accessToken } = await loginAsCustomer(app, phone);
+      const response = await request(app.getHttpServer())
+        .post('/bookings')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          flightInstanceId: instance.id,
+          cabin: 'ECONOMY',
+          passengers: [{ fullName: 'تست ایمنی پرداخت', seatCode: '3B' }],
+        });
+      expect(response.status).toBe(201);
+      return {
+        accessToken,
+        id: response.body.data.id as string,
+        priceIrr: BigInt(response.body.data.priceIrr as string),
+      };
+    }
+
+    const pay = (
+      booking: { id: string; accessToken: string },
+      key: string,
+      options: object = {},
+    ) =>
+      request(app.getHttpServer())
+        .post(`/bookings/${booking.id}/pay`)
+        .set('Authorization', `Bearer ${booking.accessToken}`)
+        .set('Idempotency-Key', key)
+        .send(options);
+
+    it('invalid promo is rejected before any gateway request', async () => {
+      const booking = await heldBooking();
+      const gateway = app.get<PaymentGateway>(PAYMENT_GATEWAY);
+      const dispatch = jest.spyOn(gateway, 'request');
+      const response = await pay(booking, crypto.randomUUID(), {
+        promoCode: 'INVALID-PAYMENT-PREFLIGHT',
+      });
+      expect(response.status).toBe(400);
+      expect(dispatch).not.toHaveBeenCalled();
+      expect(
+        await dataSource
+          .getRepository(PaymentReconciliation)
+          .countBy({ bookingId: booking.id }),
+      ).toBe(0);
+    });
+
+    it('gateway receives the discounted total used in the ledger', async () => {
+      const booking = await heldBooking();
+      const code = `SAFETY-${crypto.randomUUID()}`;
+      const promos = dataSource.getRepository(PromoCode);
+      await promos.save(
+        promos.create({ code, type: 'FIXED', value: 100n, active: true }),
+      );
+      const gateway = app.get<PaymentGateway>(PAYMENT_GATEWAY);
+      const dispatch = jest.spyOn(gateway, 'request');
+      const verify = jest.spyOn(gateway, 'verify');
+      const response = await pay(booking, crypto.randomUUID(), {
+        promoCode: code,
+      });
+      expect(response.status).toBe(201);
+      expect(dispatch).toHaveBeenCalledWith(
+        booking.priceIrr - 100n,
+        booking.id,
+      );
+      expect(verify).toHaveBeenCalledWith(
+        expect.any(String),
+        booking.priceIrr - 100n,
+      );
+      expect(response.body.data.booking.priceIrr).toBe(
+        (booking.priceIrr - 100n).toString(),
+      );
+    });
+
+    it('concurrent gateway payments dispatch at most once', async () => {
+      const booking = await heldBooking();
+      const gateway = app.get<PaymentGateway>(PAYMENT_GATEWAY);
+      const dispatch = jest
+        .spyOn(gateway, 'request')
+        .mockImplementation(async () => {
+          await new Promise<void>((resolve) => setTimeout(resolve, 150));
+          return { authority: `SBX-${crypto.randomUUID()}`, redirectUrl: null };
+        });
+      const responses = await Promise.all([
+        pay(booking, crypto.randomUUID()),
+        pay(booking, crypto.randomUUID()),
+      ]);
+      expect(responses.some((response) => response.status === 201)).toBe(true);
+      expect(dispatch).toHaveBeenCalledTimes(1);
+      expect(
+        await dataSource
+          .getRepository(LedgerEntry)
+          .countBy({ bookingId: booking.id, type: 'SALE' }),
+      ).toBe(1);
+    });
+
+    it('replays a concurrent gateway payment with the same key', async () => {
+      const booking = await heldBooking();
+      const key = crypto.randomUUID();
+      const gateway = app.get<PaymentGateway>(PAYMENT_GATEWAY);
+      let releaseDispatch: (() => void) | undefined;
+      let markDispatchStarted: (() => void) | undefined;
+      const dispatchReleased = new Promise<void>((resolve) => {
+        releaseDispatch = resolve;
+      });
+      const dispatchStarted = new Promise<void>((resolve) => {
+        markDispatchStarted = resolve;
+      });
+      const dispatch = jest
+        .spyOn(gateway, 'request')
+        .mockImplementation(async () => {
+          markDispatchStarted?.();
+          await dispatchReleased;
+          return { authority: `SBX-${crypto.randomUUID()}`, redirectUrl: null };
+        });
+      const first = Promise.resolve(pay(booking, key));
+      await dispatchStarted;
+      const second = pay(booking, key);
+      await new Promise<void>((resolve) => setTimeout(resolve, 100));
+      releaseDispatch?.();
+      const responses = await Promise.all([first, second]);
+      expect(responses.map((response) => response.status)).toEqual([201, 201]);
+      expect(responses[1].body.data.booking.id).toBe(
+        responses[0].body.data.booking.id,
+      );
+      expect(dispatch).toHaveBeenCalledTimes(1);
+    });
+
+    it('unknown verification blocks another gateway attempt', async () => {
+      const booking = await heldBooking();
+      const gateway = app.get<PaymentGateway>(PAYMENT_GATEWAY);
+      const dispatch = jest.spyOn(gateway, 'request');
+      jest
+        .spyOn(gateway, 'verify')
+        .mockRejectedValue(new Error('simulated lost verification response'));
+      await pay(booking, crypto.randomUUID());
+      const retry = await pay(booking, crypto.randomUUID());
+      expect(retry.status).toBe(409);
+      expect(retry.body.error.code).toBe('PAYMENT_STATUS_UNKNOWN');
+      expect(dispatch).toHaveBeenCalledTimes(1);
+    });
+
+    it('completed payment key rejects a different payment method', async () => {
+      const booking = await heldBooking();
+      const key = crypto.randomUUID();
+      expect((await pay(booking, key)).status).toBe(201);
+      const changed = await pay(booking, key, { paymentMethod: 'WALLET' });
+      expect(changed.status).toBe(409);
+      expect(changed.body.error.code).toBe('IDEMPOTENCY_PAYLOAD_MISMATCH');
+    });
+
+    it('persists an attempt before dispatch and records the exact captured amount', async () => {
+      const booking = await heldBooking();
+      const gateway = app.get<PaymentGateway>(PAYMENT_GATEWAY);
+      const original: PaymentGateway['request'] = gateway.request.bind(gateway);
+      jest
+        .spyOn(gateway, 'request')
+        .mockImplementation(
+          async (
+            amount: Irr,
+            bookingId: string,
+          ): Promise<GatewayRequestResult> => {
+            const durable = await dataSource
+              .getRepository(PaymentAttempt)
+              .findOneByOrFail({ bookingId });
+            expect(durable.status).toBe('REQUESTING');
+            expect(durable.amountIrr).toBe(amount);
+            expect(durable.requestHash).toBeUndefined();
+            return original(amount, bookingId);
+          },
+        );
+      expect((await pay(booking, crypto.randomUUID())).status).toBe(201);
+      const attempt = await dataSource
+        .getRepository(PaymentAttempt)
+        .findOneByOrFail({ bookingId: booking.id });
+      expect(attempt.status).toBe('COMPLETED');
+      expect(attempt.authority).toBeUndefined();
+      const ledger = await dataSource
+        .getRepository(LedgerEntry)
+        .findOneByOrFail({ bookingId: booking.id, type: 'SALE' });
+      const capture = await dataSource
+        .getRepository(PaymentReconciliation)
+        .findOneByOrFail({ bookingId: booking.id });
+      expect(ledger.signedAmountIrr).toBe(attempt.amountIrr);
+      expect(capture.amountIrr).toBe(attempt.amountIrr);
+      expect(capture.status).toBe('RESOLVED');
+    });
+
+    it('a lost request response survives restart and prohibits wallet fallback', async () => {
+      const booking = await heldBooking();
+      const gateway = app.get<PaymentGateway>(PAYMENT_GATEWAY);
+      jest
+        .spyOn(gateway, 'request')
+        .mockRejectedValueOnce(new Error('lost request response'));
+      const first = await pay(booking, crypto.randomUUID());
+      expect(first.status).toBe(409);
+      expect(first.body.error.code).toBe('PAYMENT_STATUS_UNKNOWN');
+      await app.close();
+      app = await createTestApp();
+      dataSource = app.get(DataSource);
+      const restarted = jest.spyOn(
+        app.get<PaymentGateway>(PAYMENT_GATEWAY),
+        'request',
+      );
+      const retry = await pay(booking, crypto.randomUUID());
+      const fallback = await pay(booking, crypto.randomUUID(), {
+        paymentMethod: 'WALLET',
+      });
+      expect(retry.body.error.code).toBe('PAYMENT_STATUS_UNKNOWN');
+      expect(fallback.body.error.code).toBe('PAYMENT_STATUS_UNKNOWN');
+      expect(restarted).not.toHaveBeenCalled();
+      expect(
+        await dataSource
+          .getRepository(PaymentAttempt)
+          .countBy({ bookingId: booking.id, status: 'UNKNOWN' }),
+      ).toBe(1);
+      expect(
+        await dataSource
+          .getRepository(LedgerEntry)
+          .countBy({ bookingId: booking.id }),
+      ).toBe(0);
+    });
+
+    it('does not issue a ticket if the hold expires during verification', async () => {
+      const booking = await heldBooking();
+      const gateway = app.get<PaymentGateway>(PAYMENT_GATEWAY);
+      const verify: PaymentGateway['verify'] = gateway.verify.bind(gateway);
+      jest
+        .spyOn(gateway, 'verify')
+        .mockImplementationOnce(
+          async (
+            authority: string,
+            amount: Irr,
+          ): Promise<GatewayVerifyResult> => {
+            await dataSource
+              .getRepository(Booking)
+              .update(
+                { id: booking.id },
+                { holdExpiresAt: new Date(Date.now() - 1000) },
+              );
+            return verify(authority, amount);
+          },
+        );
+      expect((await pay(booking, crypto.randomUUID())).status).toBe(409);
+      expect(
+        await dataSource
+          .getRepository(PaymentAttempt)
+          .countBy({ bookingId: booking.id, status: 'VERIFIED' }),
+      ).toBe(1);
+      expect(
+        await dataSource
+          .getRepository(PaymentReconciliation)
+          .countBy({ bookingId: booking.id, status: 'PENDING' }),
+      ).toBe(1);
+      expect(
+        await dataSource
+          .getRepository(LedgerEntry)
+          .countBy({ bookingId: booking.id }),
+      ).toBe(0);
+      const passengers = await dataSource
+        .getRepository(Passenger)
+        .findBy({ bookingId: booking.id });
+      expect(passengers.every((passenger) => passenger.ticketNo === null)).toBe(
+        true,
+      );
+    });
+
+    it('permits retry only after a proved non-dispatch', async () => {
+      const booking = await heldBooking();
+      const gateway = app.get<PaymentGateway>(PAYMENT_GATEWAY);
+      const dispatch = jest
+        .spyOn(gateway, 'request')
+        .mockRejectedValueOnce(new GatewayNotDispatchedError());
+      const key = crypto.randomUUID();
+      expect((await pay(booking, key)).status).toBe(503);
+      expect(
+        await dataSource
+          .getRepository(PaymentAttempt)
+          .countBy({ bookingId: booking.id, status: 'FAILED' }),
+      ).toBe(1);
+      expect((await pay(booking, key)).status).toBe(201);
+      expect(dispatch).toHaveBeenCalledTimes(2);
+      expect(
+        await dataSource
+          .getRepository(PaymentAttempt)
+          .countBy({ bookingId: booking.id }),
+      ).toBe(1);
+      expect(
+        await dataSource
+          .getRepository(LedgerEntry)
+          .countBy({ bookingId: booking.id, type: 'SALE' }),
+      ).toBe(1);
+    });
+
+    it('a negative verification is uncertain, not permission to retry', async () => {
+      const booking = await heldBooking();
+      const gateway = app.get<PaymentGateway>(PAYMENT_GATEWAY);
+      const dispatch = jest.spyOn(gateway, 'request');
+      jest
+        .spyOn(gateway, 'verify')
+        .mockResolvedValueOnce({ ok: false, refId: '' });
+      const response = await pay(booking, crypto.randomUUID());
+      expect(response.body.error.code).toBe('PAYMENT_STATUS_UNKNOWN');
+      expect(JSON.stringify(response.body)).not.toContain('مبلغی کسر نشده');
+      await pay(booking, crypto.randomUUID());
+      expect(dispatch).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not bind a legacy completed key to a new payment payload', async () => {
+      const booking = await heldBooking();
+      const key = crypto.randomUUID();
+      expect((await pay(booking, key)).status).toBe(201);
+      await dataSource
+        .getRepository(PayIdempotencyRecord)
+        .update({ idempotencyKey: key }, { requestHash: null });
+      const retry = await pay(booking, key);
+      expect(retry.status).toBe(409);
+      expect(retry.body.error.code).toBe('IDEMPOTENCY_PAYLOAD_MISMATCH');
+    });
+  });
+
   it('a booking cannot be paid twice', async () => {
     const instance = await freshInstance();
     const { accessToken } = await loginAsCustomer(app, '09130000002');
@@ -700,6 +1034,144 @@ describe('Booking engine (e2e)', () => {
         passengers: [{ fullName: 'نفر دوم', seatCode: '3A' }],
       });
     expect(secondRes.status).toBe(409);
+  });
+
+  it('booking replay rejects another owner without returning passenger data', async () => {
+    const instance = await freshInstance();
+    const owner = await loginAsCustomer(app, '09130000071');
+    const other = await loginAsCustomer(app, '09130000072');
+    const key = crypto.randomUUID();
+    const payload = {
+      flightInstanceId: instance.id,
+      cabin: 'ECONOMY',
+      passengers: [{ fullName: 'مسافر محرمانه', seatCode: '3B' }],
+    };
+    const first = await request(app.getHttpServer())
+      .post('/bookings')
+      .set('Authorization', `Bearer ${owner.accessToken}`)
+      .set('Idempotency-Key', key)
+      .send(payload);
+    expect(first.status).toBe(201);
+
+    const replay = await request(app.getHttpServer())
+      .post('/bookings')
+      .set('Authorization', `Bearer ${other.accessToken}`)
+      .set('Idempotency-Key', key)
+      .send(payload);
+    expect(replay.status).toBe(409);
+    expect(JSON.stringify(replay.body)).not.toContain(first.body.data.id);
+    expect(JSON.stringify(replay.body)).not.toContain('مسافر محرمانه');
+    expect(
+      await dataSource.getRepository(Booking).countBy({ idempotencyKey: key }),
+    ).toBe(1);
+  });
+
+  it('booking replay rejects changed passenger input', async () => {
+    const instance = await freshInstance();
+    const { accessToken } = await loginAsCustomer(app, '09130000073');
+    const key = crypto.randomUUID();
+    const send = (fullName: string) =>
+      request(app.getHttpServer())
+        .post('/bookings')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Idempotency-Key', key)
+        .send({
+          flightInstanceId: instance.id,
+          cabin: 'ECONOMY',
+          passengers: [{ fullName, seatCode: '3B' }],
+        });
+    const first = await send('مسافر اول');
+    expect(first.status).toBe(201);
+    const replay = await send('مسافر متفاوت');
+    expect(replay.status).toBe(409);
+    expect(replay.body.error.code).toBe('IDEMPOTENCY_PAYLOAD_MISMATCH');
+    expect(
+      await dataSource.getRepository(Booking).countBy({ idempotencyKey: key }),
+    ).toBe(1);
+  });
+
+  it('concurrent booking replay on different flights rejects payload mismatch instead of a unique-index failure', async () => {
+    const instances = await Promise.all([freshInstance(), freshInstance(41)]);
+    const { accessToken } = await loginAsCustomer(app, '09130000076');
+    const key = crypto.randomUUID();
+    const responses = await Promise.all(
+      instances.map((instance) =>
+        request(app.getHttpServer())
+          .post('/bookings')
+          .set('Authorization', `Bearer ${accessToken}`)
+          .set('Idempotency-Key', key)
+          .send({
+            flightInstanceId: instance.id,
+            cabin: 'ECONOMY',
+            passengers: [{ fullName: 'رقابت کلید', seatCode: '3B' }],
+          }),
+      ),
+    );
+    expect(responses.map((response) => response.status).sort()).toEqual([
+      201, 409,
+    ]);
+    expect(
+      responses.find((response) => response.status === 409)?.body.error.code,
+    ).toBe('IDEMPOTENCY_PAYLOAD_MISMATCH');
+    expect(
+      await dataSource.getRepository(Booking).countBy({ idempotencyKey: key }),
+    ).toBe(1);
+  });
+
+  it('booking replay rejects a legacy row without rebinding its key', async () => {
+    const instance = await freshInstance();
+    const { accessToken } = await loginAsCustomer(app, '09130000075');
+    const key = crypto.randomUUID();
+    const payload = {
+      flightInstanceId: instance.id,
+      cabin: 'ECONOMY',
+      passengers: [{ fullName: 'رزرو قدیمی', seatCode: '3B' }],
+    };
+    const send = () =>
+      request(app.getHttpServer())
+        .post('/bookings')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Idempotency-Key', key)
+        .send(payload);
+    const first = await send();
+    expect(first.status).toBe(201);
+    await dataSource
+      .getRepository(Booking)
+      .update({ idempotencyKey: key }, { idempotencyRequestHash: null });
+    const replay = await send();
+    expect(replay.status).toBe(409);
+    expect(replay.body.error.code).toBe('IDEMPOTENCY_PAYLOAD_MISMATCH');
+    const retrieved = await request(app.getHttpServer())
+      .get(`/bookings/${first.body.data.id}`)
+      .set('Authorization', `Bearer ${accessToken}`);
+    expect(retrieved.status).toBe(200);
+    expect(retrieved.body.data.id).toBe(first.body.data.id);
+    expect(retrieved.body.data.idempotencyRequestHash).toBeUndefined();
+    expect(
+      await dataSource.getRepository(Booking).countBy({ idempotencyKey: key }),
+    ).toBe(1);
+  });
+
+  it('concurrent booking replay creates one hold and returns it to both callers', async () => {
+    const instance = await freshInstance();
+    const { accessToken } = await loginAsCustomer(app, '09130000074');
+    const key = crypto.randomUUID();
+    const send = () =>
+      request(app.getHttpServer())
+        .post('/bookings')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Idempotency-Key', key)
+        .send({
+          flightInstanceId: instance.id,
+          cabin: 'ECONOMY',
+          passengers: [{ fullName: 'مسافر همزمان', seatCode: '3B' }],
+        });
+    const responses = await Promise.all([send(), send()]);
+    expect(responses.map((response) => response.status)).toEqual([201, 201]);
+    expect(responses[0].body.data.id).toBe(responses[1].body.data.id);
+    expect(
+      await dataSource.getRepository(Booking).countBy({ idempotencyKey: key }),
+    ).toBe(1);
   });
 
   it('an idempotency-key retry on booking creation returns the same booking, not a duplicate', async () => {

@@ -12,6 +12,7 @@ import { FlightInstance } from '../src/database/entities/flight-instance.entity'
 import { LedgerEntry } from '../src/database/entities/ledger-entry.entity';
 import { Passenger } from '../src/database/entities/passenger.entity';
 import { PaymentReconciliation } from '../src/database/entities/payment-reconciliation.entity';
+import { PaymentAttempt } from '../src/database/entities/payment-attempt.entity';
 import { Route } from '../src/database/entities/route.entity';
 import { Schedule } from '../src/database/entities/schedule.entity';
 import { WalletEntry } from '../src/database/entities/wallet-entry.entity';
@@ -66,6 +67,9 @@ describe('Flight engine completion', () => {
             .getMany()
         : [];
     const bids = bookings.map((b) => b.id);
+    await dataSource
+      .getRepository(PaymentAttempt)
+      .delete({ bookingId: In(bids) });
     await dataSource
       .getRepository(PaymentReconciliation)
       .delete({ bookingId: In(bids) });
