@@ -16,6 +16,29 @@ across primary databases. Extraction proceeds only in the documented order:
 phase 0 deployment safety, then `notify`, `experience`, `identity`, domain
 schemas, `loyalty`/`agency`, `intelligence`, and `warehouse`.
 
+### Commerce B3.1 — durable hold expiry
+
+No public route or response shape changes. The existing 15-minute `HELD`
+deadline remains authoritative and continues to be returned by booking detail
+responses. In addition to lazy expiry on authorized booking reads, an internal
+Core worker now materializes overdue `HELD -> EXPIRED` transitions in bounded
+PostgreSQL batches. It uses row locks with `SKIP LOCKED`, so multiple Core
+replicas can run it without double-processing a booking or blocking payment
+work on unrelated bookings.
+
+Payment confirmation and expiry serialize on the same Booking row. If payment
+commits the valid `HELD -> PAID -> TICKETED` transition first, the worker skips
+that row. If expiry commits first, payment cannot issue a ticket. A gateway
+capture that arrives after expiry remains in the existing reconciliation path;
+the worker never fabricates a PSP outcome, refund or ticket.
+
+Every materialized expiry writes one durable lifecycle event in the same
+transaction. Restarting the worker or running another replica cannot create a
+second event. `BOOKING_EXPIRY_POLL_MS` controls polling (default 30 seconds,
+minimum 1 second); `BOOKING_EXPIRY_WORKER_ENABLED=false` disables polling for a
+controlled rollback while lazy safety remains available. See
+[B3.1 acceptance and rollout gates](features/commerce-hold-expiry.md).
+
 ### Commerce B2.1 — payment preparation and uncertain outcomes
 
 `POST /api/v1/bookings/:id/pay` keeps its DTO, optional idempotency header,

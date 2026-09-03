@@ -10,6 +10,7 @@ import { AircraftSeatMap } from '../src/database/entities/aircraft-seat-map.enti
 import { AgencyProfile } from '../src/database/entities/agency-profile.entity';
 import { AgencyInvoice } from '../src/database/entities/agency-invoice.entity';
 import { Booking } from '../src/database/entities/booking.entity';
+import { BookingLifecycleEvent } from '../src/database/entities/booking-lifecycle-event.entity';
 import { Flight } from '../src/database/entities/flight.entity';
 import { FlightInstance } from '../src/database/entities/flight-instance.entity';
 import { LedgerEntry } from '../src/database/entities/ledger-entry.entity';
@@ -32,6 +33,8 @@ import {
 } from '../src/modules/booking-engine/payment-gateway';
 import { loginAsCustomer } from './helpers/login.helper';
 import { createTestApp } from './helpers/app.helper';
+import { BookingHoldExpiryWorker } from '../src/modules/booking-engine/booking-hold-expiry.worker';
+import { BookingHoldExpiryService } from '../src/modules/booking-engine/booking-hold-expiry.service';
 
 async function upsertSeatMap(
   ds: DataSource,
@@ -902,6 +905,20 @@ describe('Booking engine (e2e)', () => {
       expect(passengers.every((passenger) => passenger.ticketNo === null)).toBe(
         true,
       );
+      await expect(
+        new BookingHoldExpiryService(dataSource).expireOne(booking.id),
+      ).resolves.toBe(true);
+      expect(
+        await dataSource.getRepository(Booking).findOneByOrFail({
+          id: booking.id,
+        }),
+      ).toMatchObject({ status: 'EXPIRED' });
+      expect(
+        await dataSource.getRepository(BookingLifecycleEvent).countBy({
+          bookingId: booking.id,
+          eventType: 'HOLD_EXPIRED',
+        }),
+      ).toBe(1);
     });
 
     it('permits retry only after a proved non-dispatch', async () => {
@@ -1243,6 +1260,12 @@ describe('Booking engine (e2e)', () => {
       .where('b.id = :id', { id: bookingId })
       .getOneOrFail();
     expect(updated.status).toBe('EXPIRED');
+    expect(
+      await dataSource.getRepository(BookingLifecycleEvent).countBy({
+        bookingId,
+        eventType: 'HOLD_EXPIRED',
+      }),
+    ).toBe(1);
 
     const seatmapRes = await request(app.getHttpServer()).get(
       `/search/flights/${instance.id}/seatmap`,
@@ -1251,6 +1274,64 @@ describe('Booking engine (e2e)', () => {
       (s: { seatCode: string }) => s.seatCode === '3C',
     );
     expect(seat.status).toBe('FREE');
+  });
+
+  it('two expiry workers materialize one durable event and leave future holds untouched', async () => {
+    const instance = await freshInstance();
+    const { accessToken } = await loginAsCustomer(app, '09130000008');
+    const create = (seatCode: string) =>
+      request(app.getHttpServer())
+        .post('/bookings')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          flightInstanceId: instance.id,
+          cabin: 'ECONOMY',
+          passengers: [{ fullName: `انقضای ${seatCode}`, seatCode }],
+        });
+    const [dueResponse, futureResponse] = await Promise.all([
+      create('2A'),
+      create('2B'),
+    ]);
+    expect(dueResponse.status).toBe(201);
+    expect(futureResponse.status).toBe(201);
+    const dueId = dueResponse.body.data.id as string;
+    const futureId = futureResponse.body.data.id as string;
+    await dataSource
+      .getRepository(Booking)
+      .update({ id: dueId }, { holdExpiresAt: new Date(0) });
+
+    const [firstCount, secondCount] = await Promise.all([
+      new BookingHoldExpiryWorker(
+        new BookingHoldExpiryService(dataSource),
+      ).sweepOnce(),
+      new BookingHoldExpiryWorker(
+        new BookingHoldExpiryService(dataSource),
+      ).sweepOnce(),
+    ]);
+    expect(firstCount + secondCount).toBeGreaterThanOrEqual(1);
+    expect(
+      await dataSource.getRepository(Booking).findOneByOrFail({ id: dueId }),
+    ).toMatchObject({ status: 'EXPIRED' });
+    expect(
+      await dataSource.getRepository(Booking).findOneByOrFail({ id: futureId }),
+    ).toMatchObject({ status: 'HELD' });
+    expect(
+      await dataSource.getRepository(BookingLifecycleEvent).countBy({
+        bookingId: dueId,
+        eventType: 'HOLD_EXPIRED',
+      }),
+    ).toBe(1);
+    await expect(
+      new BookingHoldExpiryWorker(
+        new BookingHoldExpiryService(dataSource),
+      ).sweepOnce(),
+    ).resolves.toBeGreaterThanOrEqual(0);
+    expect(
+      await dataSource.getRepository(BookingLifecycleEvent).countBy({
+        bookingId: dueId,
+        eventType: 'HOLD_EXPIRED',
+      }),
+    ).toBe(1);
   });
 
   it('an idempotency-key retry on payment returns the same ticketed booking, not a double charge', async () => {

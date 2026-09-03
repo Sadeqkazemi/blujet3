@@ -24,6 +24,7 @@ import { AuditLog } from './entities/audit-log.entity';
 import { BackupRecord } from './entities/backup-record.entity';
 import { BlogPost } from './entities/blog-post.entity';
 import { Booking } from './entities/booking.entity';
+import { BookingLifecycleEvent } from './entities/booking-lifecycle-event.entity';
 import { CabinFare } from './entities/cabin-fare.entity';
 import { CharterCommitment } from './entities/charter-commitment.entity';
 import { CareersSettings } from './entities/careers-settings.entity';
@@ -137,6 +138,7 @@ export const dataSourceOptions: DataSourceOptions = {
     BackupRecord,
     BlogPost,
     Booking,
+    BookingLifecycleEvent,
     CabinFare,
     CharterCommitment,
     CareersSettings,

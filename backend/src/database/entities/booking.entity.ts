@@ -21,6 +21,9 @@ import { User } from './user.entity';
 @Index('bookings_allotmentId_idx', ['allotmentId'])
 @Index('bookings_channel_idx', ['channel'])
 @Index('bookings_flightInstanceId_status_idx', ['flightInstanceId', 'status'])
+@Index('bookings_due_hold_expiry_idx', ['holdExpiresAt', 'id'], {
+  where: `"status" = 'HELD'`,
+})
 @Index('bookings_idempotencyKey_key', ['idempotencyKey'], { unique: true })
 @Index('bookings_pnr_key', ['pnr'], { unique: true })
 @Index('bookings_userId_idx', ['userId'])
