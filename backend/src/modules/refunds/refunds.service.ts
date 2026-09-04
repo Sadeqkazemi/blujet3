@@ -361,14 +361,21 @@ export class RefundsService {
    * one request per booking (enforced by the unique index on `bookingId`,
    * backstopping the application-level check below against races). */
   private previewForBooking(
-    booking: Pick<Booking, 'id' | 'priceIrr'> & {
+    booking: Pick<Booking, 'id' | 'priceIrr' | 'createdAt'> & {
       flightInstance: Pick<FlightInstance, 'departureAt'>;
     },
     rules: RefundPenaltyRule[],
   ) {
+    const now = Date.now();
     const hoursLeft =
-      (booking.flightInstance.departureAt.getTime() - Date.now()) / 3_600_000;
-    const penalty = computePenalty(rules, hoursLeft, booking.priceIrr);
+      (booking.flightInstance.departureAt.getTime() - now) / 3_600_000;
+    const purchaseAgeHours = (now - booking.createdAt.getTime()) / 3_600_000;
+    const penalty = computePenalty(
+      rules,
+      hoursLeft,
+      booking.priceIrr,
+      purchaseAgeHours,
+    );
     return {
       bookingId: booking.id,
       totalPaidIrr: booking.priceIrr,
@@ -381,7 +388,7 @@ export class RefundsService {
   }
 
   private assertRefundable(
-    booking: Pick<Booking, 'id' | 'priceIrr' | 'status'> & {
+    booking: Pick<Booking, 'id' | 'priceIrr' | 'status' | 'createdAt'> & {
       flightInstance: Pick<FlightInstance, 'departureAt'>;
     },
     rules: RefundPenaltyRule[],
@@ -731,7 +738,14 @@ export class RefundsService {
     );
     const rules = await this.ruleRepo.find();
     const hoursLeft = (instance.departureAt.getTime() - Date.now()) / 3_600_000;
-    const penalty = computePenalty(rules, hoursLeft, totalPaidIrr);
+    const purchaseAgeHours =
+      (Date.now() - booking.createdAt.getTime()) / 3_600_000;
+    const penalty = computePenalty(
+      rules,
+      hoursLeft,
+      totalPaidIrr,
+      purchaseAgeHours,
+    );
 
     return this.refundRepo.save(
       this.refundRepo.create({

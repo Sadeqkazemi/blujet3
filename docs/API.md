@@ -44,7 +44,8 @@ The approved BluJet cancellation policy is the persisted source for the
 penalty bracket used by customer and Core refund quotes: 30% when more than
 72 hours remain, 50% from 24 through 72 hours, 70% from 12 through (but not
 including) 24 hours, and non-refundable below 12 hours or after departure.
-After a request is
+When at least 12 hours remain, a request made within 24 hours of purchase uses
+the 30% bracket before the departure-time brackets. After a request is
 submitted, the site administrator reviews it and routes it to Finance; the
 approved refundable amount is paid within at most seven business days.
 

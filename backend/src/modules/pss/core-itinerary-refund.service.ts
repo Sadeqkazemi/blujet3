@@ -19,7 +19,7 @@ import { CoreItinerarySegment } from '../../database/entities/core-itinerary-seg
 import { CoreItineraryTicketDocument } from '../../database/entities/core-itinerary-ticket-document.entity';
 import { LedgerEntry } from '../../database/entities/ledger-entry.entity';
 import { RefundPenaltyRule } from '../../database/entities/refund-penalty-rule.entity';
-import { computePenalty } from '../refunds/penalty';
+import { computePenalty, selectPenaltyRule } from '../refunds/penalty';
 import type {
   AppliedCoreItineraryRefundDto,
   ApplyCoreItineraryRefundDto,
@@ -45,25 +45,18 @@ export function calculateCoreItineraryRefundSegment(
   coupons: CoreItineraryFlightCoupon[],
   rules: RefundPenaltyRule[],
   now: Date,
+  purchasedAt?: Date,
 ): RefundSegmentCalculation {
   const gross = addIrr(
     ...coupons.flatMap((coupon) => [coupon.fareIrr, coupon.taxIrr]),
     segment.extrasIrr,
   );
   const hours = (segment.departureAt.getTime() - now.getTime()) / 3_600_000;
-  const penalty = computePenalty(rules, hours, gross);
-  const selectedRule =
-    [...rules]
-      .sort(
-        (left, right) =>
-          right.minHoursBeforeDeparture - left.minHoursBeforeDeparture,
-      )
-      .find((rule) => hours >= rule.minHoursBeforeDeparture) ??
-    [...rules].sort(
-      (left, right) =>
-        right.minHoursBeforeDeparture - left.minHoursBeforeDeparture,
-    )[0];
-  if (!selectedRule) throw new Error('Refund penalty rules are not configured');
+  const purchaseAgeHours = purchasedAt
+    ? (now.getTime() - purchasedAt.getTime()) / 3_600_000
+    : Number.POSITIVE_INFINITY;
+  const penalty = computePenalty(rules, hours, gross, purchaseAgeHours);
+  const selectedRule = selectPenaltyRule(rules, hours, purchaseAgeHours);
   return {
     sequence: segment.sequence,
     segmentId: segment.id,
@@ -459,6 +452,7 @@ export class CoreItineraryRefundService {
         bySegment.get(segment.id) ?? [],
         rules,
         now,
+        order.createdAt,
       ),
     );
     const grossAmountIrr = addIrr(

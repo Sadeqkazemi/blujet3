@@ -51,6 +51,12 @@ describe('computePenalty (unit)', () => {
     expect(r.refundableIrr).toBe(0n);
   });
 
+  it('applies the 30% purchase grace only when at least 12h remains', () => {
+    expect(computePenalty(RULES, 48, 10_000_000n, 24).penaltyPct).toBe(30);
+    expect(computePenalty(RULES, 48, 10_000_000n, 24.01).penaltyPct).toBe(50);
+    expect(computePenalty(RULES, 11.9, 10_000_000n, 1).penaltyPct).toBe(100);
+  });
+
   it('rounds odd percentages to whole rial', () => {
     const r = computePenalty(RULES, 100, 33_333_333n);
     expect(r.penaltyAmountIrr).toBe(10_000_000n);

@@ -39,7 +39,7 @@ function coupon(
 describe('calculateCoreItineraryRefundSegment', () => {
   const now = new Date('2026-09-04T00:00:00.000Z');
 
-  it('uses the highest eligible threshold at an exact boundary', () => {
+  it('uses the 24–72h bracket at the exact 72h boundary', () => {
     const result = calculateCoreItineraryRefundSegment(
       segment('2026-09-07T00:00:00.000Z'),
       [coupon('coupon-1', 10_000n, 1_000n)],
@@ -47,10 +47,23 @@ describe('calculateCoreItineraryRefundSegment', () => {
       now,
     );
     expect(result.hoursLeft).toBe(72);
-    expect(result.penaltyPct).toBe(30);
+    expect(result.penaltyPct).toBe(50);
     expect(result.grossAmountIrr).toBe('11100');
+    expect(result.penaltyAmountIrr).toBe('5550');
+    expect(result.refundableIrr).toBe('5550');
+  });
+
+  it('applies the 30% purchase grace when bought within 24h and departure is safe', () => {
+    const result = calculateCoreItineraryRefundSegment(
+      segment('2026-09-06T12:00:00.000Z'),
+      [coupon('coupon-1', 10_000n, 1_000n)],
+      rules,
+      now,
+      new Date('2026-09-04T06:00:00.000Z'),
+    );
+    expect(result.hoursLeft).toBe(60);
+    expect(result.penaltyPct).toBe(30);
     expect(result.penaltyAmountIrr).toBe('3330');
-    expect(result.refundableIrr).toBe('7770');
   });
 
   it('keeps bigint arithmetic exact for a 50 percent penalty', () => {

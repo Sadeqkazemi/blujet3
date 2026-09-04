@@ -14,6 +14,37 @@ export interface PenaltyResult {
   ruleLabelFa: string;
 }
 
+export const BLUJET_PURCHASE_GRACE_HOURS = 24;
+export const BLUJET_MIN_REFUND_HOURS = 12;
+
+export function selectPenaltyRule<T extends PenaltyRule>(
+  rules: T[],
+  hoursLeft: number,
+  purchaseAgeHours = Number.POSITIVE_INFINITY,
+): T {
+  const sorted = [...rules].sort(
+    (a, b) => b.minHoursBeforeDeparture - a.minHoursBeforeDeparture,
+  );
+  if (sorted.length === 0) {
+    throw new Error('Refund penalty rules are not configured');
+  }
+
+  if (
+    hoursLeft >= BLUJET_MIN_REFUND_HOURS &&
+    purchaseAgeHours <= BLUJET_PURCHASE_GRACE_HOURS
+  ) {
+    return sorted[0];
+  }
+
+  return (
+    sorted.find((r, index) =>
+      index === 0
+        ? hoursLeft > r.minHoursBeforeDeparture
+        : hoursLeft >= r.minHoursBeforeDeparture,
+    ) ?? sorted[sorted.length - 1]
+  );
+}
+
 /**
  * Pure fare-rule penalty computation (design's 4-bracket engine, seeded in
  * RefundPenaltyRule): the highest bracket is strictly above its 72-hour
@@ -27,16 +58,9 @@ export function computePenalty(
   rules: PenaltyRule[],
   hoursLeft: number,
   totalPaidIrr: Irr,
+  purchaseAgeHours = Number.POSITIVE_INFINITY,
 ): PenaltyResult {
-  const sorted = [...rules].sort(
-    (a, b) => b.minHoursBeforeDeparture - a.minHoursBeforeDeparture,
-  );
-  const rule =
-    sorted.find((r, index) =>
-      index === 0
-        ? hoursLeft > r.minHoursBeforeDeparture
-        : hoursLeft >= r.minHoursBeforeDeparture,
-    ) ?? sorted[sorted.length - 1];
+  const rule = selectPenaltyRule(rules, hoursLeft, purchaseAgeHours);
 
   const penaltyAmountIrr = pctOfIrr(totalPaidIrr, rule.penaltyPct);
   return {

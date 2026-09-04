@@ -161,6 +161,21 @@ describe('Customer account refunds (e2e)', () => {
     expect(preview.body.data.totalPaidIrr).toBe('20000000');
   });
 
+  it('applies the 30% purchase grace within 24h when at least 12h remains', async () => {
+    const owner = await createBooking(phone(7), 48);
+    await dataSource.getRepository(Booking).update(owner.booking.id, {
+      createdAt: new Date(Date.now() - 23 * 3_600_000),
+    });
+
+    const preview = await request(app.getHttpServer())
+      .post('/my/refunds/preview')
+      .set('Authorization', `Bearer ${owner.accessToken}`)
+      .send({ bookingId: owner.booking.id });
+    expect(preview.status).toBe(201);
+    expect(preview.body.data.penaltyPct).toBe(30);
+    expect(preview.body.data.refundableIrr).toBe('14000000');
+  });
+
   it('enforces validation, auth, ownership and non-refundable windows', async () => {
     const owner = await createBooking(phone(2), 240);
     const tooLate = await createBooking(phone(2), 2);
