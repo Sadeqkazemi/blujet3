@@ -13,8 +13,72 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Detect changed areas
+    runs-on: ubuntu-24.04-arm
+    outputs:
+      backend: ${{ steps.scope.outputs.backend }}
+      backend_migration: ${{ steps.scope.outputs.backend_migration }}
+      experience: ${{ steps.scope.outputs.experience }}
+      identity: ${{ steps.scope.outputs.identity }}
+      notify: ${{ steps.scope.outputs.notify }}
+      pss: ${{ steps.scope.outputs.pss }}
+      frontend: ${{ steps.scope.outputs.frontend }}
+      ml: ${{ steps.scope.outputs.ml }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: scope
+        name: Select required jobs
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          areas=(backend backend_migration experience identity notify pss frontend ml)
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+            for area in "${areas[@]}"; do
+              echo "$area=true" >> "$GITHUB_OUTPUT"
+            done
+            exit 0
+          fi
+
+          git diff --name-only \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}" > /tmp/changed-files
+
+          matches() {
+            grep -Eq "$1" /tmp/changed-files
+          }
+
+          run_all=false
+          if matches '^(\.github/workflows/ci\.yml|docker-compose[^/]*\.ya?ml|\.env\.production\.example)$'; then
+            run_all=true
+          fi
+
+          emit() {
+            local area="$1"
+            local pattern="$2"
+            if [[ "$run_all" == "true" ]] || matches "$pattern"; then
+              echo "$area=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "$area=false" >> "$GITHUB_OUTPUT"
+            fi
+          }
+
+          emit backend '^backend/'
+          emit backend_migration '^(backend/|scripts/check-expand-only-migrations\.mjs$)'
+          emit experience '^(experience-service/|backend/(package(-lock)?\.json$|src/database/))'
+          emit identity '^identity-service/'
+          emit notify '^(notify-service/|backend/(package(-lock)?\.json$|src/database/))'
+          emit pss '^pss-service/'
+          emit frontend '^frontend/'
+          emit ml '^ml-service/'
+
   experience-service:
     name: Experience service
+    needs: changes
+    if: needs.changes.outputs.experience == 'true'
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 25
     services:
@@ -65,6 +129,8 @@ jobs:
 
   identity-service:
     name: Identity service
+    needs: changes
+    if: needs.changes.outputs.identity == 'true'
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
     defaults:
@@ -92,6 +158,8 @@ jobs:
 
   notify-service:
     name: Notify service
+    needs: changes
+    if: needs.changes.outputs.notify == 'true'
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 20
     services:
@@ -141,7 +209,10 @@ jobs:
 
   backend-migration-compatibility:
     name: Backend migration compatibility
-    if: github.event_name == 'pull_request'
+    needs: changes
+    if: >-
+      github.event_name == 'pull_request' &&
+      needs.changes.outputs.backend_migration == 'true'
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 20
     services:
@@ -195,6 +266,8 @@ jobs:
 
   pss-service:
     name: Central PSS service
+    needs: changes
+    if: needs.changes.outputs.pss == 'true'
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
     services:
@@ -233,6 +306,8 @@ jobs:
 
   backend:
     name: Backend
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 30
     services:
@@ -280,6 +355,8 @@ jobs:
 
   frontend:
     name: Frontend
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 20
     defaults:
@@ -299,6 +376,8 @@ jobs:
 
   ml-service:
     name: ML service
+    needs: changes
+    if: needs.changes.outputs.ml == 'true'
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
     defaults:
@@ -313,3 +392,26 @@ jobs:
           cache-dependency-path: ml-service/pyproject.toml
       - run: pip install -e ".[dev]"
       - run: pytest
+
+  ci-gate:
+    name: CI gate
+    if: always()
+    needs:
+      - changes
+      - experience-service
+      - identity-service
+      - notify-service
+      - backend-migration-compatibility
+      - pss-service
+      - backend
+      - frontend
+      - ml-service
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Require every selected job to pass
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          case " $RESULTS " in
+            *" failure "*|*" cancelled "*) exit 1 ;;
+          esac
