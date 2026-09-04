@@ -11,6 +11,9 @@ const nginxProxyConfig = readFileSync(
 );
 const viteConfig = readFileSync(join(repoRoot, 'frontend/vite.config.ts'), 'utf8');
 
+// Service-to-service controllers are deliberately outside the public edge API.
+const INTERNAL_ONLY_PREFIXES = new Set(['internal']);
+
 function controllerFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const path = join(directory, entry.name);
@@ -38,11 +41,27 @@ function escapeRegex(value: string): string {
 }
 
 describe('edge routing configuration', () => {
-  it('routes every top-level backend controller prefix through production nginx', () => {
+  it('routes every public top-level backend controller prefix through production nginx', () => {
     for (const prefix of backendControllerPrefixes()) {
+      if (INTERNAL_ONLY_PREFIXES.has(prefix)) continue;
       expect(nginxConfig, `missing nginx API prefix: ${prefix}`).toMatch(
         new RegExp(`(?:\\(|\\|)${escapeRegex(prefix)}(?:\\||\\))`),
       );
+    }
+  });
+
+  it('keeps internal-only prefixes out of public nginx and Vite API allowlists', () => {
+    const viteApiBlock = viteConfig.match(
+      /const API_PROXY_PREFIXES[\s\S]*?\] as const/,
+    )?.[0];
+    expect(viteApiBlock).toBeDefined();
+
+    for (const prefix of INTERNAL_ONLY_PREFIXES) {
+      expect(backendControllerPrefixes()).toContain(prefix);
+      expect(nginxConfig, `internal API prefix published: ${prefix}`).not.toMatch(
+        new RegExp(`(?:\\(|\\|)${escapeRegex(prefix)}(?:\\||\\))`),
+      );
+      expect(viteApiBlock).not.toContain(`'${prefix}'`);
     }
   });
 

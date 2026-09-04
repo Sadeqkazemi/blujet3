@@ -4117,6 +4117,10 @@ contracts and retires the production mock adapters.
   provisioned SELECT-only role before any public read integration.
 - [x] Owner explicitly approved commit/push/merge on 2026-09-04. Production
   credentials, deployment and cutover remain separate approval gates.
+- [x] Owner approved correcting the pre-existing edge-routing test: enforce
+  public controller coverage while separately checking that internal-only
+  prefixes stay out of the nginx/Vite public API allowlists. Runtime routing
+  is unchanged.
 
 ## Central PSS/CRS extraction — Slice 0 (2026-09-01)
 
