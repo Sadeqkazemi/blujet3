@@ -46,7 +46,8 @@
     "uat:kl2550:financial-scenario:prod": "node dist/database/run-uat-kl2550-financial-scenario.js",
     "uat:wallets:reconcile-100m:prod": "node dist/database/reconcile-uat-wallet-balances.js",
     "pss:reconcile:shadow": "tsx src/database/report-pss-shadow-reconciliation.ts",
-    "loyalty:compare:shadow": "tsx src/database/report-loyalty-shadow.ts"
+    "loyalty:compare:shadow": "tsx src/database/report-loyalty-shadow.ts",
+    "agency:compare:shadow": "tsx src/database/report-agency-shadow.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

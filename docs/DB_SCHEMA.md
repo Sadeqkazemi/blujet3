@@ -2,6 +2,11 @@
 
 ## A6.4 — Agency read-only projections
 
+A6.6 reads an independent owner-scoped ORM projection in the backend for
+offline comparison with Agency HTTP. Both local snapshots are read-only and
+repeatable-read. No joins, writes, migrations, grants, copied tables or new
+business data. Real-HTTP tests reuse isolated synthetic Agency fixtures.
+
 A6.5 verifies the exact projection grants and rejects elevated/inheriting roles,
 memberships, ownership, CREATE, excess column reads, writes, sequence access
 and executable user-schema SECURITY DEFINER routines (including PUBLIC grants).

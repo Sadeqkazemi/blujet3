@@ -2,6 +2,12 @@
 
 ## A6.4 — internal Agency read boundary
 
+A6.6 adds an offline backend shadow comparator for the minimized profile and
+one explicitly selected ten-row invoice page. No public caller or route changes.
+It checks local-before / remote HTTP / local-after and emits only a status and
+request ID: DISABLED, MATCH, MISMATCH, INCONCLUSIVE or UNAVAILABLE. This does
+not compare the full portal response or the invoice-detail endpoint.
+
 A6.5 adds `npm run verify:reader` in agency-service: a catalog-only offline
 permission check, not an HTTP endpoint or public cutover. It emits only status
 and boolean checks (PASS/exit 0, FAIL/exit 2, UNAVAILABLE/exit 1); it never

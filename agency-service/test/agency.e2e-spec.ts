@@ -1,4 +1,6 @@
 import { randomBytes, randomUUID } from 'node:crypto';
+import { execFile } from 'node:child_process';
+import { resolve } from 'node:path';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -33,6 +35,67 @@ describe('Agency read boundary (real restricted PostgreSQL login)', () => {
   let writer: DataSource, reader: DataSource, app: INestApplication<App>;
   let roleCreated = false;
   let before: unknown;
+  let readerUrl: string;
+
+  async function shadow(
+    agencyId: string,
+    page = '1',
+    overrides: NodeJS.ProcessEnv = {},
+  ) {
+    const serviceUrl = await app.getUrl();
+    return new Promise<{ code: number; stdout: string; stderr: string }>(
+      (resolveResult, reject) => {
+        execFile(
+          process.execPath,
+          ['dist/database/report-agency-shadow.js', agencyId, page],
+          {
+            cwd: resolve(__dirname, '../../backend'),
+            env: {
+              ...process.env,
+              DATABASE_URL: readerUrl,
+              AGENCY_SHADOW_ENABLED: 'true',
+              AGENCY_SERVICE_URL: serviceUrl,
+              AGENCY_INTERNAL_TOKEN: token,
+              ...overrides,
+            },
+            timeout: 15000,
+            windowsHide: true,
+          },
+          (error, stdout, stderr) => {
+            if (error && typeof error.code !== 'number')
+              return reject(new Error('Shadow CLI process unavailable'));
+            resolveResult({
+              code: typeof error?.code === 'number' ? error.code : 0,
+              stdout,
+              stderr,
+            });
+          },
+        );
+      },
+    );
+  }
+
+  function safeReport(
+    result: { code: number; stdout: string; stderr: string },
+    status: string,
+    code = 0,
+  ) {
+    expect(result.code).toBe(code);
+    expect(result.stderr).toBe('');
+    expect(result.stdout.trim().split('\n')).toHaveLength(1);
+    const report: unknown = JSON.parse(result.stdout);
+    expect(report).toMatchObject({ status });
+    for (const secret of [
+      password,
+      token,
+      owner,
+      other,
+      readerUrl,
+      'private-description',
+      '9007199254740993',
+    ])
+      expect(result.stdout).not.toContain(secret);
+  }
 
   async function snapshot() {
     return {
@@ -119,6 +182,7 @@ describe('Agency read boundary (real restricted PostgreSQL login)', () => {
     );
     url.username = role;
     url.password = password;
+    readerUrl = url.toString();
     reader = await new DataSource(databaseOptions(url.toString())).initialize();
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(DataSource)
@@ -135,6 +199,7 @@ describe('Agency read boundary (real restricted PostgreSQL login)', () => {
       }),
     );
     await app.init();
+    await app.listen(0, '127.0.0.1');
   });
   afterEach(async () => {
     expect(await snapshot()).toEqual(before);
@@ -177,6 +242,49 @@ describe('Agency read boundary (real restricted PostgreSQL login)', () => {
 
   it('passes the catalog gate with real minimized HTTP fixture grants', async () => {
     expect(await verifyReader(reader)).toMatchObject({ status: 'PASS' });
+  });
+
+  it.each([
+    ['first page with exact IRR', owner, '1'],
+    ['second page with deterministic ties', owner, '2'],
+    ['other tenant', other, '1'],
+    ['empty profile', empty, '1'],
+    ['missing profile', randomUUID(), '1'],
+  ])('matches built backend shadow CLI for %s', async (_label, id, page) => {
+    safeReport(await shadow(id, page), 'MATCH');
+  });
+
+  it('keeps the shadow CLI disabled without configuration or an owner', async () => {
+    safeReport(
+      await shadow('', '', {
+        AGENCY_SHADOW_ENABLED: 'false',
+        AGENCY_SERVICE_URL: '',
+        AGENCY_INTERNAL_TOKEN: '',
+        DATABASE_URL: '',
+      }),
+      'DISABLED',
+    );
+  });
+
+  it('sanitizes shadow CLI configuration errors before connection', async () => {
+    safeReport(await shadow(owner, '0'), 'UNAVAILABLE', 1);
+    safeReport(await shadow('../foreign'), 'UNAVAILABLE', 1);
+  });
+
+  it('fails closed with wrong service credentials and an unreachable service', async () => {
+    safeReport(
+      await shadow(owner, '1', {
+        AGENCY_INTERNAL_TOKEN:
+          'wrong-service-credential-at-least-32-characters',
+      }),
+      'UNAVAILABLE',
+      2,
+    );
+    safeReport(
+      await shadow(owner, '1', { AGENCY_SERVICE_URL: 'http://127.0.0.1:1' }),
+      'UNAVAILABLE',
+      2,
+    );
   });
 
   it('requires service identity on every data route', async () => {

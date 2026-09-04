@@ -19,6 +19,17 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-04 — A6.6 Agency shadow comparison
+
+- [x] Document default-off offline comparison of profile and selected invoice page.
+- [x] Implement bounded authenticated HTTP, independent ORM snapshots and safe
+  reports; public routes, Core writers and UAT behavior remain unchanged.
+- [x] Prove 27 Agency comparator cases, 13 Loyalty regressions, 51 Agency E2E
+  cases and 2 config tests (93 total). Build/typecheck/scoped backend lint,
+  Agency lint/typecheck, CI wiring and unchanged OpenAPI checks pass locally.
+- [x] Confirm zero temporary Agency roles/users after the final sequential run.
+- [ ] Present local verification before separately authorized publication; no deployment.
+
 ### 2026-09-04 — A6.5 Agency reader permission verification
 
 - [x] Document catalog-only verification of the existing A6.4 permission gate.
@@ -27,7 +38,8 @@ below for what's landed from that port so far.
 - [x] Prove PASS/FAIL/UNAVAILABLE and restricted-role regression locally:
   43 E2E + 2 config tests, lint/typecheck/build and OpenAPI no-drift check pass.
   Test cleanup leaves zero temporary Agency roles/relations/routines.
-- [ ] Present evidence before separately approved push/merge; do not deploy.
+- [x] Owner approved publication; PR #34 merged as `b361082` after Agency
+  PostgreSQL 16 CI and CodeQL passed. No deployment was performed.
 
 ### 2026-09-04 — A6.4 Agency read-only foundation
 
