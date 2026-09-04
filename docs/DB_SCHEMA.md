@@ -6,6 +6,8 @@ A6.2 verifies the documented reader grants through PostgreSQL catalogs only.
 It changes no schema or production grants. Acceptance tests create and remove
 synthetic reader/parent roles and sequence/function fixtures on the local/CI
 _test database; no existing business schema is changed.
+A6.3 adds synthetic owner/member/ledger/lock fixtures and a restricted reader
+role in the isolated test database only, with exact cleanup and no migration.
 
 No schema change, seed, migration or copied business table. Loyalty reads
 explicit columns of `loyalty.club_members`, `loyalty.club_points_entries`

@@ -8,7 +8,10 @@ a sale, redeem points, debit a wallet or claim a price lock.
 ## Local validation
 
 Use Node 22 and the lockfile. Prepare an isolated database whose name ends
-in `_test` with the existing backend migrations and seed. E2E creates and
+in `_test` with the existing backend migrations and seed. Build `backend/`
+first (`npm run build` there) for the cross-service CLI contract tests.
+Do not rebuild backend concurrently with tests that execute its `dist` files.
+E2E creates and
 cleans only its own synthetic users, memberships, points and locks. It never
 runs migrations or resets existing data.
 
@@ -108,6 +111,26 @@ function fixtures, then clean up those exact objects and grants. The reader is
 tested with session read-only disabled to prove its grants still deny writes
 and protected PII reads. No production role is provisioned. Build before E2E:
 CLI acceptance tests execute `dist/verify-reader.js`; CI already builds first.
+
+## A6.3 cross-service contract evidence
+
+`test/shadow-contract.e2e-spec.ts` starts the real Loyalty Nest application on
+an ephemeral loopback port with a generated restricted reader. The built
+backend shadow CLI runs as a separate process with the same restricted DB
+credential, reading independently via ORM and comparing with real HTTP/SQL
+projections. No service response or database is mocked.
+
+Fixtures cover ledger-derived points (different from cached points), exact IRR
+above the JS safe-integer limit, foreign-owner/expired locks, absent/deactivated
+members, invalid service credentials, a stopped HTTP listener, and disabling
+comparison without usable configuration. Each comparison must leave fixture
+rows unchanged, and only status/request ID may reach CLI output. The suite
+cleans its exact synthetic rows and role. The existing Loyalty CI job builds
+backend first and runs this suite automatically on PostgreSQL 16.
+
+This synthetic rehearsal is not a production comparison window. Real reader
+provisioning, representative parity sampling and owner approval still precede
+any public read switch. No deployment or automatic rollout is introduced.
 
 ## Offline comparison and rollback
 

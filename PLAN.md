@@ -19,6 +19,20 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-04 — A6.3 Loyalty restricted-reader shadow contract
+
+- [x] Automate built-backend CLI -> real Loyalty HTTP -> restricted PostgreSQL
+  comparison with exact ledger/IRR assertions and isolated synthetic fixtures.
+- [x] Cover absent/deactivated membership, invalid service identity, stopped
+  HTTP listener, safe report output and disabled rollback without configuration.
+- [x] Prove fixture rows unchanged and clean up exact synthetic rows/role.
+- [x] Pass 30 Loyalty tests (6 new) and 13 backend comparator tests locally;
+  Loyalty lint/typecheck, both builds and workflow YAML checks pass.
+- [x] Wire sequential backend build/unit tests before Loyalty E2E in CI.
+- [ ] Obtain commit/push/merge approval and CI PostgreSQL 16 evidence.
+- [ ] Production parity sampling and owner-approved public cutover remain
+  separate; no production credential changes or deployment in this slice.
+
 ### 2026-09-04 — A6.2 Loyalty reader permission verification
 
 - [x] Add a catalog-only offline CLI with safe status/check output and explicit
@@ -29,7 +43,8 @@ below for what's landed from that port so far.
 - [x] Prove real restricted-role reads and denied writes/PII reads even with
   session read-only disabled, using isolated synthetic PostgreSQL fixtures.
 - [x] Pass 24 Loyalty tests (13 new), lint, typecheck and build locally.
-- [ ] Obtain explicit commit/push/merge approval and GitHub CI evidence.
+- [x] Owner approved commit/push/merge; PR #31 merged as `4d2a019` with
+  PostgreSQL 16 Loyalty CI and CodeQL successful; no deployment.
 - [ ] Verify separately provisioned production credentials and collect approved
   representative shadow parity evidence before any public read cutover.
 - [ ] Deploy only after separate user approval; no deployment in this slice.
