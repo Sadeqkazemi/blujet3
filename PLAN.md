@@ -19,6 +19,20 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-04 — Core multi-segment itinerary resolution
+
+- [x] Document an internal, read-only Core contract without enabling the PSS
+  shadow writer or changing public booking routes.
+- [x] Resolve one to three ordered flight instances from authoritative Core
+  inventory and enforce publish state, sale window/channel, continuity and
+  chronology.
+- [x] Validate cabin/fare-class policy and current SYSTEM/AGENCY releases
+  against the existing reservation-engine availability calculation.
+- [x] Protect the endpoint with constant-time internal-token verification and
+  prove 401, 400, 404, 409, multi-segment success and no booking/hold write.
+- [x] Pass focused unit/E2E tests, typecheck, build and scoped lint.
+- [ ] Commit/push/merge only after explicit owner approval; do not deploy.
+
 ### 2026-09-04 — Backend CI E2E stabilization
 
 - [x] Separate fast Backend validation from database-backed E2E execution.

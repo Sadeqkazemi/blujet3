@@ -3366,6 +3366,17 @@ writer topology is superseded by architecture v1.1. They may be exercised in
 the disabled shadow service, but authoritative inventory/order/payment tables
 must be implemented within the single Core Platform transaction boundary.
 
+### Core read-only itinerary resolution
+
+No schema migration is required for
+`POST /internal/v1/core/itineraries/resolve`. The resolver reads authoritative
+`inventory.flight_instances`, `inventory.flights`, `inventory.routes`, and
+`inventory.fare_rules`, then derives occupied capacity from active
+`orders.bookings` and `orders.passengers`. It does not insert, update, lock, or
+copy rows, and it does not read or write the shadow `pss_*` tables. A later
+multi-segment hold/order slice must remain inside the same Core transaction and
+will require its own schema/locking review.
+
 These tables live in the dedicated PSS PostgreSQL database. Reliability tables
 are implemented in Slice 0; reservation, inventory and accountable-document
 tables remain approved contracts for later slices. The website database may

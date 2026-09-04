@@ -4454,8 +4454,13 @@ tables are discrepancies, never implicit zero agreement.
 
 ### Internal offer and availability API
 
+The first implemented Core-owned slice is a read-only itinerary resolver. It
+does not create an offer, hold a seat, price an itinerary, or write to the PSS
+shadow database.
+
 | Method | Path | Behaviour |
 | --- | --- | --- |
+| POST | `/internal/v1/core/itineraries/resolve` | Implemented. Authenticated read-only validation of one to three ordered Core flight instances, sale channel, route/time continuity, cabin/fare-class eligibility, and current seat availability. |
 | POST | `/internal/v1/offers/search` | Returns priced, expiring offers for ordered one-or-more-segment itineraries from authoritative inventory. |
 | POST | `/internal/v1/offers/:offerId/reprice` | Revalidates fare, tax, currency and every segment's inventory version immediately before hold/payment. |
 | GET | `/internal/v1/flights/:flightInstanceId/seatmap` | Returns PSS-authoritative held/sold/blocked seat state. |
@@ -4463,6 +4468,15 @@ tables are discrepancies, never implicit zero agreement.
 An offer contains `offerId`, `expiresAt`, `currency`, ordered `segments`,
 traveller pricing, fare/tax/ancillary breakdown, baggage terms and an opaque
 integrity token. An offer is never itself inventory authorization.
+
+`POST /internal/v1/core/itineraries/resolve` requires `X-Internal-Token` and
+accepts `channel` (`SYSTEM` or `AGENCY`) plus `segments[]` containing
+`flightInstanceId`, contiguous `sequence`, `cabin`, and optional
+`fareClassCode`. Route, flight number, departure/arrival timestamps and
+availability are resolved from PostgreSQL; callers cannot supply snapshots.
+Missing/non-sellable inventory is returned as `NOT_FOUND`, invalid ordering or
+continuity as `VALIDATION_FAILED`, and a valid but depleted cabin/fare bucket as
+`POOL_EXHAUSTED`. The result is observational: it does not reserve inventory.
 
 ### Internal reservation/order API
 

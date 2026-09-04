@@ -179,6 +179,9 @@ class EnvironmentVariables {
   PSS_SERVICE_URL?: string;
 
   @IsOptional()
+  @MinLength(32, {
+    message: 'PSS_INTERNAL_TOKEN must be at least 32 characters',
+  })
   PSS_INTERNAL_TOKEN?: string;
 
   @IsOptional()

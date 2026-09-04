@@ -1,6 +1,6 @@
 # PSS multi-segment reservation — Slice 1 contract
 
-Status: **validation foundation implemented — order/inventory slice pending**
+Status: **Core read-only resolution implemented — hold/order slice pending**
 
 This slice introduces an internal, ordered itinerary contract while preserving
 the existing public single-flight booking APIs. Inventory, orders and payment
@@ -26,9 +26,10 @@ ordered `segments[]` array. Each segment carries the flight-instance reference,
 origin/destination snapshot, cabin and fare-class selection. The server owns
 route and schedule snapshots; clients cannot override them.
 
-The internal DTO and pure resolved-segment validator now exist under
-`pss-service/src/itinerary/`. They are not wired to a public or internal HTTP
-writer yet; no public endpoint is changed here.
+The internal DTO and pure resolved-segment validator exist under
+`pss-service/src/itinerary/`. The first HTTP integration is the authenticated,
+read-only Core endpoint `POST /internal/v1/core/itineraries/resolve`; no public
+endpoint or writer is changed here.
 
 ## Explicitly pending product/vendor decisions
 
@@ -36,7 +37,9 @@ writer yet; no public endpoint is changed here.
   supplies the rule/table, implementation may only enforce chronological order
   and endpoint continuity; it must not invent a universal MCT value.
 - Multi-segment pricing, baggage and ancillary allocation rules.
-- Inventory bucket mapping for a segment's cabin/fare class.
+- Multi-segment hold locking and persisted order/segment mapping. Read-only
+  cabin/fare-class availability is resolved from current Core tables in this
+  slice.
 - PSS writer cutover flag and rollback observation window.
 
 ## Acceptance evidence for the implementation slice
@@ -44,12 +47,18 @@ writer yet; no public endpoint is changed here.
 - [x] Validation tests for one segment, multiple segments, duplicate/
   discontinuous routes, cancelled/unpublished instances and invalid chronology
   (`itinerary.contract.spec.ts`).
-- [ ] Resolve flight instances from Core-owned data and expose the internal
-  offer/order DTOs behind authenticated PSS endpoints.
+- [x] Resolve flight instances, route/time continuity, sale gates and current
+  cabin/fare-class availability from Core-owned data behind an authenticated
+  read-only endpoint (`core-itinerary.service.spec.ts`,
+  `core-itinerary.e2e-spec.ts`).
+- [ ] Expose priced offer and atomic hold/order DTOs inside Core after the
+  pending pricing and locking rules are approved.
 - A concurrency E2E proving deterministic lock order and all-or-nothing hold
   across every segment, with no partial inventory mutation.
-- Existing single-segment compatibility tests remain green.
-- Migration symmetry, metadata parity, typecheck, lint and production build.
+- [x] Existing single-segment PSS client compatibility tests remain green
+  (`http-pss.client.spec.ts`).
+- [x] No migration was required; TypeORM metadata typecheck, scoped lint and
+  production build pass.
 
 No migration, external vendor integration, server deployment or writer cutover
 is authorized by this draft.
