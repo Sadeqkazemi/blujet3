@@ -13,7 +13,7 @@ export class CoreItineraryHoldLifecycle1791129600000 implements MigrationInterfa
         "toStatus" text NOT NULL,
         "occurredAt" TIMESTAMP(3) NOT NULL,
         "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        CONSTRAINT "core_itinerary_lifecycle_events_transition_check" CHECK ("eventType" = 'HOLD_EXPIRED' AND "fromStatus" = 'HELD' AND "toStatus" = 'EXPIRED'),
+        CONSTRAINT "core_itinerary_lifecycle_events_transition_check" CHECK (("eventType" = 'HOLD_EXPIRED' AND "fromStatus" = 'HELD' AND "toStatus" = 'EXPIRED') OR ("eventType" = 'HOLD_CANCELLED' AND "fromStatus" = 'HELD' AND "toStatus" = 'CANCELLED')),
         CONSTRAINT "core_itinerary_lifecycle_events_pkey" PRIMARY KEY ("id"),
         CONSTRAINT "core_itinerary_lifecycle_events_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "orders"."core_itinerary_orders"("id") ON DELETE RESTRICT ON UPDATE CASCADE
       )`,
