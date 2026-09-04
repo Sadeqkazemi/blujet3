@@ -24,6 +24,7 @@ import {
   type PriceSuggestionResult,
 } from '../src/modules/ai/price-suggestion.provider';
 import { loginAs } from './helpers/login.helper';
+import { responseString } from './helpers/response.helper';
 
 class FakePriceSuggestionProvider implements PriceSuggestionProvider {
   nextResult: PriceSuggestionResult | null = null;
@@ -490,7 +491,9 @@ describe('Flights (e2e)', () => {
         advisoryOnly: true,
       }),
     );
-    expect(BigInt(fallback.body.data.suggestedPriceIrr)).toBeGreaterThan(0n);
+    expect(
+      BigInt(responseString(fallback.body.data.suggestedPriceIrr)),
+    ).toBeGreaterThan(0n);
 
     const afterFallback = await fareRuleRepo.findOneByOrFail({ id: rule.id });
     expect(afterFallback.sitePriceIrr).toBe(38_000_000n);

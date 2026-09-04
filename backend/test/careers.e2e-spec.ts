@@ -11,6 +11,7 @@ import { JobPosting } from '../src/database/entities/job-posting.entity';
 import { User } from '../src/database/entities/user.entity';
 import { JobType } from '../src/database/enums';
 import { createTestApp } from './helpers/app.helper';
+import { responseString } from './helpers/response.helper';
 import { loginAs } from './helpers/login.helper';
 
 // Smallest valid PDF — enough for FileInterceptor + our mimetype check.
@@ -143,9 +144,9 @@ describe('Careers (e2e)', () => {
         });
       expect(res.status).toBe(201);
       expect(res.body.data.id).toBeDefined();
-      createdApplicationIds.push(res.body.data.id);
+      createdApplicationIds.push(responseString(res.body.data.id));
 
-      const row = await getApplication(res.body.data.id);
+      const row = await getApplication(responseString(res.body.data.id));
       expect(row.status).toBe('SUBMITTED');
       expect(row.jobTitleSnapshot).toBe(posting.title);
       expect(row.resumeFileName).toBe('resume.pdf');
@@ -160,9 +161,9 @@ describe('Careers (e2e)', () => {
         .field('nationalId', VALID_NATIONAL_ID)
         .field('phone', '09121112233');
       expect(res.status).toBe(201);
-      createdApplicationIds.push(res.body.data.id);
+      createdApplicationIds.push(responseString(res.body.data.id));
 
-      const row = await getApplication(res.body.data.id);
+      const row = await getApplication(responseString(res.body.data.id));
       expect(row.resumeFileName).toBeNull();
       expect(row.resumePath).toBeNull();
     });
@@ -284,7 +285,7 @@ describe('Careers (e2e)', () => {
         .field('workEntries', JSON.stringify(workEntries))
         .field('langEntries', JSON.stringify(langEntries));
       expect(res.status).toBe(201);
-      createdApplicationIds.push(res.body.data.id);
+      createdApplicationIds.push(responseString(res.body.data.id));
 
       const admin = await loginAs(app, 'site.admin');
       const detail = await request(app.getHttpServer())
@@ -329,7 +330,7 @@ describe('Careers (e2e)', () => {
       );
       const successIds = attempts
         .filter((r) => r.status === 201)
-        .map((r) => r.body.data.id as string);
+        .map((r) => responseString(r.body.data.id));
       createdApplicationIds.push(...successIds);
       expect(attempts.some((r) => r.status === 429)).toBe(true);
     });
@@ -342,9 +343,9 @@ describe('Careers (e2e)', () => {
         .field('lastName', 'رضایی')
         .field('nationalId', VALID_NATIONAL_ID)
         .field('phone', '09121234567');
-      createdApplicationIds.push(res.body.data.id);
+      createdApplicationIds.push(responseString(res.body.data.id));
 
-      const row = await getApplication(res.body.data.id);
+      const row = await getApplication(responseString(res.body.data.id));
       expect(row.nationalIdEnc).not.toContain(VALID_NATIONAL_ID);
       expect(row.nationalIdHash).toBeTruthy();
       expect(row.nationalIdHash).not.toBe(VALID_NATIONAL_ID);
@@ -367,7 +368,7 @@ describe('Careers (e2e)', () => {
           specialReqs: ['Playwright'],
         });
       expect(created.status).toBe(201);
-      const postingId = created.body.data.id as string;
+      const postingId = responseString(created.body.data.id);
       createdPostingIds.push(postingId);
       expect(created.body.data.active).toBe(true);
 
@@ -413,8 +414,8 @@ describe('Careers (e2e)', () => {
           filename: 'resume.pdf',
           contentType: 'application/pdf',
         });
-      createdApplicationIds.push(res.body.data.id);
-      return res.body.data.id as string;
+      createdApplicationIds.push(responseString(res.body.data.id));
+      return responseString(res.body.data.id);
     }
 
     it('GET /careers/applications — SITE_ADMIN only, 403 for other exec roles', async () => {
@@ -472,7 +473,7 @@ describe('Careers (e2e)', () => {
         .field('lastName', 'تستی')
         .field('nationalId', VALID_NATIONAL_ID)
         .field('phone', '09129998877');
-      createdApplicationIds.push(noResumeRes.body.data.id);
+      createdApplicationIds.push(responseString(noResumeRes.body.data.id));
 
       const missing = await request(app.getHttpServer())
         .get(`/careers/applications/${noResumeRes.body.data.id}/resume`)

@@ -19,6 +19,18 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-04 — Backend unsafe-argument warnings
+
+- [x] Remove all 24 reported warnings with typed cabin maps, a typed Nest
+  test server and runtime-checked response scalar fields; no lint suppression.
+- [x] Pass 42 flights unit tests, 65 tests across the five affected E2E
+  suites, scoped zero-warning lint, full CI-equivalent in-memory lint,
+  TypeScript typecheck and production build.
+- No API/schema/domain behavior changes. See
+  `docs/features/backend-type-warnings.md` for scope and verification.
+- Changes remain local; no push/merge/deploy. Resume the architecture track
+  after this cleanup is reviewed.
+
 ### 2026-09-04 — Core itinerary connection-time validation
 
 - [x] Inspect existing airport MCT and document read-only validation rules.
