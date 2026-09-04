@@ -1,9 +1,11 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import type { App } from 'supertest/types';
 import { createTestApp } from './helpers/app.helper';
+import { responseString } from './helpers/response.helper';
 
 describe('Search advisory & price calendar (e2e)', () => {
-  let app: INestApplication;
+  let app: INestApplication<App>;
 
   beforeAll(async () => {
     app = await createTestApp();
@@ -46,4 +48,20 @@ describe('Search advisory & price calendar (e2e)', () => {
       .expect(200);
     expect(res.body.data.challengeId).toBeTruthy();
   });
+});
+
+describe('API response string validation (unit)', () => {
+  it.each(['identifier', '300000000', '2026-09-04T10:00:00.000Z'])(
+    'preserves a string field: %s',
+    (value) => {
+      expect(responseString(value)).toBe(value);
+    },
+  );
+
+  it.each([undefined, null, 42, 42n, true, {}, []])(
+    'rejects a non-string field without coercion: %s',
+    (value) => {
+      expect(() => responseString(value)).toThrow(TypeError);
+    },
+  );
 });

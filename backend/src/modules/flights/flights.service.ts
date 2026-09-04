@@ -288,7 +288,8 @@ export class FlightsService {
         count: string;
       }>();
     for (const row of rows) {
-      const byCabin = result.get(row.flightInstanceId) ?? new Map();
+      const byCabin =
+        result.get(row.flightInstanceId) ?? new Map<CabinClass, number>();
       byCabin.set(row.cabin, Number(row.count));
       result.set(row.flightInstanceId, byCabin);
     }
@@ -501,7 +502,7 @@ export class FlightsService {
       const commercial = this.buildCommercialExtras(
         i,
         s,
-        soldByCabin.get(i.id) ?? new Map(),
+        soldByCabin.get(i.id) ?? new Map<CabinClass, number>(),
         fareRulesMap.get(i.id) ?? [],
         lockedMap.get(i.id) ?? 0,
         i.scheduleTemplateId
@@ -3253,7 +3254,7 @@ export class FlightsService {
     return this.buildCommercialExtras(
       instance,
       sold.get(instance.id) ?? 0,
-      soldByCabin.get(instance.id) ?? new Map(),
+      soldByCabin.get(instance.id) ?? new Map<CabinClass, number>(),
       fareRules,
       lockedSeats.get(instance.id) ?? 0,
       routeAgencyPriceIrr,

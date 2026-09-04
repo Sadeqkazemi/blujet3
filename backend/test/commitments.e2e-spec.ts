@@ -16,6 +16,7 @@ import { User } from '../src/database/entities/user.entity';
 import { RedisService } from '../src/redis/redis.service';
 import { loginAs, loginAsCustomer } from './helpers/login.helper';
 import { createTestApp } from './helpers/app.helper';
+import { responseString } from './helpers/response.helper';
 
 const AIRCRAFT_TYPE = 'CMT-TestJet';
 
@@ -192,8 +193,12 @@ describe('Charter / agency seat commitments (e2e)', () => {
       contractPriceIrr: '300000000',
       status: 'ACTIVE',
     });
-    expect(new Date(res.body.data.startDate).toISOString()).toBe(startDate);
-    expect(new Date(res.body.data.releaseAt).toISOString()).toBe(releaseAt);
+    expect(
+      new Date(responseString(res.body.data.startDate)).toISOString(),
+    ).toBe(startDate);
+    expect(
+      new Date(responseString(res.body.data.releaseAt)).toISOString(),
+    ).toBe(releaseAt);
 
     const list = await request(app.getHttpServer())
       .get(`/flights/${instance.id}/commitments`)
@@ -221,7 +226,9 @@ describe('Charter / agency seat commitments (e2e)', () => {
         endDate,
       });
     expect(res.status).toBe(201);
-    expect(new Date(res.body.data.releaseAt).toISOString()).toBe(endDate);
+    expect(
+      new Date(responseString(res.body.data.releaseAt)).toISOString(),
+    ).toBe(endDate);
   });
 
   it('capacity summary reflects charter + agency commitments and availableOnline', async () => {

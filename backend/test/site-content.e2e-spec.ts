@@ -13,6 +13,7 @@ import { SiteRouteHighlight } from '../src/database/entities/site-route-highligh
 import { StoredFile } from '../src/database/entities/stored-file.entity';
 import { User } from '../src/database/entities/user.entity';
 import { createTestApp } from './helpers/app.helper';
+import { responseString } from './helpers/response.helper';
 import { loginAs } from './helpers/login.helper';
 
 function auth(token: string | null | undefined) {
@@ -109,7 +110,7 @@ describe('Site content (e2e)', () => {
         .set(auth(accessToken))
         .send({ storedFileId: file.id });
       expect(addRes.status).toBe(201);
-      createdAssetIds.push(addRes.body.data.id);
+      createdAssetIds.push(responseString(addRes.body.data.id));
 
       const mediaRes = await request(app.getHttpServer()).get(
         `/site-content/media/${file.id}`,
@@ -149,7 +150,7 @@ describe('Site content (e2e)', () => {
       expect(addRes.status).toBe(201);
       expect(addRes.body.success).toBe(true);
       expect(addRes.body.data.label).toBe('بنر تست');
-      createdAssetIds.push(addRes.body.data.id);
+      createdAssetIds.push(responseString(addRes.body.data.id));
 
       const listRes = await request(app.getHttpServer())
         .get('/site-content/admin/library')
@@ -216,7 +217,7 @@ describe('Site content (e2e)', () => {
         .set(auth(accessToken))
         .send({ airportCode: 'SYZ', priceIrr: 12_000_000, sortOrder: 9 });
       expect(destRes.status).toBe(201);
-      createdDestIds.push(destRes.body.data.id);
+      createdDestIds.push(responseString(destRes.body.data.id));
 
       const patchDest = await request(app.getHttpServer())
         .patch(`/site-content/admin/destinations/${destRes.body.data.id}`)
@@ -235,7 +236,7 @@ describe('Site content (e2e)', () => {
           sortOrder: 9,
         });
       expect(routeRes.status).toBe(201);
-      createdRouteIds.push(routeRes.body.data.id);
+      createdRouteIds.push(responseString(routeRes.body.data.id));
 
       const invalidLegacyRoute = await request(app.getHttpServer())
         .post('/site-content/admin/routes')
