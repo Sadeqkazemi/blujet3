@@ -4,6 +4,8 @@
 
 A6.2 adds an offline reader-permission verification command in loyalty-service;
 it adds no HTTP route and does not change public routing or writer ownership.
+A6.3 adds local/CI contract coverage of the built backend shadow CLI against
+real Loyalty HTTP and restricted PostgreSQL credentials; API behavior is unchanged.
 
 An independently runnable `loyalty-service` exposes authenticated GET routes
 `/internal/v1/loyalty/members/:userId` and

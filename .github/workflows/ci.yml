@@ -70,7 +70,7 @@ jobs:
           emit backend '^backend/'
           emit backend_migration '^(backend/|scripts/check-expand-only-migrations\.mjs$)'
           emit experience '^(experience-service/|backend/(package(-lock)?\.json$|src/database/))'
-          emit loyalty '^(loyalty-service/|backend/(package(-lock)?\.json$|src/database/|src/modules/loyalty-shadow/))'
+          emit loyalty '^(loyalty-service/|backend/(package(-lock)?\.json$|tsconfig[^/]*\.json$|nest-cli\.json$|src/database/|src/common/money\.ts$|src/modules/loyalty-shadow/))'
           emit identity '^identity-service/'
           emit notify '^(notify-service/|backend/(package(-lock)?\.json$|src/database/))'
           emit pss '^pss-service/'
@@ -167,6 +167,11 @@ jobs:
           cp .env.test .env
           npm run migration:run
           npm run seed
+      - name: Build and test backend shadow comparator
+        working-directory: backend
+        run: |
+          npm run build
+          npm test -- --runInBand --runTestsByPath src/modules/loyalty-shadow/loyalty-shadow.spec.ts
       - name: Validate read-only Loyalty boundary
         working-directory: loyalty-service
         env:
