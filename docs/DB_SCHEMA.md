@@ -2,6 +2,11 @@
 
 ## A6.1 — Loyalty read-only projections
 
+A6.2 verifies the documented reader grants through PostgreSQL catalogs only.
+It changes no schema or production grants. Acceptance tests create and remove
+synthetic reader/parent roles and sequence/function fixtures on the local/CI
+_test database; no existing business schema is changed.
+
 No schema change, seed, migration or copied business table. Loyalty reads
 explicit columns of `loyalty.club_members`, `loyalty.club_points_entries`
 and `loyalty.price_locks` with owner-scoped parameterized queries.
