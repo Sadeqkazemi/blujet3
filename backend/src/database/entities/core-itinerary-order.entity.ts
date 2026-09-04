@@ -87,7 +87,7 @@ export class CoreItineraryOrder {
   @Column({ type: 'text', select: false })
   idempotencyRequestHash!: string;
 
-  @VersionColumn()
+  @VersionColumn({ default: 1 })
   version!: number;
 
   @CreateDateColumn({ precision: 3, default: () => 'CURRENT_TIMESTAMP' })
