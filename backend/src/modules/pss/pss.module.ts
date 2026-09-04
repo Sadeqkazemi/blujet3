@@ -12,6 +12,9 @@ import { CoreItineraryTravellerSegment } from '../../database/entities/core-itin
 import { CoreItineraryPaymentConfirmation } from '../../database/entities/core-itinerary-payment-confirmation.entity';
 import { CoreItineraryTicketDocument } from '../../database/entities/core-itinerary-ticket-document.entity';
 import { CoreItineraryFlightCoupon } from '../../database/entities/core-itinerary-flight-coupon.entity';
+import { CoreItineraryRefund } from '../../database/entities/core-itinerary-refund.entity';
+import { CoreItineraryCouponEvent } from '../../database/entities/core-itinerary-coupon-event.entity';
+import { RefundPenaltyRule } from '../../database/entities/refund-penalty-rule.entity';
 import { AncillaryServicesModule } from '../ancillary-services/ancillary-services.module';
 import { BookingEngineModule } from '../booking-engine/booking-engine.module';
 import { CoreItineraryController } from './core-itinerary.controller';
@@ -22,6 +25,8 @@ import { CoreItineraryHoldExpiryService } from './core-itinerary-hold-expiry.ser
 import { CoreItineraryHoldExpiryWorker } from './core-itinerary-hold-expiry.worker';
 import { CoreItineraryCancelService } from './core-itinerary-cancel.service';
 import { CoreItineraryPaymentService } from './core-itinerary-payment.service';
+import { CoreItineraryRefundService } from './core-itinerary-refund.service';
+import { CoreOrderServicingController } from './core-order-servicing.controller';
 import { HttpPssClient } from './http-pss.client';
 import { PssInternalAuthGuard } from './pss-internal-auth.guard';
 import { PSS_CLIENT } from './pss-client.interface';
@@ -41,11 +46,14 @@ import { PSS_CLIENT } from './pss-client.interface';
       CoreItineraryPaymentConfirmation,
       CoreItineraryTicketDocument,
       CoreItineraryFlightCoupon,
+      CoreItineraryRefund,
+      CoreItineraryCouponEvent,
+      RefundPenaltyRule,
     ]),
     BookingEngineModule,
     AncillaryServicesModule,
   ],
-  controllers: [CoreItineraryController],
+  controllers: [CoreItineraryController, CoreOrderServicingController],
   providers: [
     HttpPssClient,
     CoreItineraryService,
@@ -55,6 +63,7 @@ import { PSS_CLIENT } from './pss-client.interface';
     CoreItineraryHoldExpiryWorker,
     CoreItineraryCancelService,
     CoreItineraryPaymentService,
+    CoreItineraryRefundService,
     PssInternalAuthGuard,
     { provide: PSS_CLIENT, useExisting: HttpPssClient },
   ],

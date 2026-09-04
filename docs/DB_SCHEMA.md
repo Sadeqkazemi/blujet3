@@ -24,6 +24,41 @@ integer `bigint` IRR and every wire value stays an IRR decimal string. Toman is
 only a public/customer presentation conversion. Finance, invoice, report and
 agency-portal presentation uses the unconverted IRR value with a rial unit.
 
+## Commerce B3.3a — Core full-itinerary refund
+
+This additive servicing slice keeps orders and financial effects in the same
+Core PostgreSQL transaction boundary:
+
+- `payments.core_itinerary_refunds`: durable trusted refund evidence with UUID
+  text id, Core order/owner references, unique idempotency key and external
+  refund reference, private request hash, quote reference, exact bigint gross,
+  penalty and refundable IRR snapshots, `RECEIVED | COMPLETED |
+  REVIEW_REQUIRED` status, nullable failure code and nullable unique refund
+  ledger reference. One completed row is the replay authority; evidence is
+  retained when local fulfilment needs reconciliation.
+- `orders.core_itinerary_coupon_events`: immutable per-coupon `REFUND`
+  transition evidence linked to the refund command, document and coupon. It
+  stores `OPEN -> REFUNDED` and the applied segment/rule snapshot.
+  `(refundId, couponId)` is unique. The refund evidence row retains the
+  exact full quote snapshot and gross/penalty/refundable IRR totals.
+- Existing Core ticket documents and coupons gain nullable
+  `servicingStatus`, `servicedAt` and `servicingId` columns. B3.3a writes only
+  `REFUNDED`; the original `status=ISSUED` / `status=OPEN` columns remain the
+  backward-compatible issuance projections during the expand release. The API
+  derives the effective lifecycle from `servicingStatus ?? status`.
+- `payments.core_itinerary_refunds` itself is the immutable order-level
+  `TICKETED -> REFUNDED` command evidence; the existing hold/cancel lifecycle
+  table and its constraints remain untouched in this expand release.
+
+The quote endpoint writes nothing. Full-order fulfilment locks the order and all
+documents/coupons, verifies one original SALE row and exact gross reconciliation
+with `core_itinerary_orders.totalIrr`, then commits status changes, immutable
+events, the negative REFUND ledger row and evidence completion together. A
+failed fulfilment rolls back those local changes and marks only its durable
+evidence `REVIEW_REQUIRED`. Migration rollback is for isolated tests; an
+application rollback leaves additive evidence and widened status constraints in
+place.
+
 ## Commerce B3.2 — accountable e-ticket documents
 
 Two additive Core-owned tables live in the `orders` schema:

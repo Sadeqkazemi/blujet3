@@ -12,6 +12,7 @@ import {
 } from 'typeorm';
 import type { JsonValue } from '../json-types';
 import { CoreItineraryOrder } from './core-itinerary-order.entity';
+import { CoreItineraryRefund } from './core-itinerary-refund.entity';
 import { CoreItineraryTraveller } from './core-itinerary-traveller.entity';
 import { TicketDocumentStock } from './ticket-document-stock.entity';
 
@@ -97,6 +98,27 @@ export class CoreItineraryTicketDocument {
 
   @Column({ type: 'text', default: 'ISSUED' })
   status!: 'ISSUED';
+
+  @Column({ type: 'text', nullable: true })
+  servicingStatus!: 'REFUNDED' | null;
+
+  @Column({ type: 'timestamp', precision: 3, nullable: true })
+  servicedAt!: Date | null;
+
+  @Column({ type: 'text', nullable: true })
+  servicingId!: string | null;
+
+  @ManyToOne(() => CoreItineraryRefund, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE',
+  })
+  @JoinColumn({
+    name: 'servicingId',
+    foreignKeyConstraintName:
+      'core_itinerary_ticket_documents_servicingId_fkey',
+  })
+  servicingRefund!: CoreItineraryRefund | null;
 
   @Column({ type: 'text', default: 'ACCOUNTABLE' })
   accountabilityStatus!: 'ACCOUNTABLE';

@@ -365,7 +365,7 @@ export class CoreItineraryPaymentService {
     const order = await tx.findOneOrFail(CoreItineraryOrder, {
       where: { id: confirmation.orderId },
     });
-    if (order.status !== 'TICKETED') {
+    if (order.status !== 'TICKETED' && order.status !== 'REFUNDED') {
       throw new Error('Completed payment has a non-ticketed itinerary');
     }
     const travellers = await tx.find(CoreItineraryTraveller, {
@@ -438,7 +438,7 @@ export class CoreItineraryPaymentService {
           .map((coupon) => ({
             couponNumber: coupon.couponNumber,
             segmentId: coupon.segmentId,
-            status: coupon.status,
+            status: coupon.servicingStatus ?? coupon.status,
           })),
       })),
     };

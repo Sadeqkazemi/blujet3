@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
 import type { App } from 'supertest/types';
 import request from 'supertest';
@@ -21,6 +21,10 @@ import { Route } from '../src/database/entities/route.entity';
 import { TravelExtraSetting } from '../src/database/entities/travel-extra-setting.entity';
 import { User } from '../src/database/entities/user.entity';
 import { LedgerEntry } from '../src/database/entities/ledger-entry.entity';
+import { CoreItineraryCouponEvent } from '../src/database/entities/core-itinerary-coupon-event.entity';
+import { CoreItineraryRefund } from '../src/database/entities/core-itinerary-refund.entity';
+import { RefundPenaltyRule } from '../src/database/entities/refund-penalty-rule.entity';
+import { toJsonValue } from '../src/database/json-types';
 import { TicketDocumentStock } from '../src/database/entities/ticket-document-stock.entity';
 import { createTestApp } from './helpers/app.helper';
 import { CoreItineraryHoldExpiryService } from '../src/modules/pss/core-itinerary-hold-expiry.service';
@@ -49,6 +53,31 @@ describe('Core itinerary internal API', () => {
         .getRepository(CoreItineraryTicketDocument)
         .find({ where: { orderId: In(orderIds) }, select: { id: true } });
       const documentIds = documents.map((document) => document.id);
+      const refunds = await dataSource
+        .getRepository(CoreItineraryRefund)
+        .find({ where: { orderId: In(orderIds) }, select: { id: true } });
+      if (refunds.length > 0) {
+        await dataSource
+          .getRepository(CoreItineraryCouponEvent)
+          .delete({ refundId: In(refunds.map((refund) => refund.id)) });
+        await dataSource
+          .getRepository(CoreItineraryTicketDocument)
+          .update(
+            { orderId: In(orderIds) },
+            { servicingStatus: null, servicedAt: null, servicingId: null },
+          );
+        if (documentIds.length > 0) {
+          await dataSource
+            .getRepository(CoreItineraryFlightCoupon)
+            .update(
+              { ticketDocumentId: In(documentIds) },
+              { servicingStatus: null, servicedAt: null, servicingId: null },
+            );
+        }
+        await dataSource
+          .getRepository(CoreItineraryRefund)
+          .delete({ orderId: In(orderIds) });
+      }
       if (documentIds.length > 0) {
         await dataSource
           .getRepository(CoreItineraryFlightCoupon)
@@ -911,6 +940,207 @@ describe('Core itinerary internal API', () => {
           where: { itineraryOrderId: orderId, type: 'SALE' },
         }),
       ).toBe(1);
+    });
+
+    it('quotes and atomically applies a full-itinerary refund with one negative ledger entry', async () => {
+      const orderId = await createHold(`refund-success-${suffix}`);
+      const payment = await request(app.getHttpServer())
+        .post(`/internal/v1/core/itineraries/${orderId}/payment-confirmations`)
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', `refund-payment-${suffix}`)
+        .send(paymentBody());
+      expect(payment.status).toBe(200);
+
+      const quote = await request(app.getHttpServer())
+        .post(`/internal/v1/orders/${orderId}/refunds/quote`)
+        .set('X-Internal-Token', token)
+        .send({ ownerId: holdOwnerId });
+      expect(quote.status).toBe(200);
+      expect(quote.body.data).toMatchObject({
+        grossAmountIrr: '36000000',
+        penaltyAmountIrr: '10800000',
+        refundableIrr: '25200000',
+      });
+
+      const apply = await request(app.getHttpServer())
+        .post(`/internal/v1/orders/${orderId}/refunds`)
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', `refund-apply-${suffix}`)
+        .send({
+          ownerId: holdOwnerId,
+          quoteReference: quote.body.data.quoteReference,
+          refundReference: `refund-${suffix}`,
+        });
+      expect(apply.status).toBe(200);
+      expect(apply.body.data).toMatchObject({
+        status: 'REFUNDED',
+        refundableIrr: '25200000',
+      });
+      expect(
+        (
+          await dataSource
+            .getRepository(CoreItineraryOrder)
+            .findOneByOrFail({ id: orderId })
+        ).status,
+      ).toBe('REFUNDED');
+      expect(
+        await dataSource
+          .getRepository(CoreItineraryRefund)
+          .count({ where: { orderId, status: 'COMPLETED' } }),
+      ).toBe(1);
+      expect(
+        await dataSource
+          .getRepository(CoreItineraryCouponEvent)
+          .count({ where: { refundId: apply.body.data.refundId } }),
+      ).toBe(4);
+      const refundLedger = await dataSource
+        .getRepository(LedgerEntry)
+        .findOneByOrFail({ itineraryOrderId: orderId, type: 'REFUND' });
+      expect(refundLedger.signedAmountIrr).toBe(-25_200_000n);
+
+      const replay = await request(app.getHttpServer())
+        .post(`/internal/v1/orders/${orderId}/refunds`)
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', `refund-apply-${suffix}`)
+        .send({
+          ownerId: holdOwnerId,
+          quoteReference: quote.body.data.quoteReference,
+          refundReference: `refund-${suffix}`,
+        });
+      expect(replay.status).toBe(200);
+      expect(replay.body.data.refundId).toBe(apply.body.data.refundId);
+    });
+
+    it('rejects an apply command when the quoted penalty rule changed', async () => {
+      const orderId = await createHold(`refund-stale-${suffix}`);
+      const payment = await request(app.getHttpServer())
+        .post(`/internal/v1/core/itineraries/${orderId}/payment-confirmations`)
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', `refund-stale-payment-${suffix}`)
+        .send(paymentBody());
+      expect(payment.status).toBe(200);
+      const quote = await request(app.getHttpServer())
+        .post(`/internal/v1/orders/${orderId}/refunds/quote`)
+        .set('X-Internal-Token', token)
+        .send({ ownerId: holdOwnerId });
+      const ruleRepo = dataSource.getRepository(RefundPenaltyRule);
+      const rules = await ruleRepo.find({
+        order: { minHoursBeforeDeparture: 'ASC' },
+      });
+      const selectedRule = rules[rules.length - 1];
+      if (!selectedRule) throw new Error('Refund penalty rules are not seeded');
+      try {
+        await ruleRepo.update(selectedRule.id, {
+          penaltyPct: selectedRule.penaltyPct + 1,
+        });
+        const apply = await request(app.getHttpServer())
+          .post(`/internal/v1/orders/${orderId}/refunds`)
+          .set('X-Internal-Token', token)
+          .set('Idempotency-Key', `refund-stale-apply-${suffix}`)
+          .send({
+            ownerId: holdOwnerId,
+            quoteReference: quote.body.data.quoteReference,
+            refundReference: `stale-${suffix}`,
+          });
+        expect(apply.status).toBe(409);
+        expect(apply.body.error.code).toBe('CONFLICT');
+        expect(
+          await dataSource
+            .getRepository(CoreItineraryRefund)
+            .count({ where: { orderId } }),
+        ).toBe(0);
+      } finally {
+        for (const rule of rules)
+          await ruleRepo.update(rule.id, { penaltyPct: rule.penaltyPct });
+      }
+    });
+
+    it('marks already registered evidence for reconciliation when fulfilment sees a stale quote', async () => {
+      const orderId = await createHold(`refund-review-${suffix}`);
+      const payment = await request(app.getHttpServer())
+        .post(`/internal/v1/core/itineraries/${orderId}/payment-confirmations`)
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', `refund-review-payment-${suffix}`)
+        .send(paymentBody());
+      expect(payment.status).toBe(200);
+      const quote = await request(app.getHttpServer())
+        .post(`/internal/v1/orders/${orderId}/refunds/quote`)
+        .set('X-Internal-Token', token)
+        .send({ ownerId: holdOwnerId });
+      const quoteData = quote.body.data as {
+        quoteReference: string;
+        grossAmountIrr: string;
+        penaltyAmountIrr: string;
+        refundableIrr: string;
+      };
+      const refundReference = `review-${suffix}`;
+      const idempotencyKey = `refund-review-apply-${suffix}`;
+      const requestHash = `v1:${createHash('sha256')
+        .update(
+          JSON.stringify({
+            operation: 'core-itinerary-refund:v1',
+            orderId,
+            ownerId: holdOwnerId,
+            quoteReference: quoteData.quoteReference,
+            refundReference,
+          }),
+        )
+        .digest('hex')}`;
+      await dataSource.getRepository(CoreItineraryRefund).save(
+        dataSource.getRepository(CoreItineraryRefund).create({
+          id: randomUUID(),
+          orderId,
+          ownerId: holdOwnerId,
+          idempotencyKey,
+          requestHash,
+          quoteReference: quoteData.quoteReference,
+          refundReference,
+          grossAmountIrr: BigInt(quoteData.grossAmountIrr),
+          penaltyAmountIrr: BigInt(quoteData.penaltyAmountIrr),
+          refundableIrr: BigInt(quoteData.refundableIrr),
+          quoteSnapshot: toJsonValue(quote.body.data),
+          currency: 'IRR',
+          status: 'RECEIVED',
+          failureCode: null,
+          ledgerEntryId: null,
+        }),
+      );
+      const ruleRepo = dataSource.getRepository(RefundPenaltyRule);
+      const rules = await ruleRepo.find({
+        order: { minHoursBeforeDeparture: 'ASC' },
+      });
+      const selectedRule = rules[rules.length - 1];
+      if (!selectedRule) throw new Error('Refund penalty rules are not seeded');
+      try {
+        await ruleRepo.update(selectedRule.id, {
+          penaltyPct: selectedRule.penaltyPct + 1,
+        });
+        const apply = await request(app.getHttpServer())
+          .post(`/internal/v1/orders/${orderId}/refunds`)
+          .set('X-Internal-Token', token)
+          .set('Idempotency-Key', idempotencyKey)
+          .send({
+            ownerId: holdOwnerId,
+            quoteReference: quoteData.quoteReference,
+            refundReference,
+          });
+        expect(apply.status).toBe(409);
+        expect(apply.body.error.code).toBe('REFUND_RECONCILIATION_REQUIRED');
+        const stored = await dataSource
+          .getRepository(CoreItineraryRefund)
+          .findOneByOrFail({ orderId });
+        expect(stored.status).toBe('REVIEW_REQUIRED');
+        expect(stored.failureCode).toBe('QUOTE_CHANGED');
+        expect(
+          await dataSource
+            .getRepository(LedgerEntry)
+            .count({ where: { itineraryOrderId: orderId, type: 'REFUND' } }),
+        ).toBe(0);
+      } finally {
+        await ruleRepo.update(selectedRule.id, {
+          penaltyPct: selectedRule.penaltyPct,
+        });
+      }
     });
 
     it('serializes concurrent replay and rejects changed replay data', async () => {

@@ -45,8 +45,8 @@ export class CoreItineraryFlightCouponDto {
   })
   segmentId!: string;
 
-  @ApiProperty({ example: 'OPEN', description: 'وضعیت کوپن' })
-  status!: 'OPEN';
+  @ApiProperty({ example: 'OPEN', description: 'وضعیت مؤثر کوپن' })
+  status!: 'OPEN' | 'REFUNDED';
 }
 
 export class CoreItineraryTicketDocumentDto {

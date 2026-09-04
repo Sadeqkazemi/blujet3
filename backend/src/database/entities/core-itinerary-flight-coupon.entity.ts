@@ -13,6 +13,7 @@ import {
 import { bigintTransformer } from '../transformers/bigint.transformer';
 import type { JsonValue } from '../json-types';
 import { CoreItinerarySegment } from './core-itinerary-segment.entity';
+import { CoreItineraryRefund } from './core-itinerary-refund.entity';
 import { CoreItineraryTicketDocument } from './core-itinerary-ticket-document.entity';
 
 @Entity('core_itinerary_flight_coupons', { schema: 'orders' })
@@ -73,6 +74,26 @@ export class CoreItineraryFlightCoupon {
 
   @Column({ type: 'text', default: 'OPEN' })
   status!: 'OPEN';
+
+  @Column({ type: 'text', nullable: true })
+  servicingStatus!: 'REFUNDED' | null;
+
+  @Column({ type: 'timestamp', precision: 3, nullable: true })
+  servicedAt!: Date | null;
+
+  @Column({ type: 'text', nullable: true })
+  servicingId!: string | null;
+
+  @ManyToOne(() => CoreItineraryRefund, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE',
+  })
+  @JoinColumn({
+    name: 'servicingId',
+    foreignKeyConstraintName: 'core_itinerary_flight_coupons_servicingId_fkey',
+  })
+  servicingRefund!: CoreItineraryRefund | null;
 
   @Column({ type: 'bigint', transformer: bigintTransformer })
   fareIrr!: bigint;

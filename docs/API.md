@@ -16,6 +16,36 @@ across primary databases. Extraction proceeds only in the documented order:
 phase 0 deployment safety, then `notify`, `experience`, `identity`, domain
 schemas, `loyalty`/`agency`, `intelligence`, and `warehouse`.
 
+### Commerce B3.3a — Core full-itinerary refund
+
+This first post-ticket servicing slice is internal and preserves every public
+route. `POST /internal/v1/orders/:id/refunds/quote` requires the internal
+service token and `{ ownerId }`. It reads a scoped `TICKETED` Core itinerary
+whose ticket documents are `ISSUED` and whose coupons are all `OPEN`, then
+returns a non-mutating full-order quote. Each segment's refundable base is the
+sum of its coupon fare/tax snapshots plus that segment's extras snapshot total.
+The existing `RefundPenaltyRule` bracket is applied independently at each
+segment departure; all IRR amounts remain decimal strings. The response carries
+a deterministic `quoteReference` bound to the order, coupon states, segment
+amounts and selected penalty brackets. It creates no database row.
+
+`POST /internal/v1/orders/:id/refunds` additionally requires a non-empty
+`Idempotency-Key` and `{ ownerId, quoteReference, refundReference }`.
+`refundReference` is evidence already approved by the trusted financial caller;
+this endpoint is not a PSP callback and does not claim that a bank transfer was
+made. It persists that evidence before local fulfilment, then locks the refund,
+order, documents and coupons. The quote is recomputed under the lock. An exact
+match atomically changes every coupon/document and the order to `REFUNDED`,
+appends immutable coupon/order lifecycle evidence and one negative `REFUND`
+ledger entry for the refundable amount. Same key and payload replay the same
+result; changed reuse returns `409 IDEMPOTENCY_PAYLOAD_MISMATCH`.
+
+If state/rules change after evidence registration, the command becomes
+`REVIEW_REQUIRED` and returns `409 REFUND_RECONCILIATION_REQUIRED`; it never
+partially changes coupons or writes a refund ledger row. Owner mismatch is
+hidden as `404 NOT_FOUND`. Selected-coupon refund, void, exchange and EMD remain
+separate slices pending the documented operational rules and approved stock.
+
 ### Commerce B3.2 — accountable e-ticket issuance
 
 No public route, DTO or successful response shape changes. Every existing

@@ -43,6 +43,8 @@ import { CoreItineraryTravellerSegment } from './entities/core-itinerary-travell
 import { CoreItineraryPaymentConfirmation } from './entities/core-itinerary-payment-confirmation.entity';
 import { CoreItineraryTicketDocument } from './entities/core-itinerary-ticket-document.entity';
 import { CoreItineraryFlightCoupon } from './entities/core-itinerary-flight-coupon.entity';
+import { CoreItineraryRefund } from './entities/core-itinerary-refund.entity';
+import { CoreItineraryCouponEvent } from './entities/core-itinerary-coupon-event.entity';
 import { CustomerIdentityVerification } from './entities/customer-identity-verification.entity';
 import { CustomerReferral } from './entities/customer-referral.entity';
 import { EmployeePermission } from './entities/employee-permission.entity';
@@ -167,6 +169,8 @@ export const dataSourceOptions: DataSourceOptions = {
     CoreItineraryPaymentConfirmation,
     CoreItineraryTicketDocument,
     CoreItineraryFlightCoupon,
+    CoreItineraryRefund,
+    CoreItineraryCouponEvent,
     CustomerIdentityVerification,
     CustomerReferral,
     EmployeePermission,
