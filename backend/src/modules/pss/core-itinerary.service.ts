@@ -58,6 +58,7 @@ export class CoreItineraryService {
     dto: ResolveCoreItineraryDto,
     requiredSeats = 1,
     manager?: EntityManager,
+    excludeItineraryOrderId?: string,
   ): Promise<ResolvedCoreItineraryDto> {
     if (!Number.isInteger(requiredSeats) || requiredSeats < 1) {
       this.invalid('تعداد صندلی مورد نیاز سفر معتبر نیست.');
@@ -72,12 +73,12 @@ export class CoreItineraryService {
       ? [
           await this.loadInstances(ids, manager),
           await loadRules(),
-          await this.loadFareUsage(ids, manager),
+          await this.loadFareUsage(ids, manager, excludeItineraryOrderId),
         ]
       : await Promise.all([
           this.loadInstances(ids),
           loadRules(),
-          this.loadFareUsage(ids),
+          this.loadFareUsage(ids, undefined, excludeItineraryOrderId),
         ]);
     const byId = new Map(instances.map((instance) => [instance.id, instance]));
     const now = new Date();
@@ -86,11 +87,14 @@ export class CoreItineraryService {
     for (const segment of requested) {
       const instance = byId.get(segment.flightInstanceId);
       this.assertInstanceSellable(instance, dto.channel, now);
-      const available = await this.search.cabinAvailability(
-        instance,
-        segment.cabin,
-        manager,
-      );
+      const available = excludeItineraryOrderId
+        ? await this.search.cabinAvailability(
+            instance,
+            segment.cabin,
+            manager,
+            excludeItineraryOrderId,
+          )
+        : await this.search.cabinAvailability(instance, segment.cabin, manager);
       if (!available) {
         throw new NotFoundException({
           code: ErrorCode.NOT_FOUND,
@@ -191,6 +195,7 @@ export class CoreItineraryService {
   private async loadFareUsage(
     ids: string[],
     manager?: EntityManager,
+    excludeItineraryOrderId?: string,
   ): Promise<FareUsageRow[]> {
     const passengerRepo = manager
       ? manager.getRepository(Passenger)
@@ -229,7 +234,7 @@ export class CoreItineraryService {
       .addGroupBy('booking.fareClassCode')
       .addGroupBy('booking.channel')
       .getRawMany<FareUsageRow>();
-    const itinerary = await itineraryRepo
+    const itineraryQuery = itineraryRepo
       .createQueryBuilder('segment')
       .innerJoin(
         CoreItineraryOrder,
@@ -249,7 +254,13 @@ export class CoreItineraryService {
       .andWhere(
         '(itineraryOrder.status != :held OR itineraryOrder.holdExpiresAt > :now)',
         { held: 'HELD', now: new Date() },
-      )
+      );
+    if (excludeItineraryOrderId) {
+      itineraryQuery.andWhere('itineraryOrder.id != :excludeItineraryOrderId', {
+        excludeItineraryOrderId,
+      });
+    }
+    const itinerary = await itineraryQuery
       .groupBy('segment.flightInstanceId')
       .addGroupBy('segment.cabin')
       .addGroupBy('segment.fareClassCode')

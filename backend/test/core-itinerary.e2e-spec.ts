@@ -11,12 +11,17 @@ import { CoreItineraryLifecycleEvent } from '../src/database/entities/core-itine
 import { CoreItinerarySegment } from '../src/database/entities/core-itinerary-segment.entity';
 import { CoreItineraryTraveller } from '../src/database/entities/core-itinerary-traveller.entity';
 import { CoreItineraryTravellerSegment } from '../src/database/entities/core-itinerary-traveller-segment.entity';
+import { CoreItineraryPaymentConfirmation } from '../src/database/entities/core-itinerary-payment-confirmation.entity';
+import { CoreItineraryTicketDocument } from '../src/database/entities/core-itinerary-ticket-document.entity';
+import { CoreItineraryFlightCoupon } from '../src/database/entities/core-itinerary-flight-coupon.entity';
 import { FareRule } from '../src/database/entities/fare-rule.entity';
 import { Flight } from '../src/database/entities/flight.entity';
 import { FlightInstance } from '../src/database/entities/flight-instance.entity';
 import { Route } from '../src/database/entities/route.entity';
 import { TravelExtraSetting } from '../src/database/entities/travel-extra-setting.entity';
 import { User } from '../src/database/entities/user.entity';
+import { LedgerEntry } from '../src/database/entities/ledger-entry.entity';
+import { TicketDocumentStock } from '../src/database/entities/ticket-document-stock.entity';
 import { createTestApp } from './helpers/app.helper';
 import { CoreItineraryHoldExpiryService } from '../src/modules/pss/core-itinerary-hold-expiry.service';
 
@@ -40,6 +45,24 @@ describe('Core itinerary internal API', () => {
       .find({ where: { ownerId: holdOwnerId }, select: { id: true } });
     const orderIds = orders.map((order) => order.id);
     if (orderIds.length > 0) {
+      const documents = await dataSource
+        .getRepository(CoreItineraryTicketDocument)
+        .find({ where: { orderId: In(orderIds) }, select: { id: true } });
+      const documentIds = documents.map((document) => document.id);
+      if (documentIds.length > 0) {
+        await dataSource
+          .getRepository(CoreItineraryFlightCoupon)
+          .delete({ ticketDocumentId: In(documentIds) });
+      }
+      await dataSource
+        .getRepository(CoreItineraryTicketDocument)
+        .delete({ orderId: In(orderIds) });
+      await dataSource
+        .getRepository(LedgerEntry)
+        .delete({ itineraryOrderId: In(orderIds) });
+      await dataSource
+        .getRepository(CoreItineraryPaymentConfirmation)
+        .delete({ orderId: In(orderIds) });
       await dataSource
         .getRepository(CoreItineraryLifecycleEvent)
         .delete({ orderId: In(orderIds) });
@@ -779,6 +802,275 @@ describe('Core itinerary internal API', () => {
             .getRepository(CoreItinerarySegment)
             .count({ where: { orderId: order.id } }),
         ).toBe(2);
+      }
+    });
+  });
+
+  describe('POST /internal/v1/core/itineraries/:id/payment-confirmations', () => {
+    afterEach(async () => {
+      await cleanupHoldOrders();
+    });
+
+    async function createHold(key: string): Promise<string> {
+      const response = await request(app.getHttpServer())
+        .post('/internal/v1/core/itineraries/hold')
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', key)
+        .send(validHoldRequest());
+      expect(response.status).toBe(201);
+      return response.body.data.id as string;
+    }
+
+    function paymentBody() {
+      return {
+        ownerId: holdOwnerId,
+        paymentReference: `verified-${randomUUID()}`,
+        amountIrr: '36000000',
+      };
+    }
+
+    it('enforces service auth, validation, owner scope and not-found', async () => {
+      const orderId = await createHold(`payment-guard-${suffix}`);
+      const body = paymentBody();
+      const unauthorized = await request(app.getHttpServer())
+        .post(`/internal/v1/core/itineraries/${orderId}/payment-confirmations`)
+        .set('Idempotency-Key', `payment-unauthorized-${suffix}`)
+        .send(body);
+      const invalidAmount = await request(app.getHttpServer())
+        .post(`/internal/v1/core/itineraries/${orderId}/payment-confirmations`)
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', `payment-invalid-${suffix}`)
+        .send({ ...body, amountIrr: '0' });
+      const missingKey = await request(app.getHttpServer())
+        .post(`/internal/v1/core/itineraries/${orderId}/payment-confirmations`)
+        .set('X-Internal-Token', token)
+        .send(body);
+      const wrongOwner = await request(app.getHttpServer())
+        .post(`/internal/v1/core/itineraries/${orderId}/payment-confirmations`)
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', `payment-owner-${suffix}`)
+        .send({ ...body, ownerId: randomUUID() });
+      const missing = await request(app.getHttpServer())
+        .post(
+          `/internal/v1/core/itineraries/${randomUUID()}/payment-confirmations`,
+        )
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', `payment-missing-${suffix}`)
+        .send(body);
+
+      expect(unauthorized.status).toBe(401);
+      expect(invalidAmount.status).toBe(400);
+      expect(missingKey.status).toBe(400);
+      expect(wrongOwner.status).toBe(404);
+      expect(missing.status).toBe(404);
+      expect(
+        await dataSource
+          .getRepository(CoreItineraryPaymentConfirmation)
+          .count({ where: { orderId } }),
+      ).toBe(0);
+    });
+
+    it('reprices without its own held seats and atomically issues every coupon', async () => {
+      const orderId = await createHold(`payment-success-${suffix}`);
+      const body = paymentBody();
+      const response = await request(app.getHttpServer())
+        .post(`/internal/v1/core/itineraries/${orderId}/payment-confirmations`)
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', `payment-success-${suffix}`)
+        .send(body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toMatchObject({
+        id: orderId,
+        status: 'TICKETED',
+        currency: 'IRR',
+        amountIrr: '36000000',
+        paymentReference: body.paymentReference,
+      });
+      expect(response.body.data.documents).toHaveLength(2);
+      for (const document of response.body.data.documents as Array<{
+        documentNumber: string;
+        coupons: Array<{ couponNumber: number; status: string }>;
+      }>) {
+        expect(document.documentNumber).toMatch(/^780[0-9]{10}$/);
+        expect(document.coupons).toEqual([
+          expect.objectContaining({ couponNumber: 1, status: 'OPEN' }),
+          expect.objectContaining({ couponNumber: 2, status: 'OPEN' }),
+        ]);
+      }
+      expect(
+        await dataSource.getRepository(CoreItineraryTicketDocument).count({
+          where: { orderId },
+        }),
+      ).toBe(2);
+      expect(
+        await dataSource.getRepository(CoreItineraryFlightCoupon).count(),
+      ).toBe(4);
+      expect(
+        await dataSource.getRepository(LedgerEntry).count({
+          where: { itineraryOrderId: orderId, type: 'SALE' },
+        }),
+      ).toBe(1);
+    });
+
+    it('serializes concurrent replay and rejects changed replay data', async () => {
+      const orderId = await createHold(`payment-replay-hold-${suffix}`);
+      const body = paymentBody();
+      const send = () =>
+        request(app.getHttpServer())
+          .post(
+            `/internal/v1/core/itineraries/${orderId}/payment-confirmations`,
+          )
+          .set('X-Internal-Token', token)
+          .set('Idempotency-Key', `payment-replay-${suffix}`)
+          .send(body);
+      const [first, replay] = await Promise.all([send(), send()]);
+      const changed = await request(app.getHttpServer())
+        .post(`/internal/v1/core/itineraries/${orderId}/payment-confirmations`)
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', `payment-replay-${suffix}`)
+        .send({ ...body, amountIrr: '36000001' });
+
+      expect(first.status).toBe(200);
+      expect(replay.status).toBe(200);
+      expect(replay.body.data.paymentConfirmationId).toBe(
+        first.body.data.paymentConfirmationId,
+      );
+      expect(changed.status).toBe(409);
+      expect(changed.body.error.code).toBe('IDEMPOTENCY_PAYLOAD_MISMATCH');
+      expect(
+        await dataSource.getRepository(CoreItineraryTicketDocument).count({
+          where: { orderId },
+        }),
+      ).toBe(2);
+      expect(
+        await dataSource.getRepository(LedgerEntry).count({
+          where: { itineraryOrderId: orderId, type: 'SALE' },
+        }),
+      ).toBe(1);
+    });
+
+    it('retains a price-mismatch proof for reconciliation with no partial issue', async () => {
+      const orderId = await createHold(`payment-price-${suffix}`);
+      const fareRuleRepo = dataSource.getRepository(FareRule);
+      try {
+        await fareRuleRepo.update(fareRuleIds[1], {
+          sitePriceIrr: 11_000_000n,
+        });
+        const response = await request(app.getHttpServer())
+          .post(
+            `/internal/v1/core/itineraries/${orderId}/payment-confirmations`,
+          )
+          .set('X-Internal-Token', token)
+          .set('Idempotency-Key', `payment-price-${suffix}`)
+          .send(paymentBody());
+
+        expect(response.status).toBe(409);
+        expect(response.body.error.code).toBe(
+          'PAYMENT_RECONCILIATION_REQUIRED',
+        );
+        const confirmation = await dataSource
+          .getRepository(CoreItineraryPaymentConfirmation)
+          .findOneByOrFail({ orderId });
+        expect(confirmation.status).toBe('REVIEW_REQUIRED');
+        expect(confirmation.failureCode).toBe('PRICE_CHANGED');
+        expect(
+          await dataSource.getRepository(CoreItineraryTicketDocument).count({
+            where: { orderId },
+          }),
+        ).toBe(0);
+        expect(
+          await dataSource.getRepository(LedgerEntry).count({
+            where: { itineraryOrderId: orderId },
+          }),
+        ).toBe(0);
+        expect(
+          (
+            await dataSource
+              .getRepository(CoreItineraryOrder)
+              .findOneByOrFail({ id: orderId })
+          ).status,
+        ).toBe('HELD');
+      } finally {
+        await fareRuleRepo.update(fareRuleIds[1], {
+          sitePriceIrr: 10_000_000n,
+        });
+      }
+    });
+
+    it('retains an expired-hold proof without issuing or recording a sale', async () => {
+      const orderId = await createHold(`payment-expired-${suffix}`);
+      await dataSource.getRepository(CoreItineraryOrder).update(orderId, {
+        holdExpiresAt: new Date(Date.now() - 1),
+      });
+      const response = await request(app.getHttpServer())
+        .post(`/internal/v1/core/itineraries/${orderId}/payment-confirmations`)
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', `payment-expired-${suffix}`)
+        .send(paymentBody());
+
+      expect(response.status).toBe(409);
+      expect(response.body.error.code).toBe('PAYMENT_RECONCILIATION_REQUIRED');
+      const confirmation = await dataSource
+        .getRepository(CoreItineraryPaymentConfirmation)
+        .findOneByOrFail({ orderId });
+      expect(confirmation.status).toBe('REVIEW_REQUIRED');
+      expect(confirmation.failureCode).toBe('HOLD_EXPIRED');
+      expect(
+        await dataSource.getRepository(CoreItineraryTicketDocument).count({
+          where: { orderId },
+        }),
+      ).toBe(0);
+      expect(
+        await dataSource.getRepository(LedgerEntry).count({
+          where: { itineraryOrderId: orderId },
+        }),
+      ).toBe(0);
+    });
+
+    it('retains proof and rolls back when accountable stock is unavailable', async () => {
+      const orderId = await createHold(`payment-stock-${suffix}`);
+      const stockRepo = dataSource.getRepository(TicketDocumentStock);
+      const stocks = await stockRepo.find();
+      try {
+        await stockRepo.update(
+          { documentType: 'ETICKET' },
+          { status: 'QUARANTINED' },
+        );
+        const response = await request(app.getHttpServer())
+          .post(
+            `/internal/v1/core/itineraries/${orderId}/payment-confirmations`,
+          )
+          .set('X-Internal-Token', token)
+          .set('Idempotency-Key', `payment-stock-${suffix}`)
+          .send(paymentBody());
+
+        expect(response.status).toBe(409);
+        expect(response.body.error.code).toBe(
+          'PAYMENT_RECONCILIATION_REQUIRED',
+        );
+        const confirmation = await dataSource
+          .getRepository(CoreItineraryPaymentConfirmation)
+          .findOneByOrFail({ orderId });
+        expect(confirmation.status).toBe('REVIEW_REQUIRED');
+        expect(confirmation.failureCode).toBe('TICKET_STOCK_UNAVAILABLE');
+        expect(
+          await dataSource.getRepository(CoreItineraryTicketDocument).count({
+            where: { orderId },
+          }),
+        ).toBe(0);
+        expect(
+          await dataSource.getRepository(CoreItineraryFlightCoupon).count(),
+        ).toBe(0);
+        expect(
+          await dataSource.getRepository(LedgerEntry).count({
+            where: { itineraryOrderId: orderId },
+          }),
+        ).toBe(0);
+      } finally {
+        for (const stock of stocks) {
+          await stockRepo.update(stock.id, { status: stock.status });
+        }
       }
     });
   });

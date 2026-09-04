@@ -13,10 +13,15 @@ import { LedgerEntryType } from '../enums';
 import { bigintTransformer } from '../transformers/bigint.transformer';
 import { AgencyProfile } from './agency-profile.entity';
 import { Booking } from './booking.entity';
+import { CoreItineraryOrder } from './core-itinerary-order.entity';
 import { User } from './user.entity';
 
 @Index('ledger_entries_agencyId_type_idx', ['agencyId', 'type'])
 @Index('ledger_entries_occurredAt_type_idx', ['occurredAt', 'type'])
+@Index('ledger_entries_itineraryOrderId_sale_key', ['itineraryOrderId'], {
+  unique: true,
+  where: `"itineraryOrderId" IS NOT NULL AND "type" = 'SALE'`,
+})
 @Entity('ledger_entries', { schema: 'payments' })
 export class LedgerEntry {
   @PrimaryColumn({
@@ -39,6 +44,19 @@ export class LedgerEntry {
     foreignKeyConstraintName: 'ledger_entries_bookingId_fkey',
   })
   booking!: Booking | null;
+
+  @Column({ type: 'text', nullable: true })
+  itineraryOrderId!: string | null;
+
+  @ManyToOne(() => CoreItineraryOrder, {
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
+  })
+  @JoinColumn({
+    name: 'itineraryOrderId',
+    foreignKeyConstraintName: 'ledger_entries_itineraryOrderId_fkey',
+  })
+  itineraryOrder!: CoreItineraryOrder | null;
 
   @Column({ type: 'enum', enum: LedgerEntryType, enumName: 'LedgerEntryType' })
   type!: LedgerEntryType;

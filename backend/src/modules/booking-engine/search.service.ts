@@ -270,6 +270,7 @@ export class SearchService {
     instance: FlightInstance,
     cabin: CabinClass,
     manager?: EntityManager,
+    excludeItineraryOrderId?: string,
   ): Promise<{ capacity: number; seatsLeft: number } | null> {
     const mapRepo = manager
       ? manager.getRepository(AircraftSeatMap)
@@ -298,11 +299,17 @@ export class SearchService {
             availabilityManager,
             instance.id,
             cabin,
+            excludeItineraryOrderId,
           ),
         ]
       : await Promise.all([
           this.takenSeatCodes(instance.id),
-          sumActiveCommittedSeats(availabilityManager, instance.id, cabin),
+          sumActiveCommittedSeats(
+            availabilityManager,
+            instance.id,
+            cabin,
+            excludeItineraryOrderId,
+          ),
         ]);
     const seatsLeft = this.seatsLeftForCabin(
       capacity,

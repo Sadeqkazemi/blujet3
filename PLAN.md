@@ -45,8 +45,15 @@ below for what's landed from that port so far.
   skip-locked batches and exactly one durable lifecycle event per transition.
 - [x] Add owner-scoped, idempotent pre-payment cancellation with one immutable
   lifecycle event and transactional release of every segment.
-- [ ] Add payment confirmation and accountable multi-coupon ticket fulfilment
-  next.
+- [x] Add trusted payment confirmation with owner/idempotency binding, durable
+  reconciliation evidence, reprice that excludes the order's own held seats,
+  shared-stock accountable documents, one OPEN coupon per traveller/segment
+  and exactly one SALE ledger row.
+- [x] Prove the additive migration apply/revert/re-apply, 37 focused unit tests,
+  26 real PostgreSQL HTTP E2E tests (including concurrent replay and rollback),
+  changed-file zero-warning lint, typecheck and production build.
+- [ ] Add post-ticket void/refund/exchange servicing next; PSP callback
+  signature verification and Nira/DCS submission wait for vendor documents.
 - No push, merge, server migration, deployment or public writer cutover.
 
 ### 2026-09-04 — Backend unsafe-argument warnings

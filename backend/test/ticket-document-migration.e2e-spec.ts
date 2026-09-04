@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import { dataSourceOptions } from '../src/database/data-source.options';
 import { AccountableTicketDocuments1790870400000 } from '../src/database/migrations/1790870400000-AccountableTicketDocuments';
+import { CoreItineraryPaymentFulfilment1791302400000 } from '../src/database/migrations/1791302400000-CoreItineraryPaymentFulfilment';
 
 describe('accountable ticket-document migration', () => {
   let dataSource: DataSource;
@@ -19,8 +20,15 @@ describe('accountable ticket-document migration', () => {
     await runner.startTransaction();
     try {
       const migration = new AccountableTicketDocuments1790870400000();
+      const fulfilmentMigration =
+        new CoreItineraryPaymentFulfilment1791302400000();
+
+      // Rehearse the older migration inside the current schema by first
+      // removing, then restoring, the newer tables that depend on its stock.
+      await fulfilmentMigration.down(runner);
       await migration.down(runner);
       await migration.up(runner);
+      await fulfilmentMigration.up(runner);
 
       const counts = await runner.query<
         Array<{ legacy_count: string; quarantined_count: string }>
