@@ -1,5 +1,16 @@
 # DB_SCHEMA.md — blujet data model
 
+## A6.4 — Agency read-only projections
+
+No migration or new business data. `agency_profiles.userId` is the canonical
+agency identity in this schema. The independent service reads only profile
+columns userId/city/tier/joinedAt/suspendedAt and invoice columns
+id/agencyId/invoiceNo/amountIrr/status/issuedAt/dueAt/paidAt from
+`agency.agency_invoices`. Every invoice query filters agencyId. No cross-schema
+joins or writes; the backend remains the only business writer. A separately
+provisioned SELECT-only role is required for deployment. Tests create and clean
+their own isolated `_test` rows and reader role, never production grants.
+
 ## A6.1 — Loyalty read-only projections
 
 A6.2 verifies the documented reader grants through PostgreSQL catalogs only.

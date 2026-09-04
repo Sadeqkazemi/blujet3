@@ -19,6 +19,23 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-04 — A6.4 Agency read-only foundation
+
+- [x] Owner approved an independent read-only agency boundary without deployment.
+- [x] Add minimized profile and ten-row invoice list/detail APIs with trusted
+  tenant assertions, parameterized owner-scoped queries and exact IRR strings.
+- [x] Preserve canonical agency_profiles.userId, single account per agency,
+  current public/UAT behavior and Core ownership of every financial/sales write.
+- [x] Prove 15 HTTP/PostgreSQL cases with a restricted login plus 2 config tests;
+  no PII/foreign invoice exposure, no writes, deterministic paging and safe errors.
+- [x] Pass lint/typecheck/build and deterministic typed internal OpenAPI export.
+- [x] Add required CI job and optional local-only Docker topology; no host port,
+  public routing, migration, production grant or deployment change.
+- [ ] Obtain explicit publication approval and GitHub CI/PostgreSQL 16 evidence.
+- [ ] Production credential review, representative parity and owner-approved
+  public integration/deployment remain separate gates; other portal reads are
+  not migrated by this minimized-profile/invoice slice.
+
 ### 2026-09-04 — A6.3 Loyalty restricted-reader shadow contract
 
 - [x] Automate built-backend CLI -> real Loyalty HTTP -> restricted PostgreSQL
@@ -29,7 +46,8 @@ below for what's landed from that port so far.
 - [x] Pass 30 Loyalty tests (6 new) and 13 backend comparator tests locally;
   Loyalty lint/typecheck, both builds and workflow YAML checks pass.
 - [x] Wire sequential backend build/unit tests before Loyalty E2E in CI.
-- [ ] Obtain commit/push/merge approval and CI PostgreSQL 16 evidence.
+- [x] Owner approved publication; PR #32 merged as `179e3ea` with all CI and
+  CodeQL checks successful. No deployment was performed.
 - [ ] Production parity sampling and owner-approved public cutover remain
   separate; no production credential changes or deployment in this slice.
 
