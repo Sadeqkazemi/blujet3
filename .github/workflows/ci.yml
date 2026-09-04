@@ -20,6 +20,7 @@ jobs:
       backend: ${{ steps.scope.outputs.backend }}
       backend_migration: ${{ steps.scope.outputs.backend_migration }}
       experience: ${{ steps.scope.outputs.experience }}
+      loyalty: ${{ steps.scope.outputs.loyalty }}
       identity: ${{ steps.scope.outputs.identity }}
       notify: ${{ steps.scope.outputs.notify }}
       pss: ${{ steps.scope.outputs.pss }}
@@ -35,7 +36,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          areas=(backend backend_migration experience identity notify pss frontend ml)
+          areas=(backend backend_migration experience loyalty identity notify pss frontend ml)
           if [[ "${{ github.event_name }}" != "pull_request" ]]; then
             for area in "${areas[@]}"; do
               echo "$area=true" >> "$GITHUB_OUTPUT"
@@ -69,6 +70,7 @@ jobs:
           emit backend '^backend/'
           emit backend_migration '^(backend/|scripts/check-expand-only-migrations\.mjs$)'
           emit experience '^(experience-service/|backend/(package(-lock)?\.json$|src/database/))'
+          emit loyalty '^(loyalty-service/|backend/(package(-lock)?\.json$|src/database/|src/modules/loyalty-shadow/))'
           emit identity '^identity-service/'
           emit notify '^(notify-service/|backend/(package(-lock)?\.json$|src/database/))'
           emit pss '^pss-service/'
@@ -119,6 +121,58 @@ jobs:
           EXPERIENCE_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_experience_test
           EXPERIENCE_INTERNAL_TOKEN: test-experience-internal-token-at-least-32-characters
           PII_ENCRYPTION_KEY: 3a6dfd91b775e9cd09be8a576889adfe518a31ad1064af3d63c21ce9aadbdf10
+        run: |
+          npm ci
+          npm run lint:check
+          npm run typecheck
+          npm run build
+          npm test
+          npm run test:e2e
+
+  loyalty-service:
+    name: Loyalty service
+    needs: changes
+    if: needs.changes.outputs.loyalty == 'true'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: blujet
+          POSTGRES_PASSWORD: blujet
+          POSTGRES_DB: blujet_loyalty_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U blujet -d blujet_loyalty_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            loyalty-service/package-lock.json
+      - name: Apply existing schema and test fixtures
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_loyalty_test
+        run: |
+          npm ci
+          cp .env.test .env
+          npm run migration:run
+          npm run seed
+      - name: Validate read-only Loyalty boundary
+        working-directory: loyalty-service
+        env:
+          NODE_ENV: test
+          LOYALTY_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_loyalty_test
+          LOYALTY_INTERNAL_TOKEN: test-loyalty-internal-token-at-least-32-characters
         run: |
           npm ci
           npm run lint:check
@@ -420,6 +474,7 @@ jobs:
     needs:
       - changes
       - experience-service
+      - loyalty-service
       - identity-service
       - notify-service
       - backend-migration-compatibility

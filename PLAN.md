@@ -133,7 +133,9 @@ below for what's landed from that port so far.
   build, Prettier check and scoped read-only lint. Real stock authority/ranges, EMD servicing,
   Nira and PSP late-capture compensation remain input-gated. Nothing from B3.2
   has been pushed, merged, migrated on a server or deployed.
-- Phase 6 agency/loyalty extraction has not started. See
+- Phase 6 update (2026-09-04): A6.1 Loyalty read-only service and offline shadow
+  comparison are implemented locally; agency and writer extraction have not
+  started. See
   [execution roadmap](docs/architecture/commerce-execution-roadmap.md) for
   dependencies, acceptance evidence and deferred external integrations.
 - No B3.2 push, merge, production migration or deployment has occurred.
@@ -4104,10 +4106,17 @@ contracts and retires the production mock adapters.
 - [x] Draft the contract-first Loyalty read boundary, projection safety rules,
   compatibility behavior and flag-based rollback plan in
   `docs/features/microservices-phase-6-loyalty-foundation.md`.
-- [ ] Implement the independently deployable read-only service and typed
+- [x] Implement the independently deployable read-only service and typed
   gateway shadow comparison against the existing `loyalty` schema.
-- [ ] Keep the current backend as the sole writer until shadow-read parity and
-  explicit owner approval are complete; no deploy or production cutover.
+- [x] Keep the current backend as the sole writer; the A6.1 service exposes no
+  commands and its application connection is transaction/session read-only.
+- [x] Wire lint, typecheck, build, unit and real-PostgreSQL E2E coverage into CI,
+  including access isolation, ledger-derived points, IRR precision, strict
+  expiry, bounded results, sanitized readiness failure and rejected writes.
+- [ ] Collect representative shadow-read parity evidence with a separately
+  provisioned SELECT-only role before any public read integration.
+- [x] Owner explicitly approved commit/push/merge on 2026-09-04. Production
+  credentials, deployment and cutover remain separate approval gates.
 
 ## Central PSS/CRS extraction — Slice 0 (2026-09-01)
 

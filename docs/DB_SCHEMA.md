@@ -1,5 +1,18 @@
 # DB_SCHEMA.md — blujet data model
 
+## A6.1 — Loyalty read-only projections
+
+No schema change, seed, migration or copied business table. Loyalty reads
+explicit columns of `loyalty.club_members`, `loyalty.club_points_entries`
+and `loyalty.price_locks` with owner-scoped parameterized queries.
+Points are ledger-derived decimal strings; IRR stays decimal strings.
+Every service query runs in a READ ONLY transaction with a statement timeout.
+Production requires a separately provisioned non-superuser, non-owner role,
+with SELECT on only these projections' columns and no writes. The app's
+read-only transaction is defense in depth, not a replacement for DB grants.
+No permission grants or production changes are executed by this slice.
+
+
 ## Architecture authority (v1.1)
 
 Target ownership and schema extraction are governed by

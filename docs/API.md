@@ -1,5 +1,31 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## A6.1 — internal Loyalty read boundary
+
+An independently runnable `loyalty-service` exposes authenticated GET routes
+`/internal/v1/loyalty/members/:userId` and
+`/internal/v1/loyalty/price-locks/:userId`. Both require `X-Internal-Token`,
+`X-Loyalty-User-Id` matching the UUID path (asserted by the trusted caller,
+never forwarded from a browser), and propagate `X-Request-Id`. They are
+internal service-identity APIs, not user-token APIs. Missing identity: 401;
+owner mismatch: 403; invalid UUID/query: 400; missing/inactive member: 404.
+Errors use the existing success/error envelope and safe Persian messages.
+
+Member data: `{id,userId,level,cardStatus,points}`; points is a signed decimal
+string from the immutable points ledger, not the cached member.points field.
+Lock data: `{id,flightInstanceId,cabin,lockedPriceIrr,feeIrr,status,expiresAt,
+createdAt,bookingId}` for the owner, ACTIVE and strictly unexpired; no flight
+join. Optional ISO UTC `at` fixes the comparison instant (read-only, not sale
+authorization). Results are ordered by id and bounded to 1001 rows; an overflow
+returns 409 rather than a silently truncated comparison.
+
+`/health` is public liveness; `/ready` probes the required schema through a
+read-only transaction and returns safe 503 on failure. No public facade or
+writer changes. The offline backend shadow command is disabled by default;
+it compares local-before, remote, local-after and reports MATCH, MISMATCH,
+INCONCLUSIVE (concurrent change), or UNAVAILABLE without logging projections.
+
+
 ## Architecture authority (v1.1)
 
 The target service topology and migration order are governed by
