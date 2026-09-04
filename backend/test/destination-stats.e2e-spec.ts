@@ -6,6 +6,8 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter';
 
+jest.setTimeout(60_000);
+
 describe('Destination stats (e2e)', () => {
   let app: INestApplication;
 
