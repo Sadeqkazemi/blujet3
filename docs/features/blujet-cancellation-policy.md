@@ -7,7 +7,7 @@ integer IRR arithmetic.
 ## Acceptance checklist
 
 - [x] More than 72 hours before departure applies a 30% penalty; 24 through 72
-      hours applies 50%; 12 through 24 hours applies 70%; below 12 hours or
+      hours applies 50%; 12 through (but not including) 24 hours applies 70%; below 12 hours or
       after departure is non-refundable (`backend/src/modules/refunds/penalty.spec.ts`).
 - [x] The customer refund API reads the persisted rules and rejects a request
       below the 12-hour threshold (`backend/test/customer-account-refunds.e2e-spec.ts`).

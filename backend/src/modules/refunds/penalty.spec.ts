@@ -26,9 +26,9 @@ const RULES: PenaltyRule[] = [
 describe('computePenalty (unit)', () => {
   it.each([
     [100, 30],
-    [72, 30], // boundary: exactly 72h keeps the ≥72 bracket
+    [72, 50], // exactly 72h belongs to the 24–72h bracket
     [71.9, 50],
-    [24, 50], // boundary
+    [24, 50], // boundary: lower bound is inclusive
     [23.9, 70],
     [12, 70], // boundary
     [11.9, 100],
