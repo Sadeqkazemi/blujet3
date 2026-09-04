@@ -52,8 +52,11 @@ below for what's landed from that port so far.
 - [x] Prove the additive migration apply/revert/re-apply, 37 focused unit tests,
   26 real PostgreSQL HTTP E2E tests (including concurrent replay and rollback),
   changed-file zero-warning lint, typecheck and production build.
-- [ ] Add post-ticket void/refund/exchange servicing next; PSP callback
-  signature verification and Nira/DCS submission wait for vendor documents.
+- [x] Add the first post-ticket servicing boundary: full Core-itinerary refund
+  with durable evidence, exact quote recomputation, one negative REFUND ledger
+  row, effective lifecycle retrieval by UUID/PNR and reconciliation on stale
+  state. Void, partial refund, exchange, EMD, PSP callback verification and
+  Nira/DCS submission still wait for their approved operational/vendor inputs.
 - No push, merge, server migration, deployment or public writer cutover.
 
 ### 2026-09-04 — Backend unsafe-argument warnings

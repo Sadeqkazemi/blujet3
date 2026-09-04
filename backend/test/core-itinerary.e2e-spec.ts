@@ -942,6 +942,55 @@ describe('Core itinerary internal API', () => {
       ).toBe(1);
     });
 
+    it('retrieves a Core order by UUID or PNR with effective servicing state and owner scope', async () => {
+      const orderId = await createHold(`retrieve-${suffix}`);
+      const payment = await request(app.getHttpServer())
+        .post(`/internal/v1/core/itineraries/${orderId}/payment-confirmations`)
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', `retrieve-payment-${suffix}`)
+        .send(paymentBody());
+      expect(payment.status).toBe(200);
+      const pnr = payment.body.data.pnr as string;
+
+      const unauthorized = await request(app.getHttpServer()).get(
+        `/internal/v1/orders/${orderId}?ownerId=${holdOwnerId}`,
+      );
+      const wrongOwner = await request(app.getHttpServer())
+        .get(`/internal/v1/orders/${orderId}`)
+        .set('X-Internal-Token', token)
+        .query({ ownerId: randomUUID() });
+      const byId = await request(app.getHttpServer())
+        .get(`/internal/v1/orders/${orderId}`)
+        .set('X-Internal-Token', token)
+        .query({ ownerId: holdOwnerId });
+      const byPnr = await request(app.getHttpServer())
+        .get(`/internal/v1/orders/${pnr}`)
+        .set('X-Internal-Token', token)
+        .query({ ownerId: holdOwnerId });
+
+      expect(unauthorized.status).toBe(401);
+      expect(wrongOwner.status).toBe(404);
+      expect(byId.status).toBe(200);
+      expect(byId.body.data).toMatchObject({
+        id: orderId,
+        pnr,
+        status: 'TICKETED',
+        currency: 'IRR',
+        totalIrr: '36000000',
+        travellers: [
+          { sequence: 1, fullName: 'علی رضایی', passengerType: 'ADULT' },
+          { sequence: 2, fullName: 'سارا احمدی', passengerType: 'CHILD' },
+        ],
+        segments: [{ sequence: 1 }, { sequence: 2 }],
+      });
+      expect(byId.body.data.documents).toHaveLength(2);
+      expect(byId.body.data.documents[0].coupons).toHaveLength(2);
+      expect(byId.body.data.refundHistory).toEqual([]);
+      expect(byId.body.data.couponEvents).toEqual([]);
+      expect(byPnr.status).toBe(200);
+      expect(byPnr.body.data.id).toBe(orderId);
+    });
+
     it('quotes and atomically applies a full-itinerary refund with one negative ledger entry', async () => {
       const orderId = await createHold(`refund-success-${suffix}`);
       const payment = await request(app.getHttpServer())

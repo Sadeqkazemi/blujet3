@@ -27,6 +27,8 @@ import { CoreItineraryCancelService } from './core-itinerary-cancel.service';
 import { CoreItineraryPaymentService } from './core-itinerary-payment.service';
 import { CoreItineraryRefundService } from './core-itinerary-refund.service';
 import { CoreOrderServicingController } from './core-order-servicing.controller';
+import { CoreItineraryRetrievalService } from './core-itinerary-retrieval.service';
+import { CoreOrderRetrievalController } from './core-order-retrieval.controller';
 import { HttpPssClient } from './http-pss.client';
 import { PssInternalAuthGuard } from './pss-internal-auth.guard';
 import { PSS_CLIENT } from './pss-client.interface';
@@ -53,7 +55,11 @@ import { PSS_CLIENT } from './pss-client.interface';
     BookingEngineModule,
     AncillaryServicesModule,
   ],
-  controllers: [CoreItineraryController, CoreOrderServicingController],
+  controllers: [
+    CoreItineraryController,
+    CoreOrderServicingController,
+    CoreOrderRetrievalController,
+  ],
   providers: [
     HttpPssClient,
     CoreItineraryService,
@@ -64,6 +70,7 @@ import { PSS_CLIENT } from './pss-client.interface';
     CoreItineraryCancelService,
     CoreItineraryPaymentService,
     CoreItineraryRefundService,
+    CoreItineraryRetrievalService,
     PssInternalAuthGuard,
     { provide: PSS_CLIENT, useExisting: HttpPssClient },
   ],

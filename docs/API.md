@@ -46,6 +46,17 @@ partially changes coupons or writes a refund ledger row. Owner mismatch is
 hidden as `404 NOT_FOUND`. Selected-coupon refund, void, exchange and EMD remain
 separate slices pending the documented operational rules and approved stock.
 
+### Commerce B3.3b — Core order retrieval
+
+`GET /internal/v1/orders/:reference?ownerId=<uuid>` is the read-only retrieval
+boundary for Core servicing. `reference` may be the internal order UUID or the
+PNR. The internal service token and owner scope are mandatory; owner mismatch
+is intentionally hidden as `404 NOT_FOUND`. The response includes persisted
+travellers (without encrypted national IDs), ordered segments, accountable
+documents, effective document/coupon lifecycle (`servicingStatus ?? status`)
+and refund/coupon servicing history. It performs no writes and does not expose
+passwords, hashes or PSP secrets.
+
 ### Commerce B3.2 — accountable e-ticket issuance
 
 No public route, DTO or successful response shape changes. Every existing
