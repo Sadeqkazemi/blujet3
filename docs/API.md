@@ -4536,11 +4536,38 @@ same cancelled order without a second event. An owner mismatch is reported as
 Because availability is derived from active order status, all legs are released
 together when the transaction commits.
 
+#### Core itinerary payment confirmation and fulfilment
+
+`POST /internal/v1/core/itineraries/:id/payment-confirmations` requires
+`X-Internal-Token`, a non-empty `Idempotency-Key`, and a body containing the
+scoped `ownerId`, an already verified `paymentReference`, and exact decimal-
+string `amountIrr`. The endpoint is an internal proof-ingestion boundary, not a
+PSP callback: the trusted caller must verify the provider response/signature
+before invoking it. PSP-specific verification remains disabled until the
+provider documentation and sandbox are supplied.
+
+The payment proof is persisted durably before local fulfilment. The Core then
+locks the order and every itinerary flight in stable order, reprices without
+counting the order's own held seats, and requires an active unexpired `HELD`
+order whose current total equals `amountIrr`. In one PostgreSQL transaction it
+transitions the order through `PAID` to `TICKETED`, allocates one accountable
+e-ticket document per traveller from the shared airline stock, creates one
+ordered `OPEN` coupon per traveller/segment, appends one SALE ledger entry and
+marks the confirmation complete. The response returns the original result on
+an identical replay; no document number is allocated twice.
+
+The idempotency key is bound to order, owner, reference and amount. Changed
+reuse returns `409 IDEMPOTENCY_PAYLOAD_MISMATCH`; owner mismatch is hidden as
+`404 NOT_FOUND`. A captured payment that cannot be fulfilled because of
+expiry, state, price or accountable-stock availability remains persisted as
+`REVIEW_REQUIRED` and returns `409 PAYMENT_RECONCILIATION_REQUIRED`; Core does
+not claim an automatic refund or accept another payment for that order.
+
 | Method | Path | Behaviour |
 | --- | --- | --- |
 | POST | `/internal/v1/orders` | Atomically holds every segment and creates one PNR. |
 | GET | `/internal/v1/orders/:reference` | Retrieves by internal id or PNR, including travellers, segments, documents, coupons and servicing history. |
-| POST | `/internal/v1/orders/:id/payment-confirmations` | Records a verified external payment reference and fulfils/tickets exactly once. |
+| POST | `/internal/v1/core/itineraries/:id/payment-confirmations` | Implemented contract. Records trusted verified payment evidence and fulfils/tickets exactly once. |
 | POST | `/internal/v1/orders/:id/cancel` | Cancels an eligible unticketed order and releases all held inventory. |
 | POST | `/internal/v1/orders/:id/void` | Voids eligible accountable documents within the configured window. |
 | POST | `/internal/v1/orders/:id/refunds/quote` | Quotes full or selected-traveller/segment/document refund without mutation. |

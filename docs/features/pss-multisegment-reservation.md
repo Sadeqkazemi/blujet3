@@ -1,6 +1,6 @@
 # PSS multi-segment reservation — Slice 1 contract
 
-Status: **Core resolution, additive quote and atomic hold implemented; fulfilment pending**
+Status: **Core resolution, quote, hold and accountable payment fulfilment implemented**
 
 ## Owner-approved commercial rule — 2026-09-04
 
@@ -51,10 +51,11 @@ endpoint or writer is changed here.
   is enforced by the Core resolver without inventing a universal fallback.
 - Through-fare discounts, pooled baggage and through-check operations are not
   part of the approved additive/per-segment rule.
-- Payment confirmation, accountable ticket/coupon issue, cancellation and
-  servicing over the new Core itinerary order.
-- Payment confirmation and accountable ticket/coupon fulfilment over the new
-  Core itinerary order.
+- PSP callback/signature verification remains pending the selected provider's
+  documentation. The internal payment-confirmation contract only accepts a
+  reference already verified by a trusted caller; it does not emulate a bank.
+- Post-ticket servicing (void/refund/exchange), EMD issuance and Nira/DCS
+  submission remain later slices.
 - PSS writer cutover flag and rollback observation window.
 
 ## Acceptance evidence for the implementation slice
@@ -115,5 +116,17 @@ cutover is authorized by this implementation.
   HTTP proof confirms expired inventory returns on every leg.
 - [x] Cancel an active order under its owner scope, release every leg in one
   commit and make replay return the same cancellation without another event.
-- [ ] Add payment confirmation and accountable ticket/coupon fulfilment in
-  later slices.
+- [x] Persist trusted payment confirmation evidence before fulfilment, bind
+  retries to owner/order/amount/reference, and retain failures for manual
+  reconciliation instead of losing an externally captured payment.
+- [x] Reprice the held itinerary without counting its own seats, lock every
+  flight in stable order, and atomically transition `HELD -> PAID -> TICKETED`
+  with one SALE ledger row.
+- [x] Allocate one accountable e-ticket document per traveller from the shared
+  stock and one ordered OPEN flight coupon per traveller/segment; no partial
+  issue and no duplicate allocation on replay or concurrency.
+- [x] Prove auth, validation, ownership, not-found, expiry/price/stock failure,
+  exact IRR, idempotency, multi-coupon issue, rollback and concurrency. Local
+  evidence: migration apply/revert/re-apply, 37 focused unit tests, 26 real
+  PostgreSQL HTTP E2E tests, changed-file zero-warning lint, typecheck and
+  production build.

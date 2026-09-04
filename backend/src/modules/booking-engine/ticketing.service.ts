@@ -1,6 +1,12 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { EntityManager, In } from 'typeorm';
 import { Booking } from '../../database/entities/booking.entity';
+import { CoreItineraryFlightCoupon } from '../../database/entities/core-itinerary-flight-coupon.entity';
+import { CoreItineraryOrder } from '../../database/entities/core-itinerary-order.entity';
+import { CoreItinerarySegment } from '../../database/entities/core-itinerary-segment.entity';
+import { CoreItineraryTicketDocument } from '../../database/entities/core-itinerary-ticket-document.entity';
+import { CoreItineraryTraveller } from '../../database/entities/core-itinerary-traveller.entity';
+import { CoreItineraryTravellerSegment } from '../../database/entities/core-itinerary-traveller-segment.entity';
 import { Passenger } from '../../database/entities/passenger.entity';
 import {
   TicketDocument,
@@ -121,6 +127,176 @@ export class TicketingService {
     return passengers.map((passenger) => byPassenger.get(passenger.id)!);
   }
 
+  async issueCoreItineraryTickets(
+    manager: EntityManager,
+    orderId: string,
+    paymentReference: string,
+  ): Promise<{
+    documents: CoreItineraryTicketDocument[];
+    coupons: CoreItineraryFlightCoupon[];
+  }> {
+    const order = await manager.findOneOrFail(CoreItineraryOrder, {
+      where: { id: orderId },
+      lock: { mode: 'pessimistic_write' },
+    });
+    const travellers = await manager.find(CoreItineraryTraveller, {
+      where: { orderId },
+      order: { sequence: 'ASC' },
+    });
+    const segments = await manager.find(CoreItinerarySegment, {
+      where: { orderId },
+      order: { sequence: 'ASC' },
+    });
+    const travellerSegments = await manager.find(
+      CoreItineraryTravellerSegment,
+      {
+        where: {
+          travellerId: In(travellers.map((traveller) => traveller.id)),
+        },
+      },
+    );
+    if (travellerSegments.length !== travellers.length * segments.length) {
+      throw new Error('Incomplete itinerary traveller-segment pricing');
+    }
+    const existing = travellers.length
+      ? await manager.find(CoreItineraryTicketDocument, {
+          where: {
+            travellerId: In(travellers.map((traveller) => traveller.id)),
+          },
+        })
+      : [];
+    await this.assertStockAvailable(
+      manager,
+      travellers.length - existing.length,
+    );
+
+    const byTraveller = new Map(
+      existing.map((document) => [document.travellerId, document]),
+    );
+    for (const document of existing) {
+      if (
+        document.orderId !== orderId ||
+        document.paymentReference !== paymentReference
+      ) {
+        throw new Error('Existing itinerary ticket does not match payment');
+      }
+    }
+    const priceByPair = new Map(
+      travellerSegments.map((row) => [
+        `${row.travellerId}:${row.segmentId}`,
+        row,
+      ]),
+    );
+    const issuedAt = new Date();
+
+    for (const traveller of travellers) {
+      if (byTraveller.has(traveller.id)) continue;
+      const travellerPrices = travellerSegments.filter(
+        (row) => row.travellerId === traveller.id,
+      );
+      const travellerFareIrr = travellerPrices.reduce(
+        (total, row) => total + row.fareIrr,
+        0n,
+      );
+      const travellerTaxIrr = travellerPrices.reduce(
+        (total, row) => total + row.taxIrr,
+        0n,
+      );
+      const { stock, documentNumber } =
+        await this.allocateNextDocumentNumber(manager);
+      const document = await manager.save(
+        manager.create(CoreItineraryTicketDocument, {
+          orderId,
+          travellerId: traveller.id,
+          stockId: stock.id,
+          documentNumber,
+          status: 'ISSUED',
+          accountabilityStatus: 'ACCOUNTABLE',
+          issueSource: 'CORE_ITINERARY_PAYMENT',
+          paymentReference,
+          issueSnapshot: toJsonValue({
+            orderId,
+            pnr: order.pnr,
+            channel: order.channel,
+            currency: order.currency,
+            travellerId: traveller.id,
+            passengerType: traveller.passengerType,
+            travellerFareIrr,
+            travellerTaxIrr,
+            orderFareIrr: order.fareIrr,
+            orderTaxIrr: order.taxIrr,
+            orderExtrasIrr: order.extrasIrr,
+            orderTotalIrr: order.totalIrr,
+          }),
+          issuedAt,
+        }),
+      );
+      existing.push(document);
+      byTraveller.set(traveller.id, document);
+    }
+
+    const documentIds = existing.map((document) => document.id);
+    const existingCoupons = documentIds.length
+      ? await manager.find(CoreItineraryFlightCoupon, {
+          where: { ticketDocumentId: In(documentIds) },
+        })
+      : [];
+    const couponKeys = new Set(
+      existingCoupons.map(
+        (coupon) => `${coupon.ticketDocumentId}:${coupon.segmentId}`,
+      ),
+    );
+    const newCoupons: CoreItineraryFlightCoupon[] = [];
+    for (const traveller of travellers) {
+      const document = byTraveller.get(traveller.id)!;
+      for (const segment of segments) {
+        const key = `${document.id}:${segment.id}`;
+        if (couponKeys.has(key)) continue;
+        const price = priceByPair.get(`${traveller.id}:${segment.id}`);
+        if (!price) {
+          throw new Error('Missing itinerary traveller-segment price row');
+        }
+        newCoupons.push(
+          manager.create(CoreItineraryFlightCoupon, {
+            ticketDocumentId: document.id,
+            segmentId: segment.id,
+            couponNumber: segment.sequence,
+            status: 'OPEN',
+            fareIrr: price.fareIrr,
+            taxIrr: price.taxIrr,
+            baggageAllowanceKg: segment.baggageAllowanceKg,
+            segmentSnapshot: toJsonValue({
+              orderId,
+              segmentId: segment.id,
+              flightInstanceId: segment.flightInstanceId,
+              sequence: segment.sequence,
+              flightNo: segment.flightNo,
+              originCode: segment.originCode,
+              destinationCode: segment.destinationCode,
+              departureAt: segment.departureAt.toISOString(),
+              arrivalAt: segment.arrivalAt.toISOString(),
+              cabin: segment.cabin,
+              fareClassCode: segment.fareClassCode,
+              currency: order.currency,
+              fareIrr: price.fareIrr,
+              taxIrr: price.taxIrr,
+              baggageAllowanceKg: segment.baggageAllowanceKg,
+            }),
+          }),
+        );
+      }
+    }
+    const savedCoupons = newCoupons.length
+      ? await manager.save(newCoupons)
+      : [];
+    return {
+      documents: travellers.map((traveller) => byTraveller.get(traveller.id)!),
+      coupons: [...existingCoupons, ...savedCoupons].sort(
+        (left, right) => left.couponNumber - right.couponNumber,
+      ),
+    };
+  }
+
   private async allocateNextDocumentNumber(
     manager: EntityManager,
   ): Promise<{ stock: TicketDocumentStock; documentNumber: string }> {
@@ -149,6 +325,9 @@ export class TicketingService {
 
         const occupied =
           (await manager.exists(TicketDocument, {
+            where: { documentNumber },
+          })) ||
+          (await manager.exists(CoreItineraryTicketDocument, {
             where: { documentNumber },
           })) ||
           (await manager.exists(Passenger, {

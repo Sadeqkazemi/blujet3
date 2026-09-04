@@ -24,6 +24,11 @@ import { CoreItineraryService } from './core-itinerary.service';
 import { CoreItineraryQuoteService } from './core-itinerary-quote.service';
 import { CoreItineraryHoldService } from './core-itinerary-hold.service';
 import { CoreItineraryCancelService } from './core-itinerary-cancel.service';
+import { CoreItineraryPaymentService } from './core-itinerary-payment.service';
+import {
+  ConfirmCoreItineraryPaymentDto,
+  ConfirmCoreItineraryPaymentResponseDto,
+} from './dto/confirm-core-itinerary-payment.dto';
 import {
   CancelCoreItineraryDto,
   CancelCoreItineraryResponseDto,
@@ -57,6 +62,7 @@ export class CoreItineraryController {
     private readonly quotes: CoreItineraryQuoteService,
     private readonly holds: CoreItineraryHoldService,
     private readonly cancellations: CoreItineraryCancelService,
+    private readonly payments: CoreItineraryPaymentService,
   ) {}
 
   @Post('resolve')
@@ -134,6 +140,36 @@ export class CoreItineraryController {
     @Body() dto: CancelCoreItineraryDto,
   ) {
     const data = await this.cancellations.cancel(id, dto.ownerId);
+    return { success: true, data };
+  }
+
+  @Post(':id/payment-confirmations')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'ثبت شاهد پرداخت تأییدشده و صدور اتمیک بلیت چندسگمنتی',
+  })
+  @ApiParam({ name: 'id', description: 'شناسه داخلی سفارش' })
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    description: 'کلید یکتای تکرار امن تأیید پرداخت',
+    required: true,
+  })
+  @ApiOkResponse({ type: ConfirmCoreItineraryPaymentResponseDto })
+  @ApiUnauthorizedResponse({ description: 'توکن سرویس داخلی نامعتبر است.' })
+  @ApiBadRequestResponse({
+    description: 'مالک، مبلغ، مرجع پرداخت یا کلید تکرار معتبر نیست.',
+  })
+  @ApiNotFoundResponse({ description: 'سفارش در محدوده مالک یافت نشد.' })
+  @ApiConflictResponse({
+    description:
+      'درخواست تکراری متفاوت است یا پرداخت برای تطبیق دستی نگه داشته شد.',
+  })
+  async confirmPayment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ConfirmCoreItineraryPaymentDto,
+    @Headers('idempotency-key') idempotencyKey?: string,
+  ) {
+    const data = await this.payments.confirm(id, dto, idempotencyKey);
     return { success: true, data };
   }
 }

@@ -3412,6 +3412,32 @@ writers serialize through the same `inventory.flight_instances` row locks;
 the multi-leg writer locks IDs in lexical order and writes all rows in one
 transaction, so there is no inventory dual-write or partial itinerary.
 
+### Core itinerary payment and accountable fulfilment
+
+This additive slice reuses `orders.ticket_document_stocks` as the single
+accountable e-ticket number allocator and adds no second inventory writer:
+
+- `payments.core_itinerary_payment_confirmations`: one durable trusted payment
+  proof per Core order, unique idempotency key and payment reference, exact
+  bigint IRR amount, request digest, `RECEIVED | COMPLETED | REVIEW_REQUIRED`
+  state and nullable failure code. It contains no passenger PII.
+- `orders.core_itinerary_ticket_documents`: one unique accountable document
+  per itinerary traveller, linked to the shared stock range, payment reference,
+  non-PII issue snapshot and issue/accountability state.
+- `orders.core_itinerary_flight_coupons`: one ordered coupon per document and
+  itinerary segment, with OPEN lifecycle plus immutable route/schedule/fare/
+  tax/baggage snapshots. Unique document/segment and document/coupon-number
+  constraints prevent duplicate or malformed coupon sets.
+- `payments.ledger_entries.itineraryOrderId`: nullable Core-order reference for
+  the single SALE entry; legacy booking ledger rows remain unchanged.
+
+Payment proof persistence is deliberately separate from fulfilment so an
+already captured external payment is not erased by a local failure. The order
+status, accountable documents, coupons, SALE ledger row and confirmation
+completion are committed together under order/flight/stock locks. A failure
+leaves the proof in `REVIEW_REQUIRED` for reconciliation and produces no
+partial documents, coupons or ledger sale.
+
 These tables live in the dedicated PSS PostgreSQL database. Reliability tables
 are implemented in Slice 0; reservation, inventory and accountable-document
 tables remain approved contracts for later slices. The website database may

@@ -36,6 +36,7 @@ export class CoreItineraryQuoteService {
   async quote(
     dto: QuoteCoreItineraryDto,
     manager?: EntityManager,
+    excludeItineraryOrderId?: string,
   ): Promise<QuotedCoreItineraryDto> {
     const requiredSeats = dto.travellers.filter(
       (traveller) => traveller.passengerType !== 'INFANT',
@@ -44,8 +45,22 @@ export class CoreItineraryQuoteService {
       this.invalid('سفر باید حداقل یک مسافر دارای صندلی داشته باشد.');
     }
     const resolved = manager
-      ? await this.itineraries.resolve(dto, requiredSeats, manager)
-      : await this.itineraries.resolve(dto, requiredSeats);
+      ? excludeItineraryOrderId
+        ? await this.itineraries.resolve(
+            dto,
+            requiredSeats,
+            manager,
+            excludeItineraryOrderId,
+          )
+        : await this.itineraries.resolve(dto, requiredSeats, manager)
+      : excludeItineraryOrderId
+        ? await this.itineraries.resolve(
+            dto,
+            requiredSeats,
+            undefined,
+            excludeItineraryOrderId,
+          )
+        : await this.itineraries.resolve(dto, requiredSeats);
     const extraIds = dto.segments.flatMap((segment) =>
       (segment.extras ?? []).map((extra) => extra.id),
     );

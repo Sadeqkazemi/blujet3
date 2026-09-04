@@ -21,6 +21,7 @@ export async function sumActiveCommittedSeats(
   manager: EntityManager,
   flightInstanceId: string,
   cabin: CabinClass,
+  excludeItineraryOrderId?: string,
 ): Promise<number> {
   const now = new Date();
   const queries = [
@@ -84,8 +85,8 @@ export async function sumActiveCommittedSeats(
         .andWhere('passenger.deletedAt IS NULL')
         .andWhere('booking.deletedAt IS NULL')
         .getRawOne<{ sum: string }>(),
-    () =>
-      manager
+    () => {
+      const query = manager
         .createQueryBuilder(CoreItinerarySegment, 'segment')
         .innerJoin(
           CoreItineraryOrder,
@@ -101,8 +102,14 @@ export async function sumActiveCommittedSeats(
         .andWhere(
           '(itineraryOrder.status != :held OR itineraryOrder.holdExpiresAt > :now)',
           { held: 'HELD', now },
-        )
-        .getRawOne<{ sum: string }>(),
+        );
+      if (excludeItineraryOrderId) {
+        query.andWhere('itineraryOrder.id != :excludeItineraryOrderId', {
+          excludeItineraryOrderId,
+        });
+      }
+      return query.getRawOne<{ sum: string }>();
+    },
   ] as const;
   const [charterSum, agencySum, allotmentSum, allotmentUsed, itineraryHeld] =
     manager.queryRunner
