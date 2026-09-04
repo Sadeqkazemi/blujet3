@@ -4099,6 +4099,16 @@ contracts and retires the production mock adapters.
 - [ ] Present the complete diff and obtain explicit owner approval before
   commit/push/merge. Deployment remains a separate approved action.
 
+## Microservices architecture v1.1 — phase 6 loyalty foundation (A6.1)
+
+- [x] Draft the contract-first Loyalty read boundary, projection safety rules,
+  compatibility behavior and flag-based rollback plan in
+  `docs/features/microservices-phase-6-loyalty-foundation.md`.
+- [ ] Implement the independently deployable read-only service and typed
+  gateway shadow comparison against the existing `loyalty` schema.
+- [ ] Keep the current backend as the sole writer until shadow-read parity and
+  explicit owner approval are complete; no deploy or production cutover.
+
 ## Central PSS/CRS extraction — Slice 0 (2026-09-01)
 
 - [x] Record the owner-approved API, schema, migration and airline-document decisions.
