@@ -1,5 +1,17 @@
 # DB_SCHEMA.md — blujet data model
 
+## A6.9 — Agency portal profile compatibility projection
+
+No schema migration or writer change. The opt-in route additionally selects the
+existing `agency.agency_profiles.managerName`, `licenseNo`, `phone`, `email`,
+`address` and `suspendReason` columns alongside the A6.4 profile projection.
+`userId` remains the tenant key. No `identity.users` access or cross-schema join
+is allowed; the backend supplies authenticated `fullName`. Minimal reader grants
+remain valid while `AGENCY_PORTAL_PROFILE_ENABLED=false`; enabled readiness and
+the offline verifier require the expanded exact profile grant. This feature does
+not provision production grants. See
+`docs/features/agency-profile-read-cutover.md`.
+
 ## A6.8 — Agency portal invoice compatibility projection
 
 No schema migration or writer change. Opt-in compatibility reads additionally

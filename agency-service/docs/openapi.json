@@ -1,6 +1,120 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/internal/v1/agencies/{agencyId}/portal-profile": {
+      "get": {
+        "operationId": "AgencyController_portalProfile",
+        "parameters": [
+          {
+            "name": "X-Agency-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Internal-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "agencyId",
+            "required": true,
+            "in": "path",
+            "description": "شناسه حساب یکتای آژانس",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ورودی نامعتبر",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "هویت سرویس نامعتبر",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "مالک درخواست مطابقت ندارد",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "پروفایل یا فاکتور متعلق به مالک یافت نشد",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "خطای داخلی بدون اطلاعات حساس",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "مسیر خاموش یا پاسخ خارج از سقف خواندن",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal": []
+          }
+        ],
+        "summary": "پروفایل کامل مالک برای سازگاری پرتال؛ فعال‌سازی صریح",
+        "tags": [
+          "internal-agency"
+        ]
+      }
+    },
     "/internal/v1/agencies/{agencyId}/portal-invoices": {
       "get": {
         "operationId": "AgencyController_portalInvoices",
@@ -565,6 +679,97 @@
         "required": [
           "success",
           "error"
+        ]
+      },
+      "PortalProfileView": {
+        "type": "object",
+        "properties": {
+          "agencyId": {
+            "type": "string",
+            "description": "شناسه حساب آژانس",
+            "format": "uuid"
+          },
+          "city": {
+            "type": "string",
+            "description": "شهر",
+            "example": "تهران"
+          },
+          "tier": {
+            "type": "string",
+            "description": "سطح ثبت‌شده",
+            "example": "NORMAL"
+          },
+          "joinedAt": {
+            "type": "string",
+            "description": "زمان عضویت UTC",
+            "format": "date-time"
+          },
+          "suspendedAt": {
+            "type": "string",
+            "description": "زمان تعلیق پرتال؛ مجوز Partner API نیست",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "managerName": {
+            "type": "string",
+            "description": "نام مدیر یا نماینده آژانس",
+            "example": "علی رضایی"
+          },
+          "licenseNo": {
+            "type": "string",
+            "description": "شماره مجوز آژانس",
+            "example": "AG-1405-001"
+          },
+          "phone": {
+            "type": "string",
+            "description": "شماره تماس ثبت‌شده آژانس",
+            "example": "02112345678"
+          },
+          "email": {
+            "type": "string",
+            "description": "ایمیل ثبت‌شده آژانس",
+            "example": "agency@example.com"
+          },
+          "address": {
+            "type": "string",
+            "description": "نشانی ثبت‌شده آژانس",
+            "example": "تهران، خیابان آزادی"
+          },
+          "suspendReason": {
+            "type": "string",
+            "description": "علت تعلیق پرتال",
+            "nullable": true,
+            "example": null
+          }
+        },
+        "required": [
+          "agencyId",
+          "city",
+          "tier",
+          "joinedAt",
+          "suspendedAt",
+          "managerName",
+          "licenseNo",
+          "phone",
+          "email",
+          "address",
+          "suspendReason"
+        ]
+      },
+      "PortalProfileResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/PortalProfileView"
+          }
+        },
+        "required": [
+          "success",
+          "data"
         ]
       },
       "PortalInvoiceView": {

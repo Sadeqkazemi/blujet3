@@ -348,6 +348,120 @@ describe('Agency Portal (e2e)', () => {
 
   // ── Dashboard / credit / invoices ────────────────────────────────────
 
+  it('routes enabled profile reads with session ownership and safe rollback', async () => {
+    const agency = await createFreshAgency();
+    const { accessToken } = await loginAsAgency(agency.phone);
+    const config = app.get(ConfigService);
+    const serviceToken = 'test-agency-profile-read-at-least-32-characters';
+    const calls: Array<{
+      owner: string | string[] | undefined;
+      id: string | string[] | undefined;
+    }> = [];
+    const read = () =>
+      request(app.getHttpServer())
+        .get('/agency-portal/profile')
+        .set('Authorization', auth(accessToken))
+        .set('X-Agency-Id', crypto.randomUUID())
+        .set('X-Request-Id', 'portal-profile-correlation');
+    const baseline = await read().expect(200);
+    const profile = baseline.body.data as Record<string, unknown>;
+    const row = {
+      agencyId: agency.id,
+      managerName: profile.managerName,
+      licenseNo: profile.licenseNo,
+      phone: profile.phone,
+      email: profile.email,
+      city: profile.city,
+      address: profile.address,
+      tier: profile.tier,
+      suspendedAt: profile.suspendedAt,
+      suspendReason: profile.suspendReason,
+      joinedAt: profile.joinedAt,
+    };
+    let status = 200;
+    let foreign = false;
+    const server = createServer((req, res) => {
+      calls.push({
+        owner: req.headers['x-agency-id'],
+        id: req.headers['x-request-id'],
+      });
+      expect(req.headers['x-internal-token']).toBe(serviceToken);
+      res.writeHead(status, { 'Content-Type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          success: true,
+          data: {
+            ...row,
+            agencyId: foreign ? crypto.randomUUID() : agency.id,
+          },
+        }),
+      );
+    });
+    await new Promise<void>((resolve) =>
+      server.listen(0, '127.0.0.1', resolve),
+    );
+    const address = server.address();
+    if (!address || typeof address === 'string')
+      throw new Error('Fixture listener unavailable');
+    const previous = [
+      'AGENCY_PROFILE_READ_ENABLED',
+      'AGENCY_SERVICE_URL',
+      'AGENCY_INTERNAL_TOKEN',
+    ].map((key) => [key, config.get<string>(key)] as const);
+    try {
+      config.set('AGENCY_PROFILE_READ_ENABLED', 'true');
+      config.set('AGENCY_SERVICE_URL', 'http://127.0.0.1:' + address.port);
+      config.set('AGENCY_INTERNAL_TOKEN', serviceToken);
+      await request(app.getHttpServer())
+        .get('/agency-portal/profile')
+        .expect(401);
+      expect(calls).toHaveLength(0);
+      const enabled = await read().expect(200);
+      expect(enabled.body as unknown).toEqual(baseline.body as unknown);
+      expect(calls).toEqual([
+        { owner: agency.id, id: 'portal-profile-correlation' },
+      ]);
+      foreign = true;
+      await read().expect(503);
+      foreign = false;
+      status = 401;
+      await read().expect(503);
+      status = 404;
+      await read().expect(404);
+      status = 503;
+      const fallback = await read().expect(200);
+      expect(fallback.body as unknown).toEqual(baseline.body as unknown);
+      const count = calls.length;
+      config.set('AGENCY_PROFILE_READ_ENABLED', 'false');
+      const disabled = await read().expect(200);
+      expect(disabled.body as unknown).toEqual(baseline.body as unknown);
+      expect(calls).toHaveLength(count);
+    } finally {
+      for (const [key, value] of previous)
+        config.set(
+          key,
+          value ?? (key === 'AGENCY_PROFILE_READ_ENABLED' ? 'false' : value),
+        );
+      server.closeAllConnections();
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+      await dataSource.query(
+        'DELETE FROM agency.agency_credit_lines WHERE "agencyId"=$1',
+        [agency.id],
+      );
+      await dataSource.query(
+        'DELETE FROM agency.agency_profiles WHERE "userId"=$1',
+        [agency.id],
+      );
+      await dataSource.query(
+        'DELETE FROM identity.refresh_tokens WHERE "userId"=$1',
+        [agency.id],
+      );
+      await dataSource.query('DELETE FROM identity.users WHERE id=$1', [
+        agency.id,
+      ]);
+    }
+  });
+
   it('routes enabled invoice reads with session ownership, preserves the array and rolls back safely', async () => {
     const agency = await createFreshAgency();
     const { accessToken } = await loginAsAgency(agency.phone);

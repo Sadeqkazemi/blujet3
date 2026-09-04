@@ -251,6 +251,116 @@ describe('Agency read boundary (real restricted PostgreSQL login)', () => {
     expect(await verifyReader(reader)).toMatchObject({ status: 'PASS' });
   });
 
+  it('serves the compatible portal profile only with explicit opt-in grants', async () => {
+    const extra =
+      'SELECT ("managerName","licenseNo",phone,email,address,"suspendReason") ON agency.agency_profiles';
+    await writer.query('GRANT ' + extra + ' TO ' + quotedRole);
+    app.get(ConfigService).set('AGENCY_PORTAL_PROFILE_ENABLED', 'true');
+    try {
+      const result = await request(app.getHttpServer())
+        .get(path + '/portal-profile')
+        .set(headers)
+        .expect(200);
+      expect(result.body as unknown).toEqual({
+        success: true,
+        data: {
+          agencyId: owner,
+          managerName: 'private-manager',
+          licenseNo: 'private-license',
+          phone: 'private-phone',
+          email: 'private@agency.invalid',
+          city: 'تهران',
+          address: 'private-address',
+          tier: 'NORMAL',
+          suspendedAt: null,
+          suspendReason: null,
+          joinedAt: '2026-09-04T12:34:56.789Z',
+        },
+      });
+      expect(await verifyReader(reader, false, true)).toMatchObject({
+        status: 'PASS',
+      });
+      expect(await verifyReader(reader)).toMatchObject({
+        status: 'FAIL',
+        checks: { exactReads: false },
+      });
+      await request(app.getHttpServer()).get('/ready').expect(200);
+      const second = await request(app.getHttpServer())
+        .get('/internal/v1/agencies/' + other + '/portal-profile')
+        .set({ ...headers, 'X-Agency-Id': other })
+        .expect(200);
+      expect(second.body as unknown).toMatchObject({
+        data: { agencyId: other, managerName: 'private-manager' },
+      });
+    } finally {
+      app.get(ConfigService).set('AGENCY_PORTAL_PROFILE_ENABLED', 'false');
+      await writer.query('REVOKE ' + extra + ' FROM ' + quotedRole);
+    }
+  });
+
+  it('keeps portal profiles disabled, authenticated, owner-bound and grant-gated', async () => {
+    await request(app.getHttpServer())
+      .get(path + '/portal-profile')
+      .expect(401);
+    await request(app.getHttpServer())
+      .get(path + '/portal-profile')
+      .set({ ...headers, 'X-Agency-Id': other })
+      .expect(403);
+    await request(app.getHttpServer())
+      .get('/internal/v1/agencies/invalid/portal-profile')
+      .set(headers)
+      .expect(400);
+    await request(app.getHttpServer())
+      .get(path + '/portal-profile')
+      .set(headers)
+      .expect(503);
+    expect(await verifyReader(reader, false, true)).toMatchObject({
+      status: 'FAIL',
+      checks: { requiredReads: false },
+    });
+    app.get(ConfigService).set('AGENCY_PORTAL_PROFILE_ENABLED', 'true');
+    try {
+      await request(app.getHttpServer()).get('/ready').expect(503);
+      const response = await request(app.getHttpServer())
+        .get(path + '/portal-profile')
+        .set(headers)
+        .expect(500);
+      expect(response.text).not.toContain('private-license');
+    } finally {
+      app.get(ConfigService).set('AGENCY_PORTAL_PROFILE_ENABLED', 'false');
+    }
+  });
+
+  it('returns missing portal profiles honestly and refuses oversized data', async () => {
+    const extra =
+      'SELECT ("managerName","licenseNo",phone,email,address,"suspendReason") ON agency.agency_profiles';
+    await writer.query('GRANT ' + extra + ' TO ' + quotedRole);
+    app.get(ConfigService).set('AGENCY_PORTAL_PROFILE_ENABLED', 'true');
+    try {
+      const missing = randomUUID();
+      await request(app.getHttpServer())
+        .get('/internal/v1/agencies/' + missing + '/portal-profile')
+        .set({ ...headers, 'X-Agency-Id': missing })
+        .expect(404);
+      await writer.query(
+        'UPDATE agency.agency_profiles SET address=$1 WHERE "userId"=$2',
+        ['x'.repeat(64 * 1024), owner],
+      );
+      const oversized = await request(app.getHttpServer())
+        .get(path + '/portal-profile')
+        .set(headers)
+        .expect(503);
+      expect(oversized.text.length).toBeLessThan(500);
+    } finally {
+      await writer.query(
+        'UPDATE agency.agency_profiles SET address=$1 WHERE "userId"=$2',
+        ['private-address', owner],
+      );
+      app.get(ConfigService).set('AGENCY_PORTAL_PROFILE_ENABLED', 'false');
+      await writer.query('REVOKE ' + extra + ' FROM ' + quotedRole);
+    }
+  });
+
   it('serves the complete compatible invoice array only with explicit opt-in grants', async () => {
     const extra =
       'SELECT ("bookingId","issuedById","descriptionFa") ON agency.agency_invoices';
@@ -809,7 +919,7 @@ describe('Agency read boundary (real restricted PostgreSQL login)', () => {
         .setVersion('0.1.0')
         .build(),
     );
-    expect(Object.keys(doc.paths)).toHaveLength(6);
+    expect(Object.keys(doc.paths)).toHaveLength(7);
     expect(
       doc.paths['/internal/v1/agencies/{agencyId}/invoices']?.get?.responses[
         '200'

@@ -51,6 +51,13 @@ export class HealthController {
         await tx.query(
           'SELECT "userId", city, tier, "joinedAt", "suspendedAt" FROM agency.agency_profiles LIMIT 0',
         );
+        if (
+          this.config.get<string>('AGENCY_PORTAL_PROFILE_ENABLED') === 'true'
+        ) {
+          await tx.query(
+            'SELECT "managerName", "licenseNo", phone, email, address, "suspendReason" FROM agency.agency_profiles LIMIT 0',
+          );
+        }
         await tx.query(
           'SELECT id, "agencyId", "invoiceNo", "amountIrr", status, "issuedAt", "dueAt", "paidAt" FROM agency.agency_invoices LIMIT 0',
         );

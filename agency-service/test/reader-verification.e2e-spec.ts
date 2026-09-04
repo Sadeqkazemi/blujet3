@@ -326,4 +326,44 @@ describe('Agency reader permission gate (real PostgreSQL)', () => {
     }
     expect(run('false').status).toBe(0);
   });
+
+  it('requires exactly the opt-in portal profile grants through the built verifier CLI', async () => {
+    const extra =
+      'SELECT ("managerName","licenseNo",phone,email,address,"suspendReason") ON agency.agency_profiles';
+    const run = (flag: string) =>
+      spawnSync(
+        process.execPath,
+        [resolve(__dirname, '../dist/verify-reader.js')],
+        {
+          env: {
+            ...process.env,
+            AGENCY_DATABASE_URL: readerUrl,
+            AGENCY_PORTAL_PROFILE_ENABLED: flag,
+          },
+          encoding: 'utf8',
+          timeout: 10000,
+          windowsHide: true,
+        },
+      );
+    expect(run('true').status).toBe(2);
+    const invalid = run('invalid');
+    expect(invalid.status).toBe(1);
+    expect(invalid.stdout.trim()).toBe('{"status":"UNAVAILABLE"}');
+    await admin.query('GRANT ' + extra + ' TO ' + quotedRole);
+    try {
+      const result = run('true');
+      expect(result.error).toBeUndefined();
+      expect(result.status).toBe(0);
+      expect(result.stderr).toBe('');
+      expect(JSON.parse(result.stdout) as unknown).toMatchObject({
+        status: 'PASS',
+      });
+      for (const secret of [role, password, readerUrl])
+        expect(result.stdout).not.toContain(secret);
+      expect(run('false').status).toBe(2);
+    } finally {
+      await admin.query('REVOKE ' + extra + ' FROM ' + quotedRole);
+    }
+    expect(run('false').status).toBe(0);
+  });
 });

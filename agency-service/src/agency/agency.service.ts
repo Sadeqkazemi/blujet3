@@ -12,6 +12,7 @@ import {
   InvoiceView,
   ProfileView,
   PortalInvoiceView,
+  PortalProfileView,
 } from './agency.dto';
 
 const invoiceColumns = `id, "invoiceNo", "amountIrr"::text, status,
@@ -25,6 +26,43 @@ export class AgencyService {
     private readonly db: DataSource,
     private readonly config: ConfigService,
   ) {}
+
+  async portalProfile(
+    agencyId: string,
+    owner: string | undefined,
+  ): Promise<PortalProfileView> {
+    this.assertOwner(agencyId, owner);
+    const unavailable = () =>
+      new ServiceUnavailableException({
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        message: 'خواندن پروفایل از این سرویس در دسترس نیست.',
+      });
+    if (this.config.get<string>('AGENCY_PORTAL_PROFILE_ENABLED') !== 'true')
+      throw unavailable();
+    return this.db.transaction('REPEATABLE READ', async (tx) => {
+      await tx.query('SET TRANSACTION READ ONLY');
+      const rows = await tx.query<PortalProfileView[]>(
+        `SELECT "userId" AS "agencyId", "managerName", "licenseNo", phone,
+          email, city, address, tier, "suspendReason",
+          to_char("joinedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "joinedAt",
+          to_char("suspendedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "suspendedAt"
+         FROM agency.agency_profiles WHERE "userId"=$1`,
+        [agencyId],
+      );
+      const profile = rows[0];
+      if (!profile)
+        throw new NotFoundException({
+          code: ErrorCode.NOT_FOUND,
+          message: 'پروفایل آژانس یافت نشد.',
+        });
+      if (
+        Buffer.byteLength(JSON.stringify({ success: true, data: profile })) >
+        64 * 1024
+      )
+        throw unavailable();
+      return profile;
+    });
+  }
 
   async portalInvoices(
     agencyId: string,

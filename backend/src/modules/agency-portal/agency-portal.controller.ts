@@ -162,8 +162,14 @@ export class AgencyPortalController {
 
   @Get('profile')
   @ApiOperation({ summary: 'پروفایل خودِ آژانس' })
-  async profile(@CurrentUser() actor: AuthenticatedUser) {
-    return { success: true, data: await this.portal.profile(actor) };
+  async profile(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Headers('x-request-id') requestId?: string,
+  ) {
+    return {
+      success: true,
+      data: await this.portal.profile(actor, requestId),
+    };
   }
 
   @Get('allotments')

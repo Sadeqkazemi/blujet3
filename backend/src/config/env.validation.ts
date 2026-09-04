@@ -1,5 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 import { agencyInvoiceReadConfig } from './agency-invoice-read.config';
+import { agencyProfileReadConfig } from './agency-profile-read.config';
 import {
   IsIn,
   IsNotEmpty,
@@ -171,6 +172,10 @@ class EnvironmentVariables {
   @IsNumberString()
   EXPERIENCE_REQUEST_TIMEOUT_MS?: string;
 
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  AGENCY_PROFILE_READ_ENABLED?: string;
+
   /** Central PSS is introduced behind an explicit cutover switch. */
   @IsOptional()
   @IsIn(['true', 'false'])
@@ -233,6 +238,7 @@ class EnvironmentVariables {
 
 export function validateEnv(config: Record<string, unknown>) {
   agencyInvoiceReadConfig(config);
+  agencyProfileReadConfig(config);
   const validated = plainToInstance(EnvironmentVariables, config, {
     enableImplicitConversion: true,
   });
