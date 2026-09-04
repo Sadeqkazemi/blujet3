@@ -105,7 +105,7 @@ echo "▶ Building backend…"
 echo "▶ Starting backend on :3000…"
 # Prefer the compiled app over `nest start --watch` here: watch mode can
 # sit idle after compile without binding the port (seen in cloud VMs).
-(cd backend && nohup node --enable-source-maps dist/src/main > "$LOG_DIR/backend.log" 2>&1 & echo $! > "$LOG_DIR/backend.pid")
+(cd backend && nohup node --enable-source-maps dist/main.js > "$LOG_DIR/backend.log" 2>&1 & echo $! > "$LOG_DIR/backend.pid")
 
 echo "▶ Starting frontend on :5173…"
 (cd frontend && nohup npm run dev -- --host 0.0.0.0 --port 5173 > "$LOG_DIR/frontend.log" 2>&1 & echo $! > "$LOG_DIR/frontend.pid")
