@@ -1,0 +1,29 @@
+# Optional LOCAL topology only. Never applied by a default compose up.
+# docker compose -f docker-compose.yml -f docker-compose.loyalty.yml --profile loyalty-read up loyalty-service
+services:
+  loyalty-service:
+    profiles: ['loyalty-read']
+    build: ./loyalty-service
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3500
+      LOYALTY_DATABASE_URL: ${LOYALTY_DATABASE_URL:?Supply a dedicated SELECT-only loyalty reader URL}
+      LOYALTY_INTERNAL_TOKEN: ${LOYALTY_INTERNAL_TOKEN:?Supply a separate random internal token}
+    expose:
+      - '3500'
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ['CMD', 'node', '-e', "require('http').get('http://localhost:3500/ready', r => process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s

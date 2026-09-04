@@ -133,7 +133,9 @@ below for what's landed from that port so far.
   build, Prettier check and scoped read-only lint. Real stock authority/ranges, EMD servicing,
   Nira and PSP late-capture compensation remain input-gated. Nothing from B3.2
   has been pushed, merged, migrated on a server or deployed.
-- Phase 6 agency/loyalty extraction has not started. See
+- Phase 6 update (2026-09-04): A6.1 Loyalty read-only service and offline shadow
+  comparison are implemented locally; agency and writer extraction have not
+  started. See
   [execution roadmap](docs/architecture/commerce-execution-roadmap.md) for
   dependencies, acceptance evidence and deferred external integrations.
 - No B3.2 push, merge, production migration or deployment has occurred.
@@ -4098,6 +4100,27 @@ contracts and retires the production mock adapters.
   repository-wide line-ending lint baseline in the phase evidence.
 - [ ] Present the complete diff and obtain explicit owner approval before
   commit/push/merge. Deployment remains a separate approved action.
+
+## Microservices architecture v1.1 — phase 6 loyalty foundation (A6.1)
+
+- [x] Draft the contract-first Loyalty read boundary, projection safety rules,
+  compatibility behavior and flag-based rollback plan in
+  `docs/features/microservices-phase-6-loyalty-foundation.md`.
+- [x] Implement the independently deployable read-only service and typed
+  gateway shadow comparison against the existing `loyalty` schema.
+- [x] Keep the current backend as the sole writer; the A6.1 service exposes no
+  commands and its application connection is transaction/session read-only.
+- [x] Wire lint, typecheck, build, unit and real-PostgreSQL E2E coverage into CI,
+  including access isolation, ledger-derived points, IRR precision, strict
+  expiry, bounded results, sanitized readiness failure and rejected writes.
+- [ ] Collect representative shadow-read parity evidence with a separately
+  provisioned SELECT-only role before any public read integration.
+- [x] Owner explicitly approved commit/push/merge on 2026-09-04. Production
+  credentials, deployment and cutover remain separate approval gates.
+- [x] Owner approved correcting the pre-existing edge-routing test: enforce
+  public controller coverage while separately checking that internal-only
+  prefixes stay out of the nginx/Vite public API allowlists. Runtime routing
+  is unchanged.
 
 ## Central PSS/CRS extraction — Slice 0 (2026-09-01)
 
