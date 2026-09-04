@@ -19,6 +19,21 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-04 — A6.2 Loyalty reader permission verification
+
+- [x] Add a catalog-only offline CLI with safe status/check output and explicit
+  PASS/FAIL/UNAVAILABLE exit codes; no public route or business writer change.
+- [x] Verify exact projection grants and reject broad reads, writes, elevated
+  role flags, memberships, relation/schema/database ownership, CREATE,
+  sequence access and executable user-schema SECURITY DEFINER routines.
+- [x] Prove real restricted-role reads and denied writes/PII reads even with
+  session read-only disabled, using isolated synthetic PostgreSQL fixtures.
+- [x] Pass 24 Loyalty tests (13 new), lint, typecheck and build locally.
+- [ ] Obtain explicit commit/push/merge approval and GitHub CI evidence.
+- [ ] Verify separately provisioned production credentials and collect approved
+  representative shadow parity evidence before any public read cutover.
+- [ ] Deploy only after separate user approval; no deployment in this slice.
+
 ### 2026-09-04 — Core additive multi-segment quote and atomic hold
 
 - [x] Add an authenticated, read-only quote for one to three ordered segments

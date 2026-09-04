@@ -2,6 +2,9 @@
 
 ## A6.1 — internal Loyalty read boundary
 
+A6.2 adds an offline reader-permission verification command in loyalty-service;
+it adds no HTTP route and does not change public routing or writer ownership.
+
 An independently runnable `loyalty-service` exposes authenticated GET routes
 `/internal/v1/loyalty/members/:userId` and
 `/internal/v1/loyalty/price-locks/:userId`. Both require `X-Internal-Token`,

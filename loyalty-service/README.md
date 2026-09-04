@@ -79,6 +79,36 @@ are defense-in-depth, not a replacement for database grants. Credential
 provisioning and production privilege verification require separate approval;
 no grants are applied by this package or by migrations.
 
+## A6.2 credential verification
+
+With `LOYALTY_DATABASE_URL` set to the reader credential, run:
+
+```sh
+npm run build
+npm run verify:reader
+```
+
+No internal HTTP token is needed. The command inspects PostgreSQL catalogs in
+a read-only transaction; it does not change privileges or business data.
+Output contains only status and named boolean checks. Exit codes are 0 for
+PASS, 2 for FAIL, and 1 for UNAVAILABLE (configuration/connection/query failure).
+No credentials, role names, SQL or customer data are printed.
+
+Checks cover restricted role flags, no memberships, no relation/schema/database
+ownership, no schema/database CREATE, required projection reads, no extra
+user-relation column reads, no writes, no sequence privileges, and no executable
+user-schema SECURITY DEFINER routines. System catalogs and database TEMP
+permission are excluded. This checks current grants in the connected database,
+not network access, authentication, other databases, or future privilege changes.
+It is an offline operational gate, not an automatic readiness or public cutover.
+
+Permission E2E tests need a local/CI fixture administrator able to create roles.
+They generate a LOGIN reader, an empty parent role, and synthetic sequence and
+function fixtures, then clean up those exact objects and grants. The reader is
+tested with session read-only disabled to prove its grants still deny writes
+and protected PII reads. No production role is provisioned. Build before E2E:
+CLI acceptance tests execute `dist/verify-reader.js`; CI already builds first.
+
 ## Offline comparison and rollback
 
 Run in `backend/` with an explicitly selected user UUID:
