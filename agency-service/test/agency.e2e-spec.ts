@@ -7,6 +7,7 @@ import type { App } from 'supertest/types';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { databaseOptions } from '../src/config';
+import { verifyReader } from '../src/reader-verification';
 import type {
   InvoicePage,
   InvoiceView,
@@ -172,6 +173,10 @@ describe('Agency read boundary (real restricted PostgreSQL login)', () => {
         }
       }
     }
+  });
+
+  it('passes the catalog gate with real minimized HTTP fixture grants', async () => {
+    expect(await verifyReader(reader)).toMatchObject({ status: 'PASS' });
   });
 
   it('requires service identity on every data route', async () => {

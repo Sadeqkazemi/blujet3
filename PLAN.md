@@ -19,6 +19,16 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-04 — A6.5 Agency reader permission verification
+
+- [x] Document catalog-only verification of the existing A6.4 permission gate.
+- [x] Add safe offline CLI and exact-grant/effective-privilege checks without
+  granting access, querying business rows or changing any public route.
+- [x] Prove PASS/FAIL/UNAVAILABLE and restricted-role regression locally:
+  43 E2E + 2 config tests, lint/typecheck/build and OpenAPI no-drift check pass.
+  Test cleanup leaves zero temporary Agency roles/relations/routines.
+- [ ] Present evidence before separately approved push/merge; do not deploy.
+
 ### 2026-09-04 — A6.4 Agency read-only foundation
 
 - [x] Owner approved an independent read-only agency boundary without deployment.
@@ -31,7 +41,8 @@ below for what's landed from that port so far.
 - [x] Pass lint/typecheck/build and deterministic typed internal OpenAPI export.
 - [x] Add required CI job and optional local-only Docker topology; no host port,
   public routing, migration, production grant or deployment change.
-- [ ] Obtain explicit publication approval and GitHub CI/PostgreSQL 16 evidence.
+- [x] Owner approved publication; PR #33 merged as `e516fe9` with all CI,
+  PostgreSQL 16 Agency tests and CodeQL successful. No deployment performed.
 - [ ] Production credential review, representative parity and owner-approved
   public integration/deployment remain separate gates; other portal reads are
   not migrated by this minimized-profile/invoice slice.

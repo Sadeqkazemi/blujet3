@@ -5,6 +5,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
+    "verify:reader": "node dist/verify-reader.js",
     "openapi:export": "node scripts/export-openapi.cjs",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main.js",
