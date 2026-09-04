@@ -21,6 +21,7 @@ jobs:
       backend_migration: ${{ steps.scope.outputs.backend_migration }}
       experience: ${{ steps.scope.outputs.experience }}
       loyalty: ${{ steps.scope.outputs.loyalty }}
+      agency: ${{ steps.scope.outputs.agency }}
       identity: ${{ steps.scope.outputs.identity }}
       notify: ${{ steps.scope.outputs.notify }}
       pss: ${{ steps.scope.outputs.pss }}
@@ -36,7 +37,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          areas=(backend backend_migration experience loyalty identity notify pss frontend ml)
+          areas=(backend backend_migration experience loyalty agency identity notify pss frontend ml)
           if [[ "${{ github.event_name }}" != "pull_request" ]]; then
             for area in "${areas[@]}"; do
               echo "$area=true" >> "$GITHUB_OUTPUT"
@@ -72,6 +73,7 @@ jobs:
           emit experience '^(experience-service/|backend/(package(-lock)?\.json$|src/database/))'
           emit loyalty '^(loyalty-service/|backend/(package(-lock)?\.json$|tsconfig[^/]*\.json$|nest-cli\.json$|src/database/|src/common/money\.ts$|src/modules/loyalty-shadow/))'
           emit identity '^identity-service/'
+          emit agency '^(agency-service/|backend/(package(-lock)?\.json$|src/database/))'
           emit notify '^(notify-service/|backend/(package(-lock)?\.json$|src/database/))'
           emit pss '^pss-service/'
           emit frontend '^frontend/'
@@ -183,6 +185,59 @@ jobs:
           npm run lint:check
           npm run typecheck
           npm run build
+          npm test
+          npm run test:e2e
+
+  agency-service:
+    name: Agency service
+    needs: changes
+    if: needs.changes.outputs.agency == 'true'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: blujet
+          POSTGRES_PASSWORD: blujet
+          POSTGRES_DB: blujet_agency_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U blujet -d blujet_agency_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            agency-service/package-lock.json
+      - name: Apply unchanged shared-cluster schema
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_agency_test
+        run: |
+          npm ci
+          cp .env.test .env
+          npm run migration:run
+      - name: Validate isolated Agency reader
+        working-directory: agency-service
+        env:
+          NODE_ENV: test
+          AGENCY_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_agency_test
+          AGENCY_INTERNAL_TOKEN: test-agency-internal-token-at-least-32-characters
+        run: |
+          npm ci
+          npm run lint:check
+          npm run typecheck
+          npm run build
+          npm run openapi:export
+          git diff --exit-code -- docs/openapi.json
           npm test
           npm run test:e2e
 
@@ -480,6 +535,7 @@ jobs:
       - changes
       - experience-service
       - loyalty-service
+      - agency-service
       - identity-service
       - notify-service
       - backend-migration-compatibility

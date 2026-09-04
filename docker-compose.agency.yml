@@ -1,0 +1,29 @@
+# Optional LOCAL topology only; never part of production/default startup.
+# docker compose -f docker-compose.yml -f docker-compose.agency.yml --profile agency-read up agency-service
+services:
+  agency-service:
+    profiles: ['agency-read']
+    build: ./agency-service
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3600
+      AGENCY_DATABASE_URL: ${AGENCY_DATABASE_URL:?Supply a dedicated column-scoped agency reader URL}
+      AGENCY_INTERNAL_TOKEN: ${AGENCY_INTERNAL_TOKEN:?Supply a separate random service token}
+    expose:
+      - '3600'
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ['CMD', 'node', '-e', "require('http').get('http://localhost:3600/ready', r => process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s

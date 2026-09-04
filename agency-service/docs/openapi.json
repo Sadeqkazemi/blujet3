@@ -1,0 +1,658 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/internal/v1/agencies/{agencyId}/profile": {
+      "get": {
+        "operationId": "AgencyController_profile",
+        "parameters": [
+          {
+            "name": "X-Agency-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Internal-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "agencyId",
+            "required": true,
+            "in": "path",
+            "description": "شناسه حساب یکتای آژانس",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ورودی نامعتبر",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "هویت سرویس نامعتبر",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "مالک درخواست مطابقت ندارد",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "پروفایل یا فاکتور متعلق به مالک یافت نشد",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "خطای داخلی بدون اطلاعات حساس",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal": []
+          }
+        ],
+        "summary": "نمای محدود پروفایل آژانس خود",
+        "tags": [
+          "internal-agency"
+        ]
+      }
+    },
+    "/internal/v1/agencies/{agencyId}/invoices": {
+      "get": {
+        "operationId": "AgencyController_invoices",
+        "parameters": [
+          {
+            "name": "X-Agency-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Internal-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "agencyId",
+            "required": true,
+            "in": "path",
+            "description": "شناسه حساب یکتای آژانس",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "شماره صفحه؛ هر صفحه ۱۰ ردیف",
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 1,
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Object"
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoicesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ورودی نامعتبر",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "هویت سرویس نامعتبر",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "مالک درخواست مطابقت ندارد",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "پروفایل یا فاکتور متعلق به مالک یافت نشد",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "خطای داخلی بدون اطلاعات حساس",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal": []
+          }
+        ],
+        "summary": "فاکتورهای آژانس خود؛ صفحه‌بندی ۱۰ ردیفی",
+        "tags": [
+          "internal-agency"
+        ]
+      }
+    },
+    "/internal/v1/agencies/{agencyId}/invoices/{invoiceId}": {
+      "get": {
+        "operationId": "AgencyController_invoice",
+        "parameters": [
+          {
+            "name": "X-Agency-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Internal-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "agencyId",
+            "required": true,
+            "in": "path",
+            "description": "شناسه حساب یکتای آژانس",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "invoiceId",
+            "required": true,
+            "in": "path",
+            "description": "شناسه فاکتور",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ورودی نامعتبر",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "هویت سرویس نامعتبر",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "مالک درخواست مطابقت ندارد",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "پروفایل یا فاکتور متعلق به مالک یافت نشد",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "خطای داخلی بدون اطلاعات حساس",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal": []
+          }
+        ],
+        "summary": "نمای فاکتور متعلق به همان آژانس",
+        "tags": [
+          "internal-agency"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "HealthController_live",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthView"
+                }
+              }
+            }
+          }
+        },
+        "summary": "زنده‌بودن سرویس",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/ready": {
+      "get": {
+        "operationId": "HealthController_ready",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthView"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "دیتابیس آماده نیست",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "آمادگی ستون‌های خواندنی دیتابیس",
+        "tags": [
+          "health"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Blujet internal Agency read API",
+    "description": "",
+    "version": "0.1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "internal": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Internal-Token"
+      }
+    },
+    "schemas": {
+      "ErrorDetails": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "UNAUTHORIZED",
+              "FORBIDDEN",
+              "VALIDATION_FAILED",
+              "NOT_FOUND",
+              "CONFLICT",
+              "SERVICE_UNAVAILABLE",
+              "INTERNAL_ERROR"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "پیام امن فارسی",
+            "example": "درخواست قابل پردازش نیست."
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetails"
+          }
+        },
+        "required": [
+          "success",
+          "error"
+        ]
+      },
+      "ProfileView": {
+        "type": "object",
+        "properties": {
+          "agencyId": {
+            "type": "string",
+            "description": "شناسه حساب آژانس",
+            "format": "uuid"
+          },
+          "city": {
+            "type": "string",
+            "description": "شهر",
+            "example": "تهران"
+          },
+          "tier": {
+            "type": "string",
+            "description": "سطح ثبت‌شده",
+            "example": "NORMAL"
+          },
+          "joinedAt": {
+            "type": "string",
+            "description": "زمان عضویت UTC",
+            "format": "date-time"
+          },
+          "suspendedAt": {
+            "type": "string",
+            "description": "زمان تعلیق پرتال؛ مجوز Partner API نیست",
+            "nullable": true,
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "agencyId",
+          "city",
+          "tier",
+          "joinedAt",
+          "suspendedAt"
+        ]
+      },
+      "ProfileResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/ProfileView"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "Object": {
+        "type": "object",
+        "properties": {}
+      },
+      "InvoiceView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "شناسه فاکتور",
+            "format": "uuid"
+          },
+          "invoiceNo": {
+            "type": "string",
+            "description": "شماره فاکتور",
+            "example": "INV-001"
+          },
+          "amountIrr": {
+            "type": "string",
+            "description": "مبلغ صحیح ریال؛ رشته دهدهی",
+            "example": "9007199254740993"
+          },
+          "status": {
+            "type": "string",
+            "description": "وضعیت ثبت‌شده؛ مجوز پرداخت نیست",
+            "example": "UNPAID"
+          },
+          "issuedAt": {
+            "type": "string",
+            "description": "زمان صدور UTC",
+            "format": "date-time"
+          },
+          "dueAt": {
+            "type": "string",
+            "description": "سررسید UTC",
+            "format": "date-time"
+          },
+          "paidAt": {
+            "type": "string",
+            "description": "زمان پرداخت UTC",
+            "nullable": true,
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "invoiceNo",
+          "amountIrr",
+          "status",
+          "issuedAt",
+          "dueAt",
+          "paidAt"
+        ]
+      },
+      "InvoicePage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceView"
+            }
+          },
+          "total": {
+            "type": "string",
+            "description": "تعداد کل فاکتورهای همین آژانس",
+            "example": "12"
+          },
+          "page": {
+            "type": "number",
+            "example": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "example": 10,
+            "enum": [
+              10
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      },
+      "InvoicesResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/InvoicePage"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "InvoiceResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/InvoiceView"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "HealthView": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "ok"
+          },
+          "service": {
+            "type": "string",
+            "example": "blujet-agency"
+          },
+          "version": {
+            "type": "string",
+            "example": "0.1.0"
+          },
+          "commit": {
+            "type": "string",
+            "example": "unknown"
+          }
+        },
+        "required": [
+          "status",
+          "service",
+          "version",
+          "commit"
+        ]
+      }
+    }
+  }
+}

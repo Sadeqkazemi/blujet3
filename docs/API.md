@@ -1,5 +1,18 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## A6.4 — internal Agency read boundary
+
+`agency-service` adds GET `/internal/v1/agencies/:agencyId/profile`,
+`/internal/v1/agencies/:agencyId/invoices?page=1` and
+`/internal/v1/agencies/:agencyId/invoices/:invoiceId`, plus `/health` and `/ready`.
+Require `X-Internal-Token` and trusted `X-Agency-Id` equal to the path UUID.
+Preserve `{success,data}` / `{success:false,error:{code,message}}`, no-store and
+X-Request-Id. Malformed input is 400, invalid service token 401, owner mismatch
+403, missing profile or absent/foreign invoice 404. Unexpected errors are safe
+500; unavailable readiness is safe 503. See `features/agency-read-boundary.md`
+for minimized fields and ten-row pagination. All amounts remain decimal IRR
+strings. No existing public API or UAT/Partner API behavior is changed.
+
 ## A6.1 — internal Loyalty read boundary
 
 A6.2 adds an offline reader-permission verification command in loyalty-service;
