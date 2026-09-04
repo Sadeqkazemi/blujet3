@@ -12,14 +12,14 @@ const RULES: PenaltyRule[] = [
     labelFa: 'بین ۲۴ تا ۷۲ ساعت مانده',
   },
   {
-    minHoursBeforeDeparture: 3,
+    minHoursBeforeDeparture: 12,
     penaltyPct: 70,
-    labelFa: 'بین ۳ تا ۲۴ ساعت مانده',
+    labelFa: 'بین ۱۲ تا ۲۴ ساعت مانده',
   },
   {
     minHoursBeforeDeparture: 0,
     penaltyPct: 100,
-    labelFa: 'کمتر از ۳ ساعت / پس از پرواز',
+    labelFa: 'کمتر از ۱۲ ساعت / پس از پرواز',
   },
 ];
 
@@ -30,8 +30,8 @@ describe('computePenalty (unit)', () => {
     [71.9, 50],
     [24, 50], // boundary
     [23.9, 70],
-    [3, 70], // boundary
-    [2.9, 100],
+    [12, 70], // boundary
+    [11.9, 100],
     [0, 100],
   ])('hoursLeft=%p → %p٪', (hoursLeft, expectedPct) => {
     expect(computePenalty(RULES, hoursLeft, 10_000_000n).penaltyPct).toBe(

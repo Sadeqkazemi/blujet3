@@ -21,7 +21,7 @@ finance payout remain compatible and use the same penalty engine.
 
 - [x] `GET /my/refunds/eligible-bookings` is USER-only and owner-scoped;
       returns only `TICKETED|PAID`, no-prior-request bookings with current
-      server-computed penalty/refundable amounts; excludes <3h/100% cases.
+      server-computed penalty/refundable amounts; excludes <12h/100% cases.
 - [x] `GET /my/refunds/rules` returns the authoritative four brackets in
       descending threshold order; no customer write surface exists.
 - [x] `POST /my/refunds/preview` validates ownership and eligibility and

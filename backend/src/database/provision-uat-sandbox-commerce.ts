@@ -110,8 +110,8 @@ async function main(): Promise<void> {
           [
             [72, 30, 'بیش از ۷۲ ساعت مانده به پرواز'],
             [24, 50, 'بین ۲۴ تا ۷۲ ساعت مانده'],
-            [3, 70, 'بین ۳ تا ۲۴ ساعت مانده'],
-            [0, 100, 'کمتر از ۳ ساعت / پس از پرواز'],
+            [12, 70, 'بین ۱۲ تا ۲۴ ساعت مانده'],
+            [0, 100, 'کمتر از ۱۲ ساعت / پس از پرواز'],
           ].map(([minHoursBeforeDeparture, penaltyPct, labelFa]) =>
             refundRuleRepo.create({
               minHoursBeforeDeparture: Number(minHoursBeforeDeparture),

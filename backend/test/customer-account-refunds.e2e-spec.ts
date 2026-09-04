@@ -56,8 +56,8 @@ describe('Customer account refunds (e2e)', () => {
     const rules = [
       [72, 30, 'بیش از ۷۲ ساعت مانده'],
       [24, 50, 'بین ۲۴ تا ۷۲ ساعت مانده'],
-      [3, 70, 'بین ۳ تا ۲۴ ساعت مانده'],
-      [0, 100, 'کمتر از ۳ ساعت / پس از پرواز'],
+      [12, 70, 'بین ۱۲ تا ۲۴ ساعت مانده'],
+      [0, 100, 'کمتر از ۱۲ ساعت / پس از پرواز'],
     ] as const;
     const ruleRepo = setupDataSource.getRepository(RefundPenaltyRule);
     for (const [minHoursBeforeDeparture, penaltyPct, labelFa] of rules) {

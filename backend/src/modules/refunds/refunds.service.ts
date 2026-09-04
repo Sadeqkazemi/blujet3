@@ -403,7 +403,7 @@ export class RefundsService {
     if (!preview.refundable) {
       throw new ConflictException({
         code: ErrorCode.CONFLICT,
-        message: 'با کمتر از ۳ ساعت زمان تا پرواز، استرداد مجاز نیست.',
+        message: 'با کمتر از ۱۲ ساعت زمان تا پرواز، استرداد مجاز نیست.',
       });
     }
     return preview;

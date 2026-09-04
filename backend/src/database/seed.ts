@@ -1667,14 +1667,14 @@ async function main() {
         labelFa: 'بین ۲۴ تا ۷۲ ساعت مانده',
       },
       {
-        minHoursBeforeDeparture: 3,
+        minHoursBeforeDeparture: 12,
         penaltyPct: 70,
-        labelFa: 'بین ۳ تا ۲۴ ساعت مانده',
+        labelFa: 'بین ۱۲ تا ۲۴ ساعت مانده',
       },
       {
         minHoursBeforeDeparture: 0,
         penaltyPct: 100,
-        labelFa: 'کمتر از ۳ ساعت / پس از پرواز',
+        labelFa: 'کمتر از ۱۲ ساعت / پس از پرواز',
       },
     ]) {
       await refundPenaltyRuleRepo.save(refundPenaltyRuleRepo.create(rule));

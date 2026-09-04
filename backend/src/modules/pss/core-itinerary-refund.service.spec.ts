@@ -6,7 +6,7 @@ import type { RefundPenaltyRule } from '../../database/entities/refund-penalty-r
 const rules: RefundPenaltyRule[] = [
   { id: 'r30', minHoursBeforeDeparture: 72, penaltyPct: 30, labelFa: '۳۰٪' },
   { id: 'r50', minHoursBeforeDeparture: 24, penaltyPct: 50, labelFa: '۵۰٪' },
-  { id: 'r70', minHoursBeforeDeparture: 3, penaltyPct: 70, labelFa: '۷۰٪' },
+  { id: 'r70', minHoursBeforeDeparture: 12, penaltyPct: 70, labelFa: '۷۰٪' },
   { id: 'r100', minHoursBeforeDeparture: 0, penaltyPct: 100, labelFa: '۱۰۰٪' },
 ] as RefundPenaltyRule[];
 
