@@ -47,7 +47,7 @@ Backend change checklist:
   `agency-service/test/agency.e2e-spec.ts` adds eight built-CLI cases and checks
   fixture snapshots remain unchanged after every test.
 - [x] Run unit/E2E, lint/typecheck/build, unchanged OpenAPI and CI configuration checks.
-- [ ] Obtain separate publication/CI/merge approval; no deployment.
+- [x] Obtain separate publication/CI/merge approval; no deployment.
 
 ## Local evidence — 2026-09-04
 
@@ -70,5 +70,8 @@ CI YAML parsing and checks confirm backend build/comparator tests precede Agency
 E2E, and future agency-shadow/config changes select the Agency job. No workflow
 is bypassed. Post-test inspection found zero temporary Agency roles and zero
 synthetic Agency users. No production data, permissions or deployment changed.
-GitHub/PostgreSQL 16 evidence awaits publication approval; Docker execution and
-representative operational sampling remain separate. No commit/push/merge yet.
+After owner approval, PR #35 merged as `cf2e176`. CI run `33899231383` and
+CodeQL run `33899231426` passed, including the Agency PostgreSQL 16 job and all
+four backend E2E shards (19 successful checks in total). No server deployment
+was performed. Local Docker execution and representative operational sampling
+remain separate gates.

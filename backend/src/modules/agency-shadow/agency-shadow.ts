@@ -27,6 +27,7 @@ export interface InvoicePageProjection {
 export interface AgencyProjection {
   profile: ProfileProjection | null;
   invoices: InvoicePageProjection | null;
+  invoice?: InvoiceProjection | null;
 }
 export interface ShadowConfig {
   enabled: boolean;
@@ -62,8 +63,18 @@ export function shadowConfig(env: NodeJS.ProcessEnv): ShadowConfig {
   return { enabled: true, url: url.origin, token };
 }
 
-export function validateSample(agencyId: string, page: number): void {
-  if (!isUUID(agencyId) || !Number.isInteger(page) || page < 1 || page > 1000)
+export function validateSample(
+  agencyId: string,
+  page: number,
+  invoiceId?: string,
+): void {
+  if (
+    !isUUID(agencyId) ||
+    !Number.isInteger(page) ||
+    page < 1 ||
+    page > 1000 ||
+    (invoiceId !== undefined && !isUUID(invoiceId))
+  )
     throw new Error('Explicit Agency UUID and valid page required');
 }
 function record(value: unknown): value is Record<string, unknown> {
@@ -177,6 +188,7 @@ async function remoteProjection(
   agencyId: string,
   page: number,
   requestId: string,
+  invoiceId?: string,
 ): Promise<AgencyProjection> {
   const headers = {
     'X-Internal-Token': config.token ?? '',
@@ -191,12 +203,30 @@ async function remoteProjection(
     );
     return { response, body: await boundedJson(response) };
   };
-  const [p, invoices] = await Promise.all([
+  const [p, invoices, detail] = await Promise.all([
     get('/profile'),
     get('/invoices?page=' + page),
+    invoiceId === undefined ? undefined : get('/invoices/' + invoiceId),
   ]);
-  if (notFound(p) && notFound(invoices))
-    return { profile: null, invoices: null };
+  let selected: InvoiceProjection | null = null;
+  if (invoiceId !== undefined) {
+    if (!detail) throw new Error('Missing Agency invoice response');
+    if (!notFound(detail)) {
+      if (
+        detail.response.status !== 200 ||
+        !success(detail.body) ||
+        !invoice(detail.body.data) ||
+        detail.body.data.id !== invoiceId
+      )
+        throw new Error('Invalid Agency invoice response');
+      selected = detail.body.data;
+    }
+  }
+  const optionalDetail = invoiceId === undefined ? {} : { invoice: selected };
+  if (notFound(p) && notFound(invoices)) {
+    if (selected !== null) throw new Error('Invoice without an Agency profile');
+    return { profile: null, invoices: null, ...optionalDetail };
+  }
   if (
     p.response.status !== 200 ||
     !success(p.body) ||
@@ -206,22 +236,41 @@ async function remoteProjection(
     !invoicePage(invoices.body.data, page)
   )
     throw new Error('Invalid Agency projection');
-  return { profile: p.body.data, invoices: invoices.body.data };
+  return {
+    profile: p.body.data,
+    invoices: invoices.body.data,
+    ...optionalDetail,
+  };
 }
 
 export async function compareAgencyShadow(
   config: ShadowConfig,
   agencyId: string,
   page: number,
-  readLocal: (agencyId: string, page: number) => Promise<AgencyProjection>,
+  readLocal: (
+    agencyId: string,
+    page: number,
+    invoiceId?: string,
+  ) => Promise<AgencyProjection>,
+  invoiceId?: string,
 ): Promise<ShadowReport> {
   const requestId = randomUUID();
   if (!config.enabled) return { status: 'DISABLED', requestId };
-  validateSample(agencyId, page);
+  validateSample(agencyId, page, invoiceId);
+  const read = () =>
+    invoiceId === undefined
+      ? readLocal(agencyId, page)
+      : readLocal(agencyId, page, invoiceId);
   try {
-    const before = await readLocal(agencyId, page);
-    const remote = await remoteProjection(config, agencyId, page, requestId);
-    const after = await readLocal(agencyId, page);
+    const before = await read();
+    const remote = await remoteProjection(
+      config,
+      agencyId,
+      page,
+      requestId,
+      invoiceId,
+    );
+    const after = await read();
     return {
       requestId,
       status: !isDeepStrictEqual(before, after)

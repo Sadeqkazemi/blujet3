@@ -2,6 +2,10 @@
 
 ## A6.4 — Agency read-only projections
 
+A6.7 optionally adds one invoice-detail SELECT scoped by both agencyId and id
+inside each existing repeatable-read shadow snapshot. It uses the same columns
+and reviewed reader grants; no schema, permission or writer changes.
+
 A6.6 reads an independent owner-scoped ORM projection in the backend for
 offline comparison with Agency HTTP. Both local snapshots are read-only and
 repeatable-read. No joins, writes, migrations, grants, copied tables or new

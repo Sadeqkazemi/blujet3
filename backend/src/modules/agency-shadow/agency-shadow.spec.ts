@@ -35,6 +35,9 @@ describe('offline Agency shadow comparison', () => {
   // Keep fixtures in Jest's realm; structuredClone creates host-realm prototypes.
   function copyProjection(value = snapshot): AgencyProjection {
     return {
+      ...(value.invoice === undefined
+        ? {}
+        : { invoice: value.invoice === null ? null : { ...value.invoice } }),
       profile: value.profile ? { ...value.profile } : null,
       invoices: value.invoices
         ? {
@@ -76,7 +79,18 @@ describe('offline Agency shadow comparison', () => {
         res.end('x'.repeat(64 * 1024 + 1));
         return;
       }
-      if (!view.profile) {
+      const isDetail = req.url?.includes('/invoices/');
+      if (isDetail && mode === 'detail-timeout') return;
+      if (isDetail && mode === 'detail-redirect') {
+        res.writeHead(302, { Location: '/private' });
+        res.end();
+        return;
+      }
+      if (isDetail && mode === 'detail-oversized') {
+        res.end('x'.repeat(64 * 1024 + 1));
+        return;
+      }
+      if (!view.profile && !(isDetail && mode === 'orphan-detail')) {
         res.writeHead(404);
         res.end(
           JSON.stringify({
@@ -87,6 +101,33 @@ describe('offline Agency shadow comparison', () => {
         return;
       }
       const isProfile = req.url?.endsWith('/profile');
+      if (isDetail) {
+        if (!view.invoice || mode === 'detail-unsafe404') {
+          res.writeHead(404);
+          res.end(
+            JSON.stringify({
+              success: false,
+              error: {
+                code:
+                  mode === 'detail-unsafe404' ? 'INTERNAL_ERROR' : 'NOT_FOUND',
+                message: 'یافت نشد',
+              },
+            }),
+          );
+          return;
+        }
+        let detail: unknown = view.invoice;
+        if (mode === 'detail-wrong-id')
+          detail = { ...view.invoice, id: randomUUID() };
+        if (mode === 'detail-pii')
+          detail = { ...view.invoice, descriptionFa: 'private' };
+        if (mode === 'detail-number')
+          detail = { ...view.invoice, amountIrr: 900 };
+        if (mode === 'detail-time')
+          detail = { ...view.invoice, paidAt: '2026-02-30T00:00:00.000Z' };
+        res.end(JSON.stringify({ success: true, data: detail }));
+        return;
+      }
       if (mode === 'partial-missing' && !isProfile) {
         res.writeHead(404);
         res.end('{}');
@@ -328,5 +369,173 @@ describe('offline Agency shadow comparison', () => {
       ).status,
     ).toBe('UNAVAILABLE');
     expect(calls).toEqual([]);
+  });
+
+  const detailLocal = () =>
+    Promise.resolve({ ...copyProjection(), invoice: { ...items[0] } });
+
+  it('compares an explicit detail with exact ID, tenant and shared request correlation', async () => {
+    view.invoice = { ...items[0] };
+    const read = jest.fn(detailLocal);
+    const report = await compareAgencyShadow(
+      config(),
+      agencyId,
+      1,
+      read,
+      ids[0],
+    );
+    expect(report.status).toBe('MATCH');
+    expect(read).toHaveBeenNthCalledWith(1, agencyId, 1, ids[0]);
+    expect(read).toHaveBeenNthCalledWith(2, agencyId, 1, ids[0]);
+    expect(calls).toHaveLength(3);
+    for (const call of calls) {
+      expect(call.owner).toBe(agencyId);
+      expect(call.token).toBe(token);
+      expect(call.requestId).toBe(report.requestId);
+    }
+    expect(calls.map((call) => call.path)).toContain(
+      '/internal/v1/agencies/' + agencyId + '/invoices/' + ids[0],
+    );
+    expect(Object.keys(report).sort()).toEqual(['requestId', 'status']);
+    expect(JSON.stringify(report)).not.toContain(ids[0]);
+  });
+
+  it('rejects invalid optional IDs before IO but retains disabled rollback', async () => {
+    const read = jest.fn(detailLocal);
+    for (const invalid of ['', '../foreign'])
+      await expect(
+        compareAgencyShadow(config(), agencyId, 1, read, invalid),
+      ).rejects.toThrow();
+    expect(read).not.toHaveBeenCalled();
+    expect(calls).toEqual([]);
+    expect(
+      (await compareAgencyShadow({ enabled: false }, '', 0, read, '../foreign'))
+        .status,
+    ).toBe('DISABLED');
+    expect(read).not.toHaveBeenCalled();
+    expect(calls).toEqual([]);
+  });
+
+  it('detects detail-only one-rial drift and unexpected invoice visibility', async () => {
+    view.invoice = { ...items[0], amountIrr: '9007199254740994' };
+    expect(
+      (await compareAgencyShadow(config(), agencyId, 1, detailLocal, ids[0]))
+        .status,
+    ).toBe('MISMATCH');
+    expect(
+      (
+        await compareAgencyShadow(
+          config(),
+          agencyId,
+          1,
+          () => Promise.resolve({ ...copyProjection(), invoice: null }),
+          ids[0],
+        )
+      ).status,
+    ).toBe('MISMATCH');
+  });
+
+  it('marks detail-only concurrent changes inconclusive', async () => {
+    view.invoice = { ...items[0] };
+    let reads = 0;
+    const changing = () =>
+      Promise.resolve({
+        ...copyProjection(),
+        invoice: {
+          ...items[0],
+          amountIrr: ++reads === 1 ? '9007199254740993' : '9007199254740994',
+        },
+      });
+    expect(
+      (await compareAgencyShadow(config(), agencyId, 1, changing, ids[0]))
+        .status,
+    ).toBe('INCONCLUSIVE');
+  });
+
+  it('compares safe missing/foreign details without requiring page membership', async () => {
+    view.invoice = null;
+    expect(
+      (
+        await compareAgencyShadow(
+          config(),
+          agencyId,
+          1,
+          () => Promise.resolve(copyProjection(view)),
+          randomUUID(),
+        )
+      ).status,
+    ).toBe('MATCH');
+    expect(
+      (await compareAgencyShadow(config(), agencyId, 1, detailLocal, ids[0]))
+        .status,
+    ).toBe('MISMATCH');
+    view = { profile: null, invoices: null, invoice: null };
+    expect(
+      (
+        await compareAgencyShadow(
+          config(),
+          agencyId,
+          1,
+          () => Promise.resolve(copyProjection(view)),
+          ids[0],
+        )
+      ).status,
+    ).toBe('MATCH');
+  });
+
+  it.each([
+    'detail-wrong-id',
+    'detail-pii',
+    'detail-number',
+    'detail-time',
+    'detail-unsafe404',
+    'detail-redirect',
+    'detail-oversized',
+  ])('rejects invalid detail boundary: %s', async (testMode) => {
+    mode = testMode;
+    view.invoice = { ...items[0] };
+    const report = await compareAgencyShadow(
+      config(),
+      agencyId,
+      1,
+      detailLocal,
+      ids[0],
+    );
+    expect(report.status).toBe('UNAVAILABLE');
+    for (const secret of [agencyId, ids[0], token, 'private'])
+      expect(JSON.stringify(report)).not.toContain(secret);
+  });
+
+  it('rejects a successful detail alongside a missing profile', async () => {
+    mode = 'orphan-detail';
+    view = { profile: null, invoices: null, invoice: { ...items[0] } };
+    expect(
+      (
+        await compareAgencyShadow(
+          config(),
+          agencyId,
+          1,
+          () =>
+            Promise.resolve({ profile: null, invoices: null, invoice: null }),
+          ids[0],
+        )
+      ).status,
+    ).toBe('UNAVAILABLE');
+  });
+
+  it('applies the shared deadline to a stalled detail and recovers', async () => {
+    mode = 'detail-timeout';
+    view.invoice = { ...items[0] };
+    const started = Date.now();
+    expect(
+      (await compareAgencyShadow(config(), agencyId, 1, detailLocal, ids[0]))
+        .status,
+    ).toBe('UNAVAILABLE');
+    expect(Date.now() - started).toBeLessThan(3500);
+    mode = 'match';
+    expect(
+      (await compareAgencyShadow(config(), agencyId, 1, detailLocal, ids[0]))
+        .status,
+    ).toBe('MATCH');
   });
 });

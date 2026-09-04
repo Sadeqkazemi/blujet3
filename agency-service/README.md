@@ -120,20 +120,29 @@ provisioning evidence and rerun after grant changes. No production provisioning
 is performed by the command. The existing Agency CI job automatically runs its
 real-PostgreSQL tests, including CLI exit codes, after building the package.
 
-### Offline profile/page comparison (A6.6)
+### Offline profile/page and optional invoice comparison (A6.6–A6.7)
 
-In `backend/`, run `npm run agency:compare:shadow -- <agency-uuid> [page]`, or
-after building, `node dist/database/report-agency-shadow.js <agency-uuid> [page]`.
+In `backend/`, run
+`npm run agency:compare:shadow -- <agency-uuid> [page] [invoice-uuid]`, or after
+building,
+`node dist/database/report-agency-shadow.js <agency-uuid> [page] [invoice-uuid]`.
 Default output is DISABLED, without a DB/HTTP connection. To run an explicitly
 approved sample, provide AGENCY_SHADOW_ENABLED=true, AGENCY_SERVICE_URL,
 AGENCY_INTERNAL_TOKEN and the local projection's DATABASE_URL securely via the
 environment. Both database connections should use reviewed SELECT-only logins.
-The CLI compares only the minimized profile and requested invoice page (default
-1, max 1000), not the full portal or invoice-detail route. It never prints rows.
+The CLI compares the minimized profile and requested invoice page (default 1,
+max 1000). Supply a page (usually 1) and final invoice UUID to also compare that
+owned invoice's detail, independently of page membership. Omit the UUID to keep
+the original two-request behavior. Missing and foreign invoices both compare as
+absent; no ownership information is exposed. An explicitly empty/invalid invoice
+UUID fails before DB/HTTP connections when enabled. The optional third request
+shares the existing deadline and strict response validation. It never prints rows.
 MATCH means equal observed snapshots; local changes give INCONCLUSIVE, stable
 drift MISMATCH and invalid/unreachable remote data UNAVAILABLE. This does not
 prove equality during unobserved transient changes, authorize sales or enable
-any public route. See `docs/features/agency-shadow-comparison.md` in the repo.
+any public route, nor establish full-portal parity. See
+`docs/features/agency-shadow-comparison.md` and
+`docs/features/agency-invoice-shadow.md` in the repo.
 
 Representative parity against current backend projections, production credential
 review, owner-approved public integration, and deployment remain separate gates.

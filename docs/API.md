@@ -2,6 +2,11 @@
 
 ## A6.4 — internal Agency read boundary
 
+A6.7 extends the offline shadow CLI with an optional explicit invoice UUID after
+the page argument. It additionally compares the owned detail route (including
+an invoice outside that page). Missing and foreign invoice IDs both mean no
+owned invoice. UUID validation precedes connections; no public API change.
+
 A6.6 adds an offline backend shadow comparator for the minimized profile and
 one explicitly selected ten-row invoice page. No public caller or route changes.
 It checks local-before / remote HTTP / local-after and emits only a status and

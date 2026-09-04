@@ -13,8 +13,9 @@ export async function readLocalAgency(
   db: DataSource,
   agencyId: string,
   page: number,
+  invoiceId?: string,
 ): Promise<AgencyProjection> {
-  validateSample(agencyId, page);
+  validateSample(agencyId, page, invoiceId);
   return db.transaction('REPEATABLE READ', async (tx) => {
     await tx.query('SET TRANSACTION READ ONLY');
     const profile = await tx
@@ -33,14 +34,19 @@ export async function readLocalAgency(
       )
       .where('profile.userId = :agencyId', { agencyId })
       .getRawOne<ProfileProjection>();
-    if (!profile) return { profile: null, invoices: null };
+    if (!profile)
+      return {
+        profile: null,
+        invoices: null,
+        ...(invoiceId === undefined ? {} : { invoice: null }),
+      };
     const count = await tx
       .getRepository(AgencyInvoice)
       .createQueryBuilder('invoice')
       .select('COUNT(*)::text', 'total')
       .where('invoice.agencyId = :agencyId', { agencyId })
       .getRawOne<{ total: string }>();
-    const items = await tx
+    const invoiceQuery = tx
       .getRepository(AgencyInvoice)
       .createQueryBuilder('invoice')
       .select('invoice.id', 'id')
@@ -59,16 +65,26 @@ export async function readLocalAgency(
         `to_char(invoice.paidAt, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`,
         'paidAt',
       )
-      .where('invoice.agencyId = :agencyId', { agencyId })
+      .where('invoice.agencyId = :agencyId', { agencyId });
+    const items = await invoiceQuery
+      .clone()
       .orderBy('invoice.issuedAt', 'DESC')
       .addOrderBy('invoice.id', 'DESC')
       .limit(10)
       .offset((page - 1) * 10)
       .getRawMany<InvoiceProjection>();
     if (!count) throw new Error('Agency count unavailable');
+    const selected =
+      invoiceId === undefined
+        ? undefined
+        : await invoiceQuery
+            .clone()
+            .andWhere('invoice.id = :invoiceId', { invoiceId })
+            .getRawOne<InvoiceProjection>();
     return {
       profile,
       invoices: { items, total: count.total, page, pageSize: 10 },
+      ...(invoiceId === undefined ? {} : { invoice: selected ?? null }),
     };
   });
 }
