@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { Repository, SelectQueryBuilder } from 'typeorm';
+import { Airport } from '../../database/entities/airport.entity';
 import { FareRule } from '../../database/entities/fare-rule.entity';
 import { FlightInstance } from '../../database/entities/flight-instance.entity';
 import { Passenger } from '../../database/entities/passenger.entity';
@@ -69,6 +70,7 @@ describe('CoreItineraryService', () => {
   const flightQuery = chainQuery<FlightInstance>(flightGetMany);
   const usageQuery = chainQuery<Passenger>(usageGetRawMany);
   const fareFind = jest.fn();
+  const airportFind = jest.fn();
   const cabinAvailability = jest.fn();
   const service = new CoreItineraryService(
     {
@@ -79,12 +81,14 @@ describe('CoreItineraryService', () => {
       createQueryBuilder: jest.fn(() => usageQuery),
     } as unknown as Repository<Passenger>,
     { cabinAvailability } as unknown as SearchService,
+    { find: airportFind } as unknown as Repository<Airport>,
   );
 
   beforeEach(() => {
     jest.clearAllMocks();
     usageGetRawMany.mockResolvedValue([]);
     fareFind.mockResolvedValue([]);
+    airportFind.mockResolvedValue([{ code: 'DXB', minConnectMin: 60 }]);
     cabinAvailability.mockResolvedValue({ capacity: 4, seatsLeft: 4 });
   });
 
@@ -258,6 +262,145 @@ describe('CoreItineraryService', () => {
         ],
       }),
     ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  describe('connection time', () => {
+    function connectedRequest(): ResolveCoreItineraryDto {
+      return {
+        channel: 'SYSTEM',
+        segments: [
+          { flightInstanceId: FIRST_ID, sequence: 1, cabin: 'ECONOMY' },
+          { flightInstanceId: SECOND_ID, sequence: 2, cabin: 'ECONOMY' },
+        ],
+      };
+    }
+
+    beforeEach(() => {
+      flightGetMany.mockResolvedValue([
+        instance(
+          FIRST_ID,
+          'IKA',
+          'DXB',
+          '2099-10-01T08:00:00Z',
+          '2099-10-01T10:00:00Z',
+        ),
+        instance(
+          SECOND_ID,
+          'DXB',
+          'IST',
+          '2099-10-01T11:00:00Z',
+          '2099-10-01T14:00:00Z',
+        ),
+      ]);
+    });
+
+    it('accepts exactly the persisted minimum', async () => {
+      const result = await service.resolve(connectedRequest());
+      expect(result.segments).toHaveLength(2);
+      expect(airportFind).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects a positive gap shorter than the persisted minimum', async () => {
+      airportFind.mockResolvedValue([{ code: 'DXB', minConnectMin: 61 }]);
+      await expect(service.resolve(connectedRequest())).rejects.toMatchObject({
+        response: {
+          code: 'VALIDATION_FAILED',
+          message: 'فاصله بین سگمنت‌ها کمتر از حداقل زمان اتصال فرودگاه است.',
+        },
+      });
+    });
+
+    it.each([null, undefined, -1, 1.5, NaN])(
+      'rejects invalid MCT %s',
+      async (minConnectMin) => {
+        airportFind.mockResolvedValue([{ code: 'DXB', minConnectMin }]);
+        await expect(service.resolve(connectedRequest())).rejects.toMatchObject(
+          {
+            response: { code: 'VALIDATION_FAILED' },
+          },
+        );
+      },
+    );
+
+    it('rejects an unknown transfer airport without assuming a fallback', async () => {
+      airportFind.mockResolvedValue([]);
+      await expect(service.resolve(connectedRequest())).rejects.toMatchObject({
+        response: { code: 'VALIDATION_FAILED' },
+      });
+    });
+
+    it('accepts configured zero MCT when chronology is strictly positive', async () => {
+      airportFind.mockResolvedValue([{ code: 'DXB', minConnectMin: 0 }]);
+      await expect(service.resolve(connectedRequest())).resolves.toMatchObject({
+        channel: 'SYSTEM',
+      });
+    });
+
+    it('does not query airports for a direct itinerary', async () => {
+      await expect(service.resolve(singleSegment())).resolves.toMatchObject({
+        channel: 'SYSTEM',
+      });
+      expect(airportFind).not.toHaveBeenCalled();
+    });
+
+    it('checks the second transfer in a three-segment itinerary', async () => {
+      const thirdId = '33333333-3333-4333-8333-333333333333';
+      flightGetMany.mockResolvedValue([
+        instance(
+          FIRST_ID,
+          'IKA',
+          'DXB',
+          '2099-10-01T08:00:00Z',
+          '2099-10-01T10:00:00Z',
+        ),
+        instance(
+          SECOND_ID,
+          'DXB',
+          'IST',
+          '2099-10-01T11:00:00Z',
+          '2099-10-01T14:00:00Z',
+        ),
+        instance(
+          thirdId,
+          'IST',
+          'LHR',
+          '2099-10-01T14:30:00Z',
+          '2099-10-01T18:00:00Z',
+        ),
+      ]);
+      airportFind.mockResolvedValue([
+        { code: 'DXB', minConnectMin: 60 },
+        { code: 'IST', minConnectMin: 31 },
+      ]);
+      const dto = connectedRequest();
+      dto.segments.push({
+        flightInstanceId: thirdId,
+        sequence: 3,
+        cabin: 'ECONOMY',
+      });
+      await expect(service.resolve(dto)).rejects.toMatchObject({
+        response: { code: 'VALIDATION_FAILED' },
+      });
+      airportFind.mockResolvedValue([
+        { code: 'DXB', minConnectMin: 60 },
+        { code: 'IST', minConnectMin: 30 },
+      ]);
+      const result = await service.resolve(dto);
+      expect(result.segments).toHaveLength(3);
+      expect(airportFind).toHaveBeenCalledTimes(2);
+    });
+
+    it.each(['2099-10-01T08:00:00Z', '2099-10-01T07:59:59Z'])(
+      'rejects a segment arriving at or before departure: %s',
+      async (arrivalAt) => {
+        flightGetMany.mockResolvedValue([
+          instance(FIRST_ID, 'IKA', 'DXB', '2099-10-01T08:00:00Z', arrivalAt),
+        ]);
+        await expect(service.resolve(singleSegment())).rejects.toMatchObject({
+          response: { code: 'VALIDATION_FAILED' },
+        });
+      },
+    );
   });
 
   it('uses the agency release only for the agency channel', async () => {

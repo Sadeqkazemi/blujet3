@@ -19,6 +19,16 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-04 — Core itinerary connection-time validation
+
+- [x] Inspect existing airport MCT and document read-only validation rules.
+- [x] Validate segment duration and each transfer's persisted minimum time.
+- [x] Cover exact boundary, short connections, missing/invalid MCT and direct
+  itineraries with focused unit/HTTP tests; run typecheck, build and scoped lint.
+- Local verification: 25 PSS unit tests and 8 resolver E2E tests passed;
+  typecheck, scoped ESLint and production build passed.
+- No migration, writer cutover or deployment. Push/merge requires owner approval.
+
 ### 2026-09-04 — Core multi-segment itinerary resolution
 
 - [x] Document an internal, read-only Core contract without enabling the PSS

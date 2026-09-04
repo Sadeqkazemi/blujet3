@@ -3377,6 +3377,10 @@ copy rows, and it does not read or write the shadow `pss_*` tables. A later
 multi-segment hold/order slice must remain inside the same Core transaction and
 will require its own schema/locking review.
 
+Connection validation additionally reads `inventory.airports.code` and the
+existing `minConnectMin` integer column. The persisted airport value is the
+MCT authority; no new column, default override or migration is introduced.
+
 These tables live in the dedicated PSS PostgreSQL database. Reliability tables
 are implemented in Slice 0; reservation, inventory and accountable-document
 tables remain approved contracts for later slices. The website database may
