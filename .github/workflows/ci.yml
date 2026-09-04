@@ -309,7 +309,34 @@ jobs:
     needs: changes
     if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-24.04-arm
-    timeout-minutes: 30
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: cp .env.test .env
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+
+  backend-e2e:
+    name: Backend E2E (${{ matrix.shard }})
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ['1/4', '2/4', '3/4', '4/4']
     services:
       postgres:
         image: postgres:16-alpine
@@ -345,13 +372,7 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - run: cp .env.test .env
-      - run: npm run migration:run
-      - run: npm run seed
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run build
-      - run: npm test
-      - run: npm run test:e2e
+      - run: npm run test:e2e -- --shard=${{ matrix.shard }}
 
   frontend:
     name: Frontend
@@ -404,6 +425,7 @@ jobs:
       - backend-migration-compatibility
       - pss-service
       - backend
+      - backend-e2e
       - frontend
       - ml-service
     runs-on: ubuntu-24.04-arm

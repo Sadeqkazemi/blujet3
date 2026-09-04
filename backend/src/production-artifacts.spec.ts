@@ -187,6 +187,15 @@ describe('production backend artifacts', () => {
     expect(notifyFeature).toContain('NOTIFY_INTEGRATION_ENABLED=false');
   });
 
+  it('runs the complete backend E2E suite in isolated parallel shards', () => {
+    expect(ciWorkflow).toContain('backend-e2e:');
+    expect(ciWorkflow).toContain("shard: ['1/4', '2/4', '3/4', '4/4']");
+    expect(ciWorkflow).toContain(
+      'npm run test:e2e -- --shard=${{ matrix.shard }}',
+    );
+    expect(ciWorkflow).toContain('- backend-e2e');
+  });
+
   it('keeps Experience internal, authenticated and rollback-safe', () => {
     expect(compose).toContain('experience-service:');
     expect(compose).toContain(
