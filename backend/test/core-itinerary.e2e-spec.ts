@@ -6,11 +6,19 @@ import { DataSource, In } from 'typeorm';
 import { AircraftSeatMap } from '../src/database/entities/aircraft-seat-map.entity';
 import { Airport } from '../src/database/entities/airport.entity';
 import { Booking } from '../src/database/entities/booking.entity';
+import { CoreItineraryOrder } from '../src/database/entities/core-itinerary-order.entity';
+import { CoreItineraryLifecycleEvent } from '../src/database/entities/core-itinerary-lifecycle-event.entity';
+import { CoreItinerarySegment } from '../src/database/entities/core-itinerary-segment.entity';
+import { CoreItineraryTraveller } from '../src/database/entities/core-itinerary-traveller.entity';
+import { CoreItineraryTravellerSegment } from '../src/database/entities/core-itinerary-traveller-segment.entity';
 import { FareRule } from '../src/database/entities/fare-rule.entity';
 import { Flight } from '../src/database/entities/flight.entity';
 import { FlightInstance } from '../src/database/entities/flight-instance.entity';
 import { Route } from '../src/database/entities/route.entity';
+import { TravelExtraSetting } from '../src/database/entities/travel-extra-setting.entity';
+import { User } from '../src/database/entities/user.entity';
 import { createTestApp } from './helpers/app.helper';
+import { CoreItineraryHoldExpiryService } from '../src/modules/pss/core-itinerary-hold-expiry.service';
 
 describe('Core itinerary internal API', () => {
   let app: INestApplication<App>;
@@ -23,10 +31,38 @@ describe('Core itinerary internal API', () => {
   const instanceIds = [randomUUID(), randomUUID()];
   const fareRuleIds = [randomUUID(), randomUUID()];
   const airportId = randomUUID();
+  const extraId = randomUUID();
+  const holdOwnerId = randomUUID();
+
+  async function cleanupHoldOrders() {
+    const orders = await dataSource
+      .getRepository(CoreItineraryOrder)
+      .find({ where: { ownerId: holdOwnerId }, select: { id: true } });
+    const orderIds = orders.map((order) => order.id);
+    if (orderIds.length > 0) {
+      await dataSource
+        .getRepository(CoreItineraryLifecycleEvent)
+        .delete({ orderId: In(orderIds) });
+      await dataSource
+        .getRepository(CoreItineraryOrder)
+        .delete({ id: In(orderIds) });
+    }
+  }
 
   beforeAll(async () => {
     app = await createTestApp();
     dataSource = app.get(DataSource);
+
+    const userRepo = dataSource.getRepository(User);
+    await userRepo.save(
+      userRepo.create({
+        id: holdOwnerId,
+        role: 'USER',
+        fullName: 'مالک تست سفر چندسگمنتی',
+        isActive: true,
+        updatedAt: new Date(),
+      }),
+    );
 
     const seatMapRepo = dataSource.getRepository(AircraftSeatMap);
     await seatMapRepo.save(
@@ -136,13 +172,36 @@ describe('Core itinerary internal API', () => {
           agencySeatsReleased: 1,
           agencyReleasePriceIrr: 9_000_000n,
           allowedChannels: [],
-          taxIrr: 0n,
+          taxIrr: BigInt(index + 1) * 1_000_000n,
+          baggageAllowanceKg: index === 0 ? 20 : 15,
         }),
       ),
+    );
+
+    const extraRepo = dataSource.getRepository(TravelExtraSetting);
+    await extraRepo.save(
+      extraRepo.create({
+        id: extraId,
+        code: `CUSTOM_${suffix}`,
+        titleFa: 'بار اضافه تست سفر',
+        titleEn: 'Test extra baggage',
+        titleAr: null,
+        descriptionFa: null,
+        descriptionEn: null,
+        descriptionAr: null,
+        billingUnit: 'PER_KG',
+        priceIrr: 500_000n,
+        active: true,
+        purchaseEnabled: true,
+        sortOrder: 0,
+        updatedById: null,
+      }),
     );
   });
 
   afterAll(async () => {
+    await cleanupHoldOrders();
+    await dataSource.getRepository(TravelExtraSetting).delete({ id: extraId });
     await dataSource.getRepository(FareRule).delete({ id: In(fareRuleIds) });
     await dataSource
       .getRepository(FlightInstance)
@@ -151,6 +210,7 @@ describe('Core itinerary internal API', () => {
     await dataSource.getRepository(Route).delete({ id: In(routeIds) });
     await dataSource.getRepository(Airport).delete({ id: airportId });
     await dataSource.getRepository(AircraftSeatMap).delete({ aircraftType });
+    await dataSource.getRepository(User).delete({ id: holdOwnerId });
     await app.close();
   });
 
@@ -163,6 +223,43 @@ describe('Core itinerary internal API', () => {
         cabin: 'ECONOMY',
         fareClassCode: 'Y',
       })),
+    };
+  }
+
+  function validQuoteRequest() {
+    const segments = validRequest().segments;
+    segments[0] = {
+      ...segments[0],
+      extras: [{ id: extraId, quantity: 3 }],
+    };
+    return {
+      channel: 'SYSTEM',
+      segments,
+      travellers: [
+        { passengerType: 'ADULT', birthDate: '1990-01-01' },
+        { passengerType: 'CHILD', birthDate: '2020-01-01' },
+      ],
+    };
+  }
+
+  function validHoldRequest() {
+    return {
+      ...validQuoteRequest(),
+      ownerId: holdOwnerId,
+      contactPhone: '09121234567',
+      travellers: [
+        {
+          fullName: 'علی رضایی',
+          nationalId: '0012345679',
+          passengerType: 'ADULT',
+          birthDate: '1990-01-01',
+        },
+        {
+          fullName: 'سارا احمدی',
+          passengerType: 'CHILD',
+          birthDate: '2020-01-01',
+        },
+      ],
     };
   }
 
@@ -306,5 +403,383 @@ describe('Core itinerary internal API', () => {
 
     expect(response.status).toBe(409);
     expect(response.body.error.code).toBe('POOL_EXHAUSTED');
+  });
+
+  describe('POST /internal/v1/core/itineraries/quote', () => {
+    it('requires the internal token and validates the traveller manifest', async () => {
+      const unauthorized = await request(app.getHttpServer())
+        .post('/internal/v1/core/itineraries/quote')
+        .send(validQuoteRequest());
+      expect(unauthorized.status).toBe(401);
+
+      const invalid = await request(app.getHttpServer())
+        .post('/internal/v1/core/itineraries/quote')
+        .set('X-Internal-Token', token)
+        .send({ ...validQuoteRequest(), travellers: [] });
+      expect(invalid.status).toBe(400);
+      expect(invalid.body.error.code).toBe('VALIDATION_FAILED');
+    });
+
+    it('adds fares and taxes but keeps baggage and extras per segment without writes', async () => {
+      await dataSource
+        .getRepository(FareRule)
+        .update({ id: In(fareRuleIds) }, { siteSeatsReleased: 3 });
+      const bookingRepo = dataSource.getRepository(Booking);
+      const before = await bookingRepo.count({
+        where: { flightInstanceId: In(instanceIds) },
+      });
+      const response = await request(app.getHttpServer())
+        .post('/internal/v1/core/itineraries/quote')
+        .set('X-Internal-Token', token)
+        .send(validQuoteRequest());
+      const after = await bookingRepo.count({
+        where: { flightInstanceId: In(instanceIds) },
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toMatchObject({
+        currency: 'IRR',
+        requiresReprice: true,
+        fareIrr: '30000000',
+        taxIrr: '4500000',
+        extrasIrr: '1500000',
+        totalIrr: '36000000',
+        segments: [
+          {
+            baggageAllowanceKg: 20,
+            fareIrr: '15000000',
+            taxIrr: '1500000',
+            extras: [{ quantity: 3, totalIrr: '1500000' }],
+          },
+          {
+            baggageAllowanceKg: 15,
+            fareIrr: '15000000',
+            taxIrr: '3000000',
+            extras: [],
+          },
+        ],
+      });
+      expect(after).toBe(before);
+    });
+
+    it('rejects when one fare bucket cannot fit the whole party', async () => {
+      const quote = validQuoteRequest();
+      quote.travellers = [
+        { passengerType: 'ADULT', birthDate: '1990-01-01' },
+        { passengerType: 'ADULT', birthDate: '1991-01-01' },
+        { passengerType: 'ADULT', birthDate: '1992-01-01' },
+        { passengerType: 'ADULT', birthDate: '1993-01-01' },
+      ];
+      const response = await request(app.getHttpServer())
+        .post('/internal/v1/core/itineraries/quote')
+        .set('X-Internal-Token', token)
+        .send(quote);
+      expect(response.status).toBe(409);
+      expect(response.body.error.code).toBe('POOL_EXHAUSTED');
+    });
+
+    it('uses the current fare on every quote instead of returning a stale price', async () => {
+      const fareRuleRepo = dataSource.getRepository(FareRule);
+      try {
+        await fareRuleRepo.update(fareRuleIds[0], {
+          sitePriceIrr: 11_000_000n,
+        });
+        const response = await request(app.getHttpServer())
+          .post('/internal/v1/core/itineraries/quote')
+          .set('X-Internal-Token', token)
+          .send(validQuoteRequest());
+        expect(response.status).toBe(200);
+        expect(response.body.data.fareIrr).toBe('31500000');
+        expect(response.body.data.totalIrr).toBe('37500000');
+      } finally {
+        await fareRuleRepo.update(fareRuleIds[0], {
+          sitePriceIrr: 10_000_000n,
+        });
+      }
+    });
+
+    it('fails closed when a selected segment extra is disabled', async () => {
+      const extraRepo = dataSource.getRepository(TravelExtraSetting);
+      try {
+        await extraRepo.update(extraId, { purchaseEnabled: false });
+        const response = await request(app.getHttpServer())
+          .post('/internal/v1/core/itineraries/quote')
+          .set('X-Internal-Token', token)
+          .send(validQuoteRequest());
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('VALIDATION_FAILED');
+      } finally {
+        await extraRepo.update(extraId, { purchaseEnabled: true });
+      }
+    });
+  });
+
+  describe('POST /internal/v1/core/itineraries/hold', () => {
+    afterEach(async () => {
+      await cleanupHoldOrders();
+    });
+
+    it('requires an idempotency key and creates one PNR with all snapshots', async () => {
+      const missingKey = await request(app.getHttpServer())
+        .post('/internal/v1/core/itineraries/hold')
+        .set('X-Internal-Token', token)
+        .send(validHoldRequest());
+      expect(missingKey.status).toBe(400);
+
+      const bookingCount = await dataSource.getRepository(Booking).count({
+        where: { flightInstanceId: In(instanceIds) },
+      });
+      const response = await request(app.getHttpServer())
+        .post('/internal/v1/core/itineraries/hold')
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', `hold-${suffix}`)
+        .send(validHoldRequest());
+
+      expect(response.status).toBe(201);
+      expect(response.body.data).toMatchObject({
+        status: 'HELD',
+        currency: 'IRR',
+        totalIrr: '36000000',
+        segments: [
+          {
+            sequence: 1,
+            flightInstanceId: instanceIds[0],
+            occupiedSeats: 2,
+            totalIrr: '18000000',
+          },
+          {
+            sequence: 2,
+            flightInstanceId: instanceIds[1],
+            occupiedSeats: 2,
+            totalIrr: '18000000',
+          },
+        ],
+      });
+      expect(response.body.data.pnr).toMatch(/^BJ[A-F0-9]{8}$/);
+      const holdExpiresAt: unknown = response.body.data.holdExpiresAt;
+      expect(typeof holdExpiresAt).toBe('string');
+      if (typeof holdExpiresAt !== 'string') {
+        throw new Error('holdExpiresAt must be an ISO string');
+      }
+      expect(new Date(holdExpiresAt).getTime()).toBeGreaterThan(Date.now());
+      const orderId = response.body.data.id as string;
+      expect(
+        await dataSource
+          .getRepository(CoreItinerarySegment)
+          .count({ where: { orderId } }),
+      ).toBe(2);
+      expect(
+        await dataSource
+          .getRepository(CoreItineraryTraveller)
+          .count({ where: { orderId } }),
+      ).toBe(2);
+      expect(
+        await dataSource.getRepository(CoreItineraryTravellerSegment).count(),
+      ).toBe(4);
+      expect(
+        await dataSource.getRepository(Booking).count({
+          where: { flightInstanceId: In(instanceIds) },
+        }),
+      ).toBe(bookingCount);
+      const storedTraveller = await dataSource
+        .getRepository(CoreItineraryTraveller)
+        .findOneByOrFail({ orderId, sequence: 1 });
+      expect(storedTraveller.nationalIdEnc).not.toContain('0012345679');
+      expect(storedTraveller.nationalIdHash).not.toBe('0012345679');
+    });
+
+    it('replays the same command and rejects a changed payload', async () => {
+      const key = `replay-${suffix}`;
+      const first = await request(app.getHttpServer())
+        .post('/internal/v1/core/itineraries/hold')
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', key)
+        .send(validHoldRequest());
+      const replay = await request(app.getHttpServer())
+        .post('/internal/v1/core/itineraries/hold')
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', key)
+        .send(validHoldRequest());
+      const changed = validHoldRequest();
+      changed.contactPhone = '09120000000';
+      const mismatch = await request(app.getHttpServer())
+        .post('/internal/v1/core/itineraries/hold')
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', key)
+        .send(changed);
+
+      expect(first.status).toBe(201);
+      expect(replay.status).toBe(201);
+      expect(replay.body.data.id).toBe(first.body.data.id);
+      expect(mismatch.status).toBe(409);
+      expect(mismatch.body.error.code).toBe('IDEMPOTENCY_PAYLOAD_MISMATCH');
+      expect(
+        await dataSource
+          .getRepository(CoreItineraryOrder)
+          .count({ where: { ownerId: holdOwnerId } }),
+      ).toBe(1);
+    });
+
+    it('durably expires a hold once and returns its inventory', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/internal/v1/core/itineraries/hold')
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', `expiry-${suffix}`)
+        .send(validHoldRequest());
+      expect(response.status).toBe(201);
+      const orderId = response.body.data.id as string;
+      const now = new Date();
+      await dataSource.getRepository(CoreItineraryOrder).update(orderId, {
+        holdExpiresAt: new Date(now.getTime() - 1),
+      });
+      const expiry = app.get(CoreItineraryHoldExpiryService);
+
+      await expect(expiry.expireOne(orderId, now)).resolves.toBe(true);
+      await expect(expiry.expireOne(orderId, now)).resolves.toBe(false);
+
+      const order = await dataSource
+        .getRepository(CoreItineraryOrder)
+        .findOneByOrFail({ id: orderId });
+      expect(order.status).toBe('EXPIRED');
+      expect(
+        await dataSource
+          .getRepository(CoreItineraryLifecycleEvent)
+          .count({ where: { orderId } }),
+      ).toBe(1);
+      const available = await request(app.getHttpServer())
+        .post('/internal/v1/core/itineraries/resolve')
+        .set('X-Internal-Token', token)
+        .send(validRequest());
+      expect(available.status).toBe(200);
+      expect(available.body.data.segments[0].availableSeats).toBe(3);
+    });
+
+    it('cancels the whole hold idempotently and records one transition', async () => {
+      const held = await request(app.getHttpServer())
+        .post('/internal/v1/core/itineraries/hold')
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', `cancel-${suffix}`)
+        .send(validHoldRequest());
+      expect(held.status).toBe(201);
+      const orderId = held.body.data.id as string;
+
+      const cancel = () =>
+        request(app.getHttpServer())
+          .post(`/internal/v1/core/itineraries/${orderId}/cancel`)
+          .set('X-Internal-Token', token)
+          .send({ ownerId: holdOwnerId });
+      const first = await cancel();
+      const replay = await cancel();
+
+      expect(first.status).toBe(200);
+      expect(first.body.data).toMatchObject({
+        id: orderId,
+        status: 'CANCELLED',
+        segments: [{ sequence: 1 }, { sequence: 2 }],
+      });
+      expect(replay.status).toBe(200);
+      expect(replay.body.data.status).toBe('CANCELLED');
+      expect(
+        await dataSource.getRepository(CoreItineraryLifecycleEvent).count({
+          where: { orderId, eventType: 'HOLD_CANCELLED' },
+        }),
+      ).toBe(1);
+      const available = await request(app.getHttpServer())
+        .post('/internal/v1/core/itineraries/resolve')
+        .set('X-Internal-Token', token)
+        .send(validRequest());
+      expect(available.status).toBe(200);
+      expect(available.body.data.segments[0].availableSeats).toBe(3);
+    });
+
+    it('does not allow another owner to cancel the hold', async () => {
+      const held = await request(app.getHttpServer())
+        .post('/internal/v1/core/itineraries/hold')
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', `owner-scope-${suffix}`)
+        .send(validHoldRequest());
+      const response = await request(app.getHttpServer())
+        .post(`/internal/v1/core/itineraries/${held.body.data.id}/cancel`)
+        .set('X-Internal-Token', token)
+        .send({ ownerId: randomUUID() });
+
+      expect(response.status).toBe(404);
+      expect(response.body.error.code).toBe('NOT_FOUND');
+      const order = await dataSource
+        .getRepository(CoreItineraryOrder)
+        .findOneByOrFail({ id: held.body.data.id as string });
+      expect(order.status).toBe('HELD');
+    });
+
+    it('rolls back the whole command when one leg has no inventory', async () => {
+      const fareRuleRepo = dataSource.getRepository(FareRule);
+      try {
+        await fareRuleRepo.update(fareRuleIds[1], { siteSeatsReleased: 0 });
+        const response = await request(app.getHttpServer())
+          .post('/internal/v1/core/itineraries/hold')
+          .set('X-Internal-Token', token)
+          .set('Idempotency-Key', `rollback-${suffix}`)
+          .send(validHoldRequest());
+
+        expect(response.status).toBe(409);
+        expect(response.body.error.code).toBe('POOL_EXHAUSTED');
+        expect(
+          await dataSource
+            .getRepository(CoreItineraryOrder)
+            .count({ where: { ownerId: holdOwnerId } }),
+        ).toBe(0);
+        expect(
+          await dataSource.getRepository(CoreItinerarySegment).count({
+            where: { flightInstanceId: In(instanceIds) },
+          }),
+        ).toBe(0);
+      } finally {
+        await fareRuleRepo.update(fareRuleIds[1], { siteSeatsReleased: 3 });
+      }
+    });
+
+    it('has one winner for the last seat on every leg and leaves no partial order', async () => {
+      const baseline = await request(app.getHttpServer())
+        .post('/internal/v1/core/itineraries/hold')
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', `baseline-${suffix}`)
+        .send(validHoldRequest());
+      expect(baseline.status).toBe(201);
+
+      const oneTraveller = validHoldRequest();
+      oneTraveller.segments[0].extras = [];
+      oneTraveller.travellers = [oneTraveller.travellers[0]];
+      const attempts = await Promise.all([
+        request(app.getHttpServer())
+          .post('/internal/v1/core/itineraries/hold')
+          .set('X-Internal-Token', token)
+          .set('Idempotency-Key', `race-a-${suffix}`)
+          .send(oneTraveller),
+        request(app.getHttpServer())
+          .post('/internal/v1/core/itineraries/hold')
+          .set('X-Internal-Token', token)
+          .set('Idempotency-Key', `race-b-${suffix}`)
+          .send(oneTraveller),
+      ]);
+
+      expect(attempts.map((result) => result.status).sort()).toEqual([
+        201, 409,
+      ]);
+      expect(
+        await dataSource
+          .getRepository(CoreItineraryOrder)
+          .count({ where: { ownerId: holdOwnerId } }),
+      ).toBe(2);
+      const orders = await dataSource
+        .getRepository(CoreItineraryOrder)
+        .find({ where: { ownerId: holdOwnerId } });
+      for (const order of orders) {
+        expect(
+          await dataSource
+            .getRepository(CoreItinerarySegment)
+            .count({ where: { orderId: order.id } }),
+        ).toBe(2);
+      }
+    });
   });
 });

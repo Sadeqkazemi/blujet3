@@ -1,11 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, IsNull, MoreThan, Repository, SelectQueryBuilder } from 'typeorm';
+import {
+  EntityManager,
+  In,
+  IsNull,
+  MoreThan,
+  Repository,
+  SelectQueryBuilder,
+} from 'typeorm';
 import { Airport } from '../../database/entities/airport.entity';
 import { FlightInstance } from '../../database/entities/flight-instance.entity';
 import { AircraftSeatMap } from '../../database/entities/aircraft-seat-map.entity';
 import { Passenger } from '../../database/entities/passenger.entity';
 import { SeatLock } from '../../database/entities/seat-lock.entity';
+import { CoreItineraryOrder } from '../../database/entities/core-itinerary-order.entity';
+import { CoreItinerarySegment } from '../../database/entities/core-itinerary-segment.entity';
 import { RedisService } from '../../redis/redis.service';
 import { ErrorCode } from '../../common/errors';
 import { getCabinPrice } from './pricing';
@@ -260,8 +269,13 @@ export class SearchService {
   async cabinAvailability(
     instance: FlightInstance,
     cabin: CabinClass,
+    manager?: EntityManager,
   ): Promise<{ capacity: number; seatsLeft: number } | null> {
-    const map = await this.seatMapRepo.findOneBy({
+    const mapRepo = manager
+      ? manager.getRepository(AircraftSeatMap)
+      : this.seatMapRepo;
+    const availabilityManager = manager ?? this.flightInstanceRepo.manager;
+    const map = await mapRepo.findOneBy({
       aircraftType: resolveAircraftType(instance),
     });
     if (!map) return null;
@@ -270,21 +284,26 @@ export class SearchService {
     const physicalCapacity = this.physicalCabinCapacity(instance, cabin, seats);
     if (physicalCapacity === null) return null;
     const capacity = await resolveCommercialCabinCapacity(
-      this.flightInstanceRepo.manager,
+      availabilityManager,
       instance.id,
       cabin,
       physicalCapacity,
     );
     if (capacity <= 0) return null;
 
-    const [taken, committed] = await Promise.all([
-      this.takenSeatCodes(instance.id),
-      sumActiveCommittedSeats(
-        this.flightInstanceRepo.manager,
-        instance.id,
-        cabin,
-      ),
-    ]);
+    const [taken, committed] = manager
+      ? [
+          await this.takenSeatCodes(instance.id, manager),
+          await sumActiveCommittedSeats(
+            availabilityManager,
+            instance.id,
+            cabin,
+          ),
+        ]
+      : await Promise.all([
+          this.takenSeatCodes(instance.id),
+          sumActiveCommittedSeats(availabilityManager, instance.id, cabin),
+        ]);
     const seatsLeft = this.seatsLeftForCabin(
       capacity,
       cabin,
@@ -683,10 +702,13 @@ export class SearchService {
    * expired HELD bookings (materializeExpiry keeps holdExpiresAt honest;
    * a booking already past its TTL frees the seat immediately here even
    * before the lazy-expiry sweep runs on that row). */
-  async takenSeatCodes(flightInstanceId: string): Promise<Set<string>> {
+  async takenSeatCodes(
+    flightInstanceId: string,
+    manager?: EntityManager,
+  ): Promise<Set<string>> {
     const now = new Date();
     const [passengers, locks] = await Promise.all([
-      this.passengerRepo
+      (manager ? manager.getRepository(Passenger) : this.passengerRepo)
         .createQueryBuilder('p')
         .innerJoin('p.booking', 'b')
         .select(['p.seatCode', 'p.extraSeatCode'])
@@ -702,7 +724,7 @@ export class SearchService {
           now,
         })
         .getMany(),
-      this.seatLockRepo.find({
+      (manager ? manager.getRepository(SeatLock) : this.seatLockRepo).find({
         where: {
           flightInstanceId,
           releasedAt: IsNull(),
@@ -780,7 +802,7 @@ export class SearchService {
     MANAGERIAL: number;
   }> {
     const now = new Date();
-    const [channelRows, lockCount] = await Promise.all([
+    const [channelRows, itineraryRows, lockCount] = await Promise.all([
       this.passengerRepo
         .createQueryBuilder('p')
         .innerJoin('p.booking', 'b')
@@ -805,6 +827,30 @@ export class SearchService {
           channel: 'SYSTEM' | 'CHARTER' | 'AGENCY';
           count: string;
         }>(),
+      this.flightInstanceRepo.manager
+        .createQueryBuilder(CoreItinerarySegment, 'segment')
+        .innerJoin(
+          CoreItineraryOrder,
+          'itineraryOrder',
+          'itineraryOrder.id = segment.orderId',
+        )
+        .select('itineraryOrder.channel', 'channel')
+        .addSelect('COALESCE(SUM(segment.occupiedSeats), 0)', 'count')
+        .where('segment.flightInstanceId = :flightInstanceId', {
+          flightInstanceId,
+        })
+        .andWhere('itineraryOrder.status IN (:...statuses)', {
+          statuses: ['HELD', 'PAID', 'TICKETED'],
+        })
+        .andWhere(
+          '(itineraryOrder.status != :held OR itineraryOrder.holdExpiresAt > :now)',
+          { held: 'HELD', now },
+        )
+        .groupBy('itineraryOrder.channel')
+        .getRawMany<{
+          channel: 'SYSTEM' | 'AGENCY';
+          count: string;
+        }>(),
       this.seatLockRepo.count({
         where: {
           flightInstanceId,
@@ -815,6 +861,9 @@ export class SearchService {
     ]);
     const counts = { SYSTEM: 0, CHARTER: 0, AGENCY: 0, MANAGERIAL: lockCount };
     for (const row of channelRows) counts[row.channel] = Number(row.count);
+    for (const row of itineraryRows) {
+      counts[row.channel] += Number(row.count);
+    }
     return counts;
   }
 }

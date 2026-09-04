@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { ErrorCode } from '../../common/errors';
 import type { Irr } from '../../common/money';
 import type { AuthenticatedUser } from '../../common/types/authenticated-user';
@@ -273,8 +273,10 @@ export class AncillaryServicesService implements OnModuleInit {
       titleFa: string;
       descriptionFa: string | null;
     },
-  >(extras: T[]): Promise<T[]> {
-    const mapped = await this.repo.find();
+  >(extras: T[], manager?: EntityManager): Promise<T[]> {
+    const mapped = await (
+      manager ? manager.getRepository(AncillaryService) : this.repo
+    ).find();
     const byKey = new Map(mapped.map((row) => [row.key, row]));
     return extras.flatMap((extra) => {
       const ancillaryKey = ANCILLARY_KEY_BY_TRAVEL_EXTRA.get(
@@ -375,39 +377,70 @@ export class AncillaryServicesService implements OnModuleInit {
   }
 }
 
-const SEAT_SERVICE_LOCALIZATION: Record<string, { titleEn: string; titleAr: string }> = {
+const SEAT_SERVICE_LOCALIZATION: Record<
+  string,
+  { titleEn: string; titleAr: string }
+> = {
   'seat-normal': { titleEn: 'Standard seat', titleAr: 'مقعد عادي' },
-  'seat-legroom': { titleEn: 'Extra-legroom seat', titleAr: 'مقعد بمساحة إضافية للساقين' },
-  'seat-window-aisle': { titleEn: 'Window or aisle seat', titleAr: 'مقعد نافذة أو ممر' },
+  'seat-legroom': {
+    titleEn: 'Extra-legroom seat',
+    titleAr: 'مقعد بمساحة إضافية للساقين',
+  },
+  'seat-window-aisle': {
+    titleEn: 'Window or aisle seat',
+    titleAr: 'مقعد نافذة أو ممر',
+  },
 };
 
-const TRAVEL_EXTRA_LOCALIZATION: Record<string, { titleEn: string; titleAr: string; descriptionEn: string; descriptionAr: string }> = {
+const TRAVEL_EXTRA_LOCALIZATION: Record<
+  string,
+  {
+    titleEn: string;
+    titleAr: string;
+    descriptionEn: string;
+    descriptionAr: string;
+  }
+> = {
   baggage: {
-    titleEn: 'Extra baggage', titleAr: 'أمتعة إضافية',
-    descriptionEn: 'Each 5 kg above the baggage allowance', descriptionAr: 'كل 5 كغ إضافية فوق الوزن المسموح',
+    titleEn: 'Extra baggage',
+    titleAr: 'أمتعة إضافية',
+    descriptionEn: 'Each 5 kg above the baggage allowance',
+    descriptionAr: 'كل 5 كغ إضافية فوق الوزن المسموح',
   },
   meal: {
-    titleEn: 'Special meal', titleAr: 'وجبة خاصة',
-    descriptionEn: 'A hot meal on eligible flights', descriptionAr: 'وجبة ساخنة على الرحلات المؤهلة',
+    titleEn: 'Special meal',
+    titleAr: 'وجبة خاصة',
+    descriptionEn: 'A hot meal on eligible flights',
+    descriptionAr: 'وجبة ساخنة على الرحلات المؤهلة',
   },
   insurance: {
-    titleEn: 'Travel insurance', titleAr: 'تأمين السفر',
-    descriptionEn: 'Travel insurance cover for each passenger', descriptionAr: 'تغطية تأمين السفر لكل مسافر',
+    titleEn: 'Travel insurance',
+    titleAr: 'تأمين السفر',
+    descriptionEn: 'Travel insurance cover for each passenger',
+    descriptionAr: 'تغطية تأمين السفر لكل مسافر',
   },
   cip: {
-    titleEn: 'Airport CIP service', titleAr: 'خدمة كبار الشخصيات في المطار',
-    descriptionEn: 'Private airport transfer and lounge', descriptionAr: 'نقل خاص وصالة مميزة في المطار',
+    titleEn: 'Airport CIP service',
+    titleAr: 'خدمة كبار الشخصيات في المطار',
+    descriptionEn: 'Private airport transfer and lounge',
+    descriptionAr: 'نقل خاص وصالة مميزة في المطار',
   },
   pet: {
-    titleEn: 'Pet travel', titleAr: 'سفر الحيوانات الأليفة',
-    descriptionEn: 'Pet transport in the cabin or hold', descriptionAr: 'نقل الحيوانات الأليفة في المقصورة أو مخزن الأمتعة',
+    titleEn: 'Pet travel',
+    titleAr: 'سفر الحيوانات الأليفة',
+    descriptionEn: 'Pet transport in the cabin or hold',
+    descriptionAr: 'نقل الحيوانات الأليفة في المقصورة أو مخزن الأمتعة',
   },
   'seat-selection': {
-    titleEn: 'Advance seat selection', titleAr: 'اختيار المقعد مسبقاً',
-    descriptionEn: 'Select a seat during booking', descriptionAr: 'اختيار رقم المقعد أثناء الحجز',
+    titleEn: 'Advance seat selection',
+    titleAr: 'اختيار المقعد مسبقاً',
+    descriptionEn: 'Select a seat during booking',
+    descriptionAr: 'اختيار رقم المقعد أثناء الحجز',
   },
   'refund-fee': {
-    titleEn: 'Refund fee', titleAr: 'رسوم الاسترداد',
-    descriptionEn: 'Deducted according to the ticket rules', descriptionAr: 'تخصم وفقاً لقواعد التذكرة',
+    titleEn: 'Refund fee',
+    titleAr: 'رسوم الاسترداد',
+    descriptionEn: 'Deducted according to the ticket rules',
+    descriptionAr: 'تخصم وفقاً لقواعد التذكرة',
   },
 };

@@ -8,6 +8,7 @@ import { Airport } from '../../database/entities/airport.entity';
 import { FareRule } from '../../database/entities/fare-rule.entity';
 import { FlightInstance } from '../../database/entities/flight-instance.entity';
 import { Passenger } from '../../database/entities/passenger.entity';
+import { CoreItinerarySegment } from '../../database/entities/core-itinerary-segment.entity';
 import { SearchService } from '../booking-engine/search.service';
 import { CoreItineraryService } from './core-itinerary.service';
 import type { ResolveCoreItineraryDto } from './dto/resolve-core-itinerary.dto';
@@ -67,8 +68,12 @@ function fareRule(
 describe('CoreItineraryService', () => {
   const flightGetMany = jest.fn<Promise<FlightInstance[]>, []>();
   const usageGetRawMany = jest.fn<Promise<unknown[]>, []>();
+  const itineraryUsageGetRawMany = jest.fn<Promise<unknown[]>, []>();
   const flightQuery = chainQuery<FlightInstance>(flightGetMany);
   const usageQuery = chainQuery<Passenger>(usageGetRawMany);
+  const itineraryUsageQuery = chainQuery<CoreItinerarySegment>(
+    itineraryUsageGetRawMany,
+  );
   const fareFind = jest.fn();
   const airportFind = jest.fn();
   const cabinAvailability = jest.fn();
@@ -82,11 +87,15 @@ describe('CoreItineraryService', () => {
     } as unknown as Repository<Passenger>,
     { cabinAvailability } as unknown as SearchService,
     { find: airportFind } as unknown as Repository<Airport>,
+    {
+      createQueryBuilder: jest.fn(() => itineraryUsageQuery),
+    } as unknown as Repository<CoreItinerarySegment>,
   );
 
   beforeEach(() => {
     jest.clearAllMocks();
     usageGetRawMany.mockResolvedValue([]);
+    itineraryUsageGetRawMany.mockResolvedValue([]);
     fareFind.mockResolvedValue([]);
     airportFind.mockResolvedValue([{ code: 'DXB', minConnectMin: 60 }]);
     cabinAvailability.mockResolvedValue({ capacity: 4, seatsLeft: 4 });
@@ -262,6 +271,23 @@ describe('CoreItineraryService', () => {
         ],
       }),
     ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('requires one fare bucket to fit the whole requested party', async () => {
+    flightGetMany.mockResolvedValue([
+      instance(
+        FIRST_ID,
+        'IKA',
+        'DXB',
+        '2099-10-01T08:00:00.000Z',
+        '2099-10-01T10:00:00.000Z',
+      ),
+    ]);
+    fareFind.mockResolvedValue([fareRule(FIRST_ID, { siteSeatsReleased: 3 })]);
+
+    await expect(service.resolve(singleSegment(), 4)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
   });
 
   describe('connection time', () => {

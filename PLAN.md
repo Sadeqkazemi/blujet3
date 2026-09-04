@@ -19,6 +19,36 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-04 — Core additive multi-segment quote and atomic hold
+
+- [x] Add an authenticated, read-only quote for one to three ordered segments
+  and a common party of one to nine travellers.
+- [x] Reuse current channel fare classes, passenger multipliers, taxes/charges
+  and ancillary overlays; sum exact bigint IRR values without JavaScript
+  floating-point arithmetic.
+- [x] Keep baggage allowances and selected services scoped to their segment,
+  reject stale/duplicate services, and require the whole seated party to fit
+  one eligible fare bucket on every leg.
+- [x] Prove current-price behavior, no Booking writes, group capacity, auth,
+  invalid input and arithmetic beyond `Number.MAX_SAFE_INTEGER` with 33 PSS
+  unit tests and 13 HTTP E2E tests; scoped lint, typecheck and build pass.
+- [x] Persist one multi-segment order/PNR with a common 15-minute expiry,
+  encrypted traveller identity, per-leg snapshots and deterministic all-or-
+  nothing locking of every referenced flight.
+- [x] Bind retries to owner and canonical request, return the original order on
+  safe replay, reject changed payloads and count active itinerary holds in the
+  same availability calculations used by legacy bookings.
+- [x] Execute the additive migration on PostgreSQL and prove second-leg rollback
+  plus exactly one winner for the last seat on every leg. Combined HTTP suite:
+  20 tests; 35 focused PSS unit tests pass.
+- [x] Extend the restart-safe expiry cadence to itinerary holds with locked,
+  skip-locked batches and exactly one durable lifecycle event per transition.
+- [x] Add owner-scoped, idempotent pre-payment cancellation with one immutable
+  lifecycle event and transactional release of every segment.
+- [ ] Add payment confirmation and accountable multi-coupon ticket fulfilment
+  next.
+- No push, merge, server migration, deployment or public writer cutover.
+
 ### 2026-09-04 — Backend unsafe-argument warnings
 
 - [x] Remove all 24 reported warnings with typed cabin maps, a typed Nest
