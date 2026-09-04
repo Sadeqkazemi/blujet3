@@ -2,6 +2,14 @@
 
 ## A6.4 — Agency read-only projections
 
+A6.5 verifies the exact projection grants and rejects elevated/inheriting roles,
+memberships, ownership, CREATE, excess column reads, writes, sequence access
+and executable user-schema SECURITY DEFINER routines (including PUBLIC grants).
+Only catalogs in the connected database are inspected in a read-only snapshot;
+this is not cluster-wide certification, tenant RLS or grant provisioning.
+Tests temporarily change only synthetic role/object permissions in `_test`.
+No migration or production grant is introduced.
+
 No migration or new business data. `agency_profiles.userId` is the canonical
 agency identity in this schema. The independent service reads only profile
 columns userId/city/tier/joinedAt/suspendedAt and invoice columns

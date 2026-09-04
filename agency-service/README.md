@@ -88,6 +88,33 @@ replace proper ACLs. E2E proves forbidden writes/PII reads still fail even when
 session read-only is off. Shared-reader tenant isolation is enforced by SQL
 predicates, not PostgreSQL RLS. Grant provisioning is not automated by this code.
 
+### Offline permission verifier (A6.5)
+
+After `npm run build`, run `npm run verify:reader` with `AGENCY_DATABASE_URL`
+provided securely by the environment. It uses that exact login, without an
+internal HTTP token, business reads, listener, migrations or grant changes.
+The underlying `node dist/verify-reader.js` emits one JSON line; npm itself
+may add its normal script banner. Reports contain only status and boolean checks:
+
+- `PASS` / exit 0: every catalog check passed.
+- `FAIL` / exit 2: one or more permission checks failed; do not use this login.
+- `UNAVAILABLE` / exit 1: invalid/missing configuration, connection or catalog
+  failure; details and credentials are never printed. Do not treat it as PASS.
+
+Checks: `restrictedRole`, `noMemberships`, `noOwnership` (relations, schemas,
+current database), `noCreate`, `requiredReads`, `exactReads`, `noWrites`,
+`noSequenceAccess`, `noDefinerExecute`. Required reads include owner predicates
+and schema USAGE. Excess grants count even without schema USAGE; PUBLIC grants
+and user-schema executable SECURITY DEFINER routines are included. An elevated
+login fails even if application/session read-only is enabled.
+
+This is point-in-time evidence for the connected database, not certification
+of the cluster, future grants, arbitrary extension capabilities, tenant RLS or
+trusted-caller security. Keep the report with separately approved credential
+provisioning evidence and rerun after grant changes. No production provisioning
+is performed by the command. The existing Agency CI job automatically runs its
+real-PostgreSQL tests, including CLI exit codes, after building the package.
+
 Representative parity against current backend projections, production credential
 review, owner-approved public integration, and deployment remain separate gates.
 Stopping this unused internal reader does not affect the current public portal.

@@ -2,6 +2,11 @@
 
 ## A6.4 — internal Agency read boundary
 
+A6.5 adds `npm run verify:reader` in agency-service: a catalog-only offline
+permission check, not an HTTP endpoint or public cutover. It emits only status
+and boolean checks (PASS/exit 0, FAIL/exit 2, UNAVAILABLE/exit 1); it never
+prints credentials, role names, SQL, connection details or business records.
+
 `agency-service` adds GET `/internal/v1/agencies/:agencyId/profile`,
 `/internal/v1/agencies/:agencyId/invoices?page=1` and
 `/internal/v1/agencies/:agencyId/invoices/:invoiceId`, plus `/health` and `/ready`.

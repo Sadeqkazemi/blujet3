@@ -46,7 +46,8 @@ Backend change checklist:
   exact IRR, pagination, suspended profile, PII omission and rejected writes.
 - [x] Test restricted reader login and sanitize readiness/driver failures.
 - [x] Lint/typecheck/build and generated internal OpenAPI.
-- [ ] GitHub CI and independent review before separately authorized merge.
+- [x] Owner authorized publication and merge; PR #33 merged as `e516fe9`
+  after all GitHub CI/PostgreSQL 16 Agency tests and CodeQL passed.
 - [ ] Production credentials, parity, public integration and deployment later.
 
 ## Local acceptance evidence — 2026-09-04
@@ -86,6 +87,7 @@ Loyalty. Initial offline npm install lacked cached packages; fetching those
 locked packages completed installation. Existing dependency deprecation notices
 were not addressed by changing versions in this slice.
 
-GitHub CI/PostgreSQL 16 and Docker image execution are not yet demonstrated for
-this branch; Docker is unavailable locally. No commit/push/merge, production
-grant, production schema change or deployment has been performed in this slice.
+Publication evidence: PR #33 merged as `e516fe9`; GitHub CI run `33888103867`
+and CodeQL run `33888103904` passed, including Agency on PostgreSQL 16. Docker
+image execution remains unverified locally because Docker is unavailable.
+No production grant, production schema change or deployment was performed.
