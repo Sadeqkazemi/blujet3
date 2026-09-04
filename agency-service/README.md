@@ -40,6 +40,11 @@ retains its own UAT compatibility behavior. This is not a drop-in public API.
 
 ## Local validation
 
+The A6.6 HTTP contract tests invoke the built backend CLI: first install the
+backend's locked dependencies and run `npm run build` in `backend/`. The Agency
+CI job performs this step automatically before E2E; a missing built CLI is a
+test failure, not a skipped contract. No backend HTTP server or seed is needed.
+
 Use Node 22 and the lockfile; dependencies match the existing Loyalty service.
 Prepare an isolated `_test` database with the backend's existing migrations.
 No seed is required: tests create and clean only their own fixture rows and
@@ -114,6 +119,21 @@ trusted-caller security. Keep the report with separately approved credential
 provisioning evidence and rerun after grant changes. No production provisioning
 is performed by the command. The existing Agency CI job automatically runs its
 real-PostgreSQL tests, including CLI exit codes, after building the package.
+
+### Offline profile/page comparison (A6.6)
+
+In `backend/`, run `npm run agency:compare:shadow -- <agency-uuid> [page]`, or
+after building, `node dist/database/report-agency-shadow.js <agency-uuid> [page]`.
+Default output is DISABLED, without a DB/HTTP connection. To run an explicitly
+approved sample, provide AGENCY_SHADOW_ENABLED=true, AGENCY_SERVICE_URL,
+AGENCY_INTERNAL_TOKEN and the local projection's DATABASE_URL securely via the
+environment. Both database connections should use reviewed SELECT-only logins.
+The CLI compares only the minimized profile and requested invoice page (default
+1, max 1000), not the full portal or invoice-detail route. It never prints rows.
+MATCH means equal observed snapshots; local changes give INCONCLUSIVE, stable
+drift MISMATCH and invalid/unreachable remote data UNAVAILABLE. This does not
+prove equality during unobserved transient changes, authorize sales or enable
+any public route. See `docs/features/agency-shadow-comparison.md` in the repo.
 
 Representative parity against current backend projections, production credential
 review, owner-approved public integration, and deployment remain separate gates.

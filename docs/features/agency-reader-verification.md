@@ -31,7 +31,8 @@ Backend change checklist:
 - [x] Prove HTTP projections still work using restricted credentials:
   `agency.e2e-spec.ts` (16 cases, including the new catalog gate check).
 - [x] Run full Agency unit/E2E, lint/typecheck/build and OpenAPI no-drift check.
-- [ ] Obtain separately authorized publication/CI/merge; no deployment.
+- [x] Owner authorized publication; PR #34 merged as `b361082` after Agency
+  PostgreSQL 16 CI and CodeQL passed; no deployment.
 
 Permission tests use generated roles and disposable objects in an explicitly
 named `_test` database, with exact cleanup; they do not alter PUBLIC privileges
@@ -55,7 +56,7 @@ DEFINER execution. Test cleanup left zero generated Agency roles, relations
 or routines in the local test database. Existing HTTP fixtures remain unchanged
 after every request; no business writer or schema migration changed.
 
-The existing Agency CI job already builds before running all E2E files; no CI
-bypass or workflow expansion is needed. Fresh GitHub/PostgreSQL 16 evidence
-for A6.5 awaits authorized publication. Docker execution and production role
-verification are not performed. No commit, push, merge or deployment in A6.5.
+The existing Agency CI job builds before running all E2E files. Publication
+evidence: CI `33897589968` and CodeQL `33897590247` passed; PR #34 merged as
+`b361082`. Docker execution and production role verification remain unperformed.
+No production provisioning or deployment was performed in A6.5.

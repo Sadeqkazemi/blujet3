@@ -73,7 +73,7 @@ jobs:
           emit experience '^(experience-service/|backend/(package(-lock)?\.json$|src/database/))'
           emit loyalty '^(loyalty-service/|backend/(package(-lock)?\.json$|tsconfig[^/]*\.json$|nest-cli\.json$|src/database/|src/common/money\.ts$|src/modules/loyalty-shadow/))'
           emit identity '^identity-service/'
-          emit agency '^(agency-service/|backend/(package(-lock)?\.json$|src/database/))'
+          emit agency '^(agency-service/|backend/(package(-lock)?\.json$|tsconfig[^/]*\.json$|nest-cli\.json$|src/database/|src/modules/agency-shadow/))'
           emit notify '^(notify-service/|backend/(package(-lock)?\.json$|src/database/))'
           emit pss '^pss-service/'
           emit frontend '^frontend/'
@@ -225,6 +225,8 @@ jobs:
           npm ci
           cp .env.test .env
           npm run migration:run
+          npm run build
+          npm test -- --runInBand agency-shadow
       - name: Validate isolated Agency reader
         working-directory: agency-service
         env:
