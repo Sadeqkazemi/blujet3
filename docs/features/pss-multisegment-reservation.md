@@ -15,6 +15,10 @@ dual-write is enabled by this document.
 - A segment cannot be repeated in the same itinerary.
 - The destination of segment `n` must equal the origin of segment `n+1`.
 - Every next departure must be strictly after the previous arrival.
+- Every segment must arrive strictly after its own departure.
+- Core resolution enforces the transfer airport's persisted `minConnectMin`;
+  a gap exactly equal to the minimum is valid. Missing airport/MCT or invalid
+  MCT (not a non-negative integer) fails closed with `VALIDATION_FAILED`.
 - One order/PNR owns all segments; it is never split by passenger or leg.
 - Existing single-segment `/bookings`, `/reservation` and agency routes remain
   compatibility facades until a separately approved cutover.
@@ -33,9 +37,9 @@ endpoint or writer is changed here.
 
 ## Explicitly pending product/vendor decisions
 
-- Minimum connection time (MCT) by airport or airport pair. Until an owner
-  supplies the rule/table, implementation may only enforce chronological order
-  and endpoint continuity; it must not invent a universal MCT value.
+- Airport-pair/terminal-specific MCT overrides remain pending product input.
+  Airport-level MCT already exists in `inventory.airports.minConnectMin` and
+  is enforced by the Core resolver without inventing a universal fallback.
 - Multi-segment pricing, baggage and ancillary allocation rules.
 - Multi-segment hold locking and persisted order/segment mapping. Read-only
   cabin/fare-class availability is resolved from current Core tables in this
@@ -53,6 +57,10 @@ endpoint or writer is changed here.
   `core-itinerary.e2e-spec.ts`).
 - [ ] Expose priced offer and atomic hold/order DTOs inside Core after the
   pending pricing and locking rules are approved.
+- [x] Core connection-time follow-up: persisted airport MCT, exact boundary,
+  short/missing/invalid rules, both transfers of a three-segment itinerary,
+  valid direct itineraries and invalid segment duration. Local verification:
+  25 PSS unit tests, 8 resolver HTTP E2E tests, typecheck, scoped lint and build.
 - A concurrency E2E proving deterministic lock order and all-or-nothing hold
   across every segment, with no partial inventory mutation.
 - [x] Existing single-segment PSS client compatibility tests remain green

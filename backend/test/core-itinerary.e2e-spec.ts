@@ -4,6 +4,7 @@ import type { App } from 'supertest/types';
 import request from 'supertest';
 import { DataSource, In } from 'typeorm';
 import { AircraftSeatMap } from '../src/database/entities/aircraft-seat-map.entity';
+import { Airport } from '../src/database/entities/airport.entity';
 import { Booking } from '../src/database/entities/booking.entity';
 import { FareRule } from '../src/database/entities/fare-rule.entity';
 import { Flight } from '../src/database/entities/flight.entity';
@@ -21,6 +22,7 @@ describe('Core itinerary internal API', () => {
   const flightIds = [randomUUID(), randomUUID()];
   const instanceIds = [randomUUID(), randomUUID()];
   const fareRuleIds = [randomUUID(), randomUUID()];
+  const airportId = randomUUID();
 
   beforeAll(async () => {
     app = await createTestApp();
@@ -42,11 +44,17 @@ describe('Core itinerary internal API', () => {
       }),
     );
 
-    const codes = [
-      `X${suffix.slice(0, 2)}`,
-      `Y${suffix.slice(2, 4)}`,
-      `Z${suffix.slice(4, 6)}`,
-    ];
+    const codes = [`X${suffix}`, `Y${suffix}`, `Z${suffix}`];
+    const airportRepo = dataSource.getRepository(Airport);
+    await airportRepo.save(
+      airportRepo.create({
+        id: airportId,
+        code: codes[1],
+        cityFa: 'فرودگاه تست اتصال',
+        tz: 'UTC',
+        minConnectMin: 120,
+      }),
+    );
     const routeRepo = dataSource.getRepository(Route);
     await routeRepo.save([
       routeRepo.create({
@@ -141,6 +149,7 @@ describe('Core itinerary internal API', () => {
       .delete({ id: In(instanceIds) });
     await dataSource.getRepository(Flight).delete({ id: In(flightIds) });
     await dataSource.getRepository(Route).delete({ id: In(routeIds) });
+    await dataSource.getRepository(Airport).delete({ id: airportId });
     await dataSource.getRepository(AircraftSeatMap).delete({ aircraftType });
     await app.close();
   });
@@ -194,7 +203,7 @@ describe('Core itinerary internal API', () => {
     expect(response.body.error.code).toBe('NOT_FOUND');
   });
 
-  it('resolves connected segments without creating a booking or hold', async () => {
+  it('resolves at exactly the airport MCT without creating a booking or hold', async () => {
     const bookingRepo = dataSource.getRepository(Booking);
     const before = await bookingRepo.count({
       where: { flightInstanceId: In(instanceIds) },
@@ -239,6 +248,50 @@ describe('Core itinerary internal API', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.data.segments[0].availableSeats).toBe(1);
+  });
+
+  it('rejects a connection below MCT and uses an updated airport rule immediately', async () => {
+    const airportRepo = dataSource.getRepository(Airport);
+    try {
+      await airportRepo.update(airportId, { minConnectMin: 121 });
+      const response = await request(app.getHttpServer())
+        .post('/internal/v1/core/itineraries/resolve')
+        .set('X-Internal-Token', token)
+        .send(validRequest());
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('VALIDATION_FAILED');
+      expect(response.body.error.message).toContain('حداقل زمان اتصال');
+    } finally {
+      await airportRepo.update(airportId, { minConnectMin: 120 });
+    }
+    const response = await request(app.getHttpServer())
+      .post('/internal/v1/core/itineraries/resolve')
+      .set('X-Internal-Token', token)
+      .send(validRequest());
+    expect(response.status).toBe(200);
+  });
+
+  it('rejects an unknown transfer airport but still resolves direct itineraries', async () => {
+    const airportRepo = dataSource.getRepository(Airport);
+    const airport = await airportRepo.findOneByOrFail({ id: airportId });
+    try {
+      await airportRepo.delete(airportId);
+      const response = await request(app.getHttpServer())
+        .post('/internal/v1/core/itineraries/resolve')
+        .set('X-Internal-Token', token)
+        .send(validRequest());
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('VALIDATION_FAILED');
+      const direct = validRequest();
+      direct.segments = direct.segments.slice(0, 1);
+      const directResponse = await request(app.getHttpServer())
+        .post('/internal/v1/core/itineraries/resolve')
+        .set('X-Internal-Token', token)
+        .send(direct);
+      expect(directResponse.status).toBe(200);
+    } finally {
+      await airportRepo.save(airport);
+    }
   });
 
   it('returns pool exhausted when the selected channel has no released seats', async () => {

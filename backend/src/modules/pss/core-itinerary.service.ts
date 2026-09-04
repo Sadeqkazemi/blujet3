@@ -7,6 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { ErrorCode } from '../../common/errors';
+import { Airport } from '../../database/entities/airport.entity';
 import { FareRule } from '../../database/entities/fare-rule.entity';
 import { FlightInstance } from '../../database/entities/flight-instance.entity';
 import { Passenger } from '../../database/entities/passenger.entity';
@@ -45,6 +46,8 @@ export class CoreItineraryService {
     @InjectRepository(Passenger)
     private readonly passengerRepo: Repository<Passenger>,
     private readonly search: SearchService,
+    @InjectRepository(Airport)
+    private readonly airportRepo: Repository<Airport>,
   ) {}
 
   async resolve(
@@ -96,7 +99,7 @@ export class CoreItineraryService {
       });
     }
 
-    this.assertContinuity(resolved);
+    await this.assertContinuity(resolved);
     return { channel: dto.channel, segments: resolved };
   }
 
@@ -302,7 +305,14 @@ export class CoreItineraryService {
       : (rule.sitePriceIrr ?? rule.priceIrr);
   }
 
-  private assertContinuity(segments: ResolvedCoreItinerarySegmentDto[]): void {
+  private async assertContinuity(
+    segments: ResolvedCoreItinerarySegmentDto[],
+  ): Promise<void> {
+    for (const segment of segments) {
+      if (segment.arrivalAt <= segment.departureAt) {
+        this.invalid('زمان رسیدن هر سگمنت باید بعد از زمان حرکت آن باشد.');
+      }
+    }
     for (let index = 1; index < segments.length; index += 1) {
       const previous = segments[index - 1];
       const current = segments[index];
@@ -311,6 +321,32 @@ export class CoreItineraryService {
       }
       if (previous.arrivalAt >= current.departureAt) {
         this.invalid('زمان حرکت سگمنت بعدی باید بعد از رسیدن سگمنت قبلی باشد.');
+      }
+    }
+
+    if (segments.length < 2) return;
+    const transferCodes = [
+      ...new Set(segments.slice(1).map((segment) => segment.originCode)),
+    ];
+    const airports = await this.airportRepo.find({
+      where: { code: In(transferCodes) },
+      select: { code: true, minConnectMin: true },
+    });
+    const minimums = new Map(
+      airports.map((airport) => [airport.code, airport.minConnectMin]),
+    );
+    for (let index = 1; index < segments.length; index += 1) {
+      const previous = segments[index - 1];
+      const current = segments[index];
+      const minimum = minimums.get(current.originCode);
+      if (minimum == null || !Number.isInteger(minimum) || minimum < 0) {
+        this.invalid('حداقل زمان اتصال فرودگاه مشخص نیست یا معتبر نیست.');
+      }
+      const gap = current.departureAt.getTime() - previous.arrivalAt.getTime();
+      if (gap < minimum * 60_000) {
+        this.invalid(
+          'فاصله بین سگمنت‌ها کمتر از حداقل زمان اتصال فرودگاه است.',
+        );
       }
     }
   }

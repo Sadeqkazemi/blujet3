@@ -4478,6 +4478,13 @@ Missing/non-sellable inventory is returned as `NOT_FOUND`, invalid ordering or
 continuity as `VALIDATION_FAILED`, and a valid but depleted cabin/fare bucket as
 `POOL_EXHAUSTED`. The result is observational: it does not reserve inventory.
 
+Each segment must arrive strictly after its own departure. Each connection
+must meet the transfer airport's persisted `minConnectMin` (equality is
+accepted), in addition to strict chronological order. Missing airport records
+or invalid MCT values (not a non-negative integer) fail with HTTP 400
+`VALIDATION_FAILED`; no universal fallback is assumed by this resolver.
+Single-segment requests do not require a transfer-airport lookup.
+
 ### Internal reservation/order API
 
 | Method | Path | Behaviour |

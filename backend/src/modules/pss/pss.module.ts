@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { Airport } from '../../database/entities/airport.entity';
 import { FareRule } from '../../database/entities/fare-rule.entity';
 import { FlightInstance } from '../../database/entities/flight-instance.entity';
 import { Passenger } from '../../database/entities/passenger.entity';
@@ -12,7 +13,7 @@ import { PSS_CLIENT } from './pss-client.interface';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([FlightInstance, FareRule, Passenger]),
+    TypeOrmModule.forFeature([FlightInstance, FareRule, Passenger, Airport]),
     BookingEngineModule,
   ],
   controllers: [CoreItineraryController],
