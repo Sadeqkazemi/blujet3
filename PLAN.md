@@ -19,6 +19,17 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-04 — Backend CI E2E stabilization
+
+- [x] Separate fast Backend validation from database-backed E2E execution.
+- [x] Split all 72 E2E suites evenly across four isolated Jest shards.
+- [x] Reuse the canonical test-app lifecycle and make destination-stats teardown
+  safe after setup failure.
+- [x] Pass the destination-stats E2E, all 116 unit suites / 457 tests,
+  changed-file lint, typecheck, build, workflow contract and diff checks locally.
+- [ ] Obtain four green PostgreSQL 16 shards in GitHub Actions before merge.
+- [ ] Merge only after explicit owner approval; do not deploy.
+
 ### 2026-09-03 — combined microservices and commerce execution
 
 - Baseline: project phase 5 merged in PR #12 (`feffb7f`), then commerce B1/B2.1
