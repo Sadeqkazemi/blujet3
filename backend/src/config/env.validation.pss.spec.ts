@@ -20,6 +20,16 @@ describe('PSS environment validation', () => {
     );
   });
 
+  it('rejects a weak token even when only the Core read endpoint is used', () => {
+    expect(() =>
+      validateEnv({
+        ...base,
+        PSS_INTEGRATION_ENABLED: 'false',
+        PSS_INTERNAL_TOKEN: 'short',
+      }),
+    ).toThrow('at least 32 characters');
+  });
+
   it('requires endpoint and a strong internal token when enabled', () => {
     expect(() =>
       validateEnv({ ...base, PSS_INTEGRATION_ENABLED: 'true' }),
