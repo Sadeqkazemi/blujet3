@@ -3,6 +3,7 @@ import { execFile } from 'node:child_process';
 import { resolve } from 'node:path';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import request from 'supertest';
 import type { App } from 'supertest/types';
@@ -248,6 +249,215 @@ describe('Agency read boundary (real restricted PostgreSQL login)', () => {
 
   it('passes the catalog gate with real minimized HTTP fixture grants', async () => {
     expect(await verifyReader(reader)).toMatchObject({ status: 'PASS' });
+  });
+
+  it('serves the complete compatible invoice array only with explicit opt-in grants', async () => {
+    const extra =
+      'SELECT ("bookingId","issuedById","descriptionFa") ON agency.agency_invoices';
+    await writer.query('GRANT ' + extra + ' TO ' + quotedRole);
+    app.get(ConfigService).set('AGENCY_PORTAL_INVOICES_ENABLED', 'true');
+    try {
+      const result = await request(app.getHttpServer())
+        .get(path + '/portal-invoices')
+        .set(headers)
+        .expect(200);
+      const body = result.body as { data: Array<Record<string, unknown>> };
+      expect(body.data).toHaveLength(12);
+      expect(body.data.find((row) => row.id === ids[0])).toMatchObject({
+        agencyId: owner,
+        bookingId: null,
+        issuedById: owner,
+        descriptionFa: 'private-description',
+        amountIrr: '9007199254740993',
+      });
+      expect(body.data.some((row) => row.id === foreignInvoice)).toBe(false);
+      const second = await request(app.getHttpServer())
+        .get('/internal/v1/agencies/' + other + '/portal-invoices')
+        .set({ ...headers, 'X-Agency-Id': other })
+        .expect(200);
+      expect(second.body as unknown).toMatchObject({
+        data: [
+          {
+            id: foreignInvoice,
+            agencyId: other,
+            status: 'PAID',
+            paidAt: '2026-09-05T10:00:00.123Z',
+          },
+        ],
+      });
+      expect(await verifyReader(reader, true)).toMatchObject({
+        status: 'PASS',
+      });
+      expect(await verifyReader(reader)).toMatchObject({
+        status: 'FAIL',
+        checks: { exactReads: false },
+      });
+      await request(app.getHttpServer()).get('/ready').expect(200);
+      const serviceUrl = await app.getUrl();
+      const remote = await new Promise<string>((resolveOutput, reject) => {
+        execFile(
+          process.execPath,
+          [
+            '-e',
+            `require('reflect-metadata');
+             const {ConfigService}=require('@nestjs/config');
+             const {DataSource}=require('typeorm');
+             const {dataSourceOptions}=require('./dist/database/data-source.options');
+             const {AgencyInvoice}=require('./dist/database/entities/agency-invoice.entity');
+             const {AgencyInvoiceClient}=require('./dist/modules/agency-portal/agency-invoice.client');
+             const client=new AgencyInvoiceClient(new ConfigService(process.env),{warn(){}});
+             const db=new DataSource({...dataSourceOptions,url:process.env.DATABASE_URL,synchronize:false,migrationsRun:false,logging:false,extra:{options:'-c default_transaction_read_only=on -c timezone=UTC'}});
+             (async()=>{try {await db.initialize();
+               const remote=await client.list(process.argv[1],'real-agency-client-test');
+               const legacy=await db.getRepository(AgencyInvoice).find({where:{agencyId:process.argv[1]},order:{issuedAt:'DESC'}});
+               process.stdout.write(JSON.stringify({remote,legacy},(_,value)=>typeof value==='bigint'?value.toString():value));
+             } finally {if(db.isInitialized) await db.destroy();}})().catch(()=>{process.exitCode=1;});`,
+            owner,
+          ],
+          {
+            cwd: resolve(__dirname, '../../backend'),
+            windowsHide: true,
+            timeout: 15000,
+            env: {
+              ...process.env,
+              AGENCY_INVOICES_READ_ENABLED: 'true',
+              TZ: 'UTC',
+              DATABASE_URL: readerUrl,
+              AGENCY_SERVICE_URL: serviceUrl,
+              AGENCY_INTERNAL_TOKEN: token,
+            },
+          },
+          (error, stdout) =>
+            error
+              ? reject(new Error('Built Agency invoice client failed'))
+              : resolveOutput(stdout),
+        );
+      });
+      const expected = ids
+        .map((id, index) => ({
+          id,
+          agencyId: owner,
+          bookingId: null,
+          invoiceNo: 'TEST-' + id,
+          issuedById: owner,
+          descriptionFa: 'private-description',
+          amountIrr:
+            index === 0
+              ? '9007199254740993'
+              : (1000n + BigInt(index)).toString(),
+          status: 'UNPAID',
+          issuedAt: '2026-09-04T12:34:56.789Z',
+          dueAt: '2026-10-04T12:34:56.789Z',
+          paidAt: null,
+        }))
+        .sort((a, b) => a.id.localeCompare(b.id));
+      const resultRows = JSON.parse(remote) as {
+        remote: Array<{ id: string }>;
+        legacy: Array<{ id: string }>;
+      };
+      for (const rows of [resultRows.remote, resultRows.legacy])
+        expect(rows.sort((a, b) => a.id.localeCompare(b.id))).toEqual(expected);
+    } finally {
+      app.get(ConfigService).set('AGENCY_PORTAL_INVOICES_ENABLED', 'false');
+      await writer.query('REVOKE ' + extra + ' FROM ' + quotedRole);
+    }
+  });
+
+  it('keeps the compatibility route disabled, authenticated and owner-bound', async () => {
+    await request(app.getHttpServer())
+      .get(path + '/portal-invoices')
+      .expect(401);
+    await request(app.getHttpServer())
+      .get(path + '/portal-invoices')
+      .set({ ...headers, 'X-Agency-Id': other })
+      .expect(403);
+    await request(app.getHttpServer())
+      .get('/internal/v1/agencies/invalid/portal-invoices')
+      .set(headers)
+      .expect(400);
+    await request(app.getHttpServer())
+      .get(path + '/portal-invoices')
+      .set(headers)
+      .expect(503);
+    expect(await verifyReader(reader, true)).toMatchObject({
+      status: 'FAIL',
+      checks: { requiredReads: false },
+    });
+    app.get(ConfigService).set('AGENCY_PORTAL_INVOICES_ENABLED', 'true');
+    try {
+      await request(app.getHttpServer()).get('/ready').expect(503);
+      const response = await request(app.getHttpServer())
+        .get(path + '/portal-invoices')
+        .set(headers)
+        .expect(500);
+      expect(response.text).not.toContain('descriptionFa');
+    } finally {
+      app.get(ConfigService).set('AGENCY_PORTAL_INVOICES_ENABLED', 'false');
+    }
+  });
+
+  it('returns empty and absent owners honestly and refuses oversized snapshots', async () => {
+    const extra =
+      'SELECT ("bookingId","issuedById","descriptionFa") ON agency.agency_invoices';
+    await writer.query('GRANT ' + extra + ' TO ' + quotedRole);
+    app.get(ConfigService).set('AGENCY_PORTAL_INVOICES_ENABLED', 'true');
+    try {
+      const missing = randomUUID();
+      await request(app.getHttpServer())
+        .get('/internal/v1/agencies/' + missing + '/portal-invoices')
+        .set({ ...headers, 'X-Agency-Id': missing })
+        .expect(404);
+      const response = await request(app.getHttpServer())
+        .get('/internal/v1/agencies/' + empty + '/portal-invoices')
+        .set({ ...headers, 'X-Agency-Id': empty })
+        .expect(200);
+      expect(response.body as unknown).toEqual({ success: true, data: [] });
+      await writer.query(
+        'UPDATE agency.agency_invoices SET "descriptionFa"=$1 WHERE id=$2',
+        ['x'.repeat(1024 * 1024), ids[0]],
+      );
+      const large = await request(app.getHttpServer())
+        .get(path + '/portal-invoices')
+        .set(headers)
+        .expect(503);
+      expect(large.text.length).toBeLessThan(500);
+    } finally {
+      await writer.query(
+        'UPDATE agency.agency_invoices SET "descriptionFa"=$1 WHERE id=$2',
+        ['private-description', ids[0]],
+      );
+      app.get(ConfigService).set('AGENCY_PORTAL_INVOICES_ENABLED', 'false');
+      await writer.query('REVOKE ' + extra + ' FROM ' + quotedRole);
+    }
+  });
+
+  it('refuses a 1001-row snapshot instead of returning a partial invoice list', async () => {
+    const extra =
+      'SELECT ("bookingId","issuedById","descriptionFa") ON agency.agency_invoices';
+    const overflowIds = Array.from({ length: 1001 }, () => randomUUID());
+    await writer.query('GRANT ' + extra + ' TO ' + quotedRole);
+    app.get(ConfigService).set('AGENCY_PORTAL_INVOICES_ENABLED', 'true');
+    try {
+      await writer.query(
+        `INSERT INTO agency.agency_invoices (id,"agencyId","invoiceNo","issuedById","issuedAt","dueAt","amountIrr") SELECT id,$2,'CAP-'||id,$2,'2026-09-04'::timestamp,'2026-10-04'::timestamp,1 FROM unnest($1::text[]) id`,
+        [overflowIds, empty],
+      );
+      const response = await request(app.getHttpServer())
+        .get('/internal/v1/agencies/' + empty + '/portal-invoices')
+        .set({ ...headers, 'X-Agency-Id': empty })
+        .expect(503);
+      expect(response.body as unknown).toMatchObject({
+        success: false,
+        error: { code: 'SERVICE_UNAVAILABLE' },
+      });
+    } finally {
+      await writer.query(
+        'DELETE FROM agency.agency_invoices WHERE "agencyId"=$1 AND id=ANY($2::text[])',
+        [empty, overflowIds],
+      );
+      app.get(ConfigService).set('AGENCY_PORTAL_INVOICES_ENABLED', 'false');
+      await writer.query('REVOKE ' + extra + ' FROM ' + quotedRole);
+    }
   });
 
   it('rejects an explicitly invalid shadow invoice UUID instead of silently ignoring it', async () => {
@@ -599,7 +809,7 @@ describe('Agency read boundary (real restricted PostgreSQL login)', () => {
         .setVersion('0.1.0')
         .build(),
     );
-    expect(Object.keys(doc.paths)).toHaveLength(5);
+    expect(Object.keys(doc.paths)).toHaveLength(6);
     expect(
       doc.paths['/internal/v1/agencies/{agencyId}/invoices']?.get?.responses[
         '200'

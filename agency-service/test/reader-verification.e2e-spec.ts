@@ -287,4 +287,43 @@ describe('Agency reader permission gate (real PostgreSQL)', () => {
       expect(result.stdout).not.toContain(url);
     }
   });
+  it('requires exactly the opt-in compatibility grants through the built verifier CLI', async () => {
+    const extra =
+      'SELECT ("bookingId","issuedById","descriptionFa") ON agency.agency_invoices';
+    const run = (flag: string) =>
+      spawnSync(
+        process.execPath,
+        [resolve(__dirname, '../dist/verify-reader.js')],
+        {
+          env: {
+            ...process.env,
+            AGENCY_DATABASE_URL: readerUrl,
+            AGENCY_PORTAL_INVOICES_ENABLED: flag,
+          },
+          encoding: 'utf8',
+          timeout: 10000,
+          windowsHide: true,
+        },
+      );
+    expect(run('true').status).toBe(2);
+    const invalid = run('invalid');
+    expect(invalid.status).toBe(1);
+    expect(invalid.stdout.trim()).toBe('{"status":"UNAVAILABLE"}');
+    await admin.query('GRANT ' + extra + ' TO ' + quotedRole);
+    try {
+      const result = run('true');
+      expect(result.error).toBeUndefined();
+      expect(result.status).toBe(0);
+      expect(result.stderr).toBe('');
+      expect(JSON.parse(result.stdout) as unknown).toMatchObject({
+        status: 'PASS',
+      });
+      for (const secret of [role, password, readerUrl])
+        expect(result.stdout).not.toContain(secret);
+      expect(run('false').status).toBe(2);
+    } finally {
+      await admin.query('REVOKE ' + extra + ' FROM ' + quotedRole);
+    }
+    expect(run('false').status).toBe(0);
+  });
 });

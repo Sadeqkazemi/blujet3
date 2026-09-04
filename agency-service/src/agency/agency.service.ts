@@ -2,10 +2,17 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { DataSource, EntityManager } from 'typeorm';
 import { ErrorCode } from '../common/errors';
-import { InvoicePage, InvoiceView, ProfileView } from './agency.dto';
+import {
+  InvoicePage,
+  InvoiceView,
+  ProfileView,
+  PortalInvoiceView,
+} from './agency.dto';
 
 const invoiceColumns = `id, "invoiceNo", "amountIrr"::text, status,
   to_char("issuedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "issuedAt",
@@ -14,7 +21,40 @@ const invoiceColumns = `id, "invoiceNo", "amountIrr"::text, status,
 
 @Injectable()
 export class AgencyService {
-  constructor(private readonly db: DataSource) {}
+  constructor(
+    private readonly db: DataSource,
+    private readonly config: ConfigService,
+  ) {}
+
+  async portalInvoices(
+    agencyId: string,
+    owner: string | undefined,
+  ): Promise<PortalInvoiceView[]> {
+    this.assertOwner(agencyId, owner);
+    const unavailable = () =>
+      new ServiceUnavailableException({
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        message: 'خواندن فاکتورها از این سرویس در دسترس نیست.',
+      });
+    if (this.config.get<string>('AGENCY_PORTAL_INVOICES_ENABLED') !== 'true')
+      throw unavailable();
+    return this.db.transaction('REPEATABLE READ', async (tx) => {
+      await tx.query('SET TRANSACTION READ ONLY');
+      await this.ownProfile(tx, agencyId);
+      const rows = await tx.query<PortalInvoiceView[]>(
+        `SELECT ${invoiceColumns}, "agencyId", "bookingId", "issuedById", "descriptionFa"
+         FROM agency.agency_invoices WHERE "agencyId"=$1 ORDER BY "issuedAt" DESC LIMIT 1001`,
+        [agencyId],
+      );
+      if (
+        rows.length > 1000 ||
+        Buffer.byteLength(JSON.stringify({ success: true, data: rows })) >
+          1024 * 1024
+      )
+        throw unavailable();
+      return rows;
+    });
+  }
 
   private assertOwner(agencyId: string, owner: string | undefined): void {
     if (agencyId !== owner)

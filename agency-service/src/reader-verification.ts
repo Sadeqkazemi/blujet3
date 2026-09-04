@@ -40,7 +40,10 @@ export interface ReaderReport {
 }
 
 /** Catalog-only evidence for this database; does not grant or revoke anything. */
-export async function verifyReader(db: DataSource): Promise<ReaderReport> {
+export async function verifyReader(
+  db: DataSource,
+  portalInvoices = false,
+): Promise<ReaderReport> {
   const rows = await db.transaction('REPEATABLE READ', async (tx) => {
     await tx.query('SET TRANSACTION READ ONLY');
     return tx.query<ReaderChecks[]>(
@@ -90,7 +93,17 @@ export async function verifyReader(db: DataSource): Promise<ReaderReport> {
         NOT EXISTS (SELECT 1 FROM pg_proc p JOIN namespaces n ON n.oid = p.pronamespace
           WHERE p.prosecdef AND has_function_privilege(p.oid, 'EXECUTE')) AS "noDefinerExecute"
     `,
-      [JSON.stringify(READER_COLUMNS)],
+      [
+        JSON.stringify(
+          READER_COLUMNS.map((table) => ({
+            ...table,
+            columns:
+              portalInvoices && table.relation === 'agency_invoices'
+                ? [...table.columns, 'bookingId', 'issuedById', 'descriptionFa']
+                : table.columns,
+          })),
+        ),
+      ],
     );
   });
   const checks = rows[0];

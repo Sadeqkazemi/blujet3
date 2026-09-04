@@ -1,4 +1,5 @@
 import { plainToInstance } from 'class-transformer';
+import { agencyInvoiceReadConfig } from './agency-invoice-read.config';
 import {
   IsIn,
   IsNotEmpty,
@@ -231,6 +232,7 @@ class EnvironmentVariables {
 }
 
 export function validateEnv(config: Record<string, unknown>) {
+  agencyInvoiceReadConfig(config);
   const validated = plainToInstance(EnvironmentVariables, config, {
     enableImplicitConversion: true,
   });
