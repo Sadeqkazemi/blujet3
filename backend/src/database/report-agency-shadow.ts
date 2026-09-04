@@ -17,7 +17,8 @@ async function run(): Promise<void> {
   const rawPage = process.argv[3] ?? '1';
   if (!/^[1-9]\d{0,3}$/.test(rawPage)) throw new Error('Invalid Agency page');
   const page = Number(rawPage);
-  validateSample(agencyId, page);
+  const invoiceId = process.argv[4];
+  validateSample(agencyId, page, invoiceId);
   const url = new URL(process.env.DATABASE_URL ?? '');
   if (!['postgres:', 'postgresql:'].includes(url.protocol))
     throw new Error('PostgreSQL required');
@@ -44,7 +45,9 @@ async function run(): Promise<void> {
       config,
       agencyId,
       page,
-      (owner, selectedPage) => readLocalAgency(db, owner, selectedPage),
+      (owner, selectedPage, selectedInvoice) =>
+        readLocalAgency(db, owner, selectedPage, selectedInvoice),
+      invoiceId,
     );
   } finally {
     if (db.isInitialized) await db.destroy();

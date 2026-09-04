@@ -41,13 +41,19 @@ describe('Agency read boundary (real restricted PostgreSQL login)', () => {
     agencyId: string,
     page = '1',
     overrides: NodeJS.ProcessEnv = {},
+    invoiceId?: string,
   ) {
     const serviceUrl = await app.getUrl();
     return new Promise<{ code: number; stdout: string; stderr: string }>(
       (resolveResult, reject) => {
         execFile(
           process.execPath,
-          ['dist/database/report-agency-shadow.js', agencyId, page],
+          [
+            'dist/database/report-agency-shadow.js',
+            agencyId,
+            page,
+            ...(invoiceId === undefined ? [] : [invoiceId]),
+          ],
           {
             cwd: resolve(__dirname, '../../backend'),
             env: {
@@ -242,6 +248,57 @@ describe('Agency read boundary (real restricted PostgreSQL login)', () => {
 
   it('passes the catalog gate with real minimized HTTP fixture grants', async () => {
     expect(await verifyReader(reader)).toMatchObject({ status: 'PASS' });
+  });
+
+  it('rejects an explicitly invalid shadow invoice UUID instead of silently ignoring it', async () => {
+    safeReport(await shadow(owner, '1', {}, '../foreign'), 'UNAVAILABLE', 1);
+    safeReport(await shadow(owner, '1', {}, ''), 'UNAVAILABLE', 1);
+  });
+
+  it.each([
+    ['owned exact-IRR invoice', owner, ids[0]],
+    ['paid invoice of second tenant', other, foreignInvoice],
+    ['owned invoice outside first page', owner, [...ids].sort()[0]],
+    ['foreign invoice', owner, foreignInvoice],
+    ['absent invoice', owner, randomUUID()],
+    ['missing profile', randomUUID(), ids[0]],
+  ])(
+    'compares explicit invoice detail through built CLI: %s',
+    async (_label, id, invoiceId) => {
+      const result = await shadow(id, '1', {}, invoiceId);
+      safeReport(result, 'MATCH');
+      expect(result.stdout).not.toContain(invoiceId);
+    },
+  );
+
+  it('keeps optional-detail shadow disabled and sanitizes service failures', async () => {
+    safeReport(
+      await shadow(
+        '',
+        '',
+        {
+          AGENCY_SHADOW_ENABLED: 'false',
+          DATABASE_URL: '',
+          AGENCY_SERVICE_URL: '',
+          AGENCY_INTERNAL_TOKEN: '',
+        },
+        '../invalid',
+      ),
+      'DISABLED',
+    );
+    safeReport(
+      await shadow(
+        owner,
+        '1',
+        {
+          AGENCY_INTERNAL_TOKEN:
+            'wrong-service-credential-at-least-32-characters',
+        },
+        ids[0],
+      ),
+      'UNAVAILABLE',
+      2,
+    );
   });
 
   it.each([

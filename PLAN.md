@@ -19,6 +19,18 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-04 — A6.7 Agency invoice-detail shadow parity
+
+- [x] Document optional detail comparison without changing default profile/page behavior.
+- [x] Implement owner-scoped detail snapshots and strict remote contract checks.
+- [x] Prove 41 Agency comparator cases, 13 Loyalty regressions, 59 Agency E2E
+  cases and 2 config tests (115 total). Backend build/typecheck/scoped zero-warning
+  lint and Agency lint/typecheck pass; both OpenAPI artifacts remain unchanged.
+- [x] Confirm zero temporary Agency roles and synthetic users after tests.
+- [x] Record local evidence; public routes, financial writers and schema unchanged.
+- [x] Owner authorized publication and merge; no deployment.
+- [ ] Record successful GitHub CI and completed merge.
+
 ### 2026-09-04 — A6.6 Agency shadow comparison
 
 - [x] Document default-off offline comparison of profile and selected invoice page.
@@ -28,7 +40,8 @@ below for what's landed from that port so far.
   cases and 2 config tests (93 total). Build/typecheck/scoped backend lint,
   Agency lint/typecheck, CI wiring and unchanged OpenAPI checks pass locally.
 - [x] Confirm zero temporary Agency roles/users after the final sequential run.
-- [ ] Present local verification before separately authorized publication; no deployment.
+- [x] Owner authorized publication; PR #35 merged as `cf2e176` after all CI,
+  four backend E2E shards and CodeQL passed. No deployment performed.
 
 ### 2026-09-04 — A6.5 Agency reader permission verification
 
