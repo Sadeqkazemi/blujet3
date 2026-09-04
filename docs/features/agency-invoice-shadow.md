@@ -36,7 +36,8 @@ Backend change checklist:
   outside-page, foreign, absent and missing-profile cases with no writes.
 - [x] Run affected regression suites, lint/typecheck/build and unchanged OpenAPI.
 - [x] Owner authorized publication and merge; no deployment.
-- [ ] Record successful GitHub CI and completed merge.
+- [x] PR #36 merged as `b5568e5`; CI `33901667740` and CodeQL `33901667781`
+  passed, including all four backend E2E shards. No deployment performed.
 
 ## Local evidence — 2026-09-04
 

@@ -79,6 +79,38 @@ export class InvoicePage {
   @ApiProperty({ example: 10, enum: [10] })
   pageSize!: number;
 }
+export class PortalInvoiceView extends InvoiceView {
+  @ApiProperty({
+    description: 'شناسه مالک فاکتور',
+    format: 'uuid',
+    example: '00000000-0000-4000-8000-000000000001',
+  })
+  agencyId!: string;
+  @ApiProperty({
+    description: 'شناسه رزرو بدون اطلاعات مسافر',
+    type: String,
+    nullable: true,
+    example: null,
+  })
+  bookingId!: string | null;
+  @ApiProperty({
+    description: 'شناسه صادرکننده بدون اطلاعات حساب',
+    format: 'uuid',
+    example: '00000000-0000-4000-8000-000000000002',
+  })
+  issuedById!: string;
+  @ApiProperty({
+    description: 'توضیح موجود فاکتور؛ فقط مالک مجاز',
+    type: String,
+    nullable: true,
+    example: null,
+  })
+  descriptionFa!: string | null;
+}
+export class PortalInvoicesResponse {
+  @ApiProperty({ example: true }) success!: boolean;
+  @ApiProperty({ type: [PortalInvoiceView] }) data!: PortalInvoiceView[];
+}
 export class ProfileResponse {
   @ApiProperty({ example: true }) success!: boolean;
   @ApiProperty({ type: ProfileView }) data!: ProfileView;

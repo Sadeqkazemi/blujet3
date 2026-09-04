@@ -19,6 +19,21 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-04 — A6.8 Compatible portal invoice read integration
+
+- [x] Owner approved preparing integration, default off, with enabled local tests;
+  no server activation/deployment. Scope: invoice list only, not the full portal.
+- [x] Add one-snapshot compatibility route, owner/session-bound backend client,
+  bounded reads, exact wire validation and authorized availability fallback.
+- [x] Retain Core as sole writer; require UTC runtime and reviewed extra invoice
+  column grants before opt-in; retain minimal reader mode and offline shadow APIs.
+- [x] Pass 192 relevant tests: 82 client/shadow, 10 agency-seat, 64 Agency E2E,
+  34 backend portal E2E and 2 config tests. Both builds/typechecks, scoped lint,
+  deterministic internal OpenAPI and unchanged public OpenAPI pass locally.
+- [x] Verify no temporary Agency roles or synthetic boundary users remain.
+- [x] Owner authorized publication and merge after successful CI; record final
+  CI/CodeQL and merge evidence on the PR. No deployment.
+
 ### 2026-09-04 — A6.7 Agency invoice-detail shadow parity
 
 - [x] Document optional detail comparison without changing default profile/page behavior.
@@ -29,7 +44,8 @@ below for what's landed from that port so far.
 - [x] Confirm zero temporary Agency roles and synthetic users after tests.
 - [x] Record local evidence; public routes, financial writers and schema unchanged.
 - [x] Owner authorized publication and merge; no deployment.
-- [ ] Record successful GitHub CI and completed merge.
+- [x] PR #36 merged as `b5568e5`; CI `33901667740` and CodeQL `33901667781`
+  succeeded, including all four backend E2E shards. No deployment performed.
 
 ### 2026-09-04 — A6.6 Agency shadow comparison
 

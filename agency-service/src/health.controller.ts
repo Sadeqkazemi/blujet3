@@ -6,6 +6,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { DataSource } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
 import { ErrorCode } from './common/errors';
 import { ErrorResponse } from './common/error.dto';
 
@@ -19,7 +20,10 @@ class HealthView {
 @ApiTags('health')
 @Controller()
 export class HealthController {
-  constructor(private readonly db: DataSource) {}
+  constructor(
+    private readonly db: DataSource,
+    private readonly config: ConfigService,
+  ) {}
   @Get('health')
   @ApiOperation({ summary: 'زنده‌بودن سرویس' })
   @ApiResponse({ status: 200, type: HealthView })
@@ -50,6 +54,13 @@ export class HealthController {
         await tx.query(
           'SELECT id, "agencyId", "invoiceNo", "amountIrr", status, "issuedAt", "dueAt", "paidAt" FROM agency.agency_invoices LIMIT 0',
         );
+        if (
+          this.config.get<string>('AGENCY_PORTAL_INVOICES_ENABLED') === 'true'
+        ) {
+          await tx.query(
+            'SELECT "bookingId", "issuedById", "descriptionFa" FROM agency.agency_invoices LIMIT 0',
+          );
+        }
       });
       return this.live();
     } catch {

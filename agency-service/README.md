@@ -1,10 +1,11 @@
-# BluJet Agency — A6.4 read boundary
+# BluJet Agency — read boundary and optional invoice compatibility
 
 Independent NestJS/TypeORM service over the existing PostgreSQL `agency` schema.
 This slice returns minimized profile and invoice projections, not the complete
 portal. The current backend remains the only business writer and public request handler.
-No public route is switched to this service; no migration or production grant
-is applied, and no invoice/credit/reservation/payment command exists here.
+Public invoice reads can opt into the A6.8 compatibility route below, but remain
+disabled by default. No migration or production grant is applied, and no
+invoice/credit/reservation/payment command exists here.
 
 ## Internal contract
 
@@ -147,3 +148,33 @@ any public route, nor establish full-portal parity. See
 Representative parity against current backend projections, production credential
 review, owner-approved public integration, and deployment remain separate gates.
 Stopping this unused internal reader does not affect the current public portal.
+
+## Optional portal invoice integration (A6.8)
+
+Prepare and test only; production activation is separately approved. Backend
+`AGENCY_INVOICES_READ_ENABLED=true` uses the same public invoice URL and flat
+array. The backend runtime must be UTC (`TZ=UTC`); non-UTC activation is rejected
+because the legacy ORM parses timestamp-without-time-zone in the host timezone.
+The backend derives the owner from the authenticated session, retains profile
+and temporary-UAT checks, and forwards the normalized request ID. Browser tenant
+headers are never forwarded. Other portal reads and all financial writers remain
+in Core.
+
+Set Agency `AGENCY_PORTAL_INVOICES_ENABLED=true` only with a reviewed reader
+having the A6.4 grants plus column SELECT on `bookingId`, `issuedById`,
+`descriptionFa` of `agency.agency_invoices`. Run `verify:reader` with the same
+flag; `/ready` also checks those columns. The verifier's default minimal mode
+rejects these additional grants. This code provisions no production grants.
+
+`GET /internal/v1/agencies/:agencyId/portal-invoices` adds those existing fields
+and `agencyId` to the invoice projection, without joins or new data. It returns
+one snapshot, not concatenated pages. Disabled mode or more than 1000 rows/
+1 MiB returns 503, never a truncated list. Backend transport errors, timeout,
+5xx and excessive response size fall back to the authorized complete Core
+read; 4xx, redirects and malformed/foreign rows fail closed as sanitized
+503 `INTERNAL_ERROR`. This availability fallback is logged without invoice data.
+
+Rollback: disable the backend flag first. Disable the service flag before
+reverting the three optional grants. No schema rollback, financial data change,
+PSP/Nira operation or server deployment is part of this change. See
+`docs/features/agency-invoice-read-cutover.md` for acceptance evidence.

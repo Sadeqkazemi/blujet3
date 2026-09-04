@@ -1,6 +1,120 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/internal/v1/agencies/{agencyId}/portal-invoices": {
+      "get": {
+        "operationId": "AgencyController_portalInvoices",
+        "parameters": [
+          {
+            "name": "X-Agency-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Internal-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "agencyId",
+            "required": true,
+            "in": "path",
+            "description": "شناسه حساب یکتای آژانس",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalInvoicesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ورودی نامعتبر",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "هویت سرویس نامعتبر",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "مالک درخواست مطابقت ندارد",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "پروفایل یا فاکتور متعلق به مالک یافت نشد",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "خطای داخلی بدون اطلاعات حساس",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "مسیر خاموش یا فهرست خارج از سقف خواندن",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal": []
+          }
+        ],
+        "summary": "فهرست کامل فاکتورهای مالک برای سازگاری پرتال؛ فعال‌سازی صریح",
+        "tags": [
+          "internal-agency"
+        ]
+      }
+    },
     "/internal/v1/agencies/{agencyId}/profile": {
       "get": {
         "operationId": "AgencyController_profile",
@@ -451,6 +565,103 @@
         "required": [
           "success",
           "error"
+        ]
+      },
+      "PortalInvoiceView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "شناسه فاکتور",
+            "format": "uuid"
+          },
+          "invoiceNo": {
+            "type": "string",
+            "description": "شماره فاکتور",
+            "example": "INV-001"
+          },
+          "amountIrr": {
+            "type": "string",
+            "description": "مبلغ صحیح ریال؛ رشته دهدهی",
+            "example": "9007199254740993"
+          },
+          "status": {
+            "type": "string",
+            "description": "وضعیت ثبت‌شده؛ مجوز پرداخت نیست",
+            "example": "UNPAID"
+          },
+          "issuedAt": {
+            "type": "string",
+            "description": "زمان صدور UTC",
+            "format": "date-time"
+          },
+          "dueAt": {
+            "type": "string",
+            "description": "سررسید UTC",
+            "format": "date-time"
+          },
+          "paidAt": {
+            "type": "string",
+            "description": "زمان پرداخت UTC",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "agencyId": {
+            "type": "string",
+            "description": "شناسه مالک فاکتور",
+            "format": "uuid",
+            "example": "00000000-0000-4000-8000-000000000001"
+          },
+          "bookingId": {
+            "type": "string",
+            "description": "شناسه رزرو بدون اطلاعات مسافر",
+            "nullable": true,
+            "example": null
+          },
+          "issuedById": {
+            "type": "string",
+            "description": "شناسه صادرکننده بدون اطلاعات حساب",
+            "format": "uuid",
+            "example": "00000000-0000-4000-8000-000000000002"
+          },
+          "descriptionFa": {
+            "type": "string",
+            "description": "توضیح موجود فاکتور؛ فقط مالک مجاز",
+            "nullable": true,
+            "example": null
+          }
+        },
+        "required": [
+          "id",
+          "invoiceNo",
+          "amountIrr",
+          "status",
+          "issuedAt",
+          "dueAt",
+          "paidAt",
+          "agencyId",
+          "bookingId",
+          "issuedById",
+          "descriptionFa"
+        ]
+      },
+      "PortalInvoicesResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PortalInvoiceView"
+            }
+          }
+        },
+        "required": [
+          "success",
+          "data"
         ]
       },
       "ProfileView": {

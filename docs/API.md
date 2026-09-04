@@ -1,5 +1,18 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## A6.8 — Compatible Agency invoice read integration
+
+GET `/api/v1/agency-portal/invoices` retains its flat response and existing
+authorization/UAT behavior. Default-off `AGENCY_INVOICES_READ_ENABLED` selects
+the internal full-projection `GET /internal/v1/agencies/:agencyId/portal-invoices`.
+The service route requires `AGENCY_PORTAL_INVOICES_ENABLED=true`, trusted tenant
+and service identity. No public route is added and no payment route is changed.
+Complete arrays only; bounded remote reads fall back to authorized Core reads
+for availability failures, never for authentication or malformed responses.
+Invalid boundary responses use sanitized HTTP 503 `INTERNAL_ERROR`.
+Activation requires UTC Node runtime and separately reviewed reader grants.
+See `docs/features/agency-invoice-read-cutover.md` for exact limits and rollback.
+
 ## A6.4 — internal Agency read boundary
 
 A6.7 extends the offline shadow CLI with an optional explicit invoice UUID after

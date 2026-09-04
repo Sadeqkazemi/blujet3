@@ -29,6 +29,7 @@ import { WebservicePricingService } from '../webservice-pricing/webservice-prici
 import { SearchService } from '../booking-engine/search.service';
 import { isSellableDefinitionStatus } from '../flights/definition-sellability';
 import { ErrorCode } from '../../common/errors';
+import { AgencyInvoiceClient } from './agency-invoice.client';
 import { AgencySeatRequest } from '../../database/entities/agency-seat-request.entity';
 import { AgencySeatRequestFlight } from '../../database/entities/agency-seat-request-flight.entity';
 import { FareRule } from '../../database/entities/fare-rule.entity';
@@ -169,6 +170,7 @@ export class AgencyPortalService {
     private readonly files: FilesService,
     private readonly webservicePricing: WebservicePricingService,
     private readonly search: SearchService,
+    private readonly invoiceClient: AgencyInvoiceClient,
   ) {}
 
   private async getOwnProfileOrThrow(actor: AuthenticatedUser) {
@@ -440,10 +442,11 @@ export class AgencyPortalService {
     return this.agencies.getCredit(actor.id);
   }
 
-  async invoices(actor: AuthenticatedUser) {
+  async invoices(actor: AuthenticatedUser, requestId?: string) {
     if (await this.isUatSandboxAgencyActor(actor)) return [];
     await this.getOwnProfileOrThrow(actor);
-    return this.agencies.listInvoices(actor.id);
+    const remote = await this.invoiceClient.list(actor.id, requestId);
+    return remote ?? this.agencies.listInvoices(actor.id);
   }
 
   async payInvoice(actor: AuthenticatedUser, invoiceId: string) {

@@ -1,5 +1,14 @@
 # DB_SCHEMA.md — blujet data model
 
+## A6.8 — Agency portal invoice compatibility projection
+
+No schema migration or writer change. Opt-in compatibility reads additionally
+select existing `agency.agency_invoices.bookingId`, `issuedById`, `descriptionFa`
+alongside the A6.4 columns. No relation joins or other-domain reads. Minimal
+reader grants remain unchanged with `AGENCY_PORTAL_INVOICES_ENABLED=false`;
+enabled readiness/verifier require the expanded exact column set. Production
+grants are not applied by this feature. See `docs/features/agency-invoice-read-cutover.md`.
+
 ## A6.4 — Agency read-only projections
 
 A6.7 optionally adds one invoice-detail SELECT scoped by both agencyId and id

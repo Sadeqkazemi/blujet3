@@ -5,6 +5,9 @@ import { databaseOptions } from './config';
 import { verifyReader, type ReaderReport } from './reader-verification';
 
 async function run(): Promise<void> {
+  const portalFlag = process.env.AGENCY_PORTAL_INVOICES_ENABLED ?? 'false';
+  if (!['true', 'false'].includes(portalFlag))
+    throw new Error('Invalid reader mode');
   const raw = process.env.AGENCY_DATABASE_URL;
   if (!raw || !['postgres:', 'postgresql:'].includes(new URL(raw).protocol)) {
     throw new Error('Invalid reader database configuration');
@@ -13,7 +16,7 @@ async function run(): Promise<void> {
   let report: ReaderReport;
   try {
     await db.initialize();
-    report = await verifyReader(db);
+    report = await verifyReader(db, portalFlag === 'true');
   } finally {
     if (db.isInitialized) await db.destroy();
   }

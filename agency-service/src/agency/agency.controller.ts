@@ -24,6 +24,7 @@ import {
   InvoiceResponse,
   InvoicesResponse,
   ProfileResponse,
+  PortalInvoicesResponse,
 } from './agency.dto';
 
 // Internal service identity plus trusted tenant assertion, never a public route.
@@ -56,6 +57,27 @@ import {
 @Controller('internal/v1/agencies/:agencyId')
 export class AgencyController {
   constructor(private readonly agency: AgencyService) {}
+
+  @Get('portal-invoices')
+  @Header('Cache-Control', 'no-store')
+  @ApiOperation({
+    summary: 'فهرست کامل فاکتورهای مالک برای سازگاری پرتال؛ فعال‌سازی صریح',
+  })
+  @ApiResponse({ status: 200, type: PortalInvoicesResponse })
+  @ApiResponse({
+    status: 503,
+    type: ErrorResponse,
+    description: 'مسیر خاموش یا فهرست خارج از سقف خواندن',
+  })
+  async portalInvoices(
+    @Param() params: AgencyParams,
+    @Headers('x-agency-id') owner: string | undefined,
+  ) {
+    return {
+      success: true,
+      data: await this.agency.portalInvoices(params.agencyId, owner),
+    };
+  }
 
   @Get('profile')
   @Header('Cache-Control', 'no-store')

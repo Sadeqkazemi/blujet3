@@ -1,4 +1,7 @@
 import { INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { createServer } from 'node:http';
+import { AgenciesService } from '../src/modules/agencies/agencies.service';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import * as crypto from 'node:crypto';
@@ -344,6 +347,117 @@ describe('Agency Portal (e2e)', () => {
   });
 
   // ── Dashboard / credit / invoices ────────────────────────────────────
+
+  it('routes enabled invoice reads with session ownership, preserves the array and rolls back safely', async () => {
+    const agency = await createFreshAgency();
+    const { accessToken } = await loginAsAgency(agency.phone);
+    const config = app.get(ConfigService);
+    const serviceToken = 'test-agency-invoice-read-at-least-32-characters';
+    const calls: Array<{
+      owner: string | string[] | undefined;
+      id: string | string[] | undefined;
+    }> = [];
+    const row = {
+      id: crypto.randomUUID(),
+      agencyId: agency.id,
+      bookingId: null,
+      invoiceNo: 'READ-COMPAT',
+      issuedById: agency.id,
+      issuedAt: '2026-09-01T00:00:00.000Z',
+      dueAt: '2026-10-01T00:00:00.000Z',
+      paidAt: null,
+      amountIrr: '9007199254740993',
+      descriptionFa: 'شرح فاکتور',
+      status: 'UNPAID',
+    };
+    let status = 200;
+    let foreign = false;
+    const server = createServer((req, res) => {
+      calls.push({
+        owner: req.headers['x-agency-id'],
+        id: req.headers['x-request-id'],
+      });
+      expect(req.headers['x-internal-token']).toBe(serviceToken);
+      res.writeHead(status, { 'Content-Type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          success: true,
+          data: [
+            { ...row, agencyId: foreign ? crypto.randomUUID() : agency.id },
+          ],
+        }),
+      );
+    });
+    await new Promise<void>((resolve) =>
+      server.listen(0, '127.0.0.1', resolve),
+    );
+    const address = server.address();
+    if (!address || typeof address === 'string')
+      throw new Error('Fixture listener unavailable');
+    const previous = [
+      'AGENCY_INVOICES_READ_ENABLED',
+      'AGENCY_SERVICE_URL',
+      'AGENCY_INTERNAL_TOKEN',
+    ].map((key) => [key, config.get<string>(key)] as const);
+    const legacy = jest.spyOn(app.get(AgenciesService), 'listInvoices');
+    const read = () =>
+      request(app.getHttpServer())
+        .get('/agency-portal/invoices')
+        .set('Authorization', auth(accessToken))
+        .set('X-Agency-Id', crypto.randomUUID())
+        .set('X-Request-Id', 'portal-invoice-correlation');
+    try {
+      config.set('AGENCY_INVOICES_READ_ENABLED', 'true');
+      config.set('AGENCY_SERVICE_URL', 'http://127.0.0.1:' + address.port);
+      config.set('AGENCY_INTERNAL_TOKEN', serviceToken);
+      await request(app.getHttpServer())
+        .get('/agency-portal/invoices')
+        .expect(401);
+      expect(calls).toHaveLength(0);
+      const enabled = await read().expect(200);
+      expect(enabled.body as unknown).toEqual({ success: true, data: [row] });
+      expect(calls).toEqual([
+        { owner: agency.id, id: 'portal-invoice-correlation' },
+      ]);
+      expect(legacy).not.toHaveBeenCalled();
+      foreign = true;
+      await read().expect(503);
+      expect(legacy).not.toHaveBeenCalled();
+      foreign = false;
+      status = 401;
+      await read().expect(503);
+      expect(legacy).not.toHaveBeenCalled();
+      status = 503;
+      const fallback = await read().expect(200);
+      expect(fallback.body as unknown).toEqual({ success: true, data: [] });
+      expect(legacy).toHaveBeenCalledTimes(1);
+      const count = calls.length;
+      config.set('AGENCY_INVOICES_READ_ENABLED', 'false');
+      await read().expect(200);
+      expect(calls).toHaveLength(count);
+      expect(legacy).toHaveBeenCalledTimes(2);
+    } finally {
+      for (const [key, value] of previous) config.set(key, value);
+      legacy.mockRestore();
+      server.closeAllConnections();
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+      await dataSource.query(
+        'DELETE FROM agency.agency_credit_lines WHERE "agencyId"=$1',
+        [agency.id],
+      );
+      await dataSource.query(
+        'DELETE FROM agency.agency_profiles WHERE "userId"=$1',
+        [agency.id],
+      );
+      await dataSource.query(
+        'DELETE FROM identity.refresh_tokens WHERE "userId"=$1',
+        [agency.id],
+      );
+      await dataSource.query('DELETE FROM identity.users WHERE id=$1', [
+        agency.id,
+      ]);
+    }
+  });
 
   it('GET /agency-portal/dashboard returns real, self-scoped KPIs', async () => {
     const agency = await createFreshAgency();

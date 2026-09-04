@@ -17,6 +17,7 @@ import { AgencySeatRequestFlight } from '../../database/entities/agency-seat-req
 import { FareRule } from '../../database/entities/fare-rule.entity';
 import { AgencyPortalController } from './agency-portal.controller';
 import { AgencyPortalService } from './agency-portal.service';
+import { AgencyInvoiceClient } from './agency-invoice.client';
 import { AuditModule } from '../audit/audit.module';
 import { CartableModule } from '../cartable/cartable.module';
 import { AgenciesModule } from '../agencies/agencies.module';
@@ -51,7 +52,7 @@ import { BookingEngineModule } from '../booking-engine/booking-engine.module';
     BookingEngineModule,
   ],
   controllers: [AgencyPortalController],
-  providers: [AgencyPortalService],
+  providers: [AgencyPortalService, AgencyInvoiceClient],
   exports: [AgencyPortalService],
 })
 export class AgencyPortalModule {}

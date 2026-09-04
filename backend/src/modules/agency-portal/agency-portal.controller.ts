@@ -72,8 +72,14 @@ export class AgencyPortalController {
 
   @Get('invoices')
   @ApiOperation({ summary: 'فاکتورهای خودِ آژانس' })
-  async invoices(@CurrentUser() actor: AuthenticatedUser) {
-    return { success: true, data: await this.portal.invoices(actor) };
+  async invoices(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Headers('x-request-id') requestId?: string,
+  ) {
+    return {
+      success: true,
+      data: await this.portal.invoices(actor, requestId),
+    };
   }
 
   @Post('invoices/:invoiceId/pay')
