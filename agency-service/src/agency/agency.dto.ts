@@ -42,6 +42,37 @@ export class ProfileView {
   })
   suspendedAt!: string | null;
 }
+export class PortalProfileView extends ProfileView {
+  @ApiProperty({
+    description: 'نام مدیر یا نماینده آژانس',
+    example: 'علی رضایی',
+  })
+  managerName!: string;
+  @ApiProperty({ description: 'شماره مجوز آژانس', example: 'AG-1405-001' })
+  licenseNo!: string;
+  @ApiProperty({
+    description: 'شماره تماس ثبت‌شده آژانس',
+    example: '02112345678',
+  })
+  phone!: string;
+  @ApiProperty({
+    description: 'ایمیل ثبت‌شده آژانس',
+    example: 'agency@example.com',
+  })
+  email!: string;
+  @ApiProperty({
+    description: 'نشانی ثبت‌شده آژانس',
+    example: 'تهران، خیابان آزادی',
+  })
+  address!: string;
+  @ApiProperty({
+    description: 'علت تعلیق پرتال',
+    nullable: true,
+    type: String,
+    example: null,
+  })
+  suspendReason!: string | null;
+}
 export class InvoiceView {
   @ApiProperty({ description: 'شناسه فاکتور', format: 'uuid' })
   id!: string;
@@ -114,6 +145,10 @@ export class PortalInvoicesResponse {
 export class ProfileResponse {
   @ApiProperty({ example: true }) success!: boolean;
   @ApiProperty({ type: ProfileView }) data!: ProfileView;
+}
+export class PortalProfileResponse {
+  @ApiProperty({ example: true }) success!: boolean;
+  @ApiProperty({ type: PortalProfileView }) data!: PortalProfileView;
 }
 export class InvoiceResponse {
   @ApiProperty({ example: true }) success!: boolean;

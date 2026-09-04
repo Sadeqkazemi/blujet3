@@ -226,7 +226,7 @@ jobs:
           cp .env.test .env
           npm run migration:run
           npm run build
-          npm test -- --runInBand agency-shadow agency-invoice.client
+          npm test -- --runInBand agency-shadow agency-invoice.client agency-profile.client
       - name: Validate isolated Agency reader
         working-directory: agency-service
         env:

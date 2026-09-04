@@ -30,6 +30,7 @@ import { SearchService } from '../booking-engine/search.service';
 import { isSellableDefinitionStatus } from '../flights/definition-sellability';
 import { ErrorCode } from '../../common/errors';
 import { AgencyInvoiceClient } from './agency-invoice.client';
+import { AgencyProfileClient } from './agency-profile.client';
 import { AgencySeatRequest } from '../../database/entities/agency-seat-request.entity';
 import { AgencySeatRequestFlight } from '../../database/entities/agency-seat-request-flight.entity';
 import { FareRule } from '../../database/entities/fare-rule.entity';
@@ -171,6 +172,7 @@ export class AgencyPortalService {
     private readonly webservicePricing: WebservicePricingService,
     private readonly search: SearchService,
     private readonly invoiceClient: AgencyInvoiceClient,
+    private readonly profileClient: AgencyProfileClient,
   ) {}
 
   private async getOwnProfileOrThrow(actor: AuthenticatedUser) {
@@ -679,7 +681,7 @@ export class AgencyPortalService {
 
   // ── Profile & documents ──────────────────────────────────────────────
 
-  async profile(actor: AuthenticatedUser) {
+  async profile(actor: AuthenticatedUser, requestId?: string) {
     const uatUser = await this.loadUatSandboxAgencyUser(actor);
     if (uatUser) {
       return {
@@ -696,6 +698,24 @@ export class AgencyPortalService {
         suspendReason: null,
         joinedAt: uatUser.createdAt,
         isTemporaryReadOnly: true,
+      };
+    }
+    const remote = await this.profileClient.get(actor.id, requestId);
+    if (remote) {
+      return {
+        fullName: actor.fullName,
+        managerName: remote.managerName,
+        licenseNo: remote.licenseNo,
+        phone: remote.phone,
+        email: remote.email,
+        city: remote.city,
+        address: remote.address,
+        tier: remote.tier,
+        isActive: !remote.suspendedAt,
+        suspendedAt: remote.suspendedAt,
+        suspendReason: remote.suspendReason,
+        joinedAt: remote.joinedAt,
+        isTemporaryReadOnly: false,
       };
     }
     const profile = await this.getOwnProfileOrThrow(actor);

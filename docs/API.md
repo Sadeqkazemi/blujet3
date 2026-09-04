@@ -1,5 +1,23 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## A6.9 — Compatible Agency profile read integration
+
+GET `/api/v1/agency-portal/profile` retains its current response, authentication,
+not-found and temporary-UAT behavior. Default-off `AGENCY_PROFILE_READ_ENABLED`
+selects internal GET `/internal/v1/agencies/:agencyId/portal-profile`; the Agency
+route separately requires `AGENCY_PORTAL_PROFILE_ENABLED=true`, service identity
+and the trusted owner assertion. `fullName` always comes from the authenticated
+backend identity, never the Agency database reader. The service returns only the
+existing Agency-owned profile fields and does not join `identity.users`.
+
+The backend accepts only the exact owner-scoped contract within a two-second,
+64-KiB boundary. Network/timeout, 5xx and oversized responses use the existing
+authorized Core read. A valid owned-profile 404 preserves the current public 404;
+other 4xx, redirects and malformed/foreign data fail closed as sanitized 503.
+No public URL, writer, schema or production permission is changed. Activation
+requires UTC and separately reviewed reader grants. See
+`docs/features/agency-profile-read-cutover.md` for rollback and evidence.
+
 ## A6.8 — Compatible Agency invoice read integration
 
 GET `/api/v1/agency-portal/invoices` retains its flat response and existing

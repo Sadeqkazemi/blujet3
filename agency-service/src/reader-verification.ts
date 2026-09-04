@@ -43,6 +43,7 @@ export interface ReaderReport {
 export async function verifyReader(
   db: DataSource,
   portalInvoices = false,
+  portalProfile = false,
 ): Promise<ReaderReport> {
   const rows = await db.transaction('REPEATABLE READ', async (tx) => {
     await tx.query('SET TRANSACTION READ ONLY');
@@ -100,7 +101,17 @@ export async function verifyReader(
             columns:
               portalInvoices && table.relation === 'agency_invoices'
                 ? [...table.columns, 'bookingId', 'issuedById', 'descriptionFa']
-                : table.columns,
+                : portalProfile && table.relation === 'agency_profiles'
+                  ? [
+                      ...table.columns,
+                      'managerName',
+                      'licenseNo',
+                      'phone',
+                      'email',
+                      'address',
+                      'suspendReason',
+                    ]
+                  : table.columns,
           })),
         ),
       ],

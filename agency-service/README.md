@@ -149,6 +149,27 @@ Representative parity against current backend projections, production credential
 review, owner-approved public integration, and deployment remain separate gates.
 Stopping this unused internal reader does not affect the current public portal.
 
+## Optional portal profile integration (A6.9)
+
+Prepare and test only; production activation is separately approved.
+`AGENCY_PROFILE_READ_ENABLED=true` in the backend uses the existing public
+profile URL and preserves the authenticated actor's `fullName`. The Agency
+service route is `GET /internal/v1/agencies/:agencyId/portal-profile` and is
+disabled unless `AGENCY_PORTAL_PROFILE_ENABLED=true`.
+
+The route returns the existing Agency-owned profile fields without joining
+`identity.users`: managerName, licenseNo, phone, email, city, address, tier,
+suspendedAt, suspendReason and joinedAt. It is owner-bound, read-only,
+repeatable-read and limited to a 64 KiB response. Network/timeout, 5xx and
+oversized responses fall back to the authorized Core read; 404 preserves the
+public not-found response; other 4xx, redirects and malformed/foreign data
+fail closed. Both flags default to false. Opt-in requires a UTC backend and
+the six additional profile column grants; verifier/readiness check them only
+when the Agency profile flag is true. No grants, migrations or deployment are
+performed by this package. Rollback is flag-first, then grant revocation.
+
+See `docs/features/agency-profile-read-cutover.md` for the complete contract.
+
 ## Optional portal invoice integration (A6.8)
 
 Prepare and test only; production activation is separately approved. Backend

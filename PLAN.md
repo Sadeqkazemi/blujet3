@@ -19,6 +19,18 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-04 — A6.9 Compatible portal profile read integration
+
+- [x] Owner authorized continuing with the next default-off Agency read slice;
+  no server activation/deployment.
+- [x] Preserve `GET /api/v1/agency-portal/profile`, authenticated identity fields,
+  temporary-UAT behavior and Core availability fallback.
+- [x] Add an owner-scoped full portal-profile projection without identity joins,
+  bounded transport, exact validation and reviewed opt-in reader grants.
+- [x] Prove disabled/enabled paths, tenant isolation, 404 semantics, rollback,
+  restricted PostgreSQL access, lint, typecheck, build and OpenAPI determinism.
+- [ ] Present the complete diff for separate publication/merge approval; no deployment.
+
 ### 2026-09-04 — A6.8 Compatible portal invoice read integration
 
 - [x] Owner approved preparing integration, default off, with enabled local tests;

@@ -12,6 +12,7 @@ describe('Agency environment', () => {
       { PORT: 70000 },
       { AGENCY_DATABASE_URL: 'https://example.com' },
       { AGENCY_PORTAL_INVOICES_ENABLED: 'yes' },
+      { AGENCY_PORTAL_PROFILE_ENABLED: 'yes' },
     ]) {
       expect(() => validateEnv({ ...valid, ...override })).toThrow();
     }
@@ -19,9 +20,14 @@ describe('Agency environment', () => {
   it('never synchronizes or runs migrations and defaults connections to read-only', () => {
     expect(validateEnv(valid).PORT).toBe(3600);
     expect(validateEnv(valid).AGENCY_PORTAL_INVOICES_ENABLED).toBe('false');
+    expect(validateEnv(valid).AGENCY_PORTAL_PROFILE_ENABLED).toBe('false');
     expect(
       validateEnv({ ...valid, AGENCY_PORTAL_INVOICES_ENABLED: 'true' })
         .AGENCY_PORTAL_INVOICES_ENABLED,
+    ).toBe('true');
+    expect(
+      validateEnv({ ...valid, AGENCY_PORTAL_PROFILE_ENABLED: 'true' })
+        .AGENCY_PORTAL_PROFILE_ENABLED,
     ).toBe('true');
     expect(databaseOptions(valid.AGENCY_DATABASE_URL)).toMatchObject({
       synchronize: false,
