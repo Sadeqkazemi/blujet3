@@ -1,6 +1,14 @@
 # PSS multi-segment reservation — Slice 1 contract
 
-Status: **Core read-only resolution implemented — hold/order slice pending**
+Status: **Core resolution, additive quote and atomic hold implemented; fulfilment pending**
+
+## Owner-approved commercial rule — 2026-09-04
+
+The owner approved additive itinerary pricing: sum each segment's price,
+taxes and selected extras, with baggage/service terms retained per segment.
+There is no implicit through-fare discount, pooled baggage allowance or
+promise of through-checked baggage. The target is one order/PNR and an atomic
+all-segment hold. Rollout remains staged; a read-only quote is not a hold.
 
 This slice introduces an internal, ordered itinerary contract while preserving
 the existing public single-flight booking APIs. Inventory, orders and payment
@@ -25,10 +33,11 @@ dual-write is enabled by this document.
 
 ## Contract shape (internal only)
 
-`POST /internal/v1/offers/search` and `POST /internal/v1/orders` accept an
-ordered `segments[]` array. Each segment carries the flight-instance reference,
-origin/destination snapshot, cabin and fare-class selection. The server owns
-route and schedule snapshots; clients cannot override them.
+`POST /internal/v1/core/itineraries/quote` and
+`POST /internal/v1/core/itineraries/hold` accept an ordered `segments[]` array.
+Each segment carries the flight-instance reference, cabin, fare-class selection
+and its own extras. The server owns route and schedule snapshots; clients
+cannot override them.
 
 The internal DTO and pure resolved-segment validator exist under
 `pss-service/src/itinerary/`. The first HTTP integration is the authenticated,
@@ -40,10 +49,12 @@ endpoint or writer is changed here.
 - Airport-pair/terminal-specific MCT overrides remain pending product input.
   Airport-level MCT already exists in `inventory.airports.minConnectMin` and
   is enforced by the Core resolver without inventing a universal fallback.
-- Multi-segment pricing, baggage and ancillary allocation rules.
-- Multi-segment hold locking and persisted order/segment mapping. Read-only
-  cabin/fare-class availability is resolved from current Core tables in this
-  slice.
+- Through-fare discounts, pooled baggage and through-check operations are not
+  part of the approved additive/per-segment rule.
+- Payment confirmation, accountable ticket/coupon issue, cancellation and
+  servicing over the new Core itinerary order.
+- Payment confirmation and accountable ticket/coupon fulfilment over the new
+  Core itinerary order.
 - PSS writer cutover flag and rollback observation window.
 
 ## Acceptance evidence for the implementation slice
@@ -55,18 +66,54 @@ endpoint or writer is changed here.
   cabin/fare-class availability from Core-owned data behind an authenticated
   read-only endpoint (`core-itinerary.service.spec.ts`,
   `core-itinerary.e2e-spec.ts`).
-- [ ] Expose priced offer and atomic hold/order DTOs inside Core after the
-  pending pricing and locking rules are approved.
+- [x] Expose additive quote and atomic hold/order DTOs inside Core under the
+  owner-approved pricing and per-segment baggage/service rules.
 - [x] Core connection-time follow-up: persisted airport MCT, exact boundary,
   short/missing/invalid rules, both transfers of a three-segment itinerary,
   valid direct itineraries and invalid segment duration. Local verification:
   25 PSS unit tests, 8 resolver HTTP E2E tests, typecheck, scoped lint and build.
-- A concurrency E2E proving deterministic lock order and all-or-nothing hold
-  across every segment, with no partial inventory mutation.
+- [x] Concurrency E2E proves deterministic lock order, exactly one winner for
+  the last seat on every leg and no partial inventory mutation. A separate
+  failure case proves that an unavailable second leg creates no order/segment.
 - [x] Existing single-segment PSS client compatibility tests remain green
   (`http-pss.client.spec.ts`).
-- [x] No migration was required; TypeORM metadata typecheck, scoped lint and
-  production build pass.
+- [x] Additive migration creates Core order/segment/traveller snapshots under
+  the existing `orders` schema; the real PostgreSQL migration run, TypeORM
+  metadata typecheck and production build pass.
 
-No migration, external vendor integration, server deployment or writer cutover
-is authorized by this draft.
+No external vendor integration, server migration/deployment or public writer
+cutover is authorized by this implementation.
+
+## Additive quote implementation checklist
+
+- [x] Inspect existing resolver, fare rules, passenger pricing, charge rules
+  and ancillary catalog; reuse existing Core calculation conventions.
+- [x] Document API/DB scope before implementation. Touch only PSS quote DTO,
+  controller/service/module, group-size resolver support, focused tests/docs.
+- [x] Authenticated read-only quote for 1–3 segments and 1–9 travellers.
+- [x] Sum exact IRR fare/tax/extras; retain nullable baggage and services by leg.
+- [x] Validate passenger age on every departure and enough seats in one fare
+  bucket for the entire party; never split the party across fare classes.
+- [x] Reuse per-passenger discounts, flight charges and ancillary overlays;
+  duplicate/inactive extras fail closed. No price locks/promos/seat selection
+  are claimed in the initial quote endpoint.
+- [x] Unit/HTTP tests: arithmetic beyond JS safe integers, channel price,
+  passenger mix, baggage differences, extras, auth, invalid input, capacity,
+  changed price and no database writes. Local verification: 33 PSS unit tests,
+  13 quote/resolver HTTP E2E tests, scoped zero-warning lint, typecheck and
+  production build.
+- [x] Persist one multi-segment order/PNR with common 15-minute expiry,
+  deterministic flight-lock ordering, replay binding and all-or-nothing hold.
+- [x] Store encrypted/hash-searchable traveller PII, per-leg fare/tax/baggage/
+  extras snapshots, and make Core availability count both legacy bookings and
+  active itinerary holds without a second inventory writer.
+- [x] HTTP tests cover one PNR, child/adult prices, encrypted PII, replay,
+  changed-payload rejection, unavailable-second-leg rollback and last-seat
+  concurrency. Combined resolver/quote/hold HTTP evidence: 20 tests.
+- [x] Reuse the restart-safe booking expiry cadence for itinerary holds; lock
+  due rows with `SKIP LOCKED`, transition once and persist one lifecycle event.
+  HTTP proof confirms expired inventory returns on every leg.
+- [x] Cancel an active order under its owner scope, release every leg in one
+  commit and make replay return the same cancellation without another event.
+- [ ] Add payment confirmation and accountable ticket/coupon fulfilment in
+  later slices.

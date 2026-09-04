@@ -35,6 +35,11 @@ import { ClubMember } from './entities/club-member.entity';
 import { ClubPointsEntry } from './entities/club-points-entry.entity';
 import { ClubTierRule } from './entities/club-tier-rule.entity';
 import { ContactMessage } from './entities/contact-message.entity';
+import { CoreItineraryOrder } from './entities/core-itinerary-order.entity';
+import { CoreItineraryLifecycleEvent } from './entities/core-itinerary-lifecycle-event.entity';
+import { CoreItinerarySegment } from './entities/core-itinerary-segment.entity';
+import { CoreItineraryTraveller } from './entities/core-itinerary-traveller.entity';
+import { CoreItineraryTravellerSegment } from './entities/core-itinerary-traveller-segment.entity';
 import { CustomerIdentityVerification } from './entities/customer-identity-verification.entity';
 import { CustomerReferral } from './entities/customer-referral.entity';
 import { EmployeePermission } from './entities/employee-permission.entity';
@@ -151,6 +156,11 @@ export const dataSourceOptions: DataSourceOptions = {
     ClubPointsEntry,
     ClubTierRule,
     ContactMessage,
+    CoreItineraryOrder,
+    CoreItineraryLifecycleEvent,
+    CoreItinerarySegment,
+    CoreItineraryTraveller,
+    CoreItineraryTravellerSegment,
     CustomerIdentityVerification,
     CustomerReferral,
     EmployeePermission,

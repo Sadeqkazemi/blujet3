@@ -3368,6 +3368,12 @@ must be implemented within the single Core Platform transaction boundary.
 
 ### Core read-only itinerary resolution
 
+The additive `/internal/v1/core/itineraries/quote` extension also reads
+fare/cabin pricing, active flight charges and the existing travel-extra and
+ancillary catalog. It preserves segment-level baggage/extra details in its
+response only. No migration, persisted offer/order/PNR, inventory lock or
+financial write is introduced by the quote slice.
+
 No schema migration is required for
 `POST /internal/v1/core/itineraries/resolve`. The resolver reads authoritative
 `inventory.flight_instances`, `inventory.flights`, `inventory.routes`, and
@@ -3380,6 +3386,31 @@ will require its own schema/locking review.
 Connection validation additionally reads `inventory.airports.code` and the
 existing `minConnectMin` integer column. The persisted airport value is the
 MCT authority; no new column, default override or migration is introduced.
+
+### Core atomic itinerary hold
+
+The hold slice adds four authoritative tables under the existing `orders`
+schema; it does not enable or write the historical shadow `pss_*` tables:
+
+- `core_itinerary_orders`: one PNR, owner/channel, lifecycle, common expiry,
+  exact IRR totals, idempotency key/digest and timestamps.
+- `core_itinerary_segments`: ordered flight/route/schedule/fare/baggage/service
+  snapshots and the number of occupied seats for each leg. Unique
+  `(orderId, sequence)` and `(orderId, flightInstanceId)` prevent malformed
+  orders.
+- `core_itinerary_travellers`: the common party, with encrypted identity and
+  contact values plus hashed national-ID lookup; unique `(orderId, sequence)`.
+- `core_itinerary_traveller_segments`: immutable per-traveller/per-leg fare,
+  tax and seat-entitlement snapshots; unique traveller/segment pairing.
+- `core_itinerary_lifecycle_events`: immutable, unique transition evidence for
+  restart-safe hold expiry and idempotent pre-payment cancellation; workers
+  lock due orders with `SKIP LOCKED`.
+
+Current single-flight `orders.bookings` remains unchanged. Availability reads
+both active legacy bookings and active Core itinerary segment snapshots. Both
+writers serialize through the same `inventory.flight_instances` row locks;
+the multi-leg writer locks IDs in lexical order and writes all rows in one
+transaction, so there is no inventory dual-write or partial itinerary.
 
 These tables live in the dedicated PSS PostgreSQL database. Reliability tables
 are implemented in Slice 0; reservation, inventory and accountable-document

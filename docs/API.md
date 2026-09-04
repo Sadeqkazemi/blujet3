@@ -4487,6 +4487,55 @@ Single-segment requests do not require a transfer-airport lookup.
 
 ### Internal reservation/order API
 
+#### Core itinerary quote (read-only)
+
+`POST /internal/v1/core/itineraries/quote` uses `X-Internal-Token`, the same
+SYSTEM/AGENCY channel and ordered segment references as the resolver, plus a
+common `travellers[]` (1–9, `passengerType` and ISO `birthDate`) and optional
+`extras[]` (`id`, `quantity`) on each segment. No caller-supplied price or PII.
+It returns `currency: IRR`, `quotedAt`, `requiresReprice: true`, ordered legs,
+per-traveller fare/tax, per-leg selected extras and nullable fare-rule baggage
+allowance, and exact decimal-string fare/tax/extras/total sums. Missing baggage
+configuration stays null, not zero or an invented allowance.
+
+The full party must fit the selected fare bucket on every leg. Existing age,
+infant/adult, charter-child, fare charge and ancillary billing rules apply
+per leg. Extras on one leg never silently apply to another. An unknown or
+inactive extra, duplicate selection, or invalid manifest returns 400
+`VALIDATION_FAILED`; depleted inventory returns 409 `POOL_EXHAUSTED`,
+non-sellable flight/fare returns 404 `NOT_FOUND`, missing service auth 401.
+This observation is not an expiring persisted offer or price guarantee: it
+creates no order, PNR or hold. Requote before hold/payment. Public bookings,
+promos, loyalty locks, seat assignment and PSP integration are unchanged.
+
+#### Core itinerary hold (atomic writer)
+
+`POST /internal/v1/core/itineraries/hold` is the first Core-owned
+multi-segment write contract. It requires `X-Internal-Token` and a non-empty
+`Idempotency-Key`. The request repeats the quote input, adds `ownerId`, optional
+contact phone, and traveller identity fields. `ownerId` identifies the customer
+for `SYSTEM` or the agency for `AGENCY`; it is included in replay binding.
+
+The command locks every referenced `inventory.flight_instances` row in stable
+ID order, then re-runs sellability, MCT, party-capacity and current-price checks
+inside the same PostgreSQL transaction. It creates exactly one PNR, one common
+15-minute expiry and ordered segment/traveller snapshots. Failure on any leg
+rolls back the header and every child row. It does not issue tickets, allocate
+accountable documents, charge a payment method, promise a price lock, or select
+physical seats.
+
+Successful replay with the same key and canonical request returns the original
+hold. Reuse of the key for a different owner, itinerary, traveller set or
+service selection returns `409 IDEMPOTENCY_PAYLOAD_MISMATCH`.
+
+`POST /internal/v1/core/itineraries/:id/cancel` accepts the scoped `ownerId`,
+locks the order header, changes an active hold to `CANCELLED` and appends one
+`HOLD_CANCELLED` lifecycle event. Repeating the same cancellation returns the
+same cancelled order without a second event. An owner mismatch is reported as
+`404 NOT_FOUND`; paid, ticketed or expired orders fail with `409 CONFLICT`.
+Because availability is derived from active order status, all legs are released
+together when the transaction commits.
+
 | Method | Path | Behaviour |
 | --- | --- | --- |
 | POST | `/internal/v1/orders` | Atomically holds every segment and creates one PNR. |

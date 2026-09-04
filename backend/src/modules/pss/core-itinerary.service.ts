@@ -5,12 +5,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { EntityManager, In, Repository } from 'typeorm';
 import { ErrorCode } from '../../common/errors';
 import { Airport } from '../../database/entities/airport.entity';
 import { FareRule } from '../../database/entities/fare-rule.entity';
 import { FlightInstance } from '../../database/entities/flight-instance.entity';
 import { Passenger } from '../../database/entities/passenger.entity';
+import { CoreItineraryOrder } from '../../database/entities/core-itinerary-order.entity';
+import { CoreItinerarySegment } from '../../database/entities/core-itinerary-segment.entity';
 import type { BookingChannel, CabinClass } from '../../database/enums';
 import { SearchService } from '../booking-engine/search.service';
 import { isSellableDefinitionStatus } from '../flights/definition-sellability';
@@ -48,18 +50,35 @@ export class CoreItineraryService {
     private readonly search: SearchService,
     @InjectRepository(Airport)
     private readonly airportRepo: Repository<Airport>,
+    @InjectRepository(CoreItinerarySegment)
+    private readonly itinerarySegmentRepo: Repository<CoreItinerarySegment>,
   ) {}
 
   async resolve(
     dto: ResolveCoreItineraryDto,
+    requiredSeats = 1,
+    manager?: EntityManager,
   ): Promise<ResolvedCoreItineraryDto> {
+    if (!Number.isInteger(requiredSeats) || requiredSeats < 1) {
+      this.invalid('تعداد صندلی مورد نیاز سفر معتبر نیست.');
+    }
     const requested = this.orderAndValidateRequest(dto.segments);
     const ids = requested.map((segment) => segment.flightInstanceId);
-    const [instances, rules, usageRows] = await Promise.all([
-      this.loadInstances(ids),
-      this.fareRuleRepo.find({ where: { flightInstanceId: In(ids) } }),
-      this.loadFareUsage(ids),
-    ]);
+    const loadRules = () =>
+      (manager ? manager.getRepository(FareRule) : this.fareRuleRepo).find({
+        where: { flightInstanceId: In(ids) },
+      });
+    const [instances, rules, usageRows] = manager
+      ? [
+          await this.loadInstances(ids, manager),
+          await loadRules(),
+          await this.loadFareUsage(ids, manager),
+        ]
+      : await Promise.all([
+          this.loadInstances(ids),
+          loadRules(),
+          this.loadFareUsage(ids),
+        ]);
     const byId = new Map(instances.map((instance) => [instance.id, instance]));
     const now = new Date();
     const resolved: ResolvedCoreItinerarySegmentDto[] = [];
@@ -70,6 +89,7 @@ export class CoreItineraryService {
       const available = await this.search.cabinAvailability(
         instance,
         segment.cabin,
+        manager,
       );
       if (!available) {
         throw new NotFoundException({
@@ -84,6 +104,7 @@ export class CoreItineraryService {
         available.seatsLeft,
         rules,
         usageRows,
+        requiredSeats,
       );
       resolved.push({
         flightInstanceId: instance.id,
@@ -99,7 +120,7 @@ export class CoreItineraryService {
       });
     }
 
-    await this.assertContinuity(resolved);
+    await this.assertContinuity(resolved, manager);
     return { channel: dto.channel, segments: resolved };
   }
 
@@ -122,8 +143,13 @@ export class CoreItineraryService {
     return ordered;
   }
 
-  private async loadInstances(ids: string[]): Promise<FlightInstance[]> {
-    return this.flightInstanceRepo
+  private async loadInstances(
+    ids: string[],
+    manager?: EntityManager,
+  ): Promise<FlightInstance[]> {
+    return (
+      manager ? manager.getRepository(FlightInstance) : this.flightInstanceRepo
+    )
       .createQueryBuilder('instance')
       .leftJoinAndSelect('instance.flight', 'flight')
       .leftJoinAndSelect('flight.route', 'route')
@@ -162,8 +188,17 @@ export class CoreItineraryService {
     }
   }
 
-  private async loadFareUsage(ids: string[]): Promise<FareUsageRow[]> {
-    return this.passengerRepo
+  private async loadFareUsage(
+    ids: string[],
+    manager?: EntityManager,
+  ): Promise<FareUsageRow[]> {
+    const passengerRepo = manager
+      ? manager.getRepository(Passenger)
+      : this.passengerRepo;
+    const itineraryRepo = manager
+      ? manager.getRepository(CoreItinerarySegment)
+      : this.itinerarySegmentRepo;
+    const legacy = await passengerRepo
       .createQueryBuilder('passenger')
       .innerJoin('passenger.booking', 'booking')
       .select('booking.flightInstanceId', 'flightInstanceId')
@@ -194,6 +229,33 @@ export class CoreItineraryService {
       .addGroupBy('booking.fareClassCode')
       .addGroupBy('booking.channel')
       .getRawMany<FareUsageRow>();
+    const itinerary = await itineraryRepo
+      .createQueryBuilder('segment')
+      .innerJoin(
+        CoreItineraryOrder,
+        'itineraryOrder',
+        'itineraryOrder.id = segment.orderId',
+      )
+      .select('segment.flightInstanceId', 'flightInstanceId')
+      .addSelect('segment.cabin', 'cabin')
+      .addSelect('segment.fareClassCode', 'fareClassCode')
+      .addSelect('itineraryOrder.channel', 'channel')
+      .addSelect('COALESCE(SUM(segment.occupiedSeats), 0)', 'usedSeats')
+      .where('segment.flightInstanceId IN (:...ids)', { ids })
+      .andWhere('segment.fareClassCode IS NOT NULL')
+      .andWhere('itineraryOrder.status IN (:...statuses)', {
+        statuses: ['HELD', 'PAID', 'TICKETED'],
+      })
+      .andWhere(
+        '(itineraryOrder.status != :held OR itineraryOrder.holdExpiresAt > :now)',
+        { held: 'HELD', now: new Date() },
+      )
+      .groupBy('segment.flightInstanceId')
+      .addGroupBy('segment.cabin')
+      .addGroupBy('segment.fareClassCode')
+      .addGroupBy('itineraryOrder.channel')
+      .getRawMany<FareUsageRow>();
+    return [...legacy, ...itinerary];
   }
 
   private resolveFareAvailability(
@@ -203,6 +265,7 @@ export class CoreItineraryService {
     physicalSeatsLeft: number,
     allRules: FareRule[],
     usageRows: FareUsageRow[],
+    requiredSeats: number,
   ): { fareClassCode: string | null; availableSeats: number } {
     const rules = allRules.filter(
       (rule) =>
@@ -213,7 +276,7 @@ export class CoreItineraryService {
       if (segment.fareClassCode) {
         this.fareNotFound();
       }
-      if (physicalSeatsLeft <= 0) this.poolExhausted();
+      if (physicalSeatsLeft < requiredSeats) this.poolExhausted();
       return { fareClassCode: null, availableSeats: physicalSeatsLeft };
     }
 
@@ -261,7 +324,7 @@ export class CoreItineraryService {
           rule.seatsAllocated - sharedUsed,
         ),
       );
-      if (availableSeats > 0) {
+      if (availableSeats >= requiredSeats) {
         return { fareClassCode: rule.classCode, availableSeats };
       }
     }
@@ -307,6 +370,7 @@ export class CoreItineraryService {
 
   private async assertContinuity(
     segments: ResolvedCoreItinerarySegmentDto[],
+    manager?: EntityManager,
   ): Promise<void> {
     for (const segment of segments) {
       if (segment.arrivalAt <= segment.departureAt) {
@@ -328,7 +392,9 @@ export class CoreItineraryService {
     const transferCodes = [
       ...new Set(segments.slice(1).map((segment) => segment.originCode)),
     ];
-    const airports = await this.airportRepo.find({
+    const airports = await (
+      manager ? manager.getRepository(Airport) : this.airportRepo
+    ).find({
       where: { code: In(transferCodes) },
       select: { code: true, minConnectMin: true },
     });

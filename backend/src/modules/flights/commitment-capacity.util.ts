@@ -3,6 +3,8 @@ import { AgencySeatCommitment } from '../../database/entities/agency-seat-commit
 import { AgencyAllotment } from '../../database/entities/agency-allotment.entity';
 import { Booking } from '../../database/entities/booking.entity';
 import { Passenger } from '../../database/entities/passenger.entity';
+import { CoreItineraryOrder } from '../../database/entities/core-itinerary-order.entity';
+import { CoreItinerarySegment } from '../../database/entities/core-itinerary-segment.entity';
 import { CharterCommitment } from '../../database/entities/charter-commitment.entity';
 import { CommitmentStatus } from '../../database/enums';
 import type { CabinClass } from '../../database/enums';
@@ -20,8 +22,9 @@ export async function sumActiveCommittedSeats(
   flightInstanceId: string,
   cabin: CabinClass,
 ): Promise<number> {
-  const [charterSum, agencySum, allotmentSum, allotmentUsed] =
-    await Promise.all([
+  const now = new Date();
+  const queries = [
+    () =>
       manager
         .createQueryBuilder(CharterCommitment, 'c')
         .select('COALESCE(SUM(c.seats), 0)', 'sum')
@@ -29,6 +32,7 @@ export async function sumActiveCommittedSeats(
         .andWhere('c.cabin = :cabin', { cabin })
         .andWhere('c.status = :status', { status: CommitmentStatus.ACTIVE })
         .getRawOne<{ sum: string }>(),
+    () =>
       manager
         .createQueryBuilder(AgencySeatCommitment, 'a')
         .select('COALESCE(SUM(a.seats), 0)', 'sum')
@@ -36,6 +40,7 @@ export async function sumActiveCommittedSeats(
         .andWhere('a.cabin = :cabin', { cabin })
         .andWhere('a.status = :status', { status: CommitmentStatus.ACTIVE })
         .getRawOne<{ sum: string }>(),
+    () =>
       manager
         .createQueryBuilder(AgencyAllotment, 'allotment')
         .select('COALESCE(SUM(allotment.seatsAllocated), 0)', 'sum')
@@ -43,9 +48,10 @@ export async function sumActiveCommittedSeats(
         .andWhere('allotment.cabin = :cabin', { cabin })
         .andWhere(
           '(allotment.type = :hard OR allotment.releaseAt IS NULL OR allotment.releaseAt > :now)',
-          { hard: 'HARD', now: new Date() },
+          { hard: 'HARD', now },
         )
         .getRawOne<{ sum: string }>(),
+    () =>
       manager
         .createQueryBuilder(Passenger, 'passenger')
         .innerJoin(Booking, 'booking', 'booking.id = passenger.bookingId')
@@ -69,16 +75,45 @@ export async function sumActiveCommittedSeats(
         })
         .andWhere('(booking.status != :held OR booking.holdExpiresAt > :now)', {
           held: 'HELD',
-          now: new Date(),
+          now,
         })
         .andWhere(
           '(allotment.type = :hard OR allotment.releaseAt IS NULL OR allotment.releaseAt > :now)',
-          { hard: 'HARD', now: new Date() },
+          { hard: 'HARD', now },
         )
         .andWhere('passenger.deletedAt IS NULL')
         .andWhere('booking.deletedAt IS NULL')
         .getRawOne<{ sum: string }>(),
-    ]);
+    () =>
+      manager
+        .createQueryBuilder(CoreItinerarySegment, 'segment')
+        .innerJoin(
+          CoreItineraryOrder,
+          'itineraryOrder',
+          'itineraryOrder.id = segment.orderId',
+        )
+        .select('COALESCE(SUM(segment.occupiedSeats), 0)', 'sum')
+        .where('segment.flightInstanceId = :id', { id: flightInstanceId })
+        .andWhere('segment.cabin = :cabin', { cabin })
+        .andWhere('itineraryOrder.status IN (:...statuses)', {
+          statuses: ['HELD', 'PAID', 'TICKETED'],
+        })
+        .andWhere(
+          '(itineraryOrder.status != :held OR itineraryOrder.holdExpiresAt > :now)',
+          { held: 'HELD', now },
+        )
+        .getRawOne<{ sum: string }>(),
+  ] as const;
+  const [charterSum, agencySum, allotmentSum, allotmentUsed, itineraryHeld] =
+    manager.queryRunner
+      ? [
+          await queries[0](),
+          await queries[1](),
+          await queries[2](),
+          await queries[3](),
+          await queries[4](),
+        ]
+      : await Promise.all(queries.map((query) => query()));
   const unconsumedAllotment = Math.max(
     0,
     Number(allotmentSum?.sum ?? 0) - Number(allotmentUsed?.sum ?? 0),
@@ -86,6 +121,7 @@ export async function sumActiveCommittedSeats(
   return (
     Number(charterSum?.sum ?? 0) +
     Number(agencySum?.sum ?? 0) +
-    unconsumedAllotment
+    unconsumedAllotment +
+    Number(itineraryHeld?.sum ?? 0)
   );
 }
