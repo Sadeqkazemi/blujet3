@@ -21,7 +21,8 @@ Backend checklist:
   and `commerce-outbox.kafka-spec.ts`; 12/12 real tests, 113.47 s).
 - [x] Full read-only lint, typecheck, 48 focused unit tests and 4 CI-contract
   tests pass on 2026-09-05. `git diff --check` also passes.
-- [ ] Owner-approved push and Linux/ARM CI before merge.
+- [x] Owner-approved PR #57 merged as `a7ba2ea`; CI `33975955259` and
+  CodeQL `33975955263` passed, including Linux/ARM real Kafka tests.
 
 Files: `backend/test/kafka/local-kafka-security.ts`,
 `backend/test/kafka/kafka-security.kafka-spec.ts`, API/schema notes, roadmap and
@@ -44,4 +45,5 @@ no-grants test failed because publication succeeded (46.449 s targeted run).
 Enabling StandardAuthorizer and default deny made all 12 real tests pass.
 No production authorization weakness is inferred: this reproduces the previous
 unrestricted test fixture only. Existing private-key/config absence assertions
-passed during cleanup. Current changes remain local, not pushed or deployed.
+passed during cleanup. This slice was pushed and merged in PR #57; no server
+deployment was performed.

@@ -11,6 +11,7 @@ import { KafkaEventPublisher } from '../../src/common/events/kafka-event-publish
 import {
   CanonicalEventType,
   createCanonicalEvent,
+  type CanonicalEvent,
 } from '../../src/common/events/canonical-events';
 import { LocalKafka } from './local-kafka';
 
@@ -21,10 +22,13 @@ describe('real Kafka / PostgreSQL outbox boundary', () => {
   let consumer: Consumer;
   let publisher: KafkaEventPublisher;
   let dispatcher: CommerceOutboxDispatcher;
+  let interruptedDb: DataSource;
+  const extraDispatchers: CommerceOutboxDispatcher[] = [];
   const env = { ...process.env };
   const producer = `broker-test-${randomUUID()}`;
   const topic = `blujet-test-${randomUUID()}`;
   const received: {
+    offset: string;
     value: string;
     key: string;
     eventId: string;
@@ -103,6 +107,7 @@ describe('real Kafka / PostgreSQL outbox boundary', () => {
     await consumer.run({
       eachMessage: ({ message }) => {
         received.push({
+          offset: message.offset,
           value: message.value?.toString() ?? '',
           key: message.key?.toString() ?? '',
           eventId: message.headers?.['event-id']?.toString() ?? '',
@@ -123,6 +128,11 @@ describe('real Kafka / PostgreSQL outbox boundary', () => {
     try {
       for (const cleanup of [
         () => dispatcher?.onApplicationShutdown(),
+        ...extraDispatchers.map(
+          (worker) => () => worker.onApplicationShutdown(),
+        ),
+        () =>
+          interruptedDb?.isInitialized ? interruptedDb.destroy() : undefined,
         () => consumer?.disconnect(),
         () => admin?.disconnect(),
         () => broker?.stop(),
@@ -150,6 +160,7 @@ describe('real Kafka / PostgreSQL outbox boundary', () => {
     expect((await row(event.eventId)).deliveredAt).toBeNull();
     await dispatcher.drainOnce();
     expect(await consumeEvent(event.eventId)).toEqual({
+      offset: '0',
       value: JSON.stringify(event),
       key: `${producer}:Order:${event.aggregateId}`,
       eventId: event.eventId,
@@ -196,6 +207,7 @@ describe('real Kafka / PostgreSQL outbox boundary', () => {
     await consumer.run({
       eachMessage: ({ message }) => {
         received.push({
+          offset: message.offset,
           value: message.value?.toString() ?? '',
           key: message.key?.toString() ?? '',
           eventId: message.headers?.['event-id']?.toString() ?? '',
@@ -216,5 +228,118 @@ describe('real Kafka / PostgreSQL outbox boundary', () => {
     const recovered = await consumeEvent(event.eventId);
     expect(JSON.parse(recovered.value)).toEqual(event);
     expect((await admin.fetchTopicOffsets(topic))[0].high).toBe('2');
+  });
+
+  it('recovers the same event after Kafka ACK but before database acknowledgement', async () => {
+    const event = makeEvent();
+    const beforeOffset = BigInt((await admin.fetchTopicOffsets(topic))[0].high);
+    await db.transaction((manager) => outbox.enqueue(manager, event));
+    const original = await row(event.eventId);
+    interruptedDb = await new DataSource({
+      ...dataSourceOptions,
+      logging: false,
+      extra: { options: '-c timezone=UTC' },
+    }).initialize();
+    let brokerAcknowledged = false;
+    class DisconnectAfterAckPublisher extends KafkaEventPublisher {
+      override async publish(envelope: CanonicalEvent): Promise<boolean> {
+        const sent = await super.publish(envelope);
+        if (sent) {
+          brokerAcknowledged = true;
+          // Real broker ACK, then loss of only this worker's connection pool.
+          await interruptedDb.destroy();
+        }
+        return sent;
+      }
+    }
+    const logger = {
+      warn: () => undefined,
+      error: () => undefined,
+    } as unknown as Logger;
+    const interrupted = new CommerceOutboxDispatcher(
+      interruptedDb,
+      new DisconnectAfterAckPublisher(),
+      logger,
+    );
+    extraDispatchers.push(interrupted);
+    const failure: unknown = await interrupted
+      .drainOnce()
+      .catch((error: unknown) => error);
+    expect(failure instanceof Error).toBe(true);
+    expect(brokerAcknowledged).toBe(true);
+    expect(interruptedDb.isInitialized).toBe(false);
+    const leased = await row(event.eventId);
+    expect(leased).toMatchObject({
+      deliveredAt: null,
+      deadLetterAt: null,
+      attempts: 1,
+      envelopeEncrypted: original.envelopeEncrypted,
+    });
+    expect(leased.claimedAt).toBeInstanceOf(Date);
+    expect(typeof leased.claimToken).toBe('string');
+    expect((await admin.fetchTopicOffsets(topic))[0].high).toBe(
+      String(beforeOffset + 1n),
+    );
+    await consumeEvent(event.eventId);
+    await interrupted.onApplicationShutdown();
+
+    const replacement = new CommerceOutboxDispatcher(
+      db,
+      new KafkaEventPublisher(),
+      logger,
+    );
+    extraDispatchers.push(replacement);
+    await replacement.drainOnce();
+    expect(await row(event.eventId)).toMatchObject({
+      attempts: 1,
+      claimToken: leased.claimToken,
+      deliveredAt: null,
+    });
+    expect((await admin.fetchTopicOffsets(topic))[0].high).toBe(
+      String(beforeOffset + 1n),
+    );
+
+    const aged = await db
+      .getRepository(CommerceOutboxEvent)
+      .update(
+        { id: event.eventId, producer, claimToken: leased.claimToken! },
+        { claimedAt: new Date(0) },
+      );
+    expect(aged.affected).toBe(1);
+    await replacement.drainOnce();
+    const recovered = await row(event.eventId);
+    expect(recovered).toMatchObject({
+      attempts: 2,
+      claimedAt: null,
+      claimToken: null,
+      deadLetterAt: null,
+      lastError: null,
+      envelopeEncrypted: original.envelopeEncrypted,
+    });
+    expect(recovered.deliveredAt).toBeInstanceOf(Date);
+    expect((await admin.fetchTopicOffsets(topic))[0].high).toBe(
+      String(beforeOffset + 2n),
+    );
+    const deliveries = () =>
+      new Map(
+        received
+          .filter((entry) => entry.eventId === event.eventId)
+          .map((entry) => [entry.offset, entry]),
+      );
+    const deadline = Date.now() + 20000;
+    while (deliveries().size < 2 && Date.now() < deadline) await delay(100);
+    expect([...deliveries().keys()].sort()).toEqual(
+      [String(beforeOffset), String(beforeOffset + 1n)].sort(),
+    );
+    for (const entry of deliveries().values()) {
+      expect(entry.value).toBe(JSON.stringify(event));
+      expect(entry.key).toBe(`${producer}:Order:${event.aggregateId}`);
+      expect(entry.correlationId).toBe(event.correlationId);
+    }
+    await replacement.drainOnce();
+    expect((await admin.fetchTopicOffsets(topic))[0].high).toBe(
+      String(beforeOffset + 2n),
+    );
+    expect((await row(event.eventId)).attempts).toBe(2);
   });
 });
