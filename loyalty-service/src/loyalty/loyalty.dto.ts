@@ -95,3 +95,50 @@ export class LockHistoryResponse {
   @ApiProperty({ type: LockHistoryView })
   data!: LockHistoryView;
 }
+
+export interface CardRequestView {
+  id: string;
+  status: string;
+  history: unknown;
+  cardNo: string | null;
+  createdAt: string;
+}
+
+export class TierRulesView {
+  @ApiProperty({ example: 5000 })
+  goldMinPoints!: number;
+  @ApiProperty({ example: 15000 })
+  platinumMinPoints!: number;
+  @ApiProperty({ example: 5000 })
+  cardRequestMinPoints!: number;
+}
+
+export class MembershipView {
+  @ApiProperty({ example: '00000000-0000-4000-8000-000000000001' })
+  userId!: string;
+  @ApiProperty({ example: true })
+  isMember!: boolean;
+  @ApiProperty({ example: 'GOLD', nullable: true, type: String })
+  level!: string | null;
+  @ApiProperty({ example: '5000' })
+  balance!: string;
+  @ApiProperty({ example: 'NONE', nullable: true, type: String })
+  cardStatus!: string | null;
+  @ApiProperty({ example: null, nullable: true, type: String })
+  cardNo!: string | null;
+  @ApiProperty({ type: TierRulesView })
+  tierRules!: TierRulesView;
+  @ApiProperty({ example: null, nullable: true, type: Object })
+  cardRequest!: CardRequestView | null;
+  @ApiProperty({ example: true })
+  canRequestCard!: boolean;
+  @ApiProperty({ example: '0' })
+  pointsNeededForCard!: string;
+}
+
+export class MembershipResponse {
+  @ApiProperty({ example: true })
+  success!: boolean;
+  @ApiProperty({ type: MembershipView })
+  data!: MembershipView;
+}

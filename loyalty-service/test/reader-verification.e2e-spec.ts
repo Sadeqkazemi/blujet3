@@ -23,6 +23,11 @@ describe('Loyalty least-privilege reader (real PostgreSQL login)', () => {
     'SELECT ("clubMemberId", "signedPoints") ON loyalty.club_points_entries',
     'SELECT (id, "userId", "flightInstanceId", cabin, "lockedPriceIrr", "feeIrr", status, "expiresAt", "createdAt", "bookingId") ON loyalty.price_locks',
   ];
+  const membershipGrantStatements = [
+    'SELECT ("cardNo") ON loyalty.club_members',
+    'SELECT (id, "memberId", status, history, "cardNo", "createdAt") ON loyalty.club_card_requests',
+    'SELECT ("goldMinPoints", "platinumMinPoints", "cardRequestMinPoints", "createdAt") ON loyalty.club_tier_rules',
+  ];
 
   beforeAll(async () => {
     const url = new URL(process.env.LOYALTY_DATABASE_URL ?? '');
@@ -77,6 +82,8 @@ describe('Loyalty least-privilege reader (real PostgreSQL login)', () => {
           'club_members',
           'club_points_entries',
           'price_locks',
+          'club_card_requests',
+          'club_tier_rules',
         ]) {
           await admin.query(
             'REVOKE ALL PRIVILEGES ON loyalty.' + table + ' FROM ' + quotedRole,
@@ -106,6 +113,35 @@ describe('Loyalty least-privilege reader (real PostgreSQL login)', () => {
     expect(
       await reader.query<unknown[]>('SELECT current_user AS role'),
     ).toEqual([{ role }]);
+  });
+
+  it('requires the optional exact membership projection only when enabled', async () => {
+    expect(await verifyReader(reader, true)).toMatchObject({ status: 'FAIL' });
+    try {
+      for (const grant of membershipGrantStatements)
+        await admin.query('GRANT ' + grant + ' TO ' + quotedRole);
+      expect(await verifyReader(reader, true)).toMatchObject({
+        status: 'PASS',
+      });
+      const owners = await admin.query<Array<{ userId: string }>>(
+        'SELECT "userId" FROM loyalty.club_members WHERE "userId" IS NOT NULL AND "deactivatedAt" IS NULL LIMIT 1',
+      );
+      expect(owners).toHaveLength(1);
+      expect(
+        await new LoyaltyService(reader).membership(
+          owners[0].userId,
+          owners[0].userId,
+        ),
+      ).toMatchObject({
+        userId: owners[0].userId,
+        isMember: true,
+        balance: expect.any(String) as unknown,
+      });
+    } finally {
+      for (const grant of membershipGrantStatements)
+        await admin.query('REVOKE ' + grant + ' FROM ' + quotedRole);
+    }
+    expect(await verifyReader(reader)).toMatchObject({ status: 'PASS' });
   });
 
   afterEach(async () => {

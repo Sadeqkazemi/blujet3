@@ -1,5 +1,20 @@
 # DB_SCHEMA.md — blujet data model
 
+## A6.12 — Loyalty membership compatibility projection
+
+No schema migration, copied data or automatic production grant is added. The
+optional projection expands the documented restricted reader contract by only
+`club_members.cardNo`; `club_card_requests` columns `id`, `memberId`, `status`,
+`history`, `cardNo`, `createdAt`; and `club_tier_rules` columns
+`goldMinPoints`, `platinumMinPoints`, `cardRequestMinPoints`, `createdAt`.
+Existing member/points columns remain unchanged. Queries are owner-scoped,
+read-only and do not join `identity` or another service schema.
+
+Core remains the only writer for memberships, card requests/decisions, tier
+rules and points. The expanded exact grants must be provisioned and reviewed
+separately before enabling the default-off cutover. Disabling the flag restores
+the existing Core read without data or schema rollback.
+
 ## A6.11 — Loyalty price-lock history compatibility projection
 
 No migration or grant is added. The new internal history route reads only the

@@ -16,7 +16,10 @@ describe('Loyalty environment', () => {
     }
   });
   it('never synchronizes or runs migrations and defaults connections to read-only', () => {
-    expect(validateEnv(valid).PORT).toBe(3500);
+    expect(validateEnv(valid)).toMatchObject({
+      PORT: 3500,
+      LOYALTY_MEMBERSHIP_PROJECTION_ENABLED: 'false',
+    });
     expect(databaseOptions(valid.LOYALTY_DATABASE_URL)).toMatchObject({
       synchronize: false,
       migrationsRun: false,
@@ -28,5 +31,20 @@ describe('Loyalty environment', () => {
         options: '-c default_transaction_read_only=on -c timezone=UTC',
       },
     });
+  });
+
+  it('accepts only explicit membership projection flags', () => {
+    expect(
+      validateEnv({
+        ...valid,
+        LOYALTY_MEMBERSHIP_PROJECTION_ENABLED: 'true',
+      }).LOYALTY_MEMBERSHIP_PROJECTION_ENABLED,
+    ).toBe('true');
+    expect(() =>
+      validateEnv({
+        ...valid,
+        LOYALTY_MEMBERSHIP_PROJECTION_ENABLED: 'yes',
+      }),
+    ).toThrow();
   });
 });

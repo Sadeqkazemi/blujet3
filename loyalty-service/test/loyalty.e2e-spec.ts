@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import type { App } from 'supertest/types';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
@@ -14,12 +15,14 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
   const memberId = randomUUID();
   const otherMemberId = randomUUID();
   const lockId = randomUUID();
+  const cardRequestId = randomUUID();
   const at = '2026-09-04T12:00:00.000Z';
   const token = 'test-loyalty-internal-token-at-least-32-characters';
   const headers = { 'X-Internal-Token': token, 'X-Loyalty-User-Id': owner };
   const path = '/internal/v1/loyalty';
 
   beforeAll(async () => {
+    process.env.LOYALTY_MEMBERSHIP_PROJECTION_ENABLED = 'true';
     writer = await new DataSource({
       type: 'postgres',
       url: process.env.LOYALTY_DATABASE_URL,
@@ -52,6 +55,19 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
       await tx.query(
         'INSERT INTO loyalty.club_points_entries (id, "clubMemberId", type, "signedPoints") VALUES ($1,$2,$3,100),($4,$2,$3,-30)',
         [randomUUID(), memberId, 'EARN', randomUUID()],
+      );
+      await tx.query(
+        `INSERT INTO loyalty.club_card_requests
+          (id, "memberId", level, points, status, history, "createdAt")
+         VALUES ($1,$2,'SILVER',70,'SUBMITTED',$3::jsonb,$4)`,
+        [
+          cardRequestId,
+          memberId,
+          JSON.stringify([
+            { step: 'submitted', labelFa: 'ثبت درخواست', at: 'اکنون' },
+          ]),
+          '2026-09-05T10:00:00.000Z',
+        ],
       );
       const flights = await tx.query<Array<{ id: string }>>(
         'SELECT id FROM inventory.flight_instances LIMIT 1',
@@ -92,6 +108,7 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
     app = module.createNestApplication<INestApplication<App>>({
       logger: false,
     });
+    app.get(ConfigService).set('LOYALTY_MEMBERSHIP_PROJECTION_ENABLED', 'true');
     app.useGlobalPipes(
       new ValidationPipe({
         transform: true,
@@ -106,6 +123,9 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
     if (app) await app.close();
     if (writer?.isInitialized) {
       await writer.transaction(async (tx) => {
+        await tx.query('DELETE FROM loyalty.club_card_requests WHERE id=$1', [
+          cardRequestId,
+        ]);
         await tx.query(
           'DELETE FROM loyalty.price_locks WHERE "userId" IN ($1,$2)',
           [owner, other],
@@ -125,6 +145,7 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
       });
       await writer.destroy();
     }
+    delete process.env.LOYALTY_MEMBERSHIP_PROJECTION_ENABLED;
   });
 
   it('requires service identity and a matching trusted owner assertion', async () => {
@@ -180,6 +201,107 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
     });
     expect(response.headers['x-request-id'] as unknown).toBe('loyalty-e2e');
     expect(response.headers['cache-control'] as unknown).toBe('no-store');
+  });
+
+  it('projects the complete owner membership without PII or Core joins', async () => {
+    const response = await request(app.getHttpServer())
+      .get(`${path}/membership/${owner}`)
+      .set(headers)
+      .expect(200);
+    expect(response.body as unknown).toMatchObject({
+      success: true,
+      data: {
+        userId: owner,
+        isMember: true,
+        level: 'SILVER',
+        balance: '70',
+        cardStatus: 'NONE',
+        cardNo: null,
+        tierRules: {
+          goldMinPoints: expect.any(Number) as unknown,
+          platinumMinPoints: expect.any(Number) as unknown,
+          cardRequestMinPoints: expect.any(Number) as unknown,
+        },
+        cardRequest: {
+          id: cardRequestId,
+          status: 'SUBMITTED',
+          history: [{ step: 'submitted', labelFa: 'ثبت درخواست', at: 'اکنون' }],
+          cardNo: null,
+          createdAt: '2026-09-05T10:00:00.000Z',
+        },
+        canRequestCard: false,
+      },
+    });
+    expect(response.text).not.toContain('Private name');
+    expect(response.text).not.toContain('private@example.invalid');
+    expect(response.text).not.toContain('secret-national-id');
+
+    await request(app.getHttpServer())
+      .get(`${path}/membership/${other}`)
+      .set(headers)
+      .expect(403);
+  });
+
+  it('returns tier thresholds for an absent member and keeps the route default-off', async () => {
+    const missing = randomUUID();
+    const missingHeaders = {
+      ...headers,
+      'X-Loyalty-User-Id': missing,
+    };
+    const response = await request(app.getHttpServer())
+      .get(`${path}/membership/${missing}`)
+      .set(missingHeaders)
+      .expect(200);
+    expect(response.body as unknown).toMatchObject({
+      data: {
+        userId: missing,
+        isMember: false,
+        level: null,
+        balance: '0',
+        cardStatus: null,
+        cardNo: null,
+        cardRequest: null,
+        canRequestCard: false,
+      },
+    });
+
+    const config = app.get(ConfigService);
+    config.set('LOYALTY_MEMBERSHIP_PROJECTION_ENABLED', 'false');
+    await request(app.getHttpServer())
+      .get(`${path}/membership/${owner}`)
+      .set(headers)
+      .expect(404);
+    config.set('LOYALTY_MEMBERSHIP_PROJECTION_ENABLED', 'true');
+  });
+
+  it('rejects oversized card history instead of returning a partial view', async () => {
+    const original = [
+      { step: 'submitted', labelFa: 'ثبت درخواست', at: 'اکنون' },
+    ];
+    await writer.query(
+      'UPDATE loyalty.club_card_requests SET history=$2::jsonb WHERE id=$1',
+      [
+        cardRequestId,
+        JSON.stringify(
+          Array.from({ length: 33 }, (_, index) => ({
+            step: 'step-' + index,
+            labelFa: 'مرحله',
+            at: 'اکنون',
+          })),
+        ),
+      ],
+    );
+    try {
+      await request(app.getHttpServer())
+        .get(`${path}/membership/${owner}`)
+        .set(headers)
+        .expect(409);
+    } finally {
+      await writer.query(
+        'UPDATE loyalty.club_card_requests SET history=$2::jsonb WHERE id=$1',
+        [cardRequestId, JSON.stringify(original)],
+      );
+    }
   });
 
   it('returns zero for an empty ledger and 404 for missing/deactivated membership', async () => {

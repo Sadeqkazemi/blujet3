@@ -1,4 +1,4 @@
-import { Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Controller, Get, Headers, Post, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { ClubService } from './club.service';
@@ -19,8 +19,11 @@ export class MyClubController {
 
   @Get('membership')
   @ApiOperation({ summary: 'اطلاعات عضویت باشگاه مشتریان مشتری جاری' })
-  async getMembership(@CurrentUser() actor: AuthenticatedUser) {
-    const data = await this.club.getMyMembership(actor.id);
+  async getMembership(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Headers('x-request-id') requestId?: string,
+  ) {
+    const data = await this.club.getMyMembership(actor.id, requestId);
     return { success: true, data };
   }
 

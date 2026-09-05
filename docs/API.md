@@ -1,5 +1,21 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## A6.12 — Compatible Loyalty membership integration
+
+`GET /api/v1/my/club/membership` keeps its current `USER` guard, response
+envelope and fields. Default-off `LOYALTY_MEMBERSHIP_READ_ENABLED` selects the
+owner-bound internal route
+`GET /internal/v1/loyalty/membership/:userId`; disabled or unavailable reads
+use the existing Core query. Invalid, malformed or foreign-owner service data
+fails closed with a sanitized 503.
+
+The projection contains only the active member's level/card state, the
+ledger-derived balance, tier thresholds and newest non-rejected card request.
+It excludes identity PII, wallet/payment and inventory data. An absent member
+is a successful projection with the configured thresholds. `join`, card
+request/decision, tier changes and all points writes remain Core-only. See
+`docs/features/loyalty-membership-read-cutover.md` for limits and rollback.
+
 ## A6.11 — Compatible Loyalty price-lock history integration
 
 `GET /api/v1/my/price-locks` keeps its existing authenticated envelope and
@@ -87,7 +103,8 @@ real Loyalty HTTP and restricted PostgreSQL credentials; API behavior is unchang
 An independently runnable `loyalty-service` exposes authenticated GET routes
 `/internal/v1/loyalty/members/:userId` and
 `/internal/v1/loyalty/price-locks/:userId`; A6.11 additionally exposes
-`/internal/v1/loyalty/price-lock-history/:userId`. All require `X-Internal-Token`,
+`/internal/v1/loyalty/price-lock-history/:userId`, and A6.12 exposes
+`/internal/v1/loyalty/membership/:userId`. All require `X-Internal-Token`,
 `X-Loyalty-User-Id` matching the UUID path (asserted by the trusted caller,
 never forwarded from a browser), and propagate `X-Request-Id`. They are
 internal service-identity APIs, not user-token APIs. Missing identity: 401;
@@ -106,6 +123,11 @@ The A6.11 history route returns `{userId,locks}` for the owner, includes every
 lock status, orders by `createdAt DESC, id DESC`, and applies the same 1001-row
 overflow guard. It has no optional `at` parameter and performs no inventory
 join.
+
+The A6.12 membership route returns the exact public membership projection with
+the asserted `userId`, decimal-string `balance`, tier rules and at most one
+latest SUBMITTED/REFERRED/APPROVED card request. Card-request history is limited
+to 32 entries. It performs no cross-schema join and never returns member PII.
 
 `/health` is public liveness; `/ready` probes the required schema through a
 read-only transaction and returns safe 503 on failure. No public facade or

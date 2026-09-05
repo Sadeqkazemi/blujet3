@@ -1,12 +1,16 @@
 import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { ErrorCode } from './common/errors';
 
 @ApiTags('health')
 @Controller()
 export class HealthController {
-  constructor(private readonly db: DataSource) {}
+  constructor(
+    private readonly db: DataSource,
+    private readonly config: ConfigService,
+  ) {}
 
   @Get('health')
   @ApiOperation({ summary: 'زنده‌بودن سرویس بدون اطلاعات حساس' })
@@ -37,6 +41,18 @@ export class HealthController {
         await tx.query(
           'SELECT id, "userId", "flightInstanceId", cabin, "lockedPriceIrr", "feeIrr", status, "expiresAt", "createdAt", "bookingId" FROM loyalty.price_locks LIMIT 0',
         );
+        if (
+          this.config.get<string>('LOYALTY_MEMBERSHIP_PROJECTION_ENABLED') ===
+          'true'
+        ) {
+          await tx.query('SELECT "cardNo" FROM loyalty.club_members LIMIT 0');
+          await tx.query(
+            'SELECT id, "memberId", status, history, "cardNo", "createdAt" FROM loyalty.club_card_requests LIMIT 0',
+          );
+          await tx.query(
+            'SELECT "goldMinPoints", "platinumMinPoints", "cardRequestMinPoints", "createdAt" FROM loyalty.club_tier_rules LIMIT 0',
+          );
+        }
       });
       return this.live();
     } catch {
