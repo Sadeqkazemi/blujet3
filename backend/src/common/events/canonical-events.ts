@@ -53,6 +53,9 @@ export function isCanonicalEvent(value: unknown): value is CanonicalEvent {
   const event = value as Record<string, unknown>;
   return (
     typeof event.eventId === 'string' &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      event.eventId,
+    ) &&
     typeof event.eventType === 'string' &&
     Object.values(CanonicalEventType).includes(
       event.eventType as CanonicalEventType,
@@ -60,6 +63,7 @@ export function isCanonicalEvent(value: unknown): value is CanonicalEvent {
     event.eventVersion === 1 &&
     typeof event.occurredAt === 'string' &&
     !Number.isNaN(Date.parse(event.occurredAt)) &&
+    new Date(event.occurredAt).toISOString() === event.occurredAt &&
     typeof event.producer === 'string' &&
     event.producer.length > 0 &&
     typeof event.aggregateType === 'string' &&
@@ -70,6 +74,49 @@ export function isCanonicalEvent(value: unknown): value is CanonicalEvent {
     event.correlationId.length > 0 &&
     typeof event.idempotencyKey === 'string' &&
     event.idempotencyKey.length > 0 &&
-    'payload' in event && event.payload !== undefined
+    Object.keys(event).sort().join(',') ===
+      'aggregateId,aggregateType,correlationId,eventId,eventType,eventVersion,idempotencyKey,occurredAt,payload,producer' &&
+    [
+      event.producer,
+      event.aggregateType,
+      event.aggregateId,
+      event.correlationId,
+      event.idempotencyKey,
+    ].every(
+      (v) =>
+        typeof v === 'string' &&
+        v.trim() === v &&
+        v.length <= 256 &&
+        !Array.from(v).some((character) => character.charCodeAt(0) < 32),
+    ) &&
+    event.payload !== null &&
+    typeof event.payload === 'object' &&
+    !Array.isArray(event.payload) &&
+    isJsonPayload(event.payload) &&
+    Buffer.byteLength(JSON.stringify(event), 'utf8') <= 256 * 1024
+  );
+}
+
+function isJsonPayload(value: unknown, depth = 0): boolean {
+  if (depth > 16) return false;
+  if (value === null || typeof value === 'boolean') return true;
+  if (typeof value === 'string') return value.length <= 256 * 1024;
+  if (typeof value === 'number') return Number.isSafeInteger(value);
+  if (Array.isArray(value))
+    return (
+      value.length <= 1000 &&
+      value.every((v: unknown) => isJsonPayload(v, depth + 1))
+    );
+  if (
+    typeof value !== 'object' ||
+    Object.getPrototypeOf(value) !== Object.prototype
+  )
+    return false;
+  const entries = Object.entries(value);
+  return (
+    entries.length <= 1000 &&
+    entries.every(
+      ([key, v]) => key.length <= 256 && isJsonPayload(v, depth + 1),
+    )
   );
 }
