@@ -19,6 +19,15 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-05 — A6.20 Production read parity and controlled cutover
+
+- [x] Define the credential, redacted parity, readiness, canary and rollback
+  gates for all merged Loyalty/Agency read contracts.
+- [x] Keep all flags off; no writer, migration, server configuration or deploy
+  change is included.
+- [ ] Provision production read-only credentials and collect parity evidence.
+- [ ] Obtain separate owner approval before any canary flag activation.
+
 ### 2026-09-05 — A6.19 Compatible agency credit-request history reads
 
 - [x] Preserve the existing public history route, authenticated tenant and
