@@ -19,6 +19,7 @@
     "test:cov": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config ./test/jest-e2e.json",
+    "test:kafka": "cross-env TZ=UTC NODE_OPTIONS=--experimental-vm-modules jest --config ./test/kafka/jest-kafka.json --runInBand",
     "seed": "tsx src/database/seed.ts",
     "seed:prod": "node dist/database/seed.js",
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/database/data-source.ts",

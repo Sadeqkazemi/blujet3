@@ -20,7 +20,8 @@ export class KafkaEventPublisher {
           idempotent: true,
           maxInFlightRequests: 1,
           allowAutoTopicCreation: false,
-          retry: { retries: 0 },
+          // KafkaJS requires at least one retry for idempotent producers.
+          retry: { retries: 1 },
         })
       : null;
   }
