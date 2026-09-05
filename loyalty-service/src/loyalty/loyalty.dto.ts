@@ -1,5 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsISO8601, IsOptional, IsUUID, Matches } from 'class-validator';
+import {
+  IsIn,
+  IsISO8601,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Matches,
+} from 'class-validator';
+
+const TIERS = ['SILVER', 'GOLD', 'PLATINUM'] as const;
 
 export class OwnerParams {
   @ApiProperty({
@@ -18,6 +27,25 @@ export class ReadQuery {
   @IsISO8601({ strict: true })
   @Matches(/Z$/)
   at?: string;
+}
+
+export class MembersListQuery {
+  @ApiPropertyOptional({
+    enum: TIERS,
+    description: 'فیلتر سطح عضویت',
+    example: 'GOLD',
+  })
+  @IsOptional()
+  @IsIn(TIERS)
+  level?: (typeof TIERS)[number];
+
+  @ApiPropertyOptional({
+    description: 'جستجو در نام، ایمیل یا شماره کارت؛ کد ملی مجاز نیست',
+    example: 'member@example.com',
+  })
+  @IsOptional()
+  @IsString()
+  q?: string;
 }
 export class MemberView {
   @ApiProperty({ description: 'شناسه عضویت', example: 'member-id' })
@@ -161,4 +189,67 @@ export class MembershipResponse {
   success!: boolean;
   @ApiProperty({ type: MembershipView })
   data!: MembershipView;
+}
+
+export class MembersListItem {
+  @ApiProperty({ example: 'member-id' })
+  id!: string;
+  @ApiProperty({ example: null, nullable: true, type: String })
+  userId!: string | null;
+  @ApiProperty({ example: 'عضو باشگاه' })
+  fullName!: string;
+  @ApiProperty({ example: 'member@example.com' })
+  email!: string;
+  @ApiProperty({ example: null, nullable: true, type: String })
+  birthDate!: string | null;
+  @ApiProperty({ example: '2026-09-05T10:00:00.000Z' })
+  joinDate!: string;
+  @ApiProperty({ example: 6200 })
+  points!: number;
+  @ApiProperty({ example: 'GOLD' })
+  level!: string;
+  @ApiProperty({ example: 'ISSUED' })
+  cardStatus!: string;
+  @ApiProperty({ example: null, nullable: true, type: String })
+  cardNo!: string | null;
+  @ApiProperty({ example: null, nullable: true, type: String })
+  issuedByLabelFa!: string | null;
+  @ApiProperty({ example: '2026-09-05T10:00:00.000Z' })
+  createdAt!: string;
+}
+
+export class MembersTierCounts {
+  @ApiProperty({ example: 10 })
+  SILVER!: number;
+  @ApiProperty({ example: 4 })
+  GOLD!: number;
+  @ApiProperty({ example: 1 })
+  PLATINUM!: number;
+}
+
+export class MembersListKpis {
+  @ApiProperty({ example: 15 })
+  totalMembers!: number;
+  @ApiProperty({ example: 5 })
+  issuedCards!: number;
+  @ApiProperty({ example: 2 })
+  pendingRequests!: number;
+  @ApiProperty({ example: 1 })
+  submittedRequests!: number;
+  @ApiProperty({ type: MembersTierCounts })
+  tierCounts!: MembersTierCounts;
+}
+
+export class MembersListView {
+  @ApiProperty({ type: [MembersListItem] })
+  members!: MembersListItem[];
+  @ApiProperty({ type: MembersListKpis })
+  kpis!: MembersListKpis;
+}
+
+export class MembersListResponse {
+  @ApiProperty({ example: true })
+  success!: boolean;
+  @ApiProperty({ type: MembersListView })
+  data!: MembersListView;
 }

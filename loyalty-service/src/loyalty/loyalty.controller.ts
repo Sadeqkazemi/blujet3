@@ -19,6 +19,8 @@ import {
   OwnerParams,
   ReadQuery,
   TierRulesResponse,
+  MembersListQuery,
+  MembersListResponse,
 } from './loyalty.dto';
 import { LoyaltyService } from './loyalty.service';
 
@@ -33,6 +35,21 @@ export class LoyaltyController {
     private readonly loyalty: LoyaltyService,
     private readonly config: ConfigService,
   ) {}
+
+  @Get('members-list')
+  @Header('Cache-Control', 'no-store')
+  @ApiOperation({ summary: 'فهرست و شاخص‌های اعضای فعال بدون داده کد ملی' })
+  @ApiResponse({ status: 200, type: MembersListResponse })
+  @ApiResponse({ status: 404, description: 'projection غیرفعال است' })
+  @ApiResponse({ status: 409, description: 'حد ایمن نتیجه رد شده است' })
+  async membersList(@Query() query: MembersListQuery) {
+    if (
+      this.config.get<string>('LOYALTY_MEMBERS_LIST_PROJECTION_ENABLED') !==
+      'true'
+    )
+      throw new NotFoundException();
+    return { success: true, data: await this.loyalty.membersList(query) };
+  }
 
   @Get('tier-rules')
   @Header('Cache-Control', 'no-store')

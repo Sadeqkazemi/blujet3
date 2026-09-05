@@ -24,6 +24,7 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
   beforeAll(async () => {
     process.env.LOYALTY_MEMBERSHIP_PROJECTION_ENABLED = 'true';
     process.env.LOYALTY_TIER_RULES_PROJECTION_ENABLED = 'true';
+    process.env.LOYALTY_MEMBERS_LIST_PROJECTION_ENABLED = 'true';
     writer = await new DataSource({
       type: 'postgres',
       url: process.env.LOYALTY_DATABASE_URL,
@@ -37,20 +38,18 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
           [id, 'USER', 'Loyalty test'],
         );
       }
-      for (const [id, userId] of [
-        [memberId, owner],
-        [otherMemberId, other],
+      for (const [id, userId, fullName, email] of [
+        [memberId, owner, 'Private name', 'owner-only@example.invalid'],
+        [
+          otherMemberId,
+          other,
+          'Other private name',
+          'other-only@example.invalid',
+        ],
       ]) {
         await tx.query(
           'INSERT INTO loyalty.club_members (id, "userId", "fullName", email, "nationalIdEnc", "nationalIdHash", points) VALUES ($1, $2, $3, $4, $5, $6, 999)',
-          [
-            id,
-            userId,
-            'Private name',
-            'private@example.invalid',
-            'secret-national-id',
-            'secret-hash',
-          ],
+          [id, userId, fullName, email, 'secret-national-id', 'secret-hash'],
         );
       }
       await tx.query(
@@ -111,6 +110,9 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
     });
     app.get(ConfigService).set('LOYALTY_MEMBERSHIP_PROJECTION_ENABLED', 'true');
     app.get(ConfigService).set('LOYALTY_TIER_RULES_PROJECTION_ENABLED', 'true');
+    app
+      .get(ConfigService)
+      .set('LOYALTY_MEMBERS_LIST_PROJECTION_ENABLED', 'true');
     app.useGlobalPipes(
       new ValidationPipe({
         transform: true,
@@ -149,10 +151,12 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
     }
     delete process.env.LOYALTY_MEMBERSHIP_PROJECTION_ENABLED;
     delete process.env.LOYALTY_TIER_RULES_PROJECTION_ENABLED;
+    delete process.env.LOYALTY_MEMBERS_LIST_PROJECTION_ENABLED;
   });
 
   it('requires service identity and a matching trusted owner assertion', async () => {
     await request(app.getHttpServer()).get(`${path}/tier-rules`).expect(401);
+    await request(app.getHttpServer()).get(`${path}/members-list`).expect(401);
     await request(app.getHttpServer())
       .get(`${path}/members/${owner}`)
       .expect(401);
@@ -200,6 +204,82 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
       .set('X-Internal-Token', token)
       .expect(404);
     config.set('LOYALTY_TIER_RULES_PROJECTION_ENABLED', 'true');
+  });
+
+  it('returns a bounded members list with reconciling whole-club KPIs and no national-ID fields', async () => {
+    const response = await request(app.getHttpServer())
+      .get(`${path}/members-list`)
+      .query({ level: 'SILVER', q: 'owner-only@example.invalid' })
+      .set({ 'X-Internal-Token': token, 'X-Request-Id': 'members-list-e2e' })
+      .expect(200);
+    expect(response.headers['cache-control'] as unknown).toBe('no-store');
+    expect(response.headers['x-request-id'] as unknown).toBe(
+      'members-list-e2e',
+    );
+    const body = response.body as {
+      data: {
+        members: Array<Record<string, unknown>>;
+        kpis: {
+          totalMembers: number;
+          issuedCards: number;
+          pendingRequests: number;
+          submittedRequests: number;
+          tierCounts: Record<string, number>;
+        };
+      };
+    };
+    expect(body.data.members).toHaveLength(1);
+    expect(Object.keys(body.data.members[0]).sort()).toEqual(
+      [
+        'id',
+        'userId',
+        'fullName',
+        'email',
+        'birthDate',
+        'joinDate',
+        'points',
+        'level',
+        'cardStatus',
+        'cardNo',
+        'issuedByLabelFa',
+        'createdAt',
+      ].sort(),
+    );
+    expect(body.data.members[0]).toMatchObject({
+      id: memberId,
+      userId: owner,
+      fullName: 'Private name',
+      email: 'owner-only@example.invalid',
+      level: 'SILVER',
+      points: 999,
+    });
+    expect(body.data.kpis.totalMembers).toBeGreaterThanOrEqual(2);
+    expect(body.data.kpis.tierCounts.SILVER).toBeGreaterThanOrEqual(2);
+    expect(
+      body.data.kpis.tierCounts.SILVER +
+        body.data.kpis.tierCounts.GOLD +
+        body.data.kpis.tierCounts.PLATINUM,
+    ).toBe(body.data.kpis.totalMembers);
+    expect(body.data.kpis.submittedRequests).toBeGreaterThanOrEqual(1);
+    expect(response.text).not.toContain('nationalId');
+    expect(response.text).not.toContain('secret-national-id');
+    expect(response.text).not.toContain('secret-hash');
+  });
+
+  it('validates members-list filters and keeps the projection default-off', async () => {
+    for (const query of ['level=UNKNOWN', 'unexpected=true']) {
+      await request(app.getHttpServer())
+        .get(`${path}/members-list?${query}`)
+        .set('X-Internal-Token', token)
+        .expect(400);
+    }
+    const config = app.get(ConfigService);
+    config.set('LOYALTY_MEMBERS_LIST_PROJECTION_ENABLED', 'false');
+    await request(app.getHttpServer())
+      .get(`${path}/members-list`)
+      .set('X-Internal-Token', token)
+      .expect(404);
+    config.set('LOYALTY_MEMBERS_LIST_PROJECTION_ENABLED', 'true');
   });
 
   it('validates UUIDs, timestamps and extra query fields', async () => {

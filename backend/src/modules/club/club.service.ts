@@ -33,6 +33,7 @@ import {
 } from '../../database/enums';
 import { LoyaltyMembershipClient } from './loyalty-membership.client';
 import { LoyaltyTierRulesClient } from './loyalty-tier-rules.client';
+import { LoyaltyMembersListClient } from './loyalty-members-list.client';
 
 const CARD_PREFIX: Record<ClubTier, string> = {
   SILVER: 'SILV',
@@ -127,6 +128,7 @@ export class ClubService {
     private readonly audit: AuditService,
     private readonly loyaltyMembership: LoyaltyMembershipClient,
     private readonly loyaltyTierRules: LoyaltyTierRulesClient,
+    private readonly loyaltyMembersList: LoyaltyMembersListClient,
   ) {}
 
   // ── Phase 65: club tier rules (singleton config) ────────────────────────
@@ -230,6 +232,21 @@ export class ClubService {
   }
 
   async listMembers(
+    query: { level?: ClubTier; q?: string },
+    actor: AuthenticatedUser,
+    requestId?: string,
+  ) {
+    const normalized = query.q ? normalizeNationalId(query.q.trim()) : '';
+    const requiresProtectedCoreRead =
+      actor.role === 'SITE_ADMIN' || /^\d{10}$/.test(normalized);
+    if (!requiresProtectedCoreRead) {
+      const remote = await this.loyaltyMembersList.get(query, requestId);
+      if (remote) return remote;
+    }
+    return this.listMembersLocal(query, actor);
+  }
+
+  private async listMembersLocal(
     query: { level?: ClubTier; q?: string },
     actor?: AuthenticatedUser,
   ) {

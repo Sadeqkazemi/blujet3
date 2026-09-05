@@ -67,13 +67,19 @@ must derive the owner from its authenticated session.
   `LOYALTY_TIER_RULES_PROJECTION_ENABLED=true`, returns only thresholds,
   update timestamp and updater UUID. Backend resolves the updater role; this
   service never joins Identity.
+- `GET /internal/v1/loyalty/members-list`: when
+  `LOYALTY_MEMBERS_LIST_PROJECTION_ENABLED=true`, returns at most 1000 active
+  members plus whole-club KPIs. It supports level/name/email/card filters and
+  never selects national-ID ciphertext/hash or Identity rows.
 - `GET /health`: liveness, version, commit.
 - `GET /ready`: required schema/column access, safe 503 on failure.
 
-IRR and points are decimal strings. UTC timestamp formatting happens in SQL
-because the legacy schema uses UTC values in timestamp-without-time-zone
-columns. No PII, member cached points, wallet balance, bank account or ledger
-payment data is selected. Request logs omit headers, URL and body.
+IRR and owner-facing ledger points are decimal strings. The legacy staff
+members-list keeps its existing numeric `points` field. UTC timestamp formatting
+happens in SQL because the legacy schema uses UTC values in
+timestamp-without-time-zone columns. The staff projection includes its existing
+authorized name/email/birth-date fields but never selects national-ID, wallet,
+bank-account or ledger-payment data. Request logs omit headers, URL and body.
 
 ## Reader role deployment gate (not executed automatically)
 
@@ -97,6 +103,12 @@ When the membership projection flag is enabled, additionally grant only:
 When the tier-rules projection flag is enabled, grant only these columns on
 `club_tier_rules`: goldMinPoints, platinumMinPoints, cardRequestMinPoints,
 updatedAt, updatedById, createdAt.
+
+When the members-list projection flag is enabled, additionally grant only:
+
+- `club_members`: fullName, email, birthDate, joinDate, points, cardNo,
+  issuedByLabelFa, createdAt
+- `club_card_requests`: status
 
 The route flag defaults to false so an existing minimal reader stays ready.
 Enable the service flag only after the expanded reader passes

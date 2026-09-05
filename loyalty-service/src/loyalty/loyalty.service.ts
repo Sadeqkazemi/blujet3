@@ -14,15 +14,122 @@ import {
   MemberView,
   TierRulesView,
   TierRulesProjection,
+  MembersListItem,
+  MembersListView,
 } from './loyalty.dto';
 
 interface MemberViewWithCard extends MemberView {
   cardNo: string | null;
 }
 
+interface MemberAggregateRow {
+  totalMembers: string;
+  issuedCards: string;
+  silver: string;
+  gold: string;
+  platinum: string;
+}
+
+interface RequestAggregateRow {
+  pendingRequests: string;
+  submittedRequests: string;
+}
+
+function safeCount(value: string | undefined): number {
+  if (!value || !/^\d+$/.test(value) || !Number.isSafeInteger(Number(value)))
+    throw new ConflictException({
+      code: ErrorCode.CONFLICT,
+      message: 'شمارش اعضای باشگاه بیش از حد مجاز است.',
+    });
+  return Number(value);
+}
+
 @Injectable()
 export class LoyaltyService {
   constructor(private readonly db: DataSource) {}
+
+  async membersList(query: {
+    level?: 'SILVER' | 'GOLD' | 'PLATINUM';
+    q?: string;
+  }): Promise<MembersListView> {
+    const projection = await this.db.transaction(
+      'REPEATABLE READ',
+      async (tx) => {
+        await tx.query('SET TRANSACTION READ ONLY');
+        const params: string[] = [];
+        const conditions = ['m."deactivatedAt" IS NULL'];
+        if (query.level) {
+          params.push(query.level);
+          conditions.push(`m.level = $${params.length}`);
+        }
+        if (query.q !== undefined) {
+          params.push('%' + query.q.trim() + '%');
+          conditions.push(
+            `(m."fullName" ILIKE $${params.length} OR m.email ILIKE $${params.length} OR m."cardNo" ILIKE $${params.length})`,
+          );
+        }
+        const members = await tx.query<MembersListItem[]>(
+          `SELECT m.id, m."userId", m."fullName", m.email,
+            CASE WHEN m."birthDate" IS NULL THEN NULL ELSE to_char(m."birthDate", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') END AS "birthDate",
+            to_char(m."joinDate", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "joinDate",
+            m.points, m.level, m."cardStatus", m."cardNo", m."issuedByLabelFa",
+            to_char(m."createdAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "createdAt"
+           FROM loyalty.club_members m
+           WHERE ${conditions.join(' AND ')}
+           ORDER BY m."joinDate" DESC LIMIT 1001`,
+          params,
+        );
+        const memberAggregates = await tx.query<MemberAggregateRow[]>(
+          `SELECT COUNT(*)::text AS "totalMembers",
+            COUNT(*) FILTER (WHERE "cardStatus" = 'ISSUED')::text AS "issuedCards",
+            COUNT(*) FILTER (WHERE level = 'SILVER')::text AS silver,
+            COUNT(*) FILTER (WHERE level = 'GOLD')::text AS gold,
+            COUNT(*) FILTER (WHERE level = 'PLATINUM')::text AS platinum
+           FROM loyalty.club_members WHERE "deactivatedAt" IS NULL`,
+        );
+        const requestAggregates = await tx.query<RequestAggregateRow[]>(
+          `SELECT COUNT(*) FILTER (WHERE status = 'REFERRED')::text AS "pendingRequests",
+            COUNT(*) FILTER (WHERE status = 'SUBMITTED')::text AS "submittedRequests"
+           FROM loyalty.club_card_requests`,
+        );
+        return {
+          members,
+          memberAggregates: memberAggregates[0],
+          requestAggregates: requestAggregates[0],
+        };
+      },
+    );
+    if (projection.members.length > 1000)
+      throw new ConflictException({
+        code: ErrorCode.CONFLICT,
+        message: 'تعداد اعضای باشگاه بیش از حد مجاز است.',
+      });
+    const members = projection.members;
+    const result: MembersListView = {
+      members,
+      kpis: {
+        totalMembers: safeCount(projection.memberAggregates?.totalMembers),
+        issuedCards: safeCount(projection.memberAggregates?.issuedCards),
+        pendingRequests: safeCount(
+          projection.requestAggregates?.pendingRequests,
+        ),
+        submittedRequests: safeCount(
+          projection.requestAggregates?.submittedRequests,
+        ),
+        tierCounts: {
+          SILVER: safeCount(projection.memberAggregates?.silver),
+          GOLD: safeCount(projection.memberAggregates?.gold),
+          PLATINUM: safeCount(projection.memberAggregates?.platinum),
+        },
+      },
+    };
+    if (Buffer.byteLength(JSON.stringify(result), 'utf8') > 512 * 1024)
+      throw new ConflictException({
+        code: ErrorCode.CONFLICT,
+        message: 'حجم فهرست اعضای باشگاه بیش از حد مجاز است.',
+      });
+    return result;
+  }
 
   async tierRules(): Promise<TierRulesProjection | null> {
     const rows = await this.db.transaction('REPEATABLE READ', async (tx) => {
