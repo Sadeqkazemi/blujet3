@@ -4777,3 +4777,13 @@ Planned message families are `AirShopping`, `OfferPrice`, `OrderCreate`,
 `OrderRetrieve`, `OrderChange` and `OrderCancel`. The facade maps messages to
 the internal APIs above and owns no inventory or order state. It must not be
 described as certified before named-partner conformance succeeds.
+
+### Loyalty points read cutover (A6.10)
+
+`GET /api/v1/my/club-points` keeps its existing `{ success, data }` envelope.
+With `LOYALTY_POINTS_READ_ENABLED=true`, the authenticated backend requests the
+owner-bound internal member projection from Loyalty; disabled or unavailable
+responses use the existing Core read, while a Loyalty 404 maps to the existing
+non-member response. Membership joins,
+points earning/redeeming, wallet, price-lock and card-request writes remain in
+Core. The internal route is never exposed through the public gateway.

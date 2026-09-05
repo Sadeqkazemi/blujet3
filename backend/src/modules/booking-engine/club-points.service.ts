@@ -7,6 +7,7 @@ import { ClubTierRule } from '../../database/entities/club-tier-rule.entity';
 import { ErrorCode } from '../../common/errors';
 import { resolveTierForPoints } from '../club/club.service';
 import type { Irr } from '../../common/money';
+import { LoyaltyPointsClient } from './loyalty-points.client';
 
 /** Server-side config (CLAUDE.md: "conversion rate is server-side config")
  * — documented constants rather than a SystemSetting key, since no other
@@ -21,6 +22,7 @@ export class ClubPointsService {
     private readonly clubMemberRepo: Repository<ClubMember>,
     @InjectRepository(ClubPointsEntry)
     private readonly pointsRepo: Repository<ClubPointsEntry>,
+    private readonly loyaltyClient: LoyaltyPointsClient,
   ) {}
 
   async findMemberByUserId(userId: string) {
@@ -44,6 +46,21 @@ export class ClubPointsService {
 
   async getBalance(clubMemberId: string): Promise<number> {
     return this.sumPoints(this.pointsRepo.manager, clubMemberId);
+  }
+
+  async getMyPoints(userId: string, requestId?: string) {
+    const remote = await this.loyaltyClient.get(userId, requestId);
+    if (remote) {
+      return {
+        isMember: true,
+        level: remote.level,
+        balance: Number(remote.points),
+      };
+    }
+    if (remote === null) return { isMember: false, level: null, balance: 0 };
+    const member = await this.findMemberByUserId(userId);
+    const balance = member ? await this.getBalance(member.id) : 0;
+    return { isMember: !!member, level: member?.level ?? null, balance };
   }
 
   /** Only called for GATEWAY/WALLET payments (real money spent) — never

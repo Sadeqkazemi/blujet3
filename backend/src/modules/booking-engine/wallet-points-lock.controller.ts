@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   Param,
   Post,
   UseGuards,
@@ -71,12 +72,13 @@ export class WalletPointsLockController {
 
   @Get('my/club-points')
   @ApiOperation({ summary: 'موجودی امتیاز باشگاه مشتریان' })
-  async getPoints(@CurrentUser() user: AuthenticatedUser) {
-    const member = await this.points.findMemberByUserId(user.id);
-    const balance = member ? await this.points.getBalance(member.id) : 0;
+  async getPoints(
+    @CurrentUser() user: AuthenticatedUser,
+    @Headers('x-request-id') requestId?: string,
+  ) {
     return {
       success: true,
-      data: { isMember: !!member, level: member?.level ?? null, balance },
+      data: await this.points.getMyPoints(user.id, requestId),
     };
   }
 

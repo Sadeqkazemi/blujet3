@@ -31,6 +31,18 @@ below for what's landed from that port so far.
   restricted PostgreSQL access, lint, typecheck, build and OpenAPI determinism.
 - [ ] Present the complete diff for separate publication/merge approval; no deployment.
 
+### 2026-09-04 — A6.10 Compatible Loyalty points read cutover
+
+- [x] Add a default-off owner-bound Loyalty member client for the existing
+  `/api/v1/my/club-points` compatibility route.
+- [x] Preserve Core as fallback and sole writer; no wallet, price-lock or club
+  command path is delegated.
+- [x] Validate strict service origin/token/UTC runtime, exact response shape,
+  bounded transport, 404 semantics and safe unavailable behavior.
+- [x] Add focused client coverage and API/DB ownership documentation.
+- [ ] Run representative shadow parity with a provisioned restricted role and
+  obtain owner approval before UAT flag transition.
+
 ### 2026-09-04 — A6.8 Compatible portal invoice read integration
 
 - [x] Owner approved preparing integration, default off, with enabled local tests;

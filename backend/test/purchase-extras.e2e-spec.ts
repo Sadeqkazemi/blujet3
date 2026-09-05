@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import * as crypto from 'node:crypto';
@@ -349,6 +350,48 @@ describe('Purchase extras: promo codes, wallet, club points, price lock (e2e)', 
       );
     } else {
       expect(pointsPay.status).toBe(400);
+    }
+  });
+
+  it('GET /my/club-points can read the owner-bound Loyalty projection when enabled', async () => {
+    const { accessToken, userId } = await loginAsCustomer(app, phoneFor(90));
+    const config = app.get(ConfigService);
+    config.set('LOYALTY_POINTS_READ_ENABLED', 'true');
+    config.set('LOYALTY_SERVICE_URL', 'http://loyalty-service:3500');
+    config.set(
+      'LOYALTY_INTERNAL_TOKEN',
+      'loyalty-points-e2e-token-at-least-32-characters',
+    );
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: true,
+          data: {
+            id: 'remote-member',
+            userId,
+            level: 'PLATINUM',
+            cardStatus: 'ISSUED',
+            points: '4321',
+          },
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    try {
+      const points = await request(app.getHttpServer())
+        .get('/my/club-points')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .set('X-Request-Id', 'loyalty-points-e2e');
+      expect(points.status).toBe(200);
+      expect(points.body.data).toEqual({
+        isMember: true,
+        level: 'PLATINUM',
+        balance: 4321,
+      });
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      fetchSpy.mockRestore();
+      config.set('LOYALTY_POINTS_READ_ENABLED', 'false');
     }
   });
 
