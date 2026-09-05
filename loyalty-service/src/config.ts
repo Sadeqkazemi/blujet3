@@ -36,6 +36,9 @@ class Environment {
 
   @IsIn(['true', 'false'])
   LOYALTY_MEMBERS_LIST_PROJECTION_ENABLED = 'false';
+
+  @IsIn(['true', 'false'])
+  LOYALTY_CARD_REQUESTS_PROJECTION_ENABLED = 'false';
 }
 
 export function validateEnv(input: Record<string, unknown>) {

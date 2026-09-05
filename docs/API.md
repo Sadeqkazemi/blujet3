@@ -1,5 +1,14 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## A6.16 — Executive card-request read integration
+
+Default-off `LOYALTY_CARD_REQUESTS_READ_ENABLED` can route the existing
+`GET /api/v1/club/card-requests` read to service-authenticated
+`GET /internal/v1/loyalty/card-requests`. Existing role guards, response fields,
+REFERRED/APPROVED/REJECTED filtering and ordering are preserved. SITE_ADMIN
+queue and all writers remain in Core. Bounds and rollback are documented in
+`docs/features/loyalty-card-requests-read-cutover.md`.
+
 ## A6.15 — Members-list cutover contract verification
 
 The A6.14 public and internal APIs are unchanged. A real HTTP/PostgreSQL

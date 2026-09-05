@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { ErrorCode } from '../common/errors';
+import { ExecutiveCardRequestView } from './card-requests.dto';
 import {
   CardRequestView,
   LockHistoryView,
@@ -47,6 +48,61 @@ function safeCount(value: string | undefined): number {
 @Injectable()
 export class LoyaltyService {
   constructor(private readonly db: DataSource) {}
+
+  private validCardHistory(value: unknown): boolean {
+    return (
+      Array.isArray(value) &&
+      value.length <= 32 &&
+      value.every((entry) => {
+        if (typeof entry !== 'object' || entry === null || Array.isArray(entry))
+          return false;
+        const item = entry as Record<string, unknown>;
+        return (
+          Object.keys(item).sort().join(',') === 'at,labelFa,step' &&
+          typeof item.step === 'string' &&
+          item.step.length > 0 &&
+          item.step.length <= 64 &&
+          typeof item.labelFa === 'string' &&
+          item.labelFa.length > 0 &&
+          item.labelFa.length <= 2048 &&
+          typeof item.at === 'string' &&
+          item.at.length > 0 &&
+          item.at.length <= 128
+        );
+      })
+    );
+  }
+
+  async cardRequests(): Promise<ExecutiveCardRequestView[]> {
+    const rows = await this.db.transaction('REPEATABLE READ', async (tx) => {
+      await tx.query('SET TRANSACTION READ ONLY');
+      return tx.query<ExecutiveCardRequestView[]>(
+        `SELECT r.id, r."memberId", r.level, r.points, r.status,
+          r."assignedTo", r."decidedById",
+          CASE WHEN r."decidedAt" IS NULL THEN NULL ELSE to_char(r."decidedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') END AS "decidedAt",
+          r."cardNo", r.history,
+          to_char(r."createdAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "createdAt",
+          CASE WHEN m.id IS NULL THEN NULL ELSE jsonb_build_object(
+            'id', m.id, 'fullName', m."fullName", 'email', m.email,
+            'points', m.points, 'level', m.level) END AS member
+         FROM loyalty.club_card_requests r
+         LEFT JOIN loyalty.club_members m ON m.id = r."memberId"
+         WHERE r.status IN ('REFERRED', 'APPROVED', 'REJECTED')
+         ORDER BY r."createdAt" DESC LIMIT 1001`,
+      );
+    });
+    if (
+      rows.length > 1000 ||
+      rows.some((row) => !this.validCardHistory(row.history)) ||
+      Buffer.byteLength(JSON.stringify({ success: true, data: rows }), 'utf8') >
+        512 * 1024
+    )
+      throw new ConflictException({
+        code: ErrorCode.CONFLICT,
+        message: 'حجم صف درخواست کارت بیش از حد مجاز است.',
+      });
+    return rows;
+  }
 
   async membersList(query: {
     level?: 'SILVER' | 'GOLD' | 'PLATINUM';

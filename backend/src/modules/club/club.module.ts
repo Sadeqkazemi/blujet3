@@ -13,6 +13,7 @@ import { User } from '../../database/entities/user.entity';
 import { LoyaltyMembershipClient } from './loyalty-membership.client';
 import { LoyaltyTierRulesClient } from './loyalty-tier-rules.client';
 import { LoyaltyMembersListClient } from './loyalty-members-list.client';
+import { LoyaltyCardRequestsClient } from './loyalty-card-requests.client';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { LoyaltyMembersListClient } from './loyalty-members-list.client';
     LoyaltyMembershipClient,
     LoyaltyTierRulesClient,
     LoyaltyMembersListClient,
+    LoyaltyCardRequestsClient,
   ],
   exports: [ClubService],
 })

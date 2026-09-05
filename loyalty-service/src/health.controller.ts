@@ -72,6 +72,18 @@ export class HealthController {
             'SELECT status FROM loyalty.club_card_requests LIMIT 0',
           );
         }
+        if (
+          this.config.get<string>(
+            'LOYALTY_CARD_REQUESTS_PROJECTION_ENABLED',
+          ) === 'true'
+        ) {
+          await tx.query(
+            'SELECT id, "fullName", email, points, level FROM loyalty.club_members LIMIT 0',
+          );
+          await tx.query(
+            'SELECT id, "memberId", level, points, status, "assignedTo", "decidedById", "decidedAt", "cardNo", history, "createdAt" FROM loyalty.club_card_requests LIMIT 0',
+          );
+        }
       });
       return this.live();
     } catch {

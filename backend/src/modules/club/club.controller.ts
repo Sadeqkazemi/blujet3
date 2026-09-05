@@ -103,8 +103,8 @@ export class ClubController {
   @ApiOperation({
     summary: 'صف درخواست‌های کارت (فقط ارجاع‌شده/تأیید/رد) + تایم‌لاین',
   })
-  async listRequests() {
-    const data = await this.club.listRequests();
+  async listRequests(@Headers('x-request-id') requestId?: string) {
+    const data = await this.club.listRequests(requestId);
     return { success: true, data };
   }
 
