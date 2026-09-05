@@ -1,5 +1,12 @@
 # DB_SCHEMA.md — blujet data model
 
+## A6.15 — Members-list restricted-reader contract evidence
+
+No schema changes. Tests provision only temporary roles and synthetic rows in
+an explicitly named `_test` database. Real Loyalty reads use A6.14 column grants;
+Core comparison connections are read-only. National-ID/Identity permissions and
+the PII key remain unavailable to the Loyalty process.
+
 ## A6.14 — Loyalty members-list compatibility projection
 
 No schema migration, copied data or automatic production grant is added. The

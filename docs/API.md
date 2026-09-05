@@ -1,5 +1,12 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## A6.15 — Members-list cutover contract verification
+
+The A6.14 public and internal APIs are unchanged. A real HTTP/PostgreSQL
+contract test compares the built Core service with its enabled Loyalty path,
+including protected Core-only reads and fallback. See
+`docs/features/loyalty-members-list-contract.md`; no activation is implied.
+
 ## A6.14 — Compatible Loyalty members-list integration
 
 Eligible `GET /api/v1/club/members` reads keep their existing role/permission

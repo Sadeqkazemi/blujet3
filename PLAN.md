@@ -19,6 +19,20 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-05 — A6.15 Real Loyalty members-list contract
+
+- [x] Compare the built Core ClubService and client with real Loyalty HTTP
+  responses using a temporary column-scoped PostgreSQL reader.
+- [x] Prove exact member fields, UTC dates, ordering, filters, unfiltered KPIs
+  and empty results; verify remote delivery rather than silent fallback.
+- [x] Prove protected Core-only queries, disabled flags, unavailable listener,
+  missing grants/readiness and fail-closed invalid service credentials.
+- [x] Keep this slice limited to synthetic tests and documentation; no public
+  API, production flags, migration or deployment changes.
+- [x] Pass 47 real-PostgreSQL E2E and 9 unit cases, Loyalty lint/typecheck/build;
+  document the pending CI/PostgreSQL 16 evidence for publication.
+- [x] Owner requested publication and merge on 2026-09-05; no deployment.
+
 ### 2026-09-05 — A6.14 Compatible Loyalty members-list integration
 
 - [x] Preserve `GET /api/v1/club/members`, its role/permission guards,
