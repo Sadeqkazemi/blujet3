@@ -234,6 +234,66 @@ describe('Club (e2e)', () => {
     }
   });
 
+  it('preserves executive guards, empty remote results and the local SITE_ADMIN card queue while cutover is enabled', async () => {
+    const executives = [];
+    for (const username of ['ceo', 'chair', 'senior'])
+      executives.push(await loginAs(app, username));
+    const finance = await loginAs(app, 'finance');
+    const siteAdmin = await loginAs(app, 'site.admin');
+    const config = app.get(ConfigService);
+    config.set('LOYALTY_CARD_REQUESTS_READ_ENABLED', 'true');
+    config.set('LOYALTY_SERVICE_URL', 'http://loyalty-service:3500');
+    config.set(
+      'LOYALTY_INTERNAL_TOKEN',
+      'card-request-e2e-token-at-least-32-characters',
+    );
+    const runtimeOptions = Intl.DateTimeFormat().resolvedOptions();
+    const timezoneSpy = jest
+      .spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions')
+      .mockReturnValue({ ...runtimeOptions, timeZone: 'UTC' });
+    const fetchSpy = jest
+      .spyOn(global, 'fetch')
+      .mockImplementation(() =>
+        Promise.resolve(
+          new Response(JSON.stringify({ success: true, data: [] })),
+        ),
+      );
+    try {
+      await request(app.getHttpServer()).get('/club/card-requests').expect(401);
+      for (const account of [finance, siteAdmin])
+        await request(app.getHttpServer())
+          .get('/club/card-requests')
+          .set('Authorization', 'Bearer ' + account.accessToken)
+          .expect(403);
+      await request(app.getHttpServer())
+        .get('/club/submitted-card-requests')
+        .set('Authorization', 'Bearer ' + siteAdmin.accessToken)
+        .expect(200);
+      expect(fetchSpy).not.toHaveBeenCalled();
+      for (const account of executives) {
+        const response = await request(app.getHttpServer())
+          .get('/club/card-requests')
+          .set('Authorization', 'Bearer ' + account.accessToken)
+          .set('X-Request-Id', 'card-queue-e2e')
+          .expect(200);
+        expect(response.body as unknown).toEqual({ success: true, data: [] });
+      }
+      expect(fetchSpy).toHaveBeenCalledTimes(3);
+      expect(fetchSpy).toHaveBeenLastCalledWith(
+        'http://loyalty-service:3500/internal/v1/loyalty/card-requests',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'X-Request-Id': 'card-queue-e2e',
+          }) as unknown,
+        }),
+      );
+    } finally {
+      fetchSpy.mockRestore();
+      timezoneSpy.mockRestore();
+      config.set('LOYALTY_CARD_REQUESTS_READ_ENABLED', 'false');
+    }
+  });
+
   it('keeps SITE_ADMIN reads in Core so the existing national-ID contract is preserved', async () => {
     const member = await createFreshMember();
     const admin = await loginAs(app, 'site.admin');

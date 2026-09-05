@@ -20,9 +20,21 @@ fall back; malformed successes, redirects and other 4xx fail closed with 503.
 
 Acceptance:
 
-- [x] Service route authentication, status filter, fields/order and bounds are tested (`test/loyalty.e2e-spec.ts` — executive card-request contract).
+Follow-up verification (same PR before merge):
+
+- [x] Compare built Core with real Loyalty HTTP and a restricted PostgreSQL login, including decision timestamps/history and all executive statuses (`loyalty-service/test/card-requests-contract.e2e-spec.ts`).
+- [x] Prove actual remote delivery and fallback for disabled flags, lost grants, oversized history/results and a stopped listener (same contract suite, 6 cases).
+- [x] Verify enabled public role guards and the SITE_ADMIN local queue (`backend/test/club.e2e-spec.ts`); immutable fixtures are checked after each real contract case.
+- [x] Exercise empty, redirect/authentication errors and malformed nested fields (`backend/src/modules/club/loyalty-card-requests.client.spec.ts`, 20 cases). Exactly 1000 rows, byte overflow and malformed history are covered by `loyalty-service/src/loyalty/loyalty.service.spec.ts`.
+
+Follow-up local evidence: 6 real HTTP/PostgreSQL contract cases, 26 Backend Club
+E2E cases, 20 client unit cases and 16 Loyalty unit cases passed. Loyalty
+typecheck and changed-file lint passed. The probe runs already-built Core and
+is typechecked before transpile-only execution. CI validates the full suite.
+
+- [x] Service route authentication, default-off behavior and selected member fields are tested (`test/loyalty.e2e-spec.ts`).
 - [x] Client disabled/success/fallback/malformed behavior is tested (`backend/src/modules/club/loyalty-card-requests.client.spec.ts`).
-- [x] Public guards and response contract stay unchanged; writers stay local (`backend/src/modules/club/club.controller.ts` and `club.service.ts`).
+- [x] Code review: public guards stay unchanged and writers stay local (`backend/src/modules/club/club.controller.ts` and `club.service.ts`). Enabled contract proof is tracked above.
 - [x] Readiness and reader verification enforce only conditional exact grants (`test/reader-verification.e2e-spec.ts` — executive card-request grants).
 - [x] Typechecks, builds, lint and relevant real-PostgreSQL tests pass locally (Loyalty E2E 49/49; Backend client 10/10).
 

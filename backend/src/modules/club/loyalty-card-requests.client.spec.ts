@@ -1,5 +1,6 @@
 import { ServiceUnavailableException } from '@nestjs/common';
 import { LoyaltyCardRequestsClient } from './loyalty-card-requests.client';
+import { loyaltyCardRequestsReadConfig } from '../../config/loyalty-card-requests-read.config';
 
 const token = 'loyalty-card-requests-test-token-at-least-32-chars';
 
@@ -51,6 +52,58 @@ describe('LoyaltyCardRequestsClient', () => {
   });
   afterEach(() => jest.restoreAllMocks());
 
+  it('validates the flag, credential, origin and UTC runtime only when enabled', () => {
+    expect(loyaltyCardRequestsReadConfig({})).toEqual({ enabled: false });
+    const good = {
+      LOYALTY_CARD_REQUESTS_READ_ENABLED: 'true',
+      LOYALTY_SERVICE_URL: 'http://loyalty:3500',
+      LOYALTY_INTERNAL_TOKEN: token,
+    };
+    expect(loyaltyCardRequestsReadConfig(good)).toMatchObject({
+      enabled: true,
+    });
+    for (const override of [
+      { LOYALTY_CARD_REQUESTS_READ_ENABLED: 'yes' },
+      { LOYALTY_INTERNAL_TOKEN: 'short' },
+      { LOYALTY_SERVICE_URL: 'http://user:secret@loyalty' },
+      { LOYALTY_SERVICE_URL: 'http://loyalty/path' },
+      { LOYALTY_SERVICE_URL: 'file:///tmp/test' },
+    ])
+      expect(() =>
+        loyaltyCardRequestsReadConfig({ ...good, ...override }),
+      ).toThrow();
+    jest
+      .spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions')
+      .mockReturnValue({ ...runtimeOptions, timeZone: 'Asia/Tehran' });
+    expect(() => loyaltyCardRequestsReadConfig(good)).toThrow('UTC');
+  });
+
+  it('accepts an empty queue', async () => {
+    jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValue(response({ success: true, data: [] }));
+    await expect(client().get()).resolves.toEqual([]);
+  });
+
+  it.each([301, 302, 400, 401, 403])(
+    'rejects HTTP %i without Core fallback',
+    async (status) => {
+      jest.spyOn(global, 'fetch').mockResolvedValue(response({}, status));
+      await expect(client().get()).rejects.toBeInstanceOf(
+        ServiceUnavailableException,
+      );
+    },
+  );
+
+  it('uses fallback for network errors and oversized response bodies', async () => {
+    jest.spyOn(global, 'fetch').mockRejectedValueOnce(new Error('unreachable'));
+    await expect(client().get()).resolves.toBeUndefined();
+    jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValueOnce(response({ padding: 'x'.repeat(513 * 1024) }));
+    await expect(client().get()).resolves.toBeUndefined();
+  });
+
   it('does no network work while disabled', async () => {
     const fetchSpy = jest.spyOn(global, 'fetch');
     await expect(client('false').get()).resolves.toBeUndefined();
@@ -84,6 +137,16 @@ describe('LoyaltyCardRequestsClient', () => {
     { success: true, data: [{ ...row, nationalId: '0012345678' }] },
     { success: true, data: [{ ...row, history: new Array(33).fill({}) }] },
     { success: true, data: [{ ...row, decidedAt: '2026-09-05' }] },
+    {
+      success: true,
+      data: [
+        { ...row, history: [{ ...row.history[0], nationalId: 'secret' }] },
+      ],
+    },
+    {
+      success: true,
+      data: [{ ...row, member: { ...row.member, nationalIdEnc: 'secret' } }],
+    },
     {
       success: true,
       data: [{ ...row, member: { ...row.member, points: 1.5 } }],

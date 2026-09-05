@@ -85,3 +85,47 @@ describe('LoyaltyService members-list boundary', () => {
     ).rejects.toBeInstanceOf(ConflictException);
   });
 });
+
+describe('LoyaltyService card-request bounds', () => {
+  function cards(rows: unknown[]) {
+    const query = jest
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(rows);
+    return new LoyaltyService({
+      transaction: (
+        _isolation: string,
+        work: (tx: { query: jest.Mock }) => unknown,
+      ) => work({ query }),
+    } as never);
+  }
+  const history = [{ step: 'referred', labelFa: 'ارجاع', at: 'اکنون' }];
+
+  it('returns empty results and accepts exactly 1000 rows', async () => {
+    await expect(cards([]).cardRequests()).resolves.toEqual([]);
+    const rows = Array.from({ length: 1000 }, () => ({ history }));
+    await expect(cards(rows).cardRequests()).resolves.toHaveLength(1000);
+  });
+  it('rejects excess rows without truncating', async () => {
+    await expect(
+      cards(Array.from({ length: 1001 }, () => ({ history }))).cardRequests(),
+    ).rejects.toBeInstanceOf(ConflictException);
+  });
+  it('rejects response byte overflow', async () => {
+    await expect(
+      cards([
+        { history, member: { fullName: 'x'.repeat(513 * 1024) } },
+      ]).cardRequests(),
+    ).rejects.toBeInstanceOf(ConflictException);
+  });
+  it.each([
+    null,
+    [{}],
+    [{ ...history[0], privateField: 'secret' }],
+    Array.from({ length: 33 }, () => history[0]),
+  ])('rejects malformed or excessive history', async (invalidHistory) => {
+    await expect(
+      cards([{ history: invalidHistory }]).cardRequests(),
+    ).rejects.toBeInstanceOf(ConflictException);
+  });
+});
