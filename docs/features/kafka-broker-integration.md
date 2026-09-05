@@ -23,7 +23,8 @@ Acceptance:
 - [x] Repository-wide lint resolved in the subsequent local cleanup; see
   `backend-lint-cleanup.md`. This was not part of Kafka PR #52.
 - [x] Owner-approved PR #52 merged as `81e4224`; CI `33972428524` and CodeQL
-  `33972428532` passed. Opt-in real-broker suite remains local, not wired into CI.
+  `33972428532` passed. The subsequent `kafka-ci-gate.md` slice wires the real-broker
+  suite into CI; its first actual Linux run remains an approval/publication gate.
 - [ ] Real TLS/SCRAM and multi-broker durability tests (separate gate if not run).
 
 The test broker has replication factor 1 and loopback-only plaintext transport;
