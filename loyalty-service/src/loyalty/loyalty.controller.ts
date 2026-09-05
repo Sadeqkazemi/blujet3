@@ -3,15 +3,18 @@ import {
   Get,
   Header,
   Headers,
+  NotFoundException,
   Param,
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { InternalAuthGuard } from '../common/internal-auth.guard';
 import {
   LockHistoryResponse,
   LocksResponse,
+  MembershipResponse,
   MemberResponse,
   OwnerParams,
   ReadQuery,
@@ -27,7 +30,30 @@ import { LoyaltyService } from './loyalty.service';
 @UseGuards(InternalAuthGuard)
 @Controller('internal/v1/loyalty')
 export class LoyaltyController {
-  constructor(private readonly loyalty: LoyaltyService) {}
+  constructor(
+    private readonly loyalty: LoyaltyService,
+    private readonly config: ConfigService,
+  ) {}
+
+  @Get('membership/:userId')
+  @Header('Cache-Control', 'no-store')
+  @ApiOperation({ summary: 'نمای کامل و امن عضویت مالک' })
+  @ApiResponse({ status: 200, type: MembershipResponse })
+  @ApiResponse({ status: 404, description: 'projection غیرفعال است' })
+  async membership(
+    @Param() params: OwnerParams,
+    @Headers('x-loyalty-user-id') owner: string,
+  ) {
+    if (
+      this.config.get<string>('LOYALTY_MEMBERSHIP_PROJECTION_ENABLED') !==
+      'true'
+    )
+      throw new NotFoundException();
+    return {
+      success: true,
+      data: await this.loyalty.membership(params.userId, owner),
+    };
+  }
 
   @Get('members/:userId')
   @Header('Cache-Control', 'no-store')

@@ -12,6 +12,7 @@ services:
       PORT: 3500
       LOYALTY_DATABASE_URL: ${LOYALTY_DATABASE_URL:?Supply a dedicated SELECT-only loyalty reader URL}
       LOYALTY_INTERNAL_TOKEN: ${LOYALTY_INTERNAL_TOKEN:?Supply a separate random internal token}
+      LOYALTY_MEMBERSHIP_PROJECTION_ENABLED: ${LOYALTY_MEMBERSHIP_PROJECTION_ENABLED:-false}
     expose:
       - '3500'
     read_only: true

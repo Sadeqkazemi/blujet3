@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import * as crypto from 'node:crypto';
@@ -625,6 +626,108 @@ describe('Club (e2e)', () => {
       .get('/my/club/membership')
       .set('Authorization', `Bearer ${ceoToken}`);
     expect(forbidden.status).toBe(403);
+  });
+
+  it('GET /my/club/membership can use the owner-bound Loyalty projection', async () => {
+    const { accessToken, userId } = await loginAsCustomer(app, '09180000004');
+    const config = app.get(ConfigService);
+    config.set('LOYALTY_MEMBERSHIP_READ_ENABLED', 'true');
+    config.set('LOYALTY_SERVICE_URL', 'http://loyalty-service:3500');
+    config.set(
+      'LOYALTY_INTERNAL_TOKEN',
+      'loyalty-membership-e2e-token-at-least-32-characters',
+    );
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: true,
+          data: {
+            userId,
+            isMember: true,
+            level: 'PLATINUM',
+            balance: '18800',
+            cardStatus: 'ISSUED',
+            cardNo: 'PLAT-1001',
+            tierRules: {
+              goldMinPoints: 5000,
+              platinumMinPoints: 15000,
+              cardRequestMinPoints: 5000,
+            },
+            cardRequest: null,
+            canRequestCard: false,
+            pointsNeededForCard: '0',
+          },
+        }),
+        { status: 200 },
+      ),
+    );
+    try {
+      const response = await request(app.getHttpServer())
+        .get('/my/club/membership')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .set('X-Request-Id', 'membership-e2e');
+      expect(response.status).toBe(200);
+      expect(response.body.data).toEqual({
+        isMember: true,
+        level: 'PLATINUM',
+        balance: 18800,
+        cardStatus: 'ISSUED',
+        cardNo: 'PLAT-1001',
+        tierRules: {
+          goldMinPoints: 5000,
+          platinumMinPoints: 15000,
+          cardRequestMinPoints: 5000,
+        },
+        cardRequest: null,
+        canRequestCard: false,
+        pointsNeededForCard: 0,
+      });
+      expect(fetchSpy).toHaveBeenCalledWith(
+        `http://loyalty-service:3500/internal/v1/loyalty/membership/${userId}`,
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'X-Loyalty-User-Id': userId,
+            'X-Request-Id': 'membership-e2e',
+          }) as unknown,
+        }),
+      );
+    } finally {
+      fetchSpy.mockRestore();
+      config.set('LOYALTY_MEMBERSHIP_READ_ENABLED', 'false');
+    }
+  });
+
+  it('keeps join and card-request writers local when the read flag is enabled', async () => {
+    const member = await createFreshMember();
+    const { accessToken, userId } = await loginAsCustomer(app, '09180000003');
+    await linkMemberToUser(member.id, userId!, 6200);
+    const config = app.get(ConfigService);
+    config.set('LOYALTY_MEMBERSHIP_READ_ENABLED', 'true');
+    config.set('LOYALTY_SERVICE_URL', 'http://loyalty-service:3500');
+    config.set(
+      'LOYALTY_INTERNAL_TOKEN',
+      'loyalty-membership-writer-test-token-at-least-32-chars',
+    );
+    const fetchSpy = jest.spyOn(global, 'fetch');
+    try {
+      const join = await request(app.getHttpServer())
+        .post('/my/club/join')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({});
+      expect(join.status).toBe(201);
+      expect(join.body.data).toMatchObject({ isMember: true, balance: 6200 });
+
+      const card = await request(app.getHttpServer())
+        .post('/my/club/card-request')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({});
+      expect(card.status).toBe(201);
+      expect(card.body.data.status).toBe('SUBMITTED');
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+      config.set('LOYALTY_MEMBERSHIP_READ_ENABLED', 'false');
+    }
   });
 
   it('POST /my/club/card-request creates SUBMITTED request and sets REVIEW; rejects duplicate', async () => {

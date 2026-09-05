@@ -186,6 +186,10 @@ class EnvironmentVariables {
   @IsIn(['true', 'false'])
   LOYALTY_PRICE_LOCK_READ_ENABLED?: string;
 
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  LOYALTY_MEMBERSHIP_READ_ENABLED?: string;
+
   /** Central PSS is introduced behind an explicit cutover switch. */
   @IsOptional()
   @IsIn(['true', 'false'])

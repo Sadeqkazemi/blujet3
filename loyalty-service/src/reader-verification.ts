@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm';
 
-// Exact columns consumed by the A6.1 SQL projections, including predicates.
-const READER_COLUMNS = [
+// Exact base and opt-in columns consumed by Loyalty SQL projections.
+const BASE_READER_COLUMNS = [
   {
     schema: 'loyalty',
     relation: 'club_members',
@@ -30,6 +30,29 @@ const READER_COLUMNS = [
   },
 ] as const;
 
+const MEMBERSHIP_READER_COLUMNS = [
+  {
+    schema: 'loyalty',
+    relation: 'club_members',
+    columns: ['cardNo'],
+  },
+  {
+    schema: 'loyalty',
+    relation: 'club_card_requests',
+    columns: ['id', 'memberId', 'status', 'history', 'cardNo', 'createdAt'],
+  },
+  {
+    schema: 'loyalty',
+    relation: 'club_tier_rules',
+    columns: [
+      'goldMinPoints',
+      'platinumMinPoints',
+      'cardRequestMinPoints',
+      'createdAt',
+    ],
+  },
+] as const;
+
 export interface ReaderChecks {
   restrictedRole: boolean;
   noMemberships: boolean;
@@ -47,7 +70,13 @@ export interface ReaderReport {
 }
 
 /** Catalog-only evidence for this database; does not grant or revoke anything. */
-export async function verifyReader(db: DataSource): Promise<ReaderReport> {
+export async function verifyReader(
+  db: DataSource,
+  membershipEnabled = false,
+): Promise<ReaderReport> {
+  const columns = membershipEnabled
+    ? [...BASE_READER_COLUMNS, ...MEMBERSHIP_READER_COLUMNS]
+    : BASE_READER_COLUMNS;
   const rows = await db.transaction('REPEATABLE READ', async (tx) => {
     await tx.query('SET TRANSACTION READ ONLY');
     return tx.query<ReaderChecks[]>(
@@ -97,7 +126,7 @@ export async function verifyReader(db: DataSource): Promise<ReaderReport> {
         NOT EXISTS (SELECT 1 FROM pg_proc p JOIN namespaces n ON n.oid = p.pronamespace
           WHERE p.prosecdef AND has_function_privilege(p.oid, 'EXECUTE')) AS "noDefinerExecute"
     `,
-      [JSON.stringify(READER_COLUMNS)],
+      [JSON.stringify(columns)],
     );
   });
   const checks = rows[0];

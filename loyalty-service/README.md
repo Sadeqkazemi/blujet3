@@ -59,6 +59,10 @@ must derive the owner from its authenticated session.
   status, newest first, at most 1000 rows, otherwise 409. The response wraps
   the list with the asserted `userId`; it still contains no inventory join or
   wallet/payment data.
+- `GET /internal/v1/loyalty/membership/:userId`: when
+  `LOYALTY_MEMBERSHIP_PROJECTION_ENABLED=true`, returns the complete PII-free
+  customer membership view (ledger balance, card state, tier thresholds and
+  newest non-rejected card request). History is capped at 32 entries.
 - `GET /health`: liveness, version, commit.
 - `GET /ready`: required schema/column access, safe 503 on failure.
 
@@ -78,6 +82,18 @@ or role-switch permissions:
 - `club_points_entries`: clubMemberId, signedPoints
 - `price_locks`: id, userId, flightInstanceId, cabin, lockedPriceIrr, feeIrr,
   status, expiresAt, createdAt, bookingId
+
+When the membership projection flag is enabled, additionally grant only:
+
+- `club_members`: cardNo
+- `club_card_requests`: id, memberId, status, history, cardNo, createdAt
+- `club_tier_rules`: goldMinPoints, platinumMinPoints, cardRequestMinPoints,
+  createdAt
+
+The route flag defaults to false so an existing minimal reader stays ready.
+Enable the service flag only after the expanded reader passes
+`npm run verify:reader`; the independent backend public-read flag is enabled
+after that review.
 
 Set role-level `default_transaction_read_only=on`. The application also
 sets it for every connection and transaction, with a 2-second statement and

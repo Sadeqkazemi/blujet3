@@ -12,7 +12,10 @@ async function run(): Promise<void> {
   const db = new DataSource(databaseOptions(raw));
   try {
     await db.initialize();
-    const report = await verifyReader(db);
+    const report = await verifyReader(
+      db,
+      process.env.LOYALTY_MEMBERSHIP_PROJECTION_ENABLED === 'true',
+    );
     process.stdout.write(JSON.stringify(report) + '\n');
     if (report.status !== 'PASS') process.exitCode = 2;
   } finally {

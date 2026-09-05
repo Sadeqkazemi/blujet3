@@ -31,6 +31,7 @@ import {
   ClubCardRequestStatus,
   ClubTier,
 } from '../../database/enums';
+import { LoyaltyMembershipClient } from './loyalty-membership.client';
 
 const CARD_PREFIX: Record<ClubTier, string> = {
   SILVER: 'SILV',
@@ -115,6 +116,7 @@ export class ClubService {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly audit: AuditService,
+    private readonly loyaltyMembership: LoyaltyMembershipClient,
   ) {}
 
   // ── Phase 65: club tier rules (singleton config) ────────────────────────
@@ -625,7 +627,7 @@ export class ClubService {
             'عضویت باشگاه شما غیرفعال است؛ برای فعال‌سازی مجدد با پشتیبانی تماس بگیرید.',
         });
       }
-      return this.getMyMembership(userId);
+      return this.getMyMembershipLocal(userId);
     }
 
     const user = await this.userRepo.findOne({ where: { id: userId } });
@@ -668,7 +670,7 @@ export class ClubService {
       }
       byNid.userId = userId;
       await this.clubMemberRepo.save(byNid);
-      return this.getMyMembership(userId);
+      return this.getMyMembershipLocal(userId);
     }
 
     const email =
@@ -695,11 +697,30 @@ export class ClubService {
       }),
     );
 
-    return this.getMyMembership(userId);
+    return this.getMyMembershipLocal(userId);
   }
 
   /** Customer self-service: full club membership view for the user panel. */
-  async getMyMembership(userId: string) {
+  async getMyMembership(userId: string, requestId?: string) {
+    const remote = await this.loyaltyMembership.get(userId, requestId);
+    if (remote) {
+      const {
+        userId: assertedOwner,
+        balance,
+        pointsNeededForCard,
+        ...view
+      } = remote;
+      void assertedOwner;
+      return {
+        ...view,
+        balance: Number(balance),
+        pointsNeededForCard: Number(pointsNeededForCard),
+      };
+    }
+    return this.getMyMembershipLocal(userId);
+  }
+
+  private async getMyMembershipLocal(userId: string) {
     const rule = await this.getOrCreateTierRule();
     const tierRules = {
       goldMinPoints: rule.goldMinPoints,

@@ -27,6 +27,9 @@ class Environment {
   @IsString()
   @MinLength(1)
   LOYALTY_DATABASE_URL!: string;
+
+  @IsIn(['true', 'false'])
+  LOYALTY_MEMBERSHIP_PROJECTION_ENABLED = 'false';
 }
 
 export function validateEnv(input: Record<string, unknown>) {
