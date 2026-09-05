@@ -6,6 +6,30 @@ site is served over plain HTTP on the server's IP, behind the frontend's
 nginx (see `frontend/nginx.conf`); see `docs/DEPLOY_IP.md` for the full
 IP-only deployment guide and how to add a domain + TLS later.
 
+## Commerce outbox status (read-only, after separately authorized deployment)
+
+From the Backend package with authorized `DATABASE_URL` credentials, run
+`npm run events:outbox:status` locally or `npm run events:outbox:status:prod`
+against an already-built installation. Never place credentials in command-line
+arguments or paste them into logs. Prefer a dedicated metadata-only reader with
+schema USAGE and SELECT on `createdAt`, `nextAttemptAt`, `claimedAt`, `deliveredAt`
+and `deadLetterAt` of `orders.commerce_outbox_events`. No automatic grants occur.
+
+The command reads once, outputs JSON and exits. It does not connect to Kafka,
+decrypt payloads, migrate, seed, replay, delete or change any flag. Exit 0 means
+IDLE/PENDING, 2 means PAUSED/ATTENTION, and 1 means UNAVAILABLE (including timeout,
+schema or permission failures). `dispatchConfiguredEnabled` is a configuration
+value, not proof of a running worker. Counts remain exact decimal strings.
+
+Investigate nonzero `quarantined` and `expiredLease`; check worker logs, approved
+configuration, connectivity and key-rotation history. Do not clear leases,
+delete rows or replay financial events by manual SQL. A paused backlog can be
+intentional during rollback; enabling it requires separate approval. No backlog
+SLA threshold or monitoring schedule is configured by this command. This is not
+a broker health check. Existing timestamp columns must contain UTC values;
+verify writer timezone before interpreting historical ages. Full contract:
+`docs/features/kafka-outbox-status.md`.
+
 ## Reading logs
 
 ```bash

@@ -2,6 +2,12 @@
 
 ## Kafka durable transport foundation
 
+Operator-only CLI `npm run events:outbox:status` (built equivalent
+`npm run events:outbox:status:prod`) returns aggregate delivery metadata only.
+No HTTP route, Kafka connection, payload decryption, replay or mutation.
+Its status is a DB snapshot, not broker readiness. See
+`docs/features/kafka-outbox-status.md` for fields, exit codes and access rules.
+
 No new public or internal HTTP endpoint. `CommerceOutboxService.enqueue`
 requires the caller's active Core transaction and persists an encrypted v1
 canonical event; it never contacts Kafka. Same producer/idempotency key and

@@ -19,6 +19,19 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-05 — Kafka outbox read-only operational report
+
+- [x] Add metadata-only CLI with exact counts, UTC snapshot, bounded read-only
+  queries, pending/paused/attention classification and redacted failure output.
+- [x] Preserve all HTTP routes, event contents, writers and database schema;
+  no runtime activation, automatic grants, replay or deployment.
+- [x] Pass 766 unit tests, 24 PostgreSQL integration tests, build, typecheck,
+  scoped lint and a compiled CLI smoke check on the local test database.
+  Acceptance evidence and gaps: `docs/features/kafka-outbox-status.md`.
+- [ ] Publish and verify CI after owner approval; real-broker and external
+  monitoring/replay work remains separate.
+- Local branch `codex/kafka-outbox-status`; no push/merge in this slice.
+
 ### 2026-09-05 — Kafka durable commerce outbox (local branch)
 
 - [x] Add an encrypted, Core-owned outbox in `orders` with active-transaction
@@ -30,11 +43,12 @@ below for what's landed from that port so far.
 - [x] Pass 47 focused unit tests and 15 real-PostgreSQL E2E tests (Kafka mocked).
 - [x] Pass all 751 Backend unit tests, typecheck, build and scoped lint; see
   `docs/features/kafka-commerce-outbox.md` for evidence and open acceptance gates.
-- [ ] Run GitHub CI after publication and obtain approval before merge.
+- [x] Owner-approved PR #50 merged as `49f9321`; CI `33970270336` and
+  CodeQL `33970270393` passed. No server deployment.
 - [ ] Real-broker integration, payload schemas, domain producer integration,
   consumers/deduplication, backlog alerts/load tests and controlled replay.
 - No HTTP contract, financial writer, cutover flag activation or server deploy.
-  Branch: `codex/kafka-commerce-outbox`; this slice is not pushed or merged.
+  Branch: `codex/kafka-commerce-outbox`; published and merged in PR #50.
 
 ### KafkaJS dependency installation from GitHub
 
