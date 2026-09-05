@@ -19,6 +19,19 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-05 — A6.14 Compatible Loyalty members-list integration
+
+- [x] Preserve `GET /api/v1/club/members`, its role/permission guards,
+  filters, newest-first member fields and unfiltered KPI semantics.
+- [x] Add independent default-off Backend/Loyalty switches, strict bounded
+  transport and Core fallback without moving any Club writer.
+- [x] Keep `SITE_ADMIN` and exact national-ID searches in Core; give the
+  restricted Loyalty reader no national-ID columns, Identity access or PII key.
+- [x] Prove 656 Backend unit, 25 Club E2E, 9 Loyalty unit and 38 Loyalty
+  real-PostgreSQL E2E cases; builds, typechecks and slice lint pass.
+- [x] Owner authorized publication and merge on 2026-09-05; production grants,
+  parity, flag activation and deployment remain separate.
+
 ### 2026-09-05 — A6.13 Compatible Loyalty tier-rules integration
 
 - [x] Preserve the existing staff/employee permission guards and exact public

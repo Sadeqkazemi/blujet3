@@ -46,8 +46,9 @@ export class ClubController {
   async listMembers(
     @CurrentUser() actor: AuthenticatedUser,
     @Query() query: ListMembersQueryDto,
+    @Headers('x-request-id') requestId?: string,
   ) {
-    const data = await this.club.listMembers(query, actor);
+    const data = await this.club.listMembers(query, actor, requestId);
     return { success: true, data };
   }
 

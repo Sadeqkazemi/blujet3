@@ -31,6 +31,10 @@ describe('Loyalty least-privilege reader (real PostgreSQL login)', () => {
   const tierRulesGrantStatements = [
     'SELECT ("goldMinPoints", "platinumMinPoints", "cardRequestMinPoints", "updatedAt", "updatedById", "createdAt") ON loyalty.club_tier_rules',
   ];
+  const membersListGrantStatements = [
+    'SELECT ("fullName", email, "birthDate", "joinDate", points, "cardNo", "issuedByLabelFa", "createdAt") ON loyalty.club_members',
+    'SELECT (status) ON loyalty.club_card_requests',
+  ];
 
   beforeAll(async () => {
     const url = new URL(process.env.LOYALTY_DATABASE_URL ?? '');
@@ -163,6 +167,36 @@ describe('Loyalty least-privilege reader (real PostgreSQL login)', () => {
       });
     } finally {
       for (const grant of tierRulesGrantStatements)
+        await admin.query('REVOKE ' + grant + ' FROM ' + quotedRole);
+    }
+    expect(await verifyReader(reader)).toMatchObject({ status: 'PASS' });
+  });
+
+  it('requires only the exact PII-minimized members-list grants when enabled', async () => {
+    expect(await verifyReader(reader, false, false, true)).toMatchObject({
+      status: 'FAIL',
+    });
+    try {
+      for (const grant of membersListGrantStatements)
+        await admin.query('GRANT ' + grant + ' TO ' + quotedRole);
+      expect(await verifyReader(reader, false, false, true)).toMatchObject({
+        status: 'PASS',
+      });
+      const projection = await new LoyaltyService(reader).membersList({});
+      expect(projection).toMatchObject({
+        members: expect.any(Array) as unknown,
+        kpis: {
+          totalMembers: expect.any(Number) as unknown,
+          tierCounts: {
+            SILVER: expect.any(Number) as unknown,
+            GOLD: expect.any(Number) as unknown,
+            PLATINUM: expect.any(Number) as unknown,
+          },
+        },
+      });
+      expect(JSON.stringify(projection)).not.toContain('nationalId');
+    } finally {
+      for (const grant of membersListGrantStatements)
         await admin.query('REVOKE ' + grant + ' FROM ' + quotedRole);
     }
     expect(await verifyReader(reader)).toMatchObject({ status: 'PASS' });

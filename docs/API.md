@@ -1,5 +1,19 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## A6.14 — Compatible Loyalty members-list integration
+
+Eligible `GET /api/v1/club/members` reads keep their existing role/permission
+guards, `level`/`q` filters, newest-first response and whole-club KPI fields.
+Default-off `LOYALTY_MEMBERS_LIST_READ_ENABLED` selects the internal
+service-authenticated `GET /internal/v1/loyalty/members-list` projection;
+disabled or unavailable reads use Core.
+
+The projection excludes national-ID ciphertext/hash and Identity data.
+`SITE_ADMIN` requests and exact national-ID searches therefore always use Core,
+preserving their existing authorized behavior without sharing the PII key.
+Create/deactivate, level/card changes and every writer remain Core-only. See
+`docs/features/loyalty-members-list-read-cutover.md` for bounds and rollback.
+
 ## A6.13 — Compatible Loyalty tier-rules integration
 
 `GET /api/v1/club/tier-rules` keeps its current staff role/permission guards,

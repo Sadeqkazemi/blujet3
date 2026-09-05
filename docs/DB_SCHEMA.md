@@ -1,5 +1,19 @@
 # DB_SCHEMA.md — blujet data model
 
+## A6.14 — Loyalty members-list compatibility projection
+
+No schema migration, copied data or automatic production grant is added. The
+optional projection extends the exact reader with existing non-national-ID
+member columns `fullName`, `email`, `birthDate`, `joinDate`, `points`, `cardNo`,
+`issuedByLabelFa`, `createdAt`, plus `club_card_requests.status`. Base columns
+`id`, `userId`, `level`, `cardStatus`, `deactivatedAt` are unchanged.
+
+The service reads one repeatable, read-only snapshot, performs no Identity join
+and cannot select `nationalIdEnc`, `nationalIdHash`, `deactivatedById` or any
+writer capability. Site-admin and national-ID-search reads remain in Core.
+Disabling the read flag restores the complete TypeORM path without schema or
+data rollback.
+
 ## A6.13 — Loyalty tier-rules compatibility projection
 
 No schema migration, copied data or automatic production grant is added. The

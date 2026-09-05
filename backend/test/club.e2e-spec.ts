@@ -168,6 +168,96 @@ describe('Club (e2e)', () => {
     expect(forbidden.status).toBe(403);
   });
 
+  it('GET /club/members can use the Loyalty projection without changing its public contract', async () => {
+    const { accessToken } = await loginAs(app, 'ceo');
+    const config = app.get(ConfigService);
+    config.set('LOYALTY_MEMBERS_LIST_READ_ENABLED', 'true');
+    config.set('LOYALTY_SERVICE_URL', 'http://loyalty-service:3500');
+    config.set(
+      'LOYALTY_INTERNAL_TOKEN',
+      'loyalty-members-list-e2e-token-at-least-32-characters',
+    );
+    const runtimeOptions = Intl.DateTimeFormat().resolvedOptions();
+    const timezoneSpy = jest
+      .spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions')
+      .mockReturnValue({ ...runtimeOptions, timeZone: 'UTC' });
+    const projected = {
+      members: [
+        {
+          id: 'member-projection-1',
+          userId: null,
+          fullName: 'عضو projection',
+          email: 'projection@example.com',
+          birthDate: null,
+          joinDate: '2026-09-05T10:00:00.000Z',
+          points: 6200,
+          level: 'GOLD',
+          cardStatus: 'ISSUED',
+          cardNo: 'GOLD-1001',
+          issuedByLabelFa: 'مدیر عامل',
+          createdAt: '2026-09-05T10:00:00.000Z',
+        },
+      ],
+      kpis: {
+        totalMembers: 3,
+        issuedCards: 1,
+        pendingRequests: 2,
+        submittedRequests: 1,
+        tierCounts: { SILVER: 1, GOLD: 1, PLATINUM: 1 },
+      },
+    };
+    const fetchSpy = jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValue(
+        new Response(JSON.stringify({ success: true, data: projected })),
+      );
+    try {
+      const response = await request(app.getHttpServer())
+        .get('/club/members?level=GOLD&q=projection')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .set('X-Request-Id', 'members-list-e2e');
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ success: true, data: projected });
+      expect(fetchSpy).toHaveBeenCalledWith(
+        'http://loyalty-service:3500/internal/v1/loyalty/members-list?level=GOLD&q=projection',
+        expect.objectContaining({
+          redirect: 'manual',
+          headers: expect.objectContaining({
+            'X-Request-Id': 'members-list-e2e',
+          }) as unknown,
+        }),
+      );
+    } finally {
+      fetchSpy.mockRestore();
+      timezoneSpy.mockRestore();
+      config.set('LOYALTY_MEMBERS_LIST_READ_ENABLED', 'false');
+    }
+  });
+
+  it('keeps SITE_ADMIN reads in Core so the existing national-ID contract is preserved', async () => {
+    const member = await createFreshMember();
+    const admin = await loginAs(app, 'site.admin');
+    const config = app.get(ConfigService);
+    config.set('LOYALTY_MEMBERS_LIST_READ_ENABLED', 'true');
+    const fetchSpy = jest.spyOn(global, 'fetch');
+    try {
+      const response = await request(app.getHttpServer())
+        .get(`/club/members?q=${encodeURIComponent(member.email)}`)
+        .set('Authorization', `Bearer ${admin.accessToken}`);
+      expect(response.status).toBe(200);
+      expect(response.body.data.members).toEqual([
+        expect.objectContaining({
+          id: member.id,
+          nationalId: expect.stringMatching(/^\d{10}$/) as unknown,
+        }),
+      ]);
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+      config.set('LOYALTY_MEMBERS_LIST_READ_ENABLED', 'false');
+    }
+  });
+
   it('national-ID search matches exactly via the hash; plaintext never stored', async () => {
     const nid = validNationalId();
     const memberRepo = dataSource.getRepository(ClubMember);
@@ -182,15 +272,24 @@ describe('Club (e2e)', () => {
     );
 
     const { accessToken } = await loginAs(app, 'chair');
-    const res = await request(app.getHttpServer())
-      .get(`/club/members?q=${nid}`)
-      .set('Authorization', `Bearer ${accessToken}`);
-    expect(res.status).toBe(200);
-    expect(
-      res.body.data.members.some(
-        (m: { fullName: string }) => m.fullName === 'قابل‌جستجو',
-      ),
-    ).toBe(true);
+    const config = app.get(ConfigService);
+    config.set('LOYALTY_MEMBERS_LIST_READ_ENABLED', 'true');
+    const fetchSpy = jest.spyOn(global, 'fetch');
+    try {
+      const res = await request(app.getHttpServer())
+        .get(`/club/members?q=${nid}`)
+        .set('Authorization', `Bearer ${accessToken}`);
+      expect(res.status).toBe(200);
+      expect(
+        res.body.data.members.some(
+          (m: { fullName: string }) => m.fullName === 'قابل‌جستجو',
+        ),
+      ).toBe(true);
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+      config.set('LOYALTY_MEMBERS_LIST_READ_ENABLED', 'false');
+    }
 
     const row = await dataSource
       .getRepository(ClubMember)
@@ -200,30 +299,39 @@ describe('Club (e2e)', () => {
 
   it('POST /club/members: Senior Manager can add manually; bad checksum 400; duplicate 409', async () => {
     const senior = await loginAs(app, 'senior');
-    const dto = {
-      fullName: 'عضو جدید',
-      email: `${crypto.randomUUID().slice(0, 8)}@new.example`,
-      nationalId: validNationalId(),
-      level: 'GOLD',
-    };
-    const createdBySenior = await request(app.getHttpServer())
-      .post('/club/members')
-      .set('Authorization', `Bearer ${senior.accessToken}`)
-      .send(dto);
-    expect(createdBySenior.status).toBe(201);
+    const config = app.get(ConfigService);
+    config.set('LOYALTY_MEMBERS_LIST_READ_ENABLED', 'true');
+    const fetchSpy = jest.spyOn(global, 'fetch');
+    try {
+      const dto = {
+        fullName: 'عضو جدید',
+        email: `${crypto.randomUUID().slice(0, 8)}@new.example`,
+        nationalId: validNationalId(),
+        level: 'GOLD',
+      };
+      const createdBySenior = await request(app.getHttpServer())
+        .post('/club/members')
+        .set('Authorization', `Bearer ${senior.accessToken}`)
+        .send(dto);
+      expect(createdBySenior.status).toBe(201);
+      expect(fetchSpy).not.toHaveBeenCalled();
 
-    const ceo = await loginAs(app, 'ceo');
-    const badChecksum = await request(app.getHttpServer())
-      .post('/club/members')
-      .set('Authorization', `Bearer ${ceo.accessToken}`)
-      .send({ ...dto, nationalId: '0012345678' });
-    expect(badChecksum.status).toBe(400);
+      const ceo = await loginAs(app, 'ceo');
+      const badChecksum = await request(app.getHttpServer())
+        .post('/club/members')
+        .set('Authorization', `Bearer ${ceo.accessToken}`)
+        .send({ ...dto, nationalId: '0012345678' });
+      expect(badChecksum.status).toBe(400);
 
-    const dup = await request(app.getHttpServer())
-      .post('/club/members')
-      .set('Authorization', `Bearer ${ceo.accessToken}`)
-      .send({ ...dto, email: 'other@new.example' });
-    expect(dup.status).toBe(409);
+      const dup = await request(app.getHttpServer())
+        .post('/club/members')
+        .set('Authorization', `Bearer ${ceo.accessToken}`)
+        .send({ ...dto, email: 'other@new.example' });
+      expect(dup.status).toBe(409);
+    } finally {
+      fetchSpy.mockRestore();
+      config.set('LOYALTY_MEMBERS_LIST_READ_ENABLED', 'false');
+    }
   });
 
   it('PATCH /club/members/:id/deactivate preserves history, blocks benefits and replaces deletion', async () => {
