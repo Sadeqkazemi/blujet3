@@ -1,5 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 import { agencyInvoiceReadConfig } from './agency-invoice-read.config';
+import { agencyCreditRequestsReadConfig } from './agency-credit-requests-read.config';
 import { agencyProfileReadConfig } from './agency-profile-read.config';
 import { loyaltyPointsReadConfig } from './loyalty-points-read.config';
 import { loyaltyPriceLockReadConfig } from './loyalty-price-lock-read.config';
@@ -267,6 +268,7 @@ class EnvironmentVariables {
 
 export function validateEnv(config: Record<string, unknown>) {
   agencyInvoiceReadConfig(config);
+  agencyCreditRequestsReadConfig(config);
   agencyProfileReadConfig(config);
   loyaltyPointsReadConfig(config);
   loyaltyPriceLockReadConfig(config);

@@ -2,6 +2,8 @@ import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createServer } from 'node:http';
 import { AgenciesService } from '../src/modules/agencies/agencies.service';
+import { AgencyPortalService } from '../src/modules/agency-portal/agency-portal.service';
+import { AgencyCreditRequestsClient } from '../src/modules/agency-portal/agency-credit-requests.client';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import * as crypto from 'node:crypto';
@@ -344,6 +346,176 @@ describe('Agency Portal (e2e)', () => {
       .post(`/agency-portal/invoices/${issueRes.body.data.id}/pay`)
       .set('Authorization', auth(accessToken));
     expect(payRes.status).toBe(404);
+  });
+
+  it('routes credit-request history with session ownership, strict failures and complete Core rollback', async () => {
+    const agency = await createFreshAgency();
+    const { accessToken } = await loginAsAgency(agency.phone);
+    const config = app.get(ConfigService);
+    const serviceToken = 'test-agency-credit-read-at-least-32-characters';
+    const row = {
+      id: crypto.randomUUID(),
+      agencyId: agency.id,
+      requestedLimitIrr: '9007199254740993',
+      note: 'local request',
+      status: 'PENDING',
+      decidedById: null,
+      decidedAt: null,
+      createdAt: '2026-09-05T10:00:00.123Z',
+    };
+    await dataSource.query(
+      `INSERT INTO agency.agency_credit_requests
+      (id,"agencyId","requestedLimitIrr",note,"createdAt") VALUES ($1,$2,$3,$4,$5)`,
+      [row.id, row.agencyId, row.requestedLimitIrr, row.note, row.createdAt],
+    );
+    const before = await dataSource.query<unknown[]>(
+      'SELECT * FROM agency.agency_credit_requests WHERE id=$1',
+      [row.id],
+    );
+    const remoteRow = { ...row, note: 'remote request' };
+    let remote: unknown = [remoteRow];
+    let status = 200;
+    const calls: Array<{
+      path: string | undefined;
+      owner: string | string[] | undefined;
+      requestId: string | string[] | undefined;
+      token: string | string[] | undefined;
+    }> = [];
+    const server = createServer((req, res) => {
+      calls.push({
+        path: req.url,
+        owner: req.headers['x-agency-id'],
+        requestId: req.headers['x-request-id'],
+        token: req.headers['x-internal-token'],
+      });
+      res.writeHead(status, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, data: remote }));
+    });
+    await new Promise<void>((resolve) =>
+      server.listen(0, '127.0.0.1', resolve),
+    );
+    const address = server.address();
+    if (!address || typeof address === 'string')
+      throw new Error('Fixture listener unavailable');
+    const previous = [
+      'AGENCY_CREDIT_REQUESTS_READ_ENABLED',
+      'AGENCY_SERVICE_URL',
+      'AGENCY_INTERNAL_TOKEN',
+    ].map((key) => [key, config.get<string>(key)] as const);
+    const read = () =>
+      request(app.getHttpServer())
+        .get('/agency-portal/credit-requests')
+        .set('Authorization', auth(accessToken))
+        .set('X-Agency-Id', crypto.randomUUID())
+        .set('X-Request-Id', 'credit-history-contract');
+    try {
+      config.set('AGENCY_CREDIT_REQUESTS_READ_ENABLED', 'false');
+      const baseline = await read().expect(200);
+      expect(baseline.body as unknown).toEqual({ success: true, data: [row] });
+      expect(calls).toHaveLength(0);
+      config.set('AGENCY_CREDIT_REQUESTS_READ_ENABLED', 'true');
+      config.set('AGENCY_SERVICE_URL', 'http://127.0.0.1:' + address.port);
+      config.set('AGENCY_INTERNAL_TOKEN', serviceToken);
+      await request(app.getHttpServer())
+        .get('/agency-portal/credit-requests')
+        .expect(401);
+      const staff = await loginAs(app, 'finance');
+      await request(app.getHttpServer())
+        .get('/agency-portal/credit-requests')
+        .set('Authorization', auth(staff.accessToken))
+        .expect(403);
+      expect(calls).toHaveLength(0);
+      expect((await read().expect(200)).body as unknown).toEqual({
+        success: true,
+        data: [remoteRow],
+      });
+      expect(calls).toEqual([
+        {
+          path:
+            '/internal/v1/agencies/' + agency.id + '/portal-credit-requests',
+          owner: agency.id,
+          requestId: 'credit-history-contract',
+          token: serviceToken,
+        },
+      ]);
+      remote = [];
+      expect((await read().expect(200)).body as unknown).toEqual({
+        success: true,
+        data: [],
+      });
+      remote = [{ ...remoteRow, agencyId: crypto.randomUUID() }];
+      await read().expect(503);
+      remote = [remoteRow];
+      status = 401;
+      await read().expect(503);
+      status = 503;
+      expect((await read().expect(200)).body as unknown).toEqual(
+        baseline.body as unknown,
+      );
+      const count = calls.length;
+      config.set('AGENCY_CREDIT_REQUESTS_READ_ENABLED', 'false');
+      expect((await read().expect(200)).body as unknown).toEqual(
+        baseline.body as unknown,
+      );
+      expect(calls).toHaveLength(count);
+      expect(
+        await dataSource.query<unknown[]>(
+          'SELECT * FROM agency.agency_credit_requests WHERE id=$1',
+          [row.id],
+        ),
+      ).toEqual(before);
+    } finally {
+      for (const [key, value] of previous) config.set(key, value);
+      server.closeAllConnections();
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+      await dataSource.query(
+        'DELETE FROM agency.agency_credit_requests WHERE id=$1',
+        [row.id],
+      );
+      await dataSource.query(
+        'DELETE FROM agency.agency_credit_lines WHERE "agencyId"=$1',
+        [agency.id],
+      );
+      await dataSource.query(
+        'DELETE FROM agency.agency_profiles WHERE "userId"=$1',
+        [agency.id],
+      );
+      await dataSource.query(
+        'DELETE FROM identity.refresh_tokens WHERE "userId"=$1',
+        [agency.id],
+      );
+      await dataSource.query('DELETE FROM identity.users WHERE id=$1', [
+        agency.id,
+      ]);
+    }
+  });
+
+  it('keeps temporary agency credit history local and checks missing profiles before HTTP', async () => {
+    const actor = { id: crypto.randomUUID(), role: 'AGENCY' as const, fullName: 'UAT fixture' };
+    const now = new Date();
+    const userLookup = jest.spyOn(dataSource.getRepository(User), 'findOneBy').mockResolvedValueOnce({
+      id: actor.id, role: 'AGENCY', username: 'uat.agency', twoFactorEnabled: false,
+      createdAt: now, temporaryPasswordOnlyUntil: new Date(now.getTime() + 60000),
+    } as User);
+    const profileExists = jest.spyOn(dataSource.getRepository(AgencyProfile), 'exist').mockResolvedValueOnce(false);
+    const remote = jest.spyOn(app.get(AgencyCreditRequestsClient), 'list');
+    const config = app.get(ConfigService);
+    const previous = config.get<string>('AGENCY_CREDIT_REQUESTS_READ_ENABLED');
+    config.set('AGENCY_CREDIT_REQUESTS_READ_ENABLED', 'true');
+    process.env.AUTH_SANDBOX_ENABLED = 'true';
+    try {
+      expect(await app.get(AgencyPortalService).myCreditRequests(actor)).toEqual([]);
+      expect(remote).not.toHaveBeenCalled();
+      delete process.env.AUTH_SANDBOX_ENABLED;
+      await expect(app.get(AgencyPortalService).myCreditRequests(actor)).rejects.toMatchObject({ status: 404 });
+      expect(remote).not.toHaveBeenCalled();
+    } finally {
+      config.set('AGENCY_CREDIT_REQUESTS_READ_ENABLED', previous);
+      userLookup.mockRestore();
+      profileExists.mockRestore();
+      remote.mockRestore();
+      delete process.env.AUTH_SANDBOX_ENABLED;
+    }
   });
 
   // ── Dashboard / credit / invoices ────────────────────────────────────

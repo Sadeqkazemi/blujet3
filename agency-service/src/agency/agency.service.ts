@@ -7,6 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { DataSource, EntityManager } from 'typeorm';
 import { ErrorCode } from '../common/errors';
+import { PortalCreditRequestView } from './credit-requests.dto';
 import {
   InvoicePage,
   InvoiceView,
@@ -82,6 +83,41 @@ export class AgencyService {
       const rows = await tx.query<PortalInvoiceView[]>(
         `SELECT ${invoiceColumns}, "agencyId", "bookingId", "issuedById", "descriptionFa"
          FROM agency.agency_invoices WHERE "agencyId"=$1 ORDER BY "issuedAt" DESC LIMIT 1001`,
+        [agencyId],
+      );
+      if (
+        rows.length > 1000 ||
+        Buffer.byteLength(JSON.stringify({ success: true, data: rows })) >
+          1024 * 1024
+      )
+        throw unavailable();
+      return rows;
+    });
+  }
+
+  async portalCreditRequests(
+    agencyId: string,
+    owner: string | undefined,
+  ): Promise<PortalCreditRequestView[]> {
+    this.assertOwner(agencyId, owner);
+    const unavailable = () =>
+      new ServiceUnavailableException({
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        message: 'خواندن درخواست‌های اعتبار از این سرویس در دسترس نیست.',
+      });
+    if (
+      this.config.get<string>('AGENCY_PORTAL_CREDIT_REQUESTS_ENABLED') !==
+      'true'
+    )
+      throw unavailable();
+    return this.db.transaction('REPEATABLE READ', async (tx) => {
+      await tx.query('SET TRANSACTION READ ONLY');
+      await this.ownProfile(tx, agencyId);
+      const rows = await tx.query<PortalCreditRequestView[]>(
+        `SELECT id, "agencyId", "requestedLimitIrr"::text, note, status, "decidedById",
+          to_char("decidedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "decidedAt",
+          to_char("createdAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "createdAt"
+         FROM agency.agency_credit_requests WHERE "agencyId"=$1 ORDER BY "createdAt" DESC LIMIT 1001`,
         [agencyId],
       );
       if (

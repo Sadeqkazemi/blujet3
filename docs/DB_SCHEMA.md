@@ -1,5 +1,13 @@
 # DB_SCHEMA.md — blujet data model
 
+## A6.19 — Agency credit-request projection
+
+No migration or automatic grants. Optional SELECT-only access to existing
+`agency.agency_credit_requests` columns id, agencyId, requestedLimitIrr, note,
+status, decidedById, decidedAt, createdAt is required only with
+`AGENCY_PORTAL_CREDIT_REQUESTS_ENABLED=true`. The base agency reader is
+unchanged; no Identity join or credit/ledger mutation is introduced.
+
 ## A6.18 — Membership contract evidence
 
 No migrations or production grants. Real-boundary tests use the existing A6.12

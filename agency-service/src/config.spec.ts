@@ -13,12 +13,20 @@ describe('Agency environment', () => {
       { AGENCY_DATABASE_URL: 'https://example.com' },
       { AGENCY_PORTAL_INVOICES_ENABLED: 'yes' },
       { AGENCY_PORTAL_PROFILE_ENABLED: 'yes' },
+      { AGENCY_PORTAL_CREDIT_REQUESTS_ENABLED: 'yes' },
     ]) {
       expect(() => validateEnv({ ...valid, ...override })).toThrow();
     }
   });
   it('never synchronizes or runs migrations and defaults connections to read-only', () => {
     expect(validateEnv(valid).PORT).toBe(3600);
+    expect(validateEnv(valid).AGENCY_PORTAL_CREDIT_REQUESTS_ENABLED).toBe(
+      'false',
+    );
+    expect(
+      validateEnv({ ...valid, AGENCY_PORTAL_CREDIT_REQUESTS_ENABLED: 'true' })
+        .AGENCY_PORTAL_CREDIT_REQUESTS_ENABLED,
+    ).toBe('true');
     expect(validateEnv(valid).AGENCY_PORTAL_INVOICES_ENABLED).toBe('false');
     expect(validateEnv(valid).AGENCY_PORTAL_PROFILE_ENABLED).toBe('false');
     expect(

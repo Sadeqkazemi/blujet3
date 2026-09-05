@@ -48,6 +48,14 @@ export class HealthController {
     try {
       await this.db.transaction(async (tx) => {
         await tx.query('SET TRANSACTION READ ONLY');
+        if (
+          this.config.get<string>('AGENCY_PORTAL_CREDIT_REQUESTS_ENABLED') ===
+          'true'
+        ) {
+          await tx.query(
+            'SELECT id, "agencyId", "requestedLimitIrr", note, status, "decidedById", "decidedAt", "createdAt" FROM agency.agency_credit_requests LIMIT 0',
+          );
+        }
         await tx.query(
           'SELECT "userId", city, tier, "joinedAt", "suspendedAt" FROM agency.agency_profiles LIMIT 0',
         );

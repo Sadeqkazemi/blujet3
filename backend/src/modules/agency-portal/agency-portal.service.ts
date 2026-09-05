@@ -9,6 +9,7 @@ import { In, MoreThanOrEqual, Not, IsNull, Repository } from 'typeorm';
 import { AgencyProfile } from '../../database/entities/agency-profile.entity';
 import { AgencyDocument } from '../../database/entities/agency-document.entity';
 import { AgencyCreditRequest } from '../../database/entities/agency-credit-request.entity';
+import { AgencyCreditRequestsClient } from './agency-credit-requests.client';
 import { AgencyWebserviceRequest } from '../../database/entities/agency-webservice-request.entity';
 import { AgencyAllotment } from '../../database/entities/agency-allotment.entity';
 import { LedgerEntry } from '../../database/entities/ledger-entry.entity';
@@ -173,6 +174,7 @@ export class AgencyPortalService {
     private readonly search: SearchService,
     private readonly invoiceClient: AgencyInvoiceClient,
     private readonly profileClient: AgencyProfileClient,
+    private readonly creditRequestsClient: AgencyCreditRequestsClient,
   ) {}
 
   private async getOwnProfileOrThrow(actor: AuthenticatedUser) {
@@ -499,9 +501,11 @@ export class AgencyPortalService {
     return request;
   }
 
-  async myCreditRequests(actor: AuthenticatedUser) {
+  async myCreditRequests(actor: AuthenticatedUser, requestId?: string) {
     if (await this.isUatSandboxAgencyActor(actor)) return [];
     await this.getOwnProfileOrThrow(actor);
+    const remote = await this.creditRequestsClient.list(actor.id, requestId);
+    if (remote !== undefined) return remote;
     return this.creditRequestRepo.find({
       where: { agencyId: actor.id },
       order: { createdAt: 'DESC' },

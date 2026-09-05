@@ -112,8 +112,14 @@ export class AgencyPortalController {
 
   @Get('credit-requests')
   @ApiOperation({ summary: 'تاریخچه درخواست‌های افزایش اعتبار خودِ آژانس' })
-  async myCreditRequests(@CurrentUser() actor: AuthenticatedUser) {
-    return { success: true, data: await this.portal.myCreditRequests(actor) };
+  async myCreditRequests(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Headers('x-request-id') requestId?: string,
+  ) {
+    return {
+      success: true,
+      data: await this.portal.myCreditRequests(actor, requestId),
+    };
   }
 
   @Get('sales')
