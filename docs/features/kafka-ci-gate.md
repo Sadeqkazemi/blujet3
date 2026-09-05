@@ -13,7 +13,8 @@ business producer, server activation or deployment changes.
 - [x] CI gate depends on broker job; no continue-on-error or deployment credentials (tests 1/2).
 - [x] Bounded fixture-broker diagnostics on failure, no dumps or production data (test 4).
 - [x] Local workflow tests, shell syntax and real-broker regression pass (evidence below).
-- [ ] Owner-approved push and actual Linux CI execution before merge.
+- [x] Owner-approved push and actual Linux/ARM CI execution before merge
+  (PR #54, CI run 33974163455; merged as `5e87a8d8aea8ef79f0ee9a3b8dd6962da59aa001`).
 
 Existing standard unit/E2E commands remain unchanged. The job uses its own runner
 and PostgreSQL service, so its outbox cannot race with other E2E shards. It does
@@ -40,7 +41,8 @@ owned broker and removed its uniquely identified outbox fixtures; fixture broker
 logs remain in the OS temp directory. `git diff --check` passed. No backend code,
 dependency, schema, production flag or deploy workflow changes are in this slice.
 
-The new job has not yet executed on GitHub Linux/ARM. Download availability,
-runner-specific behavior and the integrated CI result must be checked on the
-first owner-approved PR. This is an explicit remaining acceptance gate, not a
-passed test inferred from local Windows execution.
+Publication evidence (2026-09-05): [PR #54](https://github.com/Sadeqkazemi/blujet3/pull/54)
+merged after [CI run 33974163455](https://github.com/Sadeqkazemi/blujet3/actions/runs/33974163455)
+and CodeQL run 33974163389 passed. The real Kafka job 101327839761 passed on
+Linux/ARM. This verifies the original three-test CI slice, not later TLS/SCRAM
+changes. No server deployment occurred.

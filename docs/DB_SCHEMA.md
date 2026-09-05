@@ -2,6 +2,9 @@
 
 ## Kafka commerce delivery outbox
 
+TLS/SCRAM publisher tests use disposable broker topics and no application DB
+writes. The existing outbox suite retains its local `_test` fixture boundaries.
+
 Backend lint cleanup does not change schema, SQL or ownership. Historical
 migration files remain identical to main; only their formatting lint is exempted
 for the eight explicitly named files in backend/eslint.config.mjs.
