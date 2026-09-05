@@ -22,13 +22,14 @@ Backend checklist:
   acknowledges only confirmed sends, retries and quarantines without deleting
   failed events: `backend/test/commerce-outbox.e2e-spec.ts`.
 - [x] Additive migration apply/revert/reapply and entity/schema parity on local
-  PostgreSQL 18: `backend/test/commerce-outbox.e2e-spec.ts`; production/CI
-  PostgreSQL 16 compatibility still requires CI evidence.
+  PostgreSQL 18: `backend/test/commerce-outbox.e2e-spec.ts`; PostgreSQL 16
+  migration compatibility and E2E passed in CI `33970270336` for PR #50.
 - [x] Local verification: all 751 Backend unit tests (135 suites), 15 focused
   PostgreSQL E2E tests, typecheck, build and scoped lint pass. After the final
   disconnect-error redaction, publisher tests and static/build checks rerun.
 - [ ] Real Kafka broker/TLS/SASL outage and restart integration evidence.
-- [ ] CI validation on the published branch; no push or merge in this slice.
+- [x] CI `33970270336` and CodeQL `33970270393` passed; owner-approved PR #50
+  merged as `49f9321`. No server deployment.
 
 No HTTP endpoint is added (401/403 and tenant authorization remain with existing
 domain callers). Enqueue is an internal API, not an authorization boundary.

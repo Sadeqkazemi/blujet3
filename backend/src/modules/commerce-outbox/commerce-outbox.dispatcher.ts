@@ -10,9 +10,9 @@ import { decryptPii } from '../../common/pii-crypto';
 import { isCanonicalEvent } from '../../common/events/canonical-events';
 import { KafkaEventPublisher } from '../../common/events/kafka-event-publisher';
 import { CommerceOutboxEvent } from '../../database/entities/commerce-outbox-event.entity';
+import { COMMERCE_OUTBOX_LEASE_MS } from './commerce-outbox.constants';
 
 const MAX_ATTEMPTS = 10;
-const LEASE_MS = 120_000;
 
 @Injectable()
 export class CommerceOutboxDispatcher
@@ -64,7 +64,7 @@ export class CommerceOutboxDispatcher
         .where('event.deliveredAt IS NULL AND event.deadLetterAt IS NULL')
         .andWhere('event.nextAttemptAt <= :now', { now: new Date() })
         .andWhere('(event.claimedAt IS NULL OR event.claimedAt < :stale)', {
-          stale: new Date(Date.now() - LEASE_MS),
+          stale: new Date(Date.now() - COMMERCE_OUTBOX_LEASE_MS),
         })
         .orderBy('event.createdAt', 'ASC')
         .addOrderBy('event.id', 'ASC')

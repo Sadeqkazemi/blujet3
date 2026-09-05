@@ -45,6 +45,8 @@
     "uat:commerce:provision:prod": "node dist/database/provision-uat-sandbox-commerce.js",
     "uat:kl2550:financial-scenario:prod": "node dist/database/run-uat-kl2550-financial-scenario.js",
     "uat:wallets:reconcile-100m:prod": "node dist/database/reconcile-uat-wallet-balances.js",
+    "events:outbox:status": "tsx src/database/report-commerce-outbox.ts",
+    "events:outbox:status:prod": "node dist/database/report-commerce-outbox.js",
     "pss:reconcile:shadow": "tsx src/database/report-pss-shadow-reconciliation.ts",
     "loyalty:compare:shadow": "tsx src/database/report-loyalty-shadow.ts",
     "agency:compare:shadow": "tsx src/database/report-agency-shadow.ts"

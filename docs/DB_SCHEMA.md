@@ -2,6 +2,12 @@
 
 ## Kafka commerce delivery outbox
 
+Outbox status reporting reads only `createdAt`, `nextAttemptAt`, `claimedAt`,
+`deliveredAt` and `deadLetterAt` under a read-only transaction and bounded query
+timeout. No new schema, seed or grant change. A dedicated operator role may
+receive SELECT on these columns only; no envelope, key or fingerprint access
+is required. Never grant this capability to public/client-facing roles.
+
 Additive Core-owned `orders.commerce_outbox_events`: event ID, producer and
 idempotency key (unique pair), encrypted envelope, semantic SHA-256 fingerprint,
 attempt count, next attempt, lease token/time, delivered/dead-letter timestamps,
