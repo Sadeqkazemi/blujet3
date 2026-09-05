@@ -31,6 +31,13 @@ access; the **application connection** defaults to read-only and every
 application query is enclosed in a read-only transaction. The fixture writer
 is not included in the built service.
 
+`test/members-list-contract.e2e-spec.ts` also compares the built Core ClubService
+with the real Loyalty HTTP response using a temporary column-scoped reader.
+Its separate Core probe uses a read-only connection, receives only a generated
+test PII key, and emits comparison status/counters without member data. It
+checks actual remote delivery, protected Core-only reads and availability
+rollback. Build Backend before running Loyalty typecheck or this suite.
+
 For manual execution, copy `.env.example` to `.env`, provide the real local
 reader credential and internal token, then run `npm run start:prod`.
 The optional `docker-compose.loyalty.yml` overrides local Compose only;
