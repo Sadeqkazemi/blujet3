@@ -3634,3 +3634,9 @@ internal HTTP. Legacy database refresh sessions are not written on this path,
 so there is no dual-write or table ownership ambiguity. Rollback uses the
 documented `dual` verification bridge and does not copy Identity sessions back
 into Core tables.
+
+### Loyalty points read cutover (A6.10)
+
+No migration or grant is added. Loyalty reads the existing `loyalty` schema
+through its restricted projection; Core remains the only writer and retains a
+read fallback while `LOYALTY_POINTS_READ_ENABLED` is disabled or unavailable.
