@@ -19,7 +19,25 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-05 — A6.19 Compatible agency credit-request history reads
+
+- [x] Preserve the existing public history route, authenticated tenant and
+  temporary-UAT behavior with independent default-off Core/Agency flags.
+- [x] Add exact owner-scoped IRR/UTC projection, bounded transport and complete
+  Core fallback; invalid identity/foreign results fail closed.
+- [x] Keep POST, decisions, credit limits and every financial writer in Core;
+  no migration, production grant or server configuration changes.
+- [x] Verify conditional reader grants/readiness, no writes, size limits,
+  public guard/owner tests, local UAT path and safe rollback.
+- [x] Pass 704 Backend unit, 37 portal E2E, 70 Agency E2E and 2 Agency config
+  tests; both builds/typechecks, scoped lint and deterministic internal OpenAPI.
+- [x] Owner approved publication and merge on 2026-09-05; no deployment.
+- [ ] Pass GitHub CI/security checks before merging the approved head.
+
 ### 2026-09-05 — A6.18 Real Loyalty membership contract
+
+- [x] PR #47 merged as `97f79bb`; CI `33959692572` and CodeQL `33959692569`
+  passed. No server deployment was performed.
 
 - [x] Compare built Core/client with real Loyalty HTTP and exact-column
   PostgreSQL reads: ledger balance, request status/history, UTC and eligibility.
@@ -33,7 +51,7 @@ below for what's landed from that port so far.
 - [x] Pass public Club regressions (26/26), including unchanged customer
   permissions and local writers. Total: 127 relevant tests.
 - [x] Owner authorized publication and merge on 2026-09-05; no deployment.
-- [ ] Record successful CI/PostgreSQL 16 evidence on the PR before merging.
+- [x] Successful CI/PostgreSQL 16 evidence recorded on PR #47 before merging.
 
 ### 2026-09-05 — A6.17 Real Loyalty tier-rules contract
 

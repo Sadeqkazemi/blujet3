@@ -1,5 +1,13 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## A6.19 — Agency credit-request history read integration
+
+GET `/api/v1/agency-portal/credit-requests` preserves ownership, fields and UAT
+behavior. Default-off `AGENCY_CREDIT_REQUESTS_READ_ENABLED` selects an internal
+owner-bound `/internal/v1/agencies/:agencyId/portal-credit-requests` read.
+Creation, decisions and financial writers stay in Core. Bounds, exact contract
+and rollback: `docs/features/agency-credit-requests-read-cutover.md`.
+
 ## A6.18 — Membership real-boundary verification
 
 No API changes. Real HTTP tests compare the A6.12 Core membership response with

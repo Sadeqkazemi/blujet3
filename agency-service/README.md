@@ -1,5 +1,28 @@
 # BluJet Agency — read boundary and optional invoice compatibility
 
+## Optional credit-request history (A6.19)
+
+Core `AGENCY_CREDIT_REQUESTS_READ_ENABLED=false` and Agency
+`AGENCY_PORTAL_CREDIT_REQUESTS_ENABLED=false` independently gate the existing
+public credit-request history integration. The internal read-only route is
+`GET /internal/v1/agencies/:agencyId/portal-credit-requests`, protected by
+service identity and a trusted owner assertion. No request creation, decision,
+credit-limit or ledger writer moves out of Core.
+
+In addition to base grants, a separately reviewed reader requires column
+SELECT on `agency.agency_credit_requests`: id, agencyId, requestedLimitIrr,
+note, status, decidedById, decidedAt, createdAt. Run `verify:reader` with the
+same service flag; readiness checks the extra columns only when enabled.
+The verifier rejects the extra grants in default/minimal mode. This package
+never provisions production grants.
+
+The full owner list is newest-first, max 1000 rows/1 MiB, with exact IRR strings
+and UTC timestamps. Oversize/disabled responses are 503 so Core can fall back
+without returning a partial list. Invalid identity/owner/successful payloads
+fail closed. Rollback turns off the Core flag before the service flag/grants.
+Production activation/deployment requires separate approval; see
+`docs/features/agency-credit-requests-read-cutover.md` in the repository.
+
 Independent NestJS/TypeORM service over the existing PostgreSQL `agency` schema.
 This slice returns minimized profile and invoice projections, not the complete
 portal. The current backend remains the only business writer and public request handler.

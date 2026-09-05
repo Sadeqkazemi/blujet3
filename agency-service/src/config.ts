@@ -12,6 +12,9 @@ import type { DataSourceOptions } from 'typeorm';
 
 class Environment {
   @IsIn(['true', 'false'])
+  AGENCY_PORTAL_CREDIT_REQUESTS_ENABLED = 'false';
+
+  @IsIn(['true', 'false'])
   AGENCY_PORTAL_PROFILE_ENABLED = 'false';
 
   @IsIn(['true', 'false'])

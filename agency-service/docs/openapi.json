@@ -1,6 +1,120 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/internal/v1/agencies/{agencyId}/portal-credit-requests": {
+      "get": {
+        "operationId": "AgencyController_portalCreditRequests",
+        "parameters": [
+          {
+            "name": "X-Agency-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Internal-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "agencyId",
+            "required": true,
+            "in": "path",
+            "description": "شناسه حساب یکتای آژانس",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalCreditRequestsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ورودی نامعتبر",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "هویت سرویس نامعتبر",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "مالک درخواست مطابقت ندارد",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "پروفایل یا فاکتور متعلق به مالک یافت نشد",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "خطای داخلی بدون اطلاعات حساس",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "مسیر خاموش یا پاسخ بیش از حد مجاز",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal": []
+          }
+        ],
+        "summary": "تاریخچه درخواست افزایش اعتبار خود آژانس؛ فعال‌سازی صریح",
+        "tags": [
+          "internal-agency"
+        ]
+      }
+    },
     "/internal/v1/agencies/{agencyId}/portal-profile": {
       "get": {
         "operationId": "AgencyController_portalProfile",
@@ -679,6 +793,95 @@
         "required": [
           "success",
           "error"
+        ]
+      },
+      "PortalCreditRequestView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "شناسه درخواست",
+            "format": "uuid",
+            "example": "00000000-0000-4000-8000-000000000001"
+          },
+          "agencyId": {
+            "type": "string",
+            "description": "شناسه آژانس مالک",
+            "format": "uuid",
+            "example": "00000000-0000-4000-8000-000000000002"
+          },
+          "requestedLimitIrr": {
+            "type": "string",
+            "description": "سقف درخواستی به ریال صحیح",
+            "example": "9007199254740993"
+          },
+          "note": {
+            "type": "string",
+            "description": "یادداشت ثبت‌شده درخواست",
+            "nullable": true,
+            "example": null
+          },
+          "status": {
+            "type": "string",
+            "description": "وضعیت درخواست؛ مجوز تغییر اعتبار نیست",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED"
+            ],
+            "example": "PENDING"
+          },
+          "decidedById": {
+            "type": "string",
+            "description": "شناسه تصمیم‌گیرنده بدون اطلاعات هویتی",
+            "nullable": true,
+            "example": null
+          },
+          "decidedAt": {
+            "type": "string",
+            "description": "زمان تصمیم UTC",
+            "format": "date-time",
+            "nullable": true,
+            "example": null
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "زمان ثبت UTC",
+            "format": "date-time",
+            "example": "2026-09-05T10:00:00.123Z"
+          }
+        },
+        "required": [
+          "id",
+          "agencyId",
+          "requestedLimitIrr",
+          "note",
+          "status",
+          "decidedById",
+          "decidedAt",
+          "createdAt"
+        ]
+      },
+      "PortalCreditRequestsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "موفقیت درخواست",
+            "example": true
+          },
+          "data": {
+            "description": "فهرست درخواست‌های خود آژانس",
+            "example": [],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PortalCreditRequestView"
+            }
+          }
+        },
+        "required": [
+          "success",
+          "data"
         ]
       },
       "PortalProfileView": {

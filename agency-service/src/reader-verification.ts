@@ -44,6 +44,7 @@ export async function verifyReader(
   db: DataSource,
   portalInvoices = false,
   portalProfile = false,
+  portalCreditRequests = false,
 ): Promise<ReaderReport> {
   const rows = await db.transaction('REPEATABLE READ', async (tx) => {
     await tx.query('SET TRANSACTION READ ONLY');
@@ -95,8 +96,8 @@ export async function verifyReader(
           WHERE p.prosecdef AND has_function_privilege(p.oid, 'EXECUTE')) AS "noDefinerExecute"
     `,
       [
-        JSON.stringify(
-          READER_COLUMNS.map((table) => ({
+        JSON.stringify([
+          ...READER_COLUMNS.map((table) => ({
             ...table,
             columns:
               portalInvoices && table.relation === 'agency_invoices'
@@ -113,7 +114,25 @@ export async function verifyReader(
                     ]
                   : table.columns,
           })),
-        ),
+          ...(portalCreditRequests
+            ? [
+                {
+                  schema: 'agency',
+                  relation: 'agency_credit_requests',
+                  columns: [
+                    'id',
+                    'agencyId',
+                    'requestedLimitIrr',
+                    'note',
+                    'status',
+                    'decidedById',
+                    'decidedAt',
+                    'createdAt',
+                  ],
+                },
+              ]
+            : []),
+        ]),
       ],
     );
   });

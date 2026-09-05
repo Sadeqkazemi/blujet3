@@ -834,6 +834,12 @@ describe('Agency read boundary (real restricted PostgreSQL login)', () => {
       );
     }
   });
+  it('keeps credit-request reads disabled by default', async () => {
+    await request(app.getHttpServer())
+      .get(path + '/portal-credit-requests')
+      .set(headers)
+      .expect(503);
+  });
   it('has no write routes', async () => {
     await request(app.getHttpServer())
       .post(path + '/invoices')
@@ -845,6 +851,151 @@ describe('Agency read boundary (real restricted PostgreSQL login)', () => {
       .set(headers)
       .expect(404);
   });
+  it('serves exact owner-only credit requests with conditional grants, bounds and safe rollback', async () => {
+    const config = app.get(ConfigService);
+    const grant =
+      'SELECT (id,"agencyId","requestedLimitIrr",note,status,"decidedById","decidedAt","createdAt") ON agency.agency_credit_requests';
+    const creditIds = [randomUUID(), randomUUID(), randomUUID()];
+    const overflowIds = Array.from({ length: 1001 }, () => randomUUID());
+    const read = () =>
+      request(app.getHttpServer())
+        .get(path + '/portal-credit-requests')
+        .set(headers);
+    config.set('AGENCY_PORTAL_CREDIT_REQUESTS_ENABLED', 'true');
+    try {
+      expect((await verifyReader(reader, false, false, true)).status).toBe(
+        'FAIL',
+      );
+      await request(app.getHttpServer()).get('/ready').expect(503);
+      await writer.query('GRANT ' + grant + ' TO ' + quotedRole);
+      expect((await verifyReader(reader, false, false, true)).status).toBe(
+        'PASS',
+      );
+      expect((await verifyReader(reader)).status).toBe('FAIL');
+      await request(app.getHttpServer()).get('/ready').expect(200);
+      for (const [index, agencyId] of [owner, owner, other].entries()) {
+        await writer.query(
+          `INSERT INTO agency.agency_credit_requests
+          (id,"agencyId","requestedLimitIrr",note,status,"decidedById","decidedAt","createdAt")
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+          [
+            creditIds[index],
+            agencyId,
+            '9007199254740993',
+            'credit-note',
+            index === 0 ? 'APPROVED' : 'PENDING',
+            index === 0 ? owner : null,
+            index === 0 ? '2026-09-05T11:00:00.456Z' : null,
+            '2026-09-05T10:00:0' + index + '.123Z',
+          ],
+        );
+      }
+      const beforeCredits = await writer.query<unknown[]>(
+        'SELECT * FROM agency.agency_credit_requests WHERE id=ANY($1::text[]) ORDER BY id',
+        [creditIds],
+      );
+      const result = await read().expect(200);
+      expect(result.body as unknown).toEqual({
+        success: true,
+        data: [
+          {
+            id: creditIds[1],
+            agencyId: owner,
+            requestedLimitIrr: '9007199254740993',
+            note: 'credit-note',
+            status: 'PENDING',
+            decidedById: null,
+            decidedAt: null,
+            createdAt: '2026-09-05T10:00:01.123Z',
+          },
+          {
+            id: creditIds[0],
+            agencyId: owner,
+            requestedLimitIrr: '9007199254740993',
+            note: 'credit-note',
+            status: 'APPROVED',
+            decidedById: owner,
+            decidedAt: '2026-09-05T11:00:00.456Z',
+            createdAt: '2026-09-05T10:00:00.123Z',
+          },
+        ],
+      });
+      expect(result.headers['cache-control']).toBe('no-store');
+      await request(app.getHttpServer())
+        .get(path + '/portal-credit-requests')
+        .expect(401);
+      await request(app.getHttpServer())
+        .get(path + '/portal-credit-requests')
+        .set(headers)
+        .set('X-Agency-Id', other)
+        .expect(403);
+      await request(app.getHttpServer())
+        .get('/internal/v1/agencies/invalid/portal-credit-requests')
+        .set(headers)
+        .expect(400);
+      const missing = randomUUID();
+      await request(app.getHttpServer())
+        .get('/internal/v1/agencies/' + missing + '/portal-credit-requests')
+        .set(headers)
+        .set('X-Agency-Id', missing)
+        .expect(404);
+      const emptyResult = await request(app.getHttpServer())
+        .get('/internal/v1/agencies/' + empty + '/portal-credit-requests')
+        .set(headers)
+        .set('X-Agency-Id', empty)
+        .expect(200);
+      expect(emptyResult.body as unknown).toEqual({ success: true, data: [] });
+      await expect(
+        reader.query(
+          'UPDATE agency.agency_credit_requests SET note=note WHERE false',
+        ),
+      ).rejects.toBeDefined();
+      expect(
+        await writer.query<unknown[]>(
+          'SELECT * FROM agency.agency_credit_requests WHERE id=ANY($1::text[]) ORDER BY id',
+          [creditIds],
+        ),
+      ).toEqual(beforeCredits);
+      await writer.query(
+        'UPDATE agency.agency_credit_requests SET note=$2 WHERE id=$1',
+        [creditIds[0], 'x'.repeat(1024 * 1024)],
+      );
+      await read().expect(503);
+      await writer.query(
+        'UPDATE agency.agency_credit_requests SET note=$2 WHERE id=$1',
+        [creditIds[0], 'credit-note'],
+      );
+      await writer.query(
+        `INSERT INTO agency.agency_credit_requests (id,"agencyId","requestedLimitIrr")
+        SELECT id, $2, 1 FROM unnest($1::text[]) AS id`,
+        [overflowIds, owner],
+      );
+      await read().expect(503);
+      await writer.query(
+        'DELETE FROM agency.agency_credit_requests WHERE id=ANY($1::text[])',
+        [overflowIds],
+      );
+      await writer.query(
+        'REVOKE SELECT (note) ON agency.agency_credit_requests FROM ' +
+          quotedRole,
+      );
+      await request(app.getHttpServer()).get('/ready').expect(503);
+      await read().expect(500);
+      await writer.query(
+        'GRANT SELECT (note) ON agency.agency_credit_requests TO ' + quotedRole,
+      );
+      await read().expect(200);
+    } finally {
+      config.set('AGENCY_PORTAL_CREDIT_REQUESTS_ENABLED', 'false');
+      await writer.query(
+        'DELETE FROM agency.agency_credit_requests WHERE id=ANY($1::text[])',
+        [[...creditIds, ...overflowIds]],
+      );
+      await writer.query('REVOKE ' + grant + ' FROM ' + quotedRole);
+    }
+    expect((await verifyReader(reader)).status).toBe('PASS');
+    await read().expect(503);
+  }, 30000);
   it('denies writes and sensitive/cross-domain reads even with session read-only disabled', async () => {
     const runner = reader.createQueryRunner();
     try {
@@ -919,7 +1070,8 @@ describe('Agency read boundary (real restricted PostgreSQL login)', () => {
         .setVersion('0.1.0')
         .build(),
     );
-    expect(Object.keys(doc.paths)).toHaveLength(7);
+    expect(Object.keys(doc.paths)).toHaveLength(8);
+    expect(doc.components?.schemas?.PortalCreditRequestView).toBeDefined();
     expect(
       doc.paths['/internal/v1/agencies/{agencyId}/invoices']?.get?.responses[
         '200'

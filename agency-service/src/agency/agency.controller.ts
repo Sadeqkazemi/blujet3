@@ -17,6 +17,7 @@ import {
 import { InternalAuthGuard } from '../common/internal-auth.guard';
 import { ErrorResponse } from '../common/error.dto';
 import { AgencyService } from './agency.service';
+import { PortalCreditRequestsResponse } from './credit-requests.dto';
 import {
   AgencyParams,
   InvoiceParams,
@@ -58,6 +59,27 @@ import {
 @Controller('internal/v1/agencies/:agencyId')
 export class AgencyController {
   constructor(private readonly agency: AgencyService) {}
+
+  @Get('portal-credit-requests')
+  @Header('Cache-Control', 'no-store')
+  @ApiOperation({
+    summary: 'تاریخچه درخواست افزایش اعتبار خود آژانس؛ فعال‌سازی صریح',
+  })
+  @ApiResponse({ status: 200, type: PortalCreditRequestsResponse })
+  @ApiResponse({
+    status: 503,
+    type: ErrorResponse,
+    description: 'مسیر خاموش یا پاسخ بیش از حد مجاز',
+  })
+  async portalCreditRequests(
+    @Param() params: AgencyParams,
+    @Headers('x-agency-id') owner: string | undefined,
+  ) {
+    return {
+      success: true,
+      data: await this.agency.portalCreditRequests(params.agencyId, owner),
+    };
+  }
 
   @Get('portal-profile')
   @Header('Cache-Control', 'no-store')

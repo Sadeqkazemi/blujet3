@@ -5,6 +5,10 @@ import { databaseOptions } from './config';
 import { verifyReader, type ReaderReport } from './reader-verification';
 
 async function run(): Promise<void> {
+  const creditFlag =
+    process.env.AGENCY_PORTAL_CREDIT_REQUESTS_ENABLED ?? 'false';
+  if (!['true', 'false'].includes(creditFlag))
+    throw new Error('Invalid reader mode');
   const portalFlag = process.env.AGENCY_PORTAL_INVOICES_ENABLED ?? 'false';
   if (!['true', 'false'].includes(portalFlag))
     throw new Error('Invalid reader mode');
@@ -23,6 +27,7 @@ async function run(): Promise<void> {
       db,
       portalFlag === 'true',
       profileFlag === 'true',
+      creditFlag === 'true',
     );
   } finally {
     if (db.isInitialized) await db.destroy();
