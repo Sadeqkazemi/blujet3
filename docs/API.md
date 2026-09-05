@@ -2,6 +2,9 @@
 
 ## Kafka durable transport foundation
 
+Topic-ACL integration tests restrict a synthetic publisher on a disposable broker;
+no HTTP/event contract or business authorization change (`docs/features/kafka-topic-acl.md`).
+
 Real TLS/SCRAM tests exercise the existing publisher with synthetic events only;
 no HTTP or event contract change (`docs/features/kafka-tls-scram.md`).
 

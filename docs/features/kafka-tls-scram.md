@@ -24,7 +24,8 @@ Backend checklist:
   (2026-09-05: 9/9 real tests, 116.097 s; full read-only lint, typecheck,
   4/4 workflow contract tests; 48/48 existing canonical-event, publisher and
   Kafka-config unit tests).
-- [ ] Owner-approved publication and Linux/ARM CI pass before merge.
+- [x] Owner-approved PR #56 merged as `7660dbd`; CI `33975042633` and
+  CodeQL `33975042664` passed, including Linux/ARM real Kafka tests.
 
 Only synthetic events are published. Certificates/credentials are created at
 runtime using the installed Java 21 keytool; no production trust store is changed,

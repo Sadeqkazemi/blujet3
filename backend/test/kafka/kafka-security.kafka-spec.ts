@@ -3,7 +3,16 @@ import { access } from 'node:fs/promises';
 import { join } from 'node:path';
 import { connect } from 'node:tls';
 import { setTimeout as delay } from 'node:timers/promises';
-import { Kafka, logLevel, type Admin, type Consumer } from 'kafkajs';
+import {
+  Kafka,
+  logLevel,
+  type Admin,
+  type Consumer,
+  AclResourceTypes,
+  AclOperationTypes,
+  AclPermissionTypes,
+  ResourcePatternTypes,
+} from 'kafkajs';
 import { kafkaEventsConfig } from '../../src/config/kafka-events.config';
 import { KafkaEventPublisher } from '../../src/common/events/kafka-event-publisher';
 import {
@@ -12,13 +21,15 @@ import {
 } from '../../src/common/events/canonical-events';
 import { LocalKafka } from './local-kafka';
 
-describe('real Kafka TLS/SCRAM publisher boundary', () => {
+describe('real Kafka TLS/SCRAM and topic authorization boundary', () => {
   let broker: LocalKafka;
   let admin: Admin;
   let consumer: Consumer;
+  let restrictedAdmin: Admin;
   const publishers: KafkaEventPublisher[] = [];
   const env = { ...process.env };
   const topic = `tls-test-${randomUUID()}`;
+  const otherTopic = `other-test-${randomUUID()}`;
   const received = new Map<
     string,
     { value: string; key: string; correlationId: string; version: string }
@@ -63,6 +74,32 @@ describe('real Kafka TLS/SCRAM publisher boundary', () => {
     return instance;
   }
 
+  function restrictedCredentials(): Record<string, string> {
+    if (!broker.security) throw new Error('Missing secure fixture');
+    return {
+      KAFKA_SASL_USERNAME: broker.security.publisherUsername,
+      KAFKA_SASL_PASSWORD: broker.security.publisherPassword,
+    };
+  }
+
+  async function rejectPublish(target: string): Promise<void> {
+    const before = await admin.fetchTopicOffsets(target);
+    const instance = publisher({
+      ...restrictedCredentials(),
+      KAFKA_EVENTS_TOPIC: target,
+    });
+    const failure: unknown = await instance
+      .publish(makeEvent())
+      .catch((error: unknown) => error);
+    expect(
+      failure instanceof Error &&
+        failure.message === 'Kafka delivery failed' &&
+        failure.cause === undefined,
+    ).toBe(true);
+    await instance.disconnect();
+    expect(await admin.fetchTopicOffsets(target)).toEqual(before);
+  }
+
   async function deliver(instance: KafkaEventPublisher): Promise<void> {
     const event = makeEvent();
     expect(await instance.publish(event)).toBe(true);
@@ -94,7 +131,11 @@ describe('real Kafka TLS/SCRAM publisher boundary', () => {
     admin = client.admin();
     await admin.connect();
     await admin.createTopics({
-      topics: [{ topic, numPartitions: 1, replicationFactor: 1 }],
+      topics: [topic, otherTopic].map((name) => ({
+        topic: name,
+        numPartitions: 1,
+        replicationFactor: 1,
+      })),
       waitForLeaders: true,
     });
     consumer = client.consumer({
@@ -114,6 +155,15 @@ describe('real Kafka TLS/SCRAM publisher boundary', () => {
         return Promise.resolve();
       },
     });
+    configure(restrictedCredentials());
+    const restrictedConfig = kafkaEventsConfig();
+    if (!restrictedConfig.enabled) throw new Error('Expected enabled Kafka');
+    restrictedAdmin = new Kafka({
+      ...restrictedConfig.client,
+      logLevel: logLevel.NOTHING,
+    }).admin();
+    // Valid SCRAM credentials authenticate even when no resource ACL is granted.
+    await restrictedAdmin.connect();
   });
 
   afterAll(async () => {
@@ -122,6 +172,7 @@ describe('real Kafka TLS/SCRAM publisher boundary', () => {
       for (const cleanup of [
         ...publishers.map((instance) => () => instance.disconnect()),
         () => consumer?.disconnect(),
+        () => restrictedAdmin?.disconnect(),
         () => admin?.disconnect(),
         () => broker?.stop(),
         () => broker?.security?.cleanup(),
@@ -198,5 +249,55 @@ describe('real Kafka TLS/SCRAM publisher boundary', () => {
     });
     expect(code).toBe('ERR_TLS_CERT_ALTNAME_INVALID');
     await deliver(publisher());
+  });
+
+  it('denies an authenticated publisher with no resource grants', async () => {
+    await rejectPublish(topic);
+    await deliver(publisher());
+  });
+
+  it('delivers exact events after granting only literal-topic Write and IdempotentWrite', async () => {
+    const principal = `User:${broker.security!.publisherUsername}`;
+    expect(
+      await admin.createAcls({
+        acl: [
+          {
+            resourceType: AclResourceTypes.TOPIC,
+            resourceName: topic,
+            operation: AclOperationTypes.WRITE,
+          },
+          {
+            resourceType: AclResourceTypes.CLUSTER,
+            resourceName: 'kafka-cluster',
+            operation: AclOperationTypes.IDEMPOTENT_WRITE,
+          },
+        ].map((entry) => ({
+          ...entry,
+          principal,
+          host: '*',
+          permissionType: AclPermissionTypes.ALLOW,
+          resourcePatternType: ResourcePatternTypes.LITERAL,
+        })),
+      }),
+    ).toBe(true);
+    // ACL propagation is asynchronous. Probe metadata, never publish retries.
+    const deadline = Date.now() + 10000;
+    let visible = false;
+    while (!visible && Date.now() < deadline) {
+      visible = await restrictedAdmin
+        .fetchTopicMetadata({ topics: [topic] })
+        .then(
+          () => true,
+          () => false,
+        );
+      if (!visible) await delay(100);
+    }
+    expect(visible).toBe(true);
+    await deliver(publisher(restrictedCredentials()));
+  });
+
+  it('denies the same publisher access to another existing topic', async () => {
+    await rejectPublish(otherTopic);
+    await deliver(publisher(restrictedCredentials()));
   });
 });

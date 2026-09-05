@@ -2,6 +2,9 @@
 
 ## Kafka commerce delivery outbox
 
+Topic-ACL tests modify only disposable Kafka metadata; no PostgreSQL schema,
+application rows or server access grants change (`docs/features/kafka-topic-acl.md`).
+
 TLS/SCRAM publisher tests use disposable broker topics and no application DB
 writes. The existing outbox suite retains its local `_test` fixture boundaries.
 

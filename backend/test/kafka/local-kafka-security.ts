@@ -10,6 +10,8 @@ const execute = promisify(execFile);
 export class LocalKafkaSecurity {
   readonly username = `fixture-${randomBytes(8).toString('hex')}`;
   readonly password = randomBytes(32).toString('hex');
+  readonly publisherUsername = `publisher-${randomBytes(8).toString('hex')}`;
+  readonly publisherPassword = randomBytes(32).toString('hex');
   private readonly storePassword = randomBytes(32).toString('hex');
   ca = '';
 
@@ -72,6 +74,10 @@ export class LocalKafkaSecurity {
   properties(): string[] {
     const store = join(this.directory, 'broker.p12').replaceAll('\\', '/');
     return [
+      'authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer',
+      'allow.everyone.if.no.acl.found=false',
+      // ANONYMOUS is only the disposable loopback controller, never a client.
+      `super.users=User:${this.username};User:ANONYMOUS`,
       `ssl.keystore.location=${store}`,
       'ssl.keystore.type=PKCS12',
       `ssl.keystore.password=${this.storePassword}`,
@@ -89,10 +95,15 @@ export class LocalKafkaSecurity {
   }
 
   formatArgs(): string[] {
-    return ['SCRAM-SHA-256', 'SCRAM-SHA-512'].flatMap((mechanism) => [
-      '--add-scram',
-      `${mechanism}=[name=${this.username},password=${this.password}]`,
-    ]);
+    return [
+      { username: this.username, password: this.password },
+      { username: this.publisherUsername, password: this.publisherPassword },
+    ].flatMap(({ username, password }) =>
+      ['SCRAM-SHA-256', 'SCRAM-SHA-512'].flatMap((mechanism) => [
+        '--add-scram',
+        `${mechanism}=[name=${username},password=${password}]`,
+      ]),
+    );
   }
 
   async cleanup(): Promise<void> {
