@@ -19,6 +19,17 @@ below for what's landed from that port so far.
 
 ## Status
 
+### KafkaJS dependency installation from GitHub
+
+- [x] Install KafkaJS 2.2.4 from the official GitHub HTTPS archive pinned to
+  `c08472878724ce5fc62a9a9aa865255d7e7682a6`; package-lock records SHA-512
+  integrity and does not require Git/SSH in the production image build.
+- [x] Verify local import and producer/consumer construction without connecting;
+  Backend typecheck/build and all 6 existing canonical-envelope tests pass.
+- This installs the client library only. Broker provisioning, durable event
+  publication, consumers, DLQ and integration tests remain unfinished.
+- No API, schema, runtime flag, server deployment, push or merge in this slice.
+
 ### 2026-09-05 — Microservices target architecture foundation
 
 - [x] Define BluJet-owned bounded contexts and keep Operations, Crew and MRO
