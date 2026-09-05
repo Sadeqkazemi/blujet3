@@ -1,5 +1,12 @@
 # DB_SCHEMA.md — blujet data model
 
+## A6.17 — Tier-rules contract evidence
+
+No migration or production grants. Tests use the existing A6.13 exact column
+grants and generated rule UUIDs in an explicitly named `_test` database.
+Core comparison connections are read-only; Identity access is denied to the
+Loyalty login. Existing rule rows are preserved and test rows are removed.
+
 ## A6.16 — Card-request compatibility projection
 
 No migration. The optional reader uses existing `club_members` columns
