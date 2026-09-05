@@ -1,5 +1,11 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## A6.18 — Membership real-boundary verification
+
+No API changes. Real HTTP tests compare the A6.12 Core membership response with
+Loyalty, including owner isolation, ledger-derived points, card history and
+rollback. See `docs/features/loyalty-membership-contract.md`.
+
 ## A6.17 — Tier-rules real-boundary verification
 
 No API changes. The A6.13 built Core/client and real Loyalty HTTP response are

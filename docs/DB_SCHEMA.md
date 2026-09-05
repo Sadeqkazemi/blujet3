@@ -1,5 +1,12 @@
 # DB_SCHEMA.md — blujet data model
 
+## A6.18 — Membership contract evidence
+
+No migrations or production grants. Real-boundary tests use the existing A6.12
+column grants and generated users/members/ledger/card requests only in a named
+`_test` database. Core comparison connections are read-only; test snapshots
+must remain unchanged and only the generated fixtures/login are cleaned up.
+
 ## A6.17 — Tier-rules contract evidence
 
 No migration or production grants. Tests use the existing A6.13 exact column
