@@ -2,6 +2,10 @@
 
 ## Kafka durable transport foundation
 
+ACK-gap integration tests verify identical-ID redelivery after Kafka ACK and
+worker DB connection loss; no contract or consumer deduplication change
+(`docs/features/kafka-ack-gap.md`).
+
 Topic-ACL integration tests restrict a synthetic publisher on a disposable broker;
 no HTTP/event contract or business authorization change (`docs/features/kafka-topic-acl.md`).
 

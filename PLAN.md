@@ -19,14 +19,28 @@ below for what's landed from that port so far.
 
 ## Status
 
-### 2026-09-05 — Kafka exact-topic ACL tests (local)
+### 2026-09-05 — Kafka ACK/database gap recovery (local)
+
+- [x] After real broker ACK, close only a dedicated worker DB pool; verify
+  the outbox row remains leased and undelivered.
+- [x] Fresh worker respects the live lease, then recovers the identical event
+  after fixture-only lease aging. Two distinct offsets share one event ID;
+  further drain does not send again after persisted delivery.
+- [x] 13 real-broker tests, 48 focused unit tests, 4 CI-contract tests and
+  typecheck/full read-only lint pass; evidence: `docs/features/kafka-ack-gap.md`.
+- [ ] Owner-approved publication and Linux/ARM CI before merge.
+- No production code/schema/flag changes or deployment. Consumer deduplication
+  remains a separate requirement, not an outcome of this test.
+
+### 2026-09-05 — Kafka exact-topic ACL tests (merged)
 
 - [x] Document isolated default-deny broker and restricted publisher identity.
 - [x] Prove denied publication before grants, exact-topic delivery after grants,
   and denied publication to another topic without an appended record.
 - [x] 12 real-broker tests, 48 unit tests and 4 CI-contract tests pass;
   full read-only lint and typecheck pass. Red/green fixture evidence recorded.
-- [ ] Owner-approved publication and CI before merge.
+- [x] Owner-approved PR #57 merged as `a7ba2ea`; CI `33975955259` and
+  CodeQL `33975955263` passed, including Linux/ARM real Kafka tests.
 - Evidence: `docs/features/kafka-topic-acl.md`. No server deployment,
   production ACL, business-writer, API or database change.
 

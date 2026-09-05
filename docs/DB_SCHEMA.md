@@ -2,6 +2,10 @@
 
 ## Kafka commerce delivery outbox
 
+ACK-gap tests close only their dedicated worker connection pool and age only
+their uniquely identified fixture lease in the local `_test` DB. No migration,
+shared database shutdown or production row changes (`docs/features/kafka-ack-gap.md`).
+
 Topic-ACL tests modify only disposable Kafka metadata; no PostgreSQL schema,
 application rows or server access grants change (`docs/features/kafka-topic-acl.md`).
 
