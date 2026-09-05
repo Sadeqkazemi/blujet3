@@ -1,5 +1,22 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## A6.11 — Compatible Loyalty price-lock history integration
+
+`GET /api/v1/my/price-locks` keeps its existing authenticated envelope and
+newest-first, all-status history. With
+`LOYALTY_PRICE_LOCK_READ_ENABLED=true`, the backend requests the owner-bound
+`GET /internal/v1/loyalty/price-lock-history/:userId` projection, validates its
+exact bounded response, and hydrates the existing
+`flight: { flightNo, originCode, destCode, departureAt }` object from Core
+inventory. An empty remote history remains an empty list. Network, 5xx and
+bounded-result failures fall back to the existing Core read; malformed or
+foreign-owner payloads fail safely with a sanitized 503.
+
+The browser cannot provide the owner assertion or internal token. Price-lock
+creation/cancellation, fee ledger entries, booking-time lookup/claim and every
+other Loyalty write remain in Core. The internal endpoint is not published by
+the gateway and returns no inventory, passenger or wallet data.
+
 ## A6.9 — Compatible Agency profile read integration
 
 GET `/api/v1/agency-portal/profile` retains its current response, authentication,
@@ -69,7 +86,8 @@ real Loyalty HTTP and restricted PostgreSQL credentials; API behavior is unchang
 
 An independently runnable `loyalty-service` exposes authenticated GET routes
 `/internal/v1/loyalty/members/:userId` and
-`/internal/v1/loyalty/price-locks/:userId`. Both require `X-Internal-Token`,
+`/internal/v1/loyalty/price-locks/:userId`; A6.11 additionally exposes
+`/internal/v1/loyalty/price-lock-history/:userId`. All require `X-Internal-Token`,
 `X-Loyalty-User-Id` matching the UUID path (asserted by the trusted caller,
 never forwarded from a browser), and propagate `X-Request-Id`. They are
 internal service-identity APIs, not user-token APIs. Missing identity: 401;
@@ -83,6 +101,11 @@ createdAt,bookingId}` for the owner, ACTIVE and strictly unexpired; no flight
 join. Optional ISO UTC `at` fixes the comparison instant (read-only, not sale
 authorization). Results are ordered by id and bounded to 1001 rows; an overflow
 returns 409 rather than a silently truncated comparison.
+
+The A6.11 history route returns `{userId,locks}` for the owner, includes every
+lock status, orders by `createdAt DESC, id DESC`, and applies the same 1001-row
+overflow guard. It has no optional `at` parameter and performs no inventory
+join.
 
 `/health` is public liveness; `/ready` probes the required schema through a
 read-only transaction and returns safe 503 on failure. No public facade or

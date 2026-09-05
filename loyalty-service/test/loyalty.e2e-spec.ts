@@ -58,11 +58,17 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
       );
       if (!flights[0])
         throw new Error('Run backend migrations and seed before E2E');
-      for (const [id, userId, expiry, status] of [
-        [lockId, owner, '2026-09-05T12:00:00.000Z', 'ACTIVE'],
-        [randomUUID(), owner, at, 'ACTIVE'],
-        [randomUUID(), owner, '2026-09-05T12:00:00.000Z', 'EXPIRED'],
-        [randomUUID(), other, '2026-09-05T12:00:00.000Z', 'ACTIVE'],
+      for (const [id, userId, expiry, status, createdAt] of [
+        [lockId, owner, '2026-09-05T12:00:00.000Z', 'ACTIVE', at],
+        [randomUUID(), owner, at, 'ACTIVE', '2026-09-04T11:00:00.000Z'],
+        [
+          randomUUID(),
+          owner,
+          '2026-09-05T12:00:00.000Z',
+          'EXPIRED',
+          '2026-09-04T13:00:00.000Z',
+        ],
+        [randomUUID(), other, '2026-09-05T12:00:00.000Z', 'ACTIVE', at],
       ]) {
         await tx.query(
           'INSERT INTO loyalty.price_locks (id, "userId", "flightInstanceId", cabin, "lockedPriceIrr", "feeIrr", status, "expiresAt", "createdAt") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)',
@@ -75,7 +81,7 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
             '300000',
             status,
             expiry,
-            at,
+            createdAt,
           ],
         );
       }
@@ -226,6 +232,48 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
       .expect(200, { success: true, data: [] });
   });
 
+  it('returns the owner-bound all-status history newest first without inventory data', async () => {
+    const response = await request(app.getHttpServer())
+      .get(`${path}/price-lock-history/${owner}`)
+      .set(headers)
+      .expect(200);
+    expect(response.body as unknown).toEqual({
+      success: true,
+      data: {
+        userId: owner,
+        locks: [
+          expect.objectContaining({
+            status: 'EXPIRED',
+            createdAt: '2026-09-04T13:00:00.000Z',
+            lockedPriceIrr: '9007199254740993',
+          }) as unknown,
+          expect.objectContaining({
+            id: lockId,
+            status: 'ACTIVE',
+            createdAt: at,
+          }) as unknown,
+          expect.objectContaining({
+            status: 'ACTIVE',
+            createdAt: '2026-09-04T11:00:00.000Z',
+          }) as unknown,
+        ],
+      },
+    });
+    expect(response.text).not.toContain('flightNo');
+    expect(response.text).not.toContain('originCode');
+    expect(response.text).not.toContain('destCode');
+
+    await request(app.getHttpServer())
+      .get(`${path}/price-lock-history/${other}`)
+      .set(headers)
+      .expect(403);
+    const missing = randomUUID();
+    await request(app.getHttpServer())
+      .get(`${path}/price-lock-history/${missing}`)
+      .set({ ...headers, 'X-Loyalty-User-Id': missing })
+      .expect(200, { success: true, data: { userId: missing, locks: [] } });
+  });
+
   it('rejects writes at database and HTTP boundaries; reads leave cache unchanged', async () => {
     const db = app.get(DataSource);
     await expect(
@@ -314,5 +362,9 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
       success: false,
       error: { code: 'CONFLICT' },
     });
+    await request(app.getHttpServer())
+      .get(`${path}/price-lock-history/${owner}`)
+      .set(headers)
+      .expect(409);
   });
 });

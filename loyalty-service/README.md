@@ -55,6 +55,10 @@ must derive the owner from its authenticated session.
   locks with expiry strictly after the comparison instant; sorted by ID.
   Includes already-associated booking IDs for comparison only. At most 1000
   rows, otherwise 409; no silent truncation.
+- `GET /internal/v1/loyalty/price-lock-history/:userId`: every owned price-lock
+  status, newest first, at most 1000 rows, otherwise 409. The response wraps
+  the list with the asserted `userId`; it still contains no inventory join or
+  wallet/payment data.
 - `GET /health`: liveness, version, commit.
 - `GET /ready`: required schema/column access, safe 503 on failure.
 

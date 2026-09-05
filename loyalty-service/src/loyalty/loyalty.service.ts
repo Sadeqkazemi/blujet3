@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { ErrorCode } from '../common/errors';
-import { LockView, MemberView } from './loyalty.dto';
+import { LockHistoryView, LockView, MemberView } from './loyalty.dto';
 
 @Injectable()
 export class LoyaltyService {
@@ -70,5 +70,31 @@ export class LoyaltyService {
         message: 'تعداد نتایج بیش از حد مجاز مقایسه است.',
       });
     return rows;
+  }
+
+  async lockHistory(
+    userId: string,
+    callerId: string | undefined,
+  ): Promise<LockHistoryView> {
+    this.assertOwner(userId, callerId);
+    const locks = await this.db.transaction(async (tx) => {
+      await tx.query('SET TRANSACTION READ ONLY');
+      return tx.query<LockView[]>(
+        `
+        SELECT id, "flightInstanceId", cabin, "lockedPriceIrr"::text, "feeIrr"::text,
+          status, to_char("expiresAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "expiresAt",
+          to_char("createdAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "createdAt", "bookingId"
+        FROM loyalty.price_locks
+        WHERE "userId" = $1
+        ORDER BY "createdAt" DESC, id DESC LIMIT 1001`,
+        [userId],
+      );
+    });
+    if (locks.length > 1000)
+      throw new ConflictException({
+        code: ErrorCode.CONFLICT,
+        message: 'تعداد نتایج بیش از حد مجاز است.',
+      });
+    return { userId, locks };
   }
 }

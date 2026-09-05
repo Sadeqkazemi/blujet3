@@ -1,5 +1,18 @@
 # DB_SCHEMA.md — blujet data model
 
+## A6.11 — Loyalty price-lock history compatibility projection
+
+No migration or grant is added. The new internal history route reads only the
+already approved `loyalty.price_locks` projection columns through the
+restricted reader and scopes every query by the asserted owner UUID. It
+returns at most 1000 rows across all statuses and performs no cross-schema
+join. Core resolves the referenced `inventory.flight_instances`, `flights` and
+`routes` rows only to preserve the existing public flight summary.
+
+Core remains the sole writer for price locks, wallet fees and booking claims.
+Disabled or unavailable remote reads use the existing Core query, so rollback
+requires no schema or data operation.
+
 ## A6.9 — Agency portal profile compatibility projection
 
 No schema migration or writer change. The opt-in route additionally selects the
