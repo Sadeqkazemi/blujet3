@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   Param,
   Patch,
   Post,
@@ -174,8 +175,8 @@ export class ClubController {
   @Roles('COMMERCIAL_MANAGER', 'EMPLOYEE')
   @RequiresPermission('cl_rules_view')
   @ApiOperation({ summary: 'قوانین حد نصاب امتیاز سطوح باشگاه مشتریان' })
-  async getTierRules() {
-    const data = await this.club.getTierRules();
+  async getTierRules(@Headers('x-request-id') requestId?: string) {
+    const data = await this.club.getTierRules(requestId);
     return { success: true, data };
   }
 

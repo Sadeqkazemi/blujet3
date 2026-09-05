@@ -19,6 +19,7 @@ describe('Loyalty environment', () => {
     expect(validateEnv(valid)).toMatchObject({
       PORT: 3500,
       LOYALTY_MEMBERSHIP_PROJECTION_ENABLED: 'false',
+      LOYALTY_TIER_RULES_PROJECTION_ENABLED: 'false',
     });
     expect(databaseOptions(valid.LOYALTY_DATABASE_URL)).toMatchObject({
       synchronize: false,
@@ -44,6 +45,21 @@ describe('Loyalty environment', () => {
       validateEnv({
         ...valid,
         LOYALTY_MEMBERSHIP_PROJECTION_ENABLED: 'yes',
+      }),
+    ).toThrow();
+  });
+
+  it('accepts only explicit tier-rules projection flags', () => {
+    expect(
+      validateEnv({
+        ...valid,
+        LOYALTY_TIER_RULES_PROJECTION_ENABLED: 'true',
+      }).LOYALTY_TIER_RULES_PROJECTION_ENABLED,
+    ).toBe('true');
+    expect(() =>
+      validateEnv({
+        ...valid,
+        LOYALTY_TIER_RULES_PROJECTION_ENABLED: 'yes',
       }),
     ).toThrow();
   });

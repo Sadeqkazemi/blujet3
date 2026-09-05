@@ -53,6 +53,21 @@ const MEMBERSHIP_READER_COLUMNS = [
   },
 ] as const;
 
+const TIER_RULES_READER_COLUMNS = [
+  {
+    schema: 'loyalty',
+    relation: 'club_tier_rules',
+    columns: [
+      'goldMinPoints',
+      'platinumMinPoints',
+      'cardRequestMinPoints',
+      'updatedAt',
+      'updatedById',
+      'createdAt',
+    ],
+  },
+] as const;
+
 export interface ReaderChecks {
   restrictedRole: boolean;
   noMemberships: boolean;
@@ -73,10 +88,13 @@ export interface ReaderReport {
 export async function verifyReader(
   db: DataSource,
   membershipEnabled = false,
+  tierRulesEnabled = false,
 ): Promise<ReaderReport> {
-  const columns = membershipEnabled
-    ? [...BASE_READER_COLUMNS, ...MEMBERSHIP_READER_COLUMNS]
-    : BASE_READER_COLUMNS;
+  const columns = [
+    ...BASE_READER_COLUMNS,
+    ...(membershipEnabled ? MEMBERSHIP_READER_COLUMNS : []),
+    ...(tierRulesEnabled ? TIER_RULES_READER_COLUMNS : []),
+  ];
   const rows = await db.transaction('REPEATABLE READ', async (tx) => {
     await tx.query('SET TRANSACTION READ ONLY');
     return tx.query<ReaderChecks[]>(

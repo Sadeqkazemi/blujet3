@@ -23,6 +23,7 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
 
   beforeAll(async () => {
     process.env.LOYALTY_MEMBERSHIP_PROJECTION_ENABLED = 'true';
+    process.env.LOYALTY_TIER_RULES_PROJECTION_ENABLED = 'true';
     writer = await new DataSource({
       type: 'postgres',
       url: process.env.LOYALTY_DATABASE_URL,
@@ -109,6 +110,7 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
       logger: false,
     });
     app.get(ConfigService).set('LOYALTY_MEMBERSHIP_PROJECTION_ENABLED', 'true');
+    app.get(ConfigService).set('LOYALTY_TIER_RULES_PROJECTION_ENABLED', 'true');
     app.useGlobalPipes(
       new ValidationPipe({
         transform: true,
@@ -146,9 +148,11 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
       await writer.destroy();
     }
     delete process.env.LOYALTY_MEMBERSHIP_PROJECTION_ENABLED;
+    delete process.env.LOYALTY_TIER_RULES_PROJECTION_ENABLED;
   });
 
   it('requires service identity and a matching trusted owner assertion', async () => {
+    await request(app.getHttpServer()).get(`${path}/tier-rules`).expect(401);
     await request(app.getHttpServer())
       .get(`${path}/members/${owner}`)
       .expect(401);
@@ -164,6 +168,38 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
       .get(`${path}/price-locks/${other}`)
       .set(headers)
       .expect(403);
+  });
+
+  it('returns exact tier rules with service identity and keeps the route default-off', async () => {
+    const response = await request(app.getHttpServer())
+      .get(`${path}/tier-rules`)
+      .set('X-Internal-Token', token)
+      .expect(200);
+    const body = response.body as {
+      data: Record<string, unknown>;
+    };
+    expect(Object.keys(body.data).sort()).toEqual(
+      [
+        'cardRequestMinPoints',
+        'goldMinPoints',
+        'platinumMinPoints',
+        'updatedAt',
+        'updatedById',
+      ].sort(),
+    );
+    expect(body.data).toMatchObject({
+      goldMinPoints: expect.any(Number) as unknown,
+      platinumMinPoints: expect.any(Number) as unknown,
+      cardRequestMinPoints: expect.any(Number) as unknown,
+      updatedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/) as unknown,
+    });
+    const config = app.get(ConfigService);
+    config.set('LOYALTY_TIER_RULES_PROJECTION_ENABLED', 'false');
+    await request(app.getHttpServer())
+      .get(`${path}/tier-rules`)
+      .set('X-Internal-Token', token)
+      .expect(404);
+    config.set('LOYALTY_TIER_RULES_PROJECTION_ENABLED', 'true');
   });
 
   it('validates UUIDs, timestamps and extra query fields', async () => {

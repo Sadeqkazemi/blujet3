@@ -1,5 +1,18 @@
 # DB_SCHEMA.md — blujet data model
 
+## A6.13 — Loyalty tier-rules compatibility projection
+
+No schema migration, copied data or automatic production grant is added. The
+optional projection adds exact SELECT on existing
+`loyalty.club_tier_rules.updatedAt` and `updatedById` to the threshold columns
+already required by A6.12. It uses a read-only snapshot, returns at most the
+oldest singleton rule and performs no Identity join. Backend resolves the
+updater role label from the UUID to preserve the public response.
+
+Core remains the only writer and retains defensive default-row creation.
+Disabling the read flag restores the current TypeORM path without schema or
+data rollback.
+
 ## A6.12 — Loyalty membership compatibility projection
 
 No schema migration, copied data or automatic production grant is added. The

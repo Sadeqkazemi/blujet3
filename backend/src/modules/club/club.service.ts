@@ -32,6 +32,7 @@ import {
   ClubTier,
 } from '../../database/enums';
 import { LoyaltyMembershipClient } from './loyalty-membership.client';
+import { LoyaltyTierRulesClient } from './loyalty-tier-rules.client';
 
 const CARD_PREFIX: Record<ClubTier, string> = {
   SILVER: 'SILV',
@@ -39,7 +40,12 @@ const CARD_PREFIX: Record<ClubTier, string> = {
   PLATINUM: 'PLAT',
 };
 
-function tierRulePreview(rule: ClubTierRule) {
+type TierRuleValues = Pick<
+  ClubTierRule,
+  'goldMinPoints' | 'platinumMinPoints' | 'cardRequestMinPoints'
+>;
+
+function tierRulePreview(rule: TierRuleValues) {
   return [
     {
       tier: 'SILVER' as const,
@@ -59,7 +65,10 @@ function tierRulePreview(rule: ClubTierRule) {
   ];
 }
 
-function toTierRuleView(rule: ClubTierRule, updatedByLabelFa: string | null) {
+function toTierRuleView(
+  rule: TierRuleValues & Pick<ClubTierRule, 'updatedAt'>,
+  updatedByLabelFa: string | null,
+) {
   return {
     goldMinPoints: rule.goldMinPoints,
     platinumMinPoints: rule.platinumMinPoints,
@@ -117,6 +126,7 @@ export class ClubService {
     private readonly userRepo: Repository<User>,
     private readonly audit: AuditService,
     private readonly loyaltyMembership: LoyaltyMembershipClient,
+    private readonly loyaltyTierRules: LoyaltyTierRulesClient,
   ) {}
 
   // ── Phase 65: club tier rules (singleton config) ────────────────────────
@@ -133,8 +143,16 @@ export class ClubService {
     );
   }
 
-  async getTierRules() {
-    const rule = await this.getOrCreateTierRule();
+  private async tierRuleView(
+    rule: Pick<
+      ClubTierRule,
+      | 'goldMinPoints'
+      | 'platinumMinPoints'
+      | 'cardRequestMinPoints'
+      | 'updatedAt'
+      | 'updatedById'
+    >,
+  ) {
     let updatedByLabelFa: string | null = null;
     if (rule.updatedById) {
       const updater = await this.userRepo.findOne({
@@ -144,6 +162,16 @@ export class ClubService {
       updatedByLabelFa = updater ? ROLE_LABELS_FA[updater.role] : null;
     }
     return toTierRuleView(rule, updatedByLabelFa);
+  }
+
+  async getTierRules(requestId?: string) {
+    const remote = await this.loyaltyTierRules.get(requestId);
+    if (remote)
+      return this.tierRuleView({
+        ...remote,
+        updatedAt: new Date(remote.updatedAt),
+      });
+    return this.tierRuleView(await this.getOrCreateTierRule());
   }
 
   async updateTierRules(

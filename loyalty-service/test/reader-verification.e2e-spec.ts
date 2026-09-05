@@ -28,6 +28,9 @@ describe('Loyalty least-privilege reader (real PostgreSQL login)', () => {
     'SELECT (id, "memberId", status, history, "cardNo", "createdAt") ON loyalty.club_card_requests',
     'SELECT ("goldMinPoints", "platinumMinPoints", "cardRequestMinPoints", "createdAt") ON loyalty.club_tier_rules',
   ];
+  const tierRulesGrantStatements = [
+    'SELECT ("goldMinPoints", "platinumMinPoints", "cardRequestMinPoints", "updatedAt", "updatedById", "createdAt") ON loyalty.club_tier_rules',
+  ];
 
   beforeAll(async () => {
     const url = new URL(process.env.LOYALTY_DATABASE_URL ?? '');
@@ -139,6 +142,27 @@ describe('Loyalty least-privilege reader (real PostgreSQL login)', () => {
       });
     } finally {
       for (const grant of membershipGrantStatements)
+        await admin.query('REVOKE ' + grant + ' FROM ' + quotedRole);
+    }
+    expect(await verifyReader(reader)).toMatchObject({ status: 'PASS' });
+  });
+
+  it('requires the optional exact tier-rules projection only when enabled', async () => {
+    expect(await verifyReader(reader, false, true)).toMatchObject({
+      status: 'FAIL',
+    });
+    try {
+      for (const grant of tierRulesGrantStatements)
+        await admin.query('GRANT ' + grant + ' TO ' + quotedRole);
+      expect(await verifyReader(reader, false, true)).toMatchObject({
+        status: 'PASS',
+      });
+      expect(await new LoyaltyService(reader).tierRules()).toMatchObject({
+        goldMinPoints: expect.any(Number) as unknown,
+        updatedAt: expect.any(String) as unknown,
+      });
+    } finally {
+      for (const grant of tierRulesGrantStatements)
         await admin.query('REVOKE ' + grant + ' FROM ' + quotedRole);
     }
     expect(await verifyReader(reader)).toMatchObject({ status: 'PASS' });

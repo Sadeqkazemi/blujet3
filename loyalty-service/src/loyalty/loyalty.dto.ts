@@ -113,6 +113,26 @@ export class TierRulesView {
   cardRequestMinPoints!: number;
 }
 
+export class TierRulesProjection extends TierRulesView {
+  @ApiProperty({ example: '2026-09-05T10:00:00.000Z' })
+  updatedAt!: string;
+
+  @ApiProperty({
+    example: '00000000-0000-4000-8000-000000000001',
+    nullable: true,
+    type: String,
+  })
+  updatedById!: string | null;
+}
+
+export class TierRulesResponse {
+  @ApiProperty({ example: true })
+  success!: boolean;
+
+  @ApiProperty({ type: TierRulesProjection })
+  data!: TierRulesProjection;
+}
+
 export class MembershipView {
   @ApiProperty({ example: '00000000-0000-4000-8000-000000000001' })
   userId!: string;
