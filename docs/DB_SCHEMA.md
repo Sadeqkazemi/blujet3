@@ -2,6 +2,10 @@
 
 ## Kafka commerce delivery outbox
 
+Backend lint cleanup does not change schema, SQL or ownership. Historical
+migration files remain identical to main; only their formatting lint is exempted
+for the eight explicitly named files in backend/eslint.config.mjs.
+
 Real-broker integration uses the existing outbox in a local `_test` database.
 It may insert/delete its uniquely identified fixture rows only; no schema,
 business-data or production changes. Tests refuse a nonempty shared outbox.

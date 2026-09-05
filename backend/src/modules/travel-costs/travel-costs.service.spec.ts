@@ -29,7 +29,11 @@ describe('TravelCostsService fixed checkout rules', () => {
     const audit = { record: jest.fn() };
     const ancillary = { overlayTravelExtras: jest.fn() };
     return {
-      service: new TravelCostsService(repo as never, audit as never, ancillary as never),
+      service: new TravelCostsService(
+        repo as never,
+        audit as never,
+        ancillary as never,
+      ),
       repo,
     };
   }
@@ -51,9 +55,9 @@ describe('TravelCostsService fixed checkout rules', () => {
     async (code) => {
       const { service, repo } = serviceFor(fixedRow(code));
 
-      await expect(service.remove(actor, `fixed-${code}`)).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
+      await expect(
+        service.remove(actor, `fixed-${code}`),
+      ).rejects.toBeInstanceOf(BadRequestException);
       expect(repo.remove).not.toHaveBeenCalled();
     },
   );

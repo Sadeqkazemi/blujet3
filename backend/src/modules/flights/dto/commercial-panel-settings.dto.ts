@@ -9,7 +9,10 @@ import {
 import { Type } from 'class-transformer';
 
 class AgencyReleaseClassDto {
-  @ApiPropertyOptional({ example: 12, description: 'تعداد صندلی آزاد برای آژانس' })
+  @ApiPropertyOptional({
+    example: 12,
+    description: 'تعداد صندلی آزاد برای آژانس',
+  })
   @IsOptional()
   seats?: number;
 

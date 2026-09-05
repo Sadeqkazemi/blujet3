@@ -19,6 +19,21 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-05 — Backend lint cleanup (local)
+
+- [x] Resolve 473 formatting findings plus 6 redundant non-null assertions.
+  After CI feedback, restore eight immutable migrations and exempt only their
+  exact paths from formatting lint (owner approved); type/safety rules stay on.
+- [x] Normalize touched files to LF to remove mixed-line-ending whitespace errors.
+- [x] Compare normalized emitted JavaScript against main for all 45 files:
+  zero runtime differences, including existing migration SQL behavior.
+- [x] Final read-only lint: zero errors/warnings; typecheck/build and diff check
+  pass; 767 unit tests and 23 flight approval/definition E2E tests pass.
+- Verification details: `docs/features/backend-lint-cleanup.md`.
+- [x] Owner approved publishing/merging PR #53 and the migration-safe correction.
+- [ ] Verify corrected CI and merge PR #53.
+- No API/schema/dependency changes, producer activation or server deployment.
+
 ### 2026-09-05 — Real Kafka/PostgreSQL boundary tests (local)
 
 - [x] Add opt-in isolated KRaft broker harness and commit/rollback/crash-restart tests.
@@ -27,7 +42,9 @@ below for what's landed from that port so far.
 - [x] Pass 3 real-broker tests, 767 unit tests, 24 PostgreSQL regression tests,
   build, typecheck and scoped lint. Full lint has existing formatting failures.
 - Evidence, reproduction and remaining gates: `docs/features/kafka-broker-integration.md`.
-- [ ] Owner approval, push and CI verification; no push/merge/deployment in this slice.
+- [x] Owner-approved PR #52 pushed and merged as `81e4224`; CI `33972428524`
+  (including all four Backend E2E shards and CI gate) and CodeQL `33972428532`
+  passed. No deployment.
 - [ ] TLS/SCRAM and replicated-broker durability; production UTC session readiness.
 - No public API/schema change, business producer activation or server operation.
 

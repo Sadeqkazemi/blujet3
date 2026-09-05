@@ -1,10 +1,7 @@
 export const SMS_PROVIDER = Symbol('SMS_PROVIDER');
 
 export type SmsMessageType =
-  | 'OTP'
-  | 'TEMP_PASSWORD'
-  | 'SURVEY_INVITE'
-  | 'FLIGHT_CANCELLED';
+  'OTP' | 'TEMP_PASSWORD' | 'SURVEY_INVITE' | 'FLIGHT_CANCELLED';
 
 export interface SmsSendResult {
   success: boolean;

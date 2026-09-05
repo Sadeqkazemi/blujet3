@@ -13,12 +13,7 @@ import { UpdateWebservicePricingDto } from './dto/update-webservice-pricing.dto'
 
 @ApiTags('webservice-pricing')
 @Controller('webservice/pricing')
-@UseGuards(
-  JwtAuthGuard,
-  RolesGuard,
-  PanelAccessGuard,
-  EmployeePermissionGuard,
-)
+@UseGuards(JwtAuthGuard, RolesGuard, PanelAccessGuard, EmployeePermissionGuard)
 export class WebservicePricingController {
   constructor(private readonly pricing: WebservicePricingService) {}
 

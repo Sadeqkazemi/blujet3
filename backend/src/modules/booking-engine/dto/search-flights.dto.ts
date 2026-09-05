@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, IsEnum, IsOptional, IsString, Length } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsOptional,
+  IsString,
+  Length,
+} from 'class-validator';
 import { CabinClass } from '../../../database/enums';
 
 export class SearchFlightsDto {
@@ -17,7 +23,11 @@ export class SearchFlightsDto {
   @IsDateString()
   date: string;
 
-  @ApiProperty({ enum: CabinClass, example: CabinClass.ECONOMY, required: false })
+  @ApiProperty({
+    enum: CabinClass,
+    example: CabinClass.ECONOMY,
+    required: false,
+  })
   @IsOptional()
   @IsEnum(CabinClass)
   cabin?: CabinClass;

@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsISO8601, IsOptional, IsString, Length } from 'class-validator';
+import {
+  IsEnum,
+  IsISO8601,
+  IsOptional,
+  IsString,
+  Length,
+} from 'class-validator';
 import { CabinClass } from '../../../database/enums';
 
 export class SearchAdvisoryDto {
@@ -17,7 +23,11 @@ export class SearchAdvisoryDto {
   @IsISO8601({ strict: true })
   date!: string;
 
-  @ApiProperty({ enum: CabinClass, required: false, default: CabinClass.ECONOMY })
+  @ApiProperty({
+    enum: CabinClass,
+    required: false,
+    default: CabinClass.ECONOMY,
+  })
   @IsOptional()
   @IsEnum(CabinClass)
   cabin?: CabinClass;

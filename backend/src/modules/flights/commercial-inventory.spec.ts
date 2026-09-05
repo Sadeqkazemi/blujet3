@@ -110,20 +110,12 @@ describe('commercial active inventory policy', () => {
 
   it('does not flag healthy or distant inventory', () => {
     expect(
-      commercialSalesHealth(
-        new Date('2026-08-14T10:00:00.000Z'),
-        100,
-        140,
-        now,
-      ).isWeak,
+      commercialSalesHealth(new Date('2026-08-14T10:00:00.000Z'), 100, 140, now)
+        .isWeak,
     ).toBe(false);
     expect(
-      commercialSalesHealth(
-        new Date('2026-08-21T11:00:00.000Z'),
-        20,
-        140,
-        now,
-      ).isWeak,
+      commercialSalesHealth(new Date('2026-08-21T11:00:00.000Z'), 20, 140, now)
+        .isWeak,
     ).toBe(false);
   });
 });

@@ -2,6 +2,9 @@
 
 ## Kafka durable transport foundation
 
+Backend lint cleanup changes formatting and redundant TypeScript assertions only;
+all HTTP/event contracts remain unchanged (`docs/features/backend-lint-cleanup.md`).
+
 Opt-in real-broker integration tests exercise only fixture events on loopback;
 no new HTTP endpoint or business producer. See `docs/features/kafka-broker-integration.md`.
 
