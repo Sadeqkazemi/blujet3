@@ -76,3 +76,22 @@ export class LocksResponse {
   @ApiProperty({ type: [LockView] })
   data!: LockView[];
 }
+
+export class LockHistoryView {
+  @ApiProperty({
+    description: 'شناسه مالک تأییدشده برای تمام ردیف‌ها',
+    example: '00000000-0000-4000-8000-000000000001',
+  })
+  userId!: string;
+
+  @ApiProperty({ type: [LockView] })
+  locks!: LockView[];
+}
+
+export class LockHistoryResponse {
+  @ApiProperty({ example: true })
+  success!: boolean;
+
+  @ApiProperty({ type: LockHistoryView })
+  data!: LockHistoryView;
+}

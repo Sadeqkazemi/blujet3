@@ -43,6 +43,7 @@ import { WalletService } from './wallet.service';
 import { ClubPointsService } from './club-points.service';
 import { PriceLockService } from './price-lock.service';
 import { LoyaltyPointsClient } from './loyalty-points.client';
+import { LoyaltyPriceLockClient } from './loyalty-price-lock.client';
 import { SavedFlightsService } from './saved-flights.service';
 import { MySavedFlightsController } from './my-saved-flights.controller';
 import { PrivacyController } from './privacy.controller';
@@ -116,6 +117,7 @@ import {
     ClubPointsService,
     PriceLockService,
     LoyaltyPointsClient,
+    LoyaltyPriceLockClient,
     SavedFlightsService,
     PrivacyService,
     // PAYMENT_GATEWAY env var selects the driver; sandbox is the only one

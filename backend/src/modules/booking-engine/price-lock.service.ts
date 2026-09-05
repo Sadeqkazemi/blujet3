@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, MoreThan, Repository } from 'typeorm';
@@ -17,6 +18,7 @@ import type { AuthenticatedUser } from '../../common/types/authenticated-user';
 import type { CabinClass } from '../../database/enums';
 import { assertSellableForSale } from '../flights/definition-sellability';
 import { WalletService } from './wallet.service';
+import { LoyaltyPriceLockClient } from './loyalty-price-lock.client';
 
 const LOCK_TTL_MS = 72 * 60 * 60 * 1000;
 /** Flat, NestJS-computed fee — CLAUDE.md: "fee/risk suggested by the ML
@@ -35,6 +37,7 @@ export class PriceLockService {
     @InjectRepository(ClubMember)
     private readonly clubMemberRepo: Repository<ClubMember>,
     private readonly wallet: WalletService,
+    private readonly loyaltyPriceLocks: LoyaltyPriceLockClient,
   ) {}
 
   async create(
@@ -107,7 +110,53 @@ export class PriceLockService {
     });
   }
 
-  async listMine(user: AuthenticatedUser) {
+  async listMine(user: AuthenticatedUser, requestId?: string) {
+    const remote = await this.loyaltyPriceLocks.get(user.id, requestId);
+    if (remote) {
+      if (remote.locks.length === 0) return [];
+      const flightInstanceIds = [
+        ...new Set(remote.locks.map((lock) => lock.flightInstanceId)),
+      ];
+      const instances = await this.flightInstanceRepo
+        .createQueryBuilder('fi')
+        .leftJoinAndSelect('fi.flight', 'flight')
+        .leftJoinAndSelect('flight.route', 'route')
+        .where('fi.id IN (:...ids)', { ids: flightInstanceIds })
+        .getMany();
+      const byId = new Map(
+        instances.map((instance) => [instance.id, instance]),
+      );
+      return remote.locks.map((lock) => {
+        const instance = byId.get(lock.flightInstanceId);
+        if (!instance?.flight?.route) {
+          throw new ServiceUnavailableException({
+            code: ErrorCode.INTERNAL_ERROR,
+            message: 'اطلاعات پرواز قفل قیمت موقتاً در دسترس نیست.',
+          });
+        }
+        return {
+          id: lock.id,
+          flightInstanceId: lock.flightInstanceId,
+          cabin: lock.cabin,
+          lockedPriceIrr: lock.lockedPriceIrr,
+          feeIrr: lock.feeIrr,
+          status: lock.status,
+          expiresAt: lock.expiresAt,
+          createdAt: lock.createdAt,
+          bookingId: lock.bookingId,
+          flight: {
+            flightNo: instance.flight.flightNo,
+            originCode: instance.flight.route.originCode,
+            destCode: instance.flight.route.destCode,
+            departureAt: instance.departureAt,
+          },
+        };
+      });
+    }
+    return this.listMineFromCore(user);
+  }
+
+  private async listMineFromCore(user: AuthenticatedUser) {
     const locks = await this.priceLockRepo
       .createQueryBuilder('l')
       .leftJoinAndSelect('l.flightInstance', 'flightInstance')

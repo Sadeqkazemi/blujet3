@@ -93,8 +93,14 @@ export class WalletPointsLockController {
 
   @Get('my/price-locks')
   @ApiOperation({ summary: 'فهرست قفل‌های قیمت من' })
-  async listPriceLocks(@CurrentUser() user: AuthenticatedUser) {
-    return { success: true, data: await this.priceLocks.listMine(user) };
+  async listPriceLocks(
+    @CurrentUser() user: AuthenticatedUser,
+    @Headers('x-request-id') requestId?: string,
+  ) {
+    return {
+      success: true,
+      data: await this.priceLocks.listMine(user, requestId),
+    };
   }
 
   @Delete('my/price-locks/:id')

@@ -16,7 +16,7 @@ import { PriceLock } from '../src/database/entities/price-lock.entity';
 import { PromoCode } from '../src/database/entities/promo-code.entity';
 import { Route } from '../src/database/entities/route.entity';
 import { encryptPii, hashPii } from '../src/common/pii-crypto';
-import { loginAsCustomer } from './helpers/login.helper';
+import { loginAs, loginAsCustomer } from './helpers/login.helper';
 import { createTestApp } from './helpers/app.helper';
 
 /** Generates a checksum-valid, non-repeating synthetic national ID (same
@@ -395,6 +395,85 @@ describe('Purchase extras: promo codes, wallet, club points, price lock (e2e)', 
     }
   });
 
+  it('GET /my/price-locks can read the owner-bound Loyalty history when enabled', async () => {
+    const { accessToken, userId, instance } = await lockAsGold(
+      phoneFor(91),
+      50,
+    );
+    const created = await request(app.getHttpServer())
+      .post('/my/price-locks')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ flightInstanceId: instance.id, cabin: 'ECONOMY' });
+    expect(created.status).toBe(201);
+    const stored = await dataSource
+      .getRepository(PriceLock)
+      .findOneByOrFail({ id: created.body.data.id as string });
+    const config = app.get(ConfigService);
+    config.set('LOYALTY_PRICE_LOCK_READ_ENABLED', 'true');
+    config.set('LOYALTY_SERVICE_URL', 'http://loyalty-service:3500');
+    config.set(
+      'LOYALTY_INTERNAL_TOKEN',
+      'loyalty-price-lock-e2e-token-at-least-32-characters',
+    );
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: true,
+          data: {
+            userId,
+            locks: [
+              {
+                id: stored.id,
+                flightInstanceId: stored.flightInstanceId,
+                cabin: stored.cabin,
+                lockedPriceIrr: String(stored.lockedPriceIrr),
+                feeIrr: String(stored.feeIrr),
+                status: stored.status,
+                expiresAt: stored.expiresAt.toISOString(),
+                createdAt: stored.createdAt.toISOString(),
+                bookingId: stored.bookingId,
+              },
+            ],
+          },
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    try {
+      const list = await request(app.getHttpServer())
+        .get('/my/price-locks')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .set('X-Request-Id', 'loyalty-price-lock-e2e');
+      expect(list.status).toBe(200);
+      expect(list.body.data).toEqual([
+        expect.objectContaining({
+          id: stored.id,
+          lockedPriceIrr: String(stored.lockedPriceIrr),
+          flight: {
+            flightNo: 'PE-300',
+            originCode: 'THR',
+            destCode: 'IFN',
+            departureAt: instance.departureAt.toISOString(),
+          },
+        }),
+      ]);
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(
+        `http://loyalty-service:3500/internal/v1/loyalty/price-lock-history/${userId}`,
+      );
+      expect(init.headers).toEqual(
+        expect.objectContaining({
+          'X-Loyalty-User-Id': userId,
+          'X-Request-Id': 'loyalty-price-lock-e2e',
+        }),
+      );
+    } finally {
+      fetchSpy.mockRestore();
+      config.set('LOYALTY_PRICE_LOCK_READ_ENABLED', 'false');
+    }
+  });
+
   it('rejects points payment for a non-member', async () => {
     const { accessToken, bookingId } = await loginAndBook(phoneFor(7), '5A');
     const res = await request(app.getHttpServer())
@@ -405,6 +484,16 @@ describe('Purchase extras: promo codes, wallet, club points, price lock (e2e)', 
   });
 
   // ── Price lock ───────────────────────────────────────────────────────
+
+  it('requires an authenticated customer to list price locks', async () => {
+    await request(app.getHttpServer()).get('/my/price-locks').expect(401);
+    const staff = await loginAs(app, 'itadmin');
+    expect(staff.accessToken).toBeTruthy();
+    await request(app.getHttpServer())
+      .get('/my/price-locks')
+      .set('Authorization', `Bearer ${staff.accessToken}`)
+      .expect(403);
+  });
 
   it('forbids price-lock creation for a non-gold-tier customer', async () => {
     const { accessToken } = await loginAsCustomer(app, phoneFor(8));

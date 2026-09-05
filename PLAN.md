@@ -19,6 +19,17 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-05 — A6.11 Compatible Loyalty price-lock history integration
+
+- [x] Define a default-off, owner-bound all-status Loyalty history projection
+  for the existing `/api/v1/my/price-locks` compatibility route.
+- [x] Implement strict bounded transport, Core inventory hydration and safe
+  availability fallback without moving any writer or booking claim.
+- [x] Prove disabled/enabled behavior, ownership, exact IRR/UTC transport,
+  empty history, rollback and unchanged create/cancel/consume paths.
+- [x] Owner approved publication and merge on 2026-09-05; deployment and UAT
+  flag activation remain separate approval gates.
+
 ### 2026-09-04 — A6.9 Compatible portal profile read integration
 
 - [x] Owner authorized continuing with the next default-off Agency read slice;

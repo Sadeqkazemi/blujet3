@@ -10,6 +10,7 @@ import {
 import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { InternalAuthGuard } from '../common/internal-auth.guard';
 import {
+  LockHistoryResponse,
   LocksResponse,
   MemberResponse,
   OwnerParams,
@@ -68,6 +69,25 @@ export class LoyaltyController {
         owner,
         query.at ? new Date(query.at) : undefined,
       ),
+    };
+  }
+
+  @Get('price-lock-history/:userId')
+  @Header('Cache-Control', 'no-store')
+  @ApiOperation({ summary: 'تاریخچه همه وضعیت‌های قفل قیمت مالک' })
+  @ApiResponse({
+    status: 200,
+    type: LockHistoryResponse,
+    description: 'تاریخچه مالک در پاکت success',
+  })
+  @ApiResponse({ status: 409, description: 'نتایج بیش از حد مجاز است' })
+  async lockHistory(
+    @Param() params: OwnerParams,
+    @Headers('x-loyalty-user-id') owner: string,
+  ) {
+    return {
+      success: true,
+      data: await this.loyalty.lockHistory(params.userId, owner),
     };
   }
 }
