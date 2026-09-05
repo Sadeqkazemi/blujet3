@@ -19,6 +19,18 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-05 — Real Kafka required CI job (local)
+
+- [x] Add isolated PostgreSQL 16 + Java 21 + checksum-verified Kafka 3.9.1 job
+  for existing real-broker commit/rollback/crash-recovery tests.
+- [x] Require broker success through CI gate, with bounded runtime and diagnostic
+  broker-log tails on failure; no deployment or production credentials.
+- [x] Add four workflow contract tests; all pass after reproducing the missing job.
+- [x] Rerun existing real Kafka/PostgreSQL suite: 3/3 tests pass; shell syntax,
+  pinned archive checksum and CI failure/cancellation propagation verified locally.
+- [ ] Owner-approved push and actual Linux/ARM CI verification before merge.
+- Evidence and remaining gates: `docs/features/kafka-ci-gate.md`.
+
 ### 2026-09-05 — Backend lint cleanup (local)
 
 - [x] Resolve 473 formatting findings plus 6 redundant non-null assertions.
@@ -31,7 +43,8 @@ below for what's landed from that port so far.
   pass; 767 unit tests and 23 flight approval/definition E2E tests pass.
 - Verification details: `docs/features/backend-lint-cleanup.md`.
 - [x] Owner approved publishing/merging PR #53 and the migration-safe correction.
-- [ ] Verify corrected CI and merge PR #53.
+- [x] Corrected CI `33973430469` and CodeQL `33973430457` passed;
+  PR #53 merged as `9bcb85c`. No deployment.
 - No API/schema/dependency changes, producer activation or server deployment.
 
 ### 2026-09-05 — Real Kafka/PostgreSQL boundary tests (local)

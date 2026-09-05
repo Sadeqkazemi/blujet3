@@ -68,7 +68,7 @@ jobs:
             fi
           }
 
-          emit backend '^backend/'
+          emit backend '^(backend/|scripts/kafka-ci\.test\.mjs$)'
           emit backend_migration '^(backend/|scripts/check-expand-only-migrations\.mjs$)'
           emit experience '^(experience-service/|backend/(package(-lock)?\.json$|src/database/))'
           emit loyalty '^(loyalty-service/|backend/(package(-lock)?\.json$|tsconfig[^/]*\.json$|nest-cli\.json$|src/database/|src/common/money\.ts$|src/modules/loyalty-shadow/))'
@@ -443,6 +443,63 @@ jobs:
       - run: npm run build
       - run: npm test
 
+  backend-kafka:
+    name: Backend real Kafka
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: blujet
+          POSTGRES_PASSWORD: blujet
+          POSTGRES_DB: blujet_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U blujet -d blujet_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+        working-directory: backend
+      - name: Verify Kafka CI contract
+        run: node scripts/kafka-ci.test.mjs
+      - name: Prepare verified Kafka
+        shell: bash
+        run: |
+          set -euo pipefail
+          kafka_dir=$(mktemp -d "$RUNNER_TEMP/kafka-tools.XXXXXX")
+          curl --fail --show-error --silent --location --proto '=https' --proto-redir '=https' --connect-timeout 20 --max-time 180 --retry 2 \
+            https://archive.apache.org/dist/kafka/3.9.1/kafka_2.13-3.9.1.tgz \
+            --output "$kafka_dir/kafka.tgz"
+          printf '%s  %s\n' \
+            '1ea204ba73411737a275429ca976d440f007ff0957b90b19be41dc5a4bae52617267769be9f0b5791714d0b3c4c760605bd426faea39edd90763585523fa2cfe' \
+            "$kafka_dir/kafka.tgz" | sha512sum --check --strict
+          tar -xzf "$kafka_dir/kafka.tgz" -C "$kafka_dir"
+          echo "KAFKA_TEST_HOME=$kafka_dir/kafka_2.13-3.9.1" >> "$GITHUB_ENV"
+          echo "KAFKA_TEST_JAVA=$JAVA_HOME/bin/java" >> "$GITHUB_ENV"
+      - name: Test real Kafka commit, rollback and crash recovery
+        working-directory: backend
+        run: npm run test:kafka
+      - name: Show fixture broker diagnostics
+        if: failure()
+        shell: bash
+        run: find "${TMPDIR:-/tmp}" -maxdepth 2 -path '*/blujet-kafka-*/broker.log' -type f -exec tail -n 100 {} \;
+
   backend-e2e:
     name: Backend E2E (${{ matrix.shard }})
     needs: changes
@@ -543,6 +600,7 @@ jobs:
       - backend-migration-compatibility
       - pss-service
       - backend
+      - backend-kafka
       - backend-e2e
       - frontend
       - ml-service
