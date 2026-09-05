@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AgencyClassAllotments1788604800000
-  implements MigrationInterface
-{
+export class AgencyClassAllotments1788604800000 implements MigrationInterface {
   name = 'AgencyClassAllotments1788604800000';
 
   async up(queryRunner: QueryRunner): Promise<void> {

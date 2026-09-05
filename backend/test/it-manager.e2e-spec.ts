@@ -191,7 +191,9 @@ describe('IT Manager (e2e)', () => {
 
     expect(res.status).toBe(400);
     expect(res.body.error.message).toContain('دسترسی');
-    expect(await dataSource.getRepository(User).findOneBy({ username })).toBeNull();
+    expect(
+      await dataSource.getRepository(User).findOneBy({ username }),
+    ).toBeNull();
   });
 
   it('a newly created employee logs in and receives only the navigation granted by IT', async () => {
@@ -269,7 +271,8 @@ describe('IT Manager (e2e)', () => {
   });
 
   it('DELETE /it/employees/:id archives the account, revokes access, hides it and releases login identifiers', async () => {
-    const { res, accessToken, username, phone, password } = await createEmployee();
+    const { res, accessToken, username, phone, password } =
+      await createEmployee();
     const id = res.body.data.id as string;
 
     const removed = await request(app.getHttpServer())
@@ -281,7 +284,9 @@ describe('IT Manager (e2e)', () => {
       deletedAt: expect.any(String),
     });
 
-    const archived = await dataSource.getRepository(User).findOneByOrFail({ id });
+    const archived = await dataSource
+      .getRepository(User)
+      .findOneByOrFail({ id });
     expect(archived).toEqual(
       expect.objectContaining({
         isActive: false,
@@ -293,7 +298,9 @@ describe('IT Manager (e2e)', () => {
     );
     expect(archived.deletedAt).toBeInstanceOf(Date);
     expect(
-      await dataSource.getRepository(EmployeePermission).countBy({ employeeId: id }),
+      await dataSource
+        .getRepository(EmployeePermission)
+        .countBy({ employeeId: id }),
     ).toBe(0);
 
     const detail = await request(app.getHttpServer())
@@ -305,7 +312,9 @@ describe('IT Manager (e2e)', () => {
       .get('/it/employees')
       .set(auth(accessToken));
     expect(list.status).toBe(200);
-    expect(list.body.data.some((row: { id: string }) => row.id === id)).toBe(false);
+    expect(list.body.data.some((row: { id: string }) => row.id === id)).toBe(
+      false,
+    );
 
     const oldLogin = await request(app.getHttpServer())
       .post('/auth/staff/login')

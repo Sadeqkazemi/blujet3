@@ -15,10 +15,7 @@ import { CabinFare } from '../src/database/entities/cabin-fare.entity';
 import { CharterCommitment } from '../src/database/entities/charter-commitment.entity';
 import { AuditLog } from '../src/database/entities/audit-log.entity';
 import { User } from '../src/database/entities/user.entity';
-import {
-  FlightReviewDecision,
-  FlightReviewStage,
-} from '../src/database/enums';
+import { FlightReviewDecision, FlightReviewStage } from '../src/database/enums';
 
 /**
  * Task #33 — this suite calls runSandboxActiveFlightPurge() directly

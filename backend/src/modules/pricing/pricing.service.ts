@@ -126,10 +126,10 @@ export class PricingService {
             right.flightInstance.departureAt.getTime(),
         );
         return {
-          ...sorted[0]!,
+          ...sorted[0],
           scheduleGroup: {
             occurrenceCount: sorted.length,
-            startAt: sorted[0]!.flightInstance.departureAt.toISOString(),
+            startAt: sorted[0].flightInstance.departureAt.toISOString(),
             endAt: sorted.at(-1)!.flightInstance.departureAt.toISOString(),
             departures: sorted.map((item) =>
               item.flightInstance.departureAt.toISOString(),
@@ -159,7 +159,10 @@ export class PricingService {
     const row = await this.proposalRepo
       .createQueryBuilder('p')
       .innerJoin('p.flightInstance', 'fi')
-      .select('COUNT(DISTINCT COALESCE(fi."scheduleTemplateId", fi.id))', 'count')
+      .select(
+        'COUNT(DISTINCT COALESCE(fi."scheduleTemplateId", fi.id))',
+        'count',
+      )
       .where('p.status = :status', { status: PricingProposalStatus.PENDING })
       .andWhere('fi.definitionStatus IN (:...statuses)', {
         statuses: [

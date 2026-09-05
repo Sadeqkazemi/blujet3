@@ -491,23 +491,39 @@ describe('Agency Portal (e2e)', () => {
   });
 
   it('keeps temporary agency credit history local and checks missing profiles before HTTP', async () => {
-    const actor = { id: crypto.randomUUID(), role: 'AGENCY' as const, fullName: 'UAT fixture' };
+    const actor = {
+      id: crypto.randomUUID(),
+      role: 'AGENCY' as const,
+      fullName: 'UAT fixture',
+    };
     const now = new Date();
-    const userLookup = jest.spyOn(dataSource.getRepository(User), 'findOneBy').mockResolvedValueOnce({
-      id: actor.id, role: 'AGENCY', username: 'uat.agency', twoFactorEnabled: false,
-      createdAt: now, temporaryPasswordOnlyUntil: new Date(now.getTime() + 60000),
-    } as User);
-    const profileExists = jest.spyOn(dataSource.getRepository(AgencyProfile), 'exist').mockResolvedValueOnce(false);
+    const userLookup = jest
+      .spyOn(dataSource.getRepository(User), 'findOneBy')
+      .mockResolvedValueOnce({
+        id: actor.id,
+        role: 'AGENCY',
+        username: 'uat.agency',
+        twoFactorEnabled: false,
+        createdAt: now,
+        temporaryPasswordOnlyUntil: new Date(now.getTime() + 60000),
+      } as User);
+    const profileExists = jest
+      .spyOn(dataSource.getRepository(AgencyProfile), 'exist')
+      .mockResolvedValueOnce(false);
     const remote = jest.spyOn(app.get(AgencyCreditRequestsClient), 'list');
     const config = app.get(ConfigService);
     const previous = config.get<string>('AGENCY_CREDIT_REQUESTS_READ_ENABLED');
     config.set('AGENCY_CREDIT_REQUESTS_READ_ENABLED', 'true');
     process.env.AUTH_SANDBOX_ENABLED = 'true';
     try {
-      expect(await app.get(AgencyPortalService).myCreditRequests(actor)).toEqual([]);
+      expect(
+        await app.get(AgencyPortalService).myCreditRequests(actor),
+      ).toEqual([]);
       expect(remote).not.toHaveBeenCalled();
       delete process.env.AUTH_SANDBOX_ENABLED;
-      await expect(app.get(AgencyPortalService).myCreditRequests(actor)).rejects.toMatchObject({ status: 404 });
+      await expect(
+        app.get(AgencyPortalService).myCreditRequests(actor),
+      ).rejects.toMatchObject({ status: 404 });
       expect(remote).not.toHaveBeenCalled();
     } finally {
       config.set('AGENCY_CREDIT_REQUESTS_READ_ENABLED', previous);

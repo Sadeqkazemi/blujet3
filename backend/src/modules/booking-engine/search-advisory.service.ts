@@ -35,8 +35,19 @@ export class SearchAdvisoryService {
     cabin: CabinClass,
     requestId?: string,
   ): Promise<SearchAdvisoryResult> {
-    const calendar = await this.search.priceCalendar(origin, dest, date, 3, cabin);
-    const dayResults = (await this.search.search(origin, dest, date, cabin)) as {
+    const calendar = await this.search.priceCalendar(
+      origin,
+      dest,
+      date,
+      3,
+      cabin,
+    );
+    const dayResults = (await this.search.search(
+      origin,
+      dest,
+      date,
+      cabin,
+    )) as {
       cabins: { cabin: string; priceIrr: string }[];
     }[];
 

@@ -165,7 +165,8 @@ export class TravelCostsService {
   private fixedCheckoutExtra(): never {
     throw new BadRequestException({
       code: ErrorCode.VALIDATION_FAILED,
-      message: 'خدمت انتخاب صندلی و حمل حیوان خانگی ثابت است و قابل حذف یا غیرفعال‌سازی نیست.',
+      message:
+        'خدمت انتخاب صندلی و حمل حیوان خانگی ثابت است و قابل حذف یا غیرفعال‌سازی نیست.',
     });
   }
 

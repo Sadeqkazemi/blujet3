@@ -222,7 +222,7 @@ export class FlightWorkflowService {
           left.departureAt.getTime() - right.departureAt.getTime(),
       ),
     );
-    const representatives = groups.map((items) => items[0]!);
+    const representatives = groups.map((items) => items[0]);
     const proposals = representatives.length
       ? await this.proposalRepo.find({
           where: {
@@ -236,7 +236,7 @@ export class FlightWorkflowService {
     );
 
     return groups.map((items) => {
-      const inst = items[0]!;
+      const inst = items[0];
       const proposal = proposalByFlight.get(inst.id);
       return {
         id: inst.id,
@@ -287,7 +287,7 @@ export class FlightWorkflowService {
         rejectionReason: inst.rejectionReason,
         scheduleGroup: {
           occurrenceCount: items.length,
-          startAt: items[0]!.departureAt.toISOString(),
+          startAt: items[0].departureAt.toISOString(),
           endAt: items.at(-1)!.departureAt.toISOString(),
           departures: items.map((item) => item.departureAt.toISOString()),
         },

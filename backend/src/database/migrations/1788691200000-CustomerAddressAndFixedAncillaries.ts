@@ -1,9 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /** Add encrypted customer address and make the two fixed checkout rules durable. */
-export class CustomerAddressAndFixedAncillaries1788691200000
-  implements MigrationInterface
-{
+export class CustomerAddressAndFixedAncillaries1788691200000 implements MigrationInterface {
   name = 'CustomerAddressAndFixedAncillaries1788691200000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -59,6 +57,8 @@ export class CustomerAddressAndFixedAncillaries1788691200000
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Keep the fixed service row on rollback; it can predate this migration.
-    await queryRunner.query(`ALTER TABLE "users" DROP COLUMN IF EXISTS "addressEnc"`);
+    await queryRunner.query(
+      `ALTER TABLE "users" DROP COLUMN IF EXISTS "addressEnc"`,
+    );
   }
 }

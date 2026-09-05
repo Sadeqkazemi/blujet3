@@ -11,7 +11,12 @@ import { AuditModule } from '../audit/audit.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, EmployeePermission, PanelAccessFlag, RefreshToken]),
+    TypeOrmModule.forFeature([
+      User,
+      EmployeePermission,
+      PanelAccessFlag,
+      RefreshToken,
+    ]),
     AuditModule,
   ],
   controllers: [PanelsController],

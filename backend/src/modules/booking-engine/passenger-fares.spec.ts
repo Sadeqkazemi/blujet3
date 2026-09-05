@@ -32,7 +32,7 @@ describe('passenger fares', () => {
       10_000n,
       2_000n,
       'SYSTEM',
-    )[0]!;
+    )[0];
     expect(row.extraSeatFareIrr).toBe(10_000n);
     expect(row.taxIrr).toBe(2_000n);
   });

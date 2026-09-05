@@ -72,9 +72,7 @@ export function parseCommercialPanelSettings(
   return settings;
 }
 
-export function resolveSiteVisible(
-  settings: CommercialPanelSettings,
-): boolean {
+export function resolveSiteVisible(settings: CommercialPanelSettings): boolean {
   return settings.siteVisible !== false;
 }
 

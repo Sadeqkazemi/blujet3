@@ -69,8 +69,10 @@ export class AuditController {
           : typeof value === 'string'
             ? value
             : typeof value === 'object'
-              ? JSON.stringify(value) ?? ''
-              : typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint'
+              ? (JSON.stringify(value) ?? '')
+              : typeof value === 'number' ||
+                  typeof value === 'boolean' ||
+                  typeof value === 'bigint'
                 ? value.toString()
                 : '';
       return `"${normalized.replace(/"/g, '""')}"`;

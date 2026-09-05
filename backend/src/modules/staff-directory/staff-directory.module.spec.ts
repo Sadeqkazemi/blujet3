@@ -23,11 +23,21 @@ describe('StaffDirectoryService', () => {
     process.env.NODE_ENV = 'production';
     process.env.AUTH_SANDBOX_ENABLED = 'true';
     const service = serviceWith([
-      { id: 'u1', username: 'uat.finance', fullName: 'UAT Finance Manager', role: 'FINANCE_MANAGER' },
+      {
+        id: 'u1',
+        username: 'uat.finance',
+        fullName: 'UAT Finance Manager',
+        role: 'FINANCE_MANAGER',
+      },
     ]);
 
     await expect(service.list('actor', 'CEO')).resolves.toEqual([
-      { id: 'u1', fullName: 'UAT Finance Manager', role: 'FINANCE_MANAGER', roleLabelFa: 'مدیر مالی' },
+      {
+        id: 'u1',
+        fullName: 'UAT Finance Manager',
+        role: 'FINANCE_MANAGER',
+        roleLabelFa: 'مدیر مالی',
+      },
     ]);
   });
 
@@ -35,7 +45,12 @@ describe('StaffDirectoryService', () => {
     process.env.NODE_ENV = 'production';
     delete process.env.AUTH_SANDBOX_ENABLED;
     const service = serviceWith([
-      { id: 'u1', username: 'uat.finance', fullName: 'UAT Finance Manager', role: 'FINANCE_MANAGER' },
+      {
+        id: 'u1',
+        username: 'uat.finance',
+        fullName: 'UAT Finance Manager',
+        role: 'FINANCE_MANAGER',
+      },
     ]);
 
     await expect(service.list('actor', 'CEO')).resolves.toEqual([]);

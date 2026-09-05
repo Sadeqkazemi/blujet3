@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class FlightCancellationWorkflow1789046400000
-  implements MigrationInterface
-{
+export class FlightCancellationWorkflow1789046400000 implements MigrationInterface {
   name = 'FlightCancellationWorkflow1789046400000';
   transaction = false;
 

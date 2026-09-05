@@ -1,4 +1,9 @@
-import { BadGatewayException, BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadGatewayException,
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import { FlightInstance } from '../../database/entities/flight-instance.entity';
@@ -140,14 +145,19 @@ export class FlightopsService {
       });
     }
 
-    const submitted = await this.materializeNiraSubmission(instance, { force: true });
+    const submitted = await this.materializeNiraSubmission(instance, {
+      force: true,
+    });
     if (!submitted.niraSubmittedAt) {
       throw new BadGatewayException({
         code: 'NIRA_SUBMISSION_FAILED',
         message: 'ارسال فهرست مسافران به سامانه نیرا ناموفق بود.',
       });
     }
-    return { id: submitted.id, niraSubmittedAt: submitted.niraSubmittedAt.toISOString() };
+    return {
+      id: submitted.id,
+      niraSubmittedAt: submitted.niraSubmittedAt.toISOString(),
+    };
   }
 
   private baseRow(i: FlightInstance, sold: number) {
@@ -179,7 +189,9 @@ export class FlightopsService {
       .getMany();
 
     const materialized = await Promise.all(
-      instances.map((i) => this.materializeNiraSubmission(i, { notifyOnFailure: true })),
+      instances.map((i) =>
+        this.materializeNiraSubmission(i, { notifyOnFailure: true }),
+      ),
     );
     const sold = await this.soldByInstance(materialized.map((i) => i.id));
 
@@ -210,7 +222,9 @@ export class FlightopsService {
       });
     }
 
-    const materialized = await this.materializeNiraSubmission(instance, { notifyOnFailure: true });
+    const materialized = await this.materializeNiraSubmission(instance, {
+      notifyOnFailure: true,
+    });
     const sold = await this.soldByInstance([materialized.id]);
     const soldCount = sold.get(materialized.id) ?? 0;
 
