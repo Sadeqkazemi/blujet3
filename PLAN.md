@@ -19,6 +19,17 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-05 — Microservices target architecture foundation
+
+- [x] Define BluJet-owned bounded contexts and keep Operations, Crew and MRO
+  as external integration boundaries.
+- [x] Record data ownership, extraction order, event and compatibility rules
+  before changing the transactional commerce core.
+- [ ] Publish canonical event envelopes and Nira/DCS adapter contract tests.
+- [ ] Add reporting read-model seam after event contracts are approved.
+- [ ] Obtain owner approval before extracting another writer or enabling a
+  service cutover; no deployment in this phase.
+
 ### 2026-09-05 — A6.20 Production read parity and controlled cutover
 
 - [x] Define the credential, redacted parity, readiness, canary and rollback
