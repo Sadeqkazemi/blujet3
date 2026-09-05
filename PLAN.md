@@ -19,6 +19,37 @@ below for what's landed from that port so far.
 
 ## Status
 
+### KafkaJS dependency installation from GitHub
+
+- [x] Install KafkaJS 2.2.4 from the official GitHub HTTPS archive pinned to
+  `c08472878724ce5fc62a9a9aa865255d7e7682a6`; package-lock records SHA-512
+  integrity and does not require Git/SSH in the production image build.
+- [x] Verify local import and producer/consumer construction without connecting;
+  Backend typecheck/build and all 6 existing canonical-envelope tests pass.
+- This installs the client library only. Broker provisioning, durable event
+  publication, consumers, DLQ and integration tests remain unfinished.
+- No API, schema, runtime flag, server deployment, push or merge in this slice.
+
+### 2026-09-05 — Microservices target architecture foundation
+
+- [x] Define BluJet-owned bounded contexts and keep Operations, Crew and MRO
+  as external integration boundaries.
+- [x] Record data ownership, extraction order, event and compatibility rules
+  before changing the transactional commerce core.
+- [ ] Publish canonical event envelopes and Nira/DCS adapter contract tests.
+- [ ] Add reporting read-model seam after event contracts are approved.
+- [ ] Obtain owner approval before extracting another writer or enabling a
+  service cutover; no deployment in this phase.
+
+### 2026-09-05 — A6.20 Production read parity and controlled cutover
+
+- [x] Define the credential, redacted parity, readiness, canary and rollback
+  gates for all merged Loyalty/Agency read contracts.
+- [x] Keep all flags off; no writer, migration, server configuration or deploy
+  change is included.
+- [ ] Provision production read-only credentials and collect parity evidence.
+- [ ] Obtain separate owner approval before any canary flag activation.
+
 ### 2026-09-05 — A6.19 Compatible agency credit-request history reads
 
 - [x] Preserve the existing public history route, authenticated tenant and
