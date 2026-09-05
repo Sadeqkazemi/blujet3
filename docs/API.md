@@ -1,5 +1,11 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## A6.17 — Tier-rules real-boundary verification
+
+No API changes. The A6.13 built Core/client and real Loyalty HTTP response are
+compared with a restricted test reader, including Core-owned updater labels,
+preview and availability rollback. See `docs/features/loyalty-tier-rules-contract.md`.
+
 ## A6.16 — Executive card-request read integration
 
 Default-off `LOYALTY_CARD_REQUESTS_READ_ENABLED` can route the existing

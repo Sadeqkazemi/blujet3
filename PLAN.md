@@ -19,7 +19,27 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-05 — A6.17 Real Loyalty tier-rules contract
+
+- [x] Compare built Core/client with real Loyalty HTTP and a column-scoped
+  PostgreSQL reader: oldest rule, exact thresholds/UTC, Persian updater label
+  and computed preview; require remote results and actual HTTP counters.
+- [x] Prove both rollback flags, stopped listener, invalid service credentials,
+  lost-grant readiness/recovery and denied Identity reads/rule writes (8 cases).
+- [x] Preserve original rules, clean up generated test UUIDs/login, and keep
+  this slice test/documentation-only: no schema, flags or writer changes.
+- [x] Pass both builds/typechecks, complete Loyalty lint and focused Backend
+  client/config lint; Backend tier-rules client 8/8 and Loyalty unit 16/16 pass.
+- [x] Pass the full sequential Loyalty real-PostgreSQL suite (63/63); verify
+  zero temporary tier-reader logins remain after cleanup.
+- [x] Pass Backend Club HTTP regressions (26/26), including unchanged public
+  authorization, validation and Core-only PATCH. Total: 113 relevant tests.
+- [x] Owner authorized publication and merge on 2026-09-05; no deployment.
+- [ ] Record successful CI/PostgreSQL 16 evidence on the PR before merging.
+
 ### 2026-09-05 — A6.16 Compatible executive card-request reads
+
+- [x] PR #45 merged as `e87ecb3`; server deployment was not performed.
 
 - [x] Follow-up: prove the built Core/client against real Loyalty HTTP and a
   restricted PostgreSQL reader (6 cases), including decisions/history, all
