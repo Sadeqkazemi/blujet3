@@ -19,7 +19,26 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-05 — A6.18 Real Loyalty membership contract
+
+- [x] Compare built Core/client with real Loyalty HTTP and exact-column
+  PostgreSQL reads: ledger balance, request status/history, UTC and eligibility.
+- [x] Prove customer isolation, absent/inactive members, zero-call rollback,
+  rejected identity/owner/UUID, lost-grant readiness and listener failure
+  (`loyalty-service/test/membership-contract.e2e-spec.ts`, 11 new cases).
+- [x] Keep only synthetic fixtures in the named test database, snapshot all
+  fixture/ledger rows and remove generated rows and the temporary login.
+- [x] Pass Loyalty 74 E2E and 16 unit, Backend client 11 unit, both builds/
+  typechecks, complete Loyalty and scoped Backend lint; no temporary reader remains.
+- [x] Pass public Club regressions (26/26), including unchanged customer
+  permissions and local writers. Total: 127 relevant tests.
+- [x] Owner authorized publication and merge on 2026-09-05; no deployment.
+- [ ] Record successful CI/PostgreSQL 16 evidence on the PR before merging.
+
 ### 2026-09-05 — A6.17 Real Loyalty tier-rules contract
+
+- [x] PR #46 merged as `6fcbb2b`; CI `33959042840` and CodeQL `33959042830`
+  passed. No server deployment was performed.
 
 - [x] Compare built Core/client with real Loyalty HTTP and a column-scoped
   PostgreSQL reader: oldest rule, exact thresholds/UTC, Persian updater label
@@ -35,7 +54,7 @@ below for what's landed from that port so far.
 - [x] Pass Backend Club HTTP regressions (26/26), including unchanged public
   authorization, validation and Core-only PATCH. Total: 113 relevant tests.
 - [x] Owner authorized publication and merge on 2026-09-05; no deployment.
-- [ ] Record successful CI/PostgreSQL 16 evidence on the PR before merging.
+- [x] Successful CI/PostgreSQL 16 evidence recorded on PR #46 before merging.
 
 ### 2026-09-05 — A6.16 Compatible executive card-request reads
 
