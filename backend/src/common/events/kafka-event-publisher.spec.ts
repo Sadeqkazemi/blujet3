@@ -63,7 +63,7 @@ describe('KafkaEventPublisher', () => {
       expect.objectContaining({
         idempotent: true,
         allowAutoTopicCreation: false,
-        retry: { retries: 0 },
+        retry: { retries: 1 },
       }),
     );
     expect(send).toHaveBeenCalledWith(

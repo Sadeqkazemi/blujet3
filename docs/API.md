@@ -2,6 +2,9 @@
 
 ## Kafka durable transport foundation
 
+Opt-in real-broker integration tests exercise only fixture events on loopback;
+no new HTTP endpoint or business producer. See `docs/features/kafka-broker-integration.md`.
+
 Operator-only CLI `npm run events:outbox:status` (built equivalent
 `npm run events:outbox:status:prod`) returns aggregate delivery metadata only.
 No HTTP route, Kafka connection, payload decryption, replay or mutation.

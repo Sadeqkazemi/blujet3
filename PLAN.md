@@ -19,6 +19,18 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-05 — Real Kafka/PostgreSQL boundary tests (local)
+
+- [x] Add opt-in isolated KRaft broker harness and commit/rollback/crash-restart tests.
+- [x] Reproduce and fix KafkaJS rejection of idempotent producers with zero retries;
+  retain bounded transport retries and at-least-once outbox delivery.
+- [x] Pass 3 real-broker tests, 767 unit tests, 24 PostgreSQL regression tests,
+  build, typecheck and scoped lint. Full lint has existing formatting failures.
+- Evidence, reproduction and remaining gates: `docs/features/kafka-broker-integration.md`.
+- [ ] Owner approval, push and CI verification; no push/merge/deployment in this slice.
+- [ ] TLS/SCRAM and replicated-broker durability; production UTC session readiness.
+- No public API/schema change, business producer activation or server operation.
+
 ### 2026-09-05 — Kafka outbox read-only operational report
 
 - [x] Add metadata-only CLI with exact counts, UTC snapshot, bounded read-only

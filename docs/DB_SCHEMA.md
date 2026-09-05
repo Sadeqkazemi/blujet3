@@ -2,6 +2,10 @@
 
 ## Kafka commerce delivery outbox
 
+Real-broker integration uses the existing outbox in a local `_test` database.
+It may insert/delete its uniquely identified fixture rows only; no schema,
+business-data or production changes. Tests refuse a nonempty shared outbox.
+
 Outbox status reporting reads only `createdAt`, `nextAttemptAt`, `claimedAt`,
 `deliveredAt` and `deadLetterAt` under a read-only transaction and bounded query
 timeout. No new schema, seed or grant change. A dedicated operator role may
