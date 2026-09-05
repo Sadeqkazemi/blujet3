@@ -19,7 +19,18 @@ below for what's landed from that port so far.
 
 ## Status
 
-### 2026-09-05 — Kafka TLS/SCRAM tests (local, awaiting publication)
+### 2026-09-05 — Kafka exact-topic ACL tests (local)
+
+- [x] Document isolated default-deny broker and restricted publisher identity.
+- [x] Prove denied publication before grants, exact-topic delivery after grants,
+  and denied publication to another topic without an appended record.
+- [x] 12 real-broker tests, 48 unit tests and 4 CI-contract tests pass;
+  full read-only lint and typecheck pass. Red/green fixture evidence recorded.
+- [ ] Owner-approved publication and CI before merge.
+- Evidence: `docs/features/kafka-topic-acl.md`. No server deployment,
+  production ACL, business-writer, API or database change.
+
+### 2026-09-05 — Kafka TLS/SCRAM tests (merged)
 
 - [x] Add isolated per-run certificate/credentials; TLS with SCRAM-SHA-256/512.
 - [x] Exact synthetic envelope delivery; reject wrong password, unknown user,
@@ -27,7 +38,8 @@ below for what's landed from that port so far.
 - [x] All 9 real-broker tests pass, including the 3 outbox regression tests;
   full read-only backend lint, typecheck and 4 CI contract tests pass.
 - [x] Generated private key/config removed; owned broker stopped.
-- [ ] Owner-approved push and Linux/ARM CI before merge.
+- [x] Owner-approved PR #56 merged as `7660dbd`; CI `33975042633` and
+  CodeQL `33975042664` passed, including the Linux/ARM real Kafka job.
 - Evidence: `docs/features/kafka-tls-scram.md`. No production code, database,
   runtime flag or server deployment changes.
 
