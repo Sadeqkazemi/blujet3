@@ -23,6 +23,7 @@ import {
   MembersListResponse,
 } from './loyalty.dto';
 import { LoyaltyService } from './loyalty.service';
+import { CardRequestsResponse } from './card-requests.dto';
 
 @ApiTags('internal-loyalty')
 @ApiHeader({ name: 'X-Internal-Token', required: true })
@@ -35,6 +36,21 @@ export class LoyaltyController {
     private readonly loyalty: LoyaltyService,
     private readonly config: ConfigService,
   ) {}
+
+  @Get('card-requests')
+  @Header('Cache-Control', 'no-store')
+  @ApiOperation({ summary: 'صف درخواست کارت مدیران بدون اطلاعات کد ملی' })
+  @ApiResponse({ status: 200, type: CardRequestsResponse })
+  @ApiResponse({ status: 404, description: 'نمای خواندنی غیرفعال است' })
+  @ApiResponse({ status: 409, description: 'حجم نتیجه بیش از حد مجاز است' })
+  async cardRequests() {
+    if (
+      this.config.get<string>('LOYALTY_CARD_REQUESTS_PROJECTION_ENABLED') !==
+      'true'
+    )
+      throw new NotFoundException();
+    return { success: true, data: await this.loyalty.cardRequests() };
+  }
 
   @Get('members-list')
   @Header('Cache-Control', 'no-store')

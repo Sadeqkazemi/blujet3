@@ -17,6 +17,7 @@ async function run(): Promise<void> {
       process.env.LOYALTY_MEMBERSHIP_PROJECTION_ENABLED === 'true',
       process.env.LOYALTY_TIER_RULES_PROJECTION_ENABLED === 'true',
       process.env.LOYALTY_MEMBERS_LIST_PROJECTION_ENABLED === 'true',
+      process.env.LOYALTY_CARD_REQUESTS_PROJECTION_ENABLED === 'true',
     );
     process.stdout.write(JSON.stringify(report) + '\n');
     if (report.status !== 'PASS') process.exitCode = 2;

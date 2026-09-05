@@ -35,6 +35,10 @@ describe('Loyalty least-privilege reader (real PostgreSQL login)', () => {
     'SELECT ("fullName", email, "birthDate", "joinDate", points, "cardNo", "issuedByLabelFa", "createdAt") ON loyalty.club_members',
     'SELECT (status) ON loyalty.club_card_requests',
   ];
+  const cardRequestsGrantStatements = [
+    'SELECT ("fullName", email, points) ON loyalty.club_members',
+    'SELECT (id, "memberId", level, points, status, "assignedTo", "decidedById", "decidedAt", "cardNo", history, "createdAt") ON loyalty.club_card_requests',
+  ];
 
   beforeAll(async () => {
     const url = new URL(process.env.LOYALTY_DATABASE_URL ?? '');
@@ -197,6 +201,28 @@ describe('Loyalty least-privilege reader (real PostgreSQL login)', () => {
       expect(JSON.stringify(projection)).not.toContain('nationalId');
     } finally {
       for (const grant of membersListGrantStatements)
+        await admin.query('REVOKE ' + grant + ' FROM ' + quotedRole);
+    }
+    expect(await verifyReader(reader)).toMatchObject({ status: 'PASS' });
+  });
+
+  it('requires only the exact executive card-request grants when enabled', async () => {
+    expect(await verifyReader(reader, false, false, false, true)).toMatchObject(
+      {
+        status: 'FAIL',
+      },
+    );
+    try {
+      for (const grant of cardRequestsGrantStatements)
+        await admin.query('GRANT ' + grant + ' TO ' + quotedRole);
+      expect(
+        await verifyReader(reader, false, false, false, true),
+      ).toMatchObject({ status: 'PASS' });
+      expect(await new LoyaltyService(reader).cardRequests()).toEqual(
+        expect.any(Array),
+      );
+    } finally {
+      for (const grant of cardRequestsGrantStatements)
         await admin.query('REVOKE ' + grant + ' FROM ' + quotedRole);
     }
     expect(await verifyReader(reader)).toMatchObject({ status: 'PASS' });

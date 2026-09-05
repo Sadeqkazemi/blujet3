@@ -113,6 +113,9 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
     app
       .get(ConfigService)
       .set('LOYALTY_MEMBERS_LIST_PROJECTION_ENABLED', 'true');
+    app
+      .get(ConfigService)
+      .set('LOYALTY_CARD_REQUESTS_PROJECTION_ENABLED', 'true');
     app.useGlobalPipes(
       new ValidationPipe({
         transform: true,
@@ -152,6 +155,7 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
     delete process.env.LOYALTY_MEMBERSHIP_PROJECTION_ENABLED;
     delete process.env.LOYALTY_TIER_RULES_PROJECTION_ENABLED;
     delete process.env.LOYALTY_MEMBERS_LIST_PROJECTION_ENABLED;
+    delete process.env.LOYALTY_CARD_REQUESTS_PROJECTION_ENABLED;
   });
 
   it('requires service identity and a matching trusted owner assertion', async () => {
@@ -264,6 +268,53 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
     expect(response.text).not.toContain('nationalId');
     expect(response.text).not.toContain('secret-national-id');
     expect(response.text).not.toContain('secret-hash');
+  });
+
+  it('returns only the executive card-request statuses with bounded member fields', async () => {
+    await request(app.getHttpServer()).get(`${path}/card-requests`).expect(401);
+    const config = app.get(ConfigService);
+    config.set('LOYALTY_CARD_REQUESTS_PROJECTION_ENABLED', 'false');
+    await request(app.getHttpServer())
+      .get(`${path}/card-requests`)
+      .set('X-Internal-Token', token)
+      .expect(404);
+    config.set('LOYALTY_CARD_REQUESTS_PROJECTION_ENABLED', 'true');
+    await writer.query(
+      'UPDATE loyalty.club_card_requests SET status = $2 WHERE id = $1',
+      [cardRequestId, 'REFERRED'],
+    );
+    try {
+      const response = await request(app.getHttpServer())
+        .get(`${path}/card-requests`)
+        .set({ 'X-Internal-Token': token, 'X-Request-Id': 'card-requests-e2e' })
+        .expect(200);
+      const body = response.body as {
+        data: Array<Record<string, unknown>>;
+      };
+      expect(response.headers['cache-control'] as unknown).toBe('no-store');
+      expect(body.data.length).toBeGreaterThanOrEqual(1);
+      expect(body.data.find((item) => item.id === cardRequestId)).toMatchObject(
+        {
+          id: cardRequestId,
+          memberId,
+          status: 'REFERRED',
+          member: {
+            id: memberId,
+            fullName: 'Private name',
+            email: 'owner-only@example.invalid',
+            points: 999,
+            level: 'SILVER',
+          },
+        },
+      );
+      expect(response.text).not.toContain('nationalId');
+      expect(response.text).not.toContain('secret-national-id');
+    } finally {
+      await writer.query(
+        'UPDATE loyalty.club_card_requests SET status = $2 WHERE id = $1',
+        [cardRequestId, 'SUBMITTED'],
+      );
+    }
   });
 
   it('validates members-list filters and keeps the projection default-off', async () => {

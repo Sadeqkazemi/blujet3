@@ -38,6 +38,14 @@ test PII key, and emits comparison status/counters without member data. It
 checks actual remote delivery, protected Core-only reads and availability
 rollback. Build Backend before running Loyalty typecheck or this suite.
 
+`test/card-requests-contract.e2e-spec.ts` verifies the built Core card queue
+against the real HTTP service and an ephemeral column-scoped reader. It checks
+all executive statuses, UTC decisions, inactive-member compatibility, lost
+grants, disabled flags, oversized queues/history and listener shutdown. Fixture
+snapshots prove reads leave data unchanged. Run package typecheck first: the
+child probe uses transpile-only execution to avoid repeating TypeScript
+checking in every subprocess.
+
 For manual execution, copy `.env.example` to `.env`, provide the real local
 reader credential and internal token, then run `npm run start:prod`.
 The optional `docker-compose.loyalty.yml` overrides local Compose only;
@@ -79,6 +87,11 @@ must derive the owner from its authenticated session.
   members plus whole-club KPIs. It supports level/name/email/card filters and
   never selects national-ID ciphertext/hash or Identity rows.
 - `GET /health`: liveness, version, commit.
+- `GET /internal/v1/loyalty/card-requests`: with
+  `LOYALTY_CARD_REQUESTS_PROJECTION_ENABLED=true`, the executive queue
+  (REFERRED/APPROVED/REJECTED), newest first, including decision/history fields
+  and only member id/fullName/email/points/level. At most 1000 rows and 512 KiB;
+  unrepresentable history or overflow returns 409 for complete Core fallback.
 - `GET /ready`: required schema/column access, safe 503 on failure.
 
 IRR and owner-facing ledger points are decimal strings. The legacy staff
@@ -118,6 +131,16 @@ When the members-list projection flag is enabled, additionally grant only:
 - `club_card_requests`: status
 
 The route flag defaults to false so an existing minimal reader stays ready.
+
+When the card-requests projection is enabled, additionally grant:
+
+- `club_members`: fullName, email, points (id/level already in the base grants)
+- `club_card_requests`: id, memberId, level, points, status, assignedTo,
+  decidedById, decidedAt, cardNo, history, createdAt
+
+For rollback, disable the Backend read flag first, then the service projection.
+Revoke only columns no longer used by any enabled projection; shared grants
+must remain available to those projections.
 Enable the service flag only after the expanded reader passes
 `npm run verify:reader`; the independent backend public-read flag is enabled
 after that review.

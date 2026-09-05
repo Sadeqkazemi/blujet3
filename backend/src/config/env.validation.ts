@@ -5,6 +5,7 @@ import { loyaltyPointsReadConfig } from './loyalty-points-read.config';
 import { loyaltyPriceLockReadConfig } from './loyalty-price-lock-read.config';
 import { loyaltyTierRulesReadConfig } from './loyalty-tier-rules-read.config';
 import { loyaltyMembersListReadConfig } from './loyalty-members-list-read.config';
+import { loyaltyCardRequestsReadConfig } from './loyalty-card-requests-read.config';
 import {
   IsIn,
   IsNotEmpty,
@@ -200,6 +201,10 @@ class EnvironmentVariables {
   @IsIn(['true', 'false'])
   LOYALTY_MEMBERS_LIST_READ_ENABLED?: string;
 
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  LOYALTY_CARD_REQUESTS_READ_ENABLED?: string;
+
   /** Central PSS is introduced behind an explicit cutover switch. */
   @IsOptional()
   @IsIn(['true', 'false'])
@@ -267,6 +272,7 @@ export function validateEnv(config: Record<string, unknown>) {
   loyaltyPriceLockReadConfig(config);
   loyaltyTierRulesReadConfig(config);
   loyaltyMembersListReadConfig(config);
+  loyaltyCardRequestsReadConfig(config);
   const validated = plainToInstance(EnvironmentVariables, config, {
     enableImplicitConversion: true,
   });

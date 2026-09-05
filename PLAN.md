@@ -19,6 +19,26 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-05 — A6.16 Compatible executive card-request reads
+
+- [x] Follow-up: prove the built Core/client against real Loyalty HTTP and a
+  restricted PostgreSQL reader (6 cases), including decisions/history, all
+  executive statuses, lost grants, overflow and rollback; snapshots stay unchanged.
+- [x] Prove enabled public guards and the local SITE_ADMIN queue (26 Club E2E),
+  strict client failures (20 unit cases), and projection bounds (16 Loyalty
+  unit cases). Verification is included in PR #45 before merge.
+
+- [x] Preserve `GET /api/v1/club/card-requests`, executive role guards,
+  REFERRED/APPROVED/REJECTED filtering, newest-first order and bounded member fields.
+- [x] Add independent default-off Backend/Loyalty switches and strict bounded
+  transport with Core fallback; malformed successes fail closed.
+- [x] Keep SITE_ADMIN/SUBMITTED reads and every refer/approve/reject/issue writer
+  in Core; no migration, Identity join, national-ID access or server deployment.
+- [x] Enforce read-only conditional exact grants and readiness checks; history is
+  capped at 32 entries and responses at 1000 rows/512 KiB.
+- [x] Pass Backend client 10/10, Loyalty E2E 49/49, typechecks, builds and
+  focused lint. Publication/merge and production flag activation remain separate.
+
 ### 2026-09-05 — A6.15 Real Loyalty members-list contract
 
 - [x] Compare the built Core ClubService and client with real Loyalty HTTP

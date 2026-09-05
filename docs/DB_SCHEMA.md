@@ -1,5 +1,14 @@
 # DB_SCHEMA.md — blujet data model
 
+## A6.16 — Card-request compatibility projection
+
+No migration. The optional reader uses existing `club_members` columns
+`id`, `fullName`, `email`, `points`, `level` and `club_card_requests` columns
+`id`, `memberId`, `level`, `points`, `status`, `assignedTo`, `decidedById`,
+`decidedAt`, `cardNo`, `history`, `createdAt`. These grants are required only
+when `LOYALTY_CARD_REQUESTS_PROJECTION_ENABLED=true`. No Identity join,
+national-ID columns or write privileges are introduced.
+
 ## A6.15 — Members-list restricted-reader contract evidence
 
 No schema changes. Tests provision only temporary roles and synthetic rows in

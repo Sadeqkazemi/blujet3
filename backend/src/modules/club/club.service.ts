@@ -34,6 +34,8 @@ import {
 import { LoyaltyMembershipClient } from './loyalty-membership.client';
 import { LoyaltyTierRulesClient } from './loyalty-tier-rules.client';
 import { LoyaltyMembersListClient } from './loyalty-members-list.client';
+import { LoyaltyCardRequestsClient } from './loyalty-card-requests.client';
+import { Optional } from '@nestjs/common';
 
 const CARD_PREFIX: Record<ClubTier, string> = {
   SILVER: 'SILV',
@@ -129,6 +131,8 @@ export class ClubService {
     private readonly loyaltyMembership: LoyaltyMembershipClient,
     private readonly loyaltyTierRules: LoyaltyTierRulesClient,
     private readonly loyaltyMembersList: LoyaltyMembersListClient,
+    @Optional()
+    private readonly loyaltyCardRequests?: LoyaltyCardRequestsClient,
   ) {}
 
   // ── Phase 65: club tier rules (singleton config) ────────────────────────
@@ -514,9 +518,11 @@ export class ClubService {
 
   // ── Card requests ─────────────────────────────────────────────────────
 
-  async listRequests() {
+  async listRequests(requestId?: string) {
     // SUBMITTED lives in the site-admin track — the exec panels only ever
     // see REFERRED/APPROVED/REJECTED (confirmed against all three designs).
+    const remote = await this.loyaltyCardRequests?.get(requestId);
+    if (remote) return remote;
     const requests = await this.cardRequestRepo
       .createQueryBuilder('r')
       .leftJoin('r.member', 'member')
