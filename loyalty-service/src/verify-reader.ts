@@ -15,6 +15,7 @@ async function run(): Promise<void> {
     const report = await verifyReader(
       db,
       process.env.LOYALTY_MEMBERSHIP_PROJECTION_ENABLED === 'true',
+      process.env.LOYALTY_TIER_RULES_PROJECTION_ENABLED === 'true',
     );
     process.stdout.write(JSON.stringify(report) + '\n');
     if (report.status !== 'PASS') process.exitCode = 2;

@@ -19,6 +19,19 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-05 — A6.13 Compatible Loyalty tier-rules integration
+
+- [x] Preserve the existing staff/employee permission guards and exact public
+  response for `GET /api/v1/club/tier-rules`.
+- [x] Add independent default-off Backend and Loyalty switches, bounded strict
+  transport, safe Core fallback and no cross-schema Identity join.
+- [x] Keep PATCH, defensive default creation, tier recomputation and every write
+  Core-only; no migration or automatic production grant.
+- [x] Prove 640 Backend unit, 23 Club E2E, 4 Loyalty unit and 35 Loyalty real-DB
+  E2E cases; lint, typecheck and builds pass.
+- [ ] Present the complete diff for separate publication/merge approval; reader
+  grant review, parity, flag activation and deployment remain separate gates.
+
 ### 2026-09-05 — A6.11 Compatible Loyalty price-lock history integration
 
 - [x] Define a default-off, owner-bound all-status Loyalty history projection

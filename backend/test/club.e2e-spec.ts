@@ -485,6 +485,93 @@ describe('Club (e2e)', () => {
       }
     });
 
+    it('GET can use the Loyalty projection without changing the public contract', async () => {
+      const commercial = await loginAs(app, 'comm');
+      const config = app.get(ConfigService);
+      config.set('LOYALTY_TIER_RULES_READ_ENABLED', 'true');
+      config.set('LOYALTY_SERVICE_URL', 'http://loyalty-service:3500');
+      config.set(
+        'LOYALTY_INTERNAL_TOKEN',
+        'loyalty-tier-rules-e2e-token-at-least-32-characters',
+      );
+      const runtimeOptions = Intl.DateTimeFormat().resolvedOptions();
+      const timezoneSpy = jest
+        .spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions')
+        .mockReturnValue({ ...runtimeOptions, timeZone: 'UTC' });
+      const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            success: true,
+            data: {
+              goldMinPoints: 7000,
+              platinumMinPoints: 17000,
+              cardRequestMinPoints: 6500,
+              updatedAt: '2026-09-05T10:00:00.000Z',
+              updatedById: null,
+            },
+          }),
+        ),
+      );
+      try {
+        const response = await request(app.getHttpServer())
+          .get('/club/tier-rules')
+          .set('Authorization', `Bearer ${commercial.accessToken}`)
+          .set('X-Request-Id', 'tier-rules-e2e');
+        expect(response.status).toBe(200);
+        expect(response.body.data).toEqual({
+          goldMinPoints: 7000,
+          platinumMinPoints: 17000,
+          cardRequestMinPoints: 6500,
+          updatedAt: '2026-09-05T10:00:00.000Z',
+          updatedByLabelFa: null,
+          preview: [
+            { tier: 'SILVER', minPoints: 0, maxPoints: 6999 },
+            { tier: 'GOLD', minPoints: 7000, maxPoints: 16999 },
+            { tier: 'PLATINUM', minPoints: 17000, maxPoints: null },
+          ],
+        });
+        expect(fetchSpy).toHaveBeenCalledWith(
+          'http://loyalty-service:3500/internal/v1/loyalty/tier-rules',
+          expect.objectContaining({
+            headers: expect.objectContaining({
+              'X-Request-Id': 'tier-rules-e2e',
+            }) as unknown,
+          }),
+        );
+      } finally {
+        fetchSpy.mockRestore();
+        timezoneSpy.mockRestore();
+        config.set('LOYALTY_TIER_RULES_READ_ENABLED', 'false');
+      }
+    });
+
+    it('keeps PATCH local while the tier-rules read flag is enabled', async () => {
+      const commercial = await loginAs(app, 'comm');
+      const config = app.get(ConfigService);
+      config.set('LOYALTY_TIER_RULES_READ_ENABLED', 'true');
+      config.set('LOYALTY_SERVICE_URL', 'http://loyalty-service:3500');
+      config.set(
+        'LOYALTY_INTERNAL_TOKEN',
+        'loyalty-tier-rules-writer-test-token-at-least-32-chars',
+      );
+      const fetchSpy = jest.spyOn(global, 'fetch');
+      try {
+        const response = await request(app.getHttpServer())
+          .patch('/club/tier-rules')
+          .set('Authorization', `Bearer ${commercial.accessToken}`)
+          .send({
+            goldMinPoints: 5000,
+            platinumMinPoints: 15000,
+            cardRequestMinPoints: 5000,
+          });
+        expect(response.status).toBe(200);
+        expect(fetchSpy).not.toHaveBeenCalled();
+      } finally {
+        fetchSpy.mockRestore();
+        config.set('LOYALTY_TIER_RULES_READ_ENABLED', 'false');
+      }
+    });
+
     it('PATCH rejects goldMinPoints >= platinumMinPoints with VALIDATION_FAILED', async () => {
       const { accessToken } = await loginAs(app, 'comm');
       const res = await request(app.getHttpServer())
@@ -637,6 +724,10 @@ describe('Club (e2e)', () => {
       'LOYALTY_INTERNAL_TOKEN',
       'loyalty-membership-e2e-token-at-least-32-characters',
     );
+    const runtimeOptions = Intl.DateTimeFormat().resolvedOptions();
+    const timezoneSpy = jest
+      .spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions')
+      .mockReturnValue({ ...runtimeOptions, timeZone: 'UTC' });
     const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -693,6 +784,7 @@ describe('Club (e2e)', () => {
       );
     } finally {
       fetchSpy.mockRestore();
+      timezoneSpy.mockRestore();
       config.set('LOYALTY_MEMBERSHIP_READ_ENABLED', 'false');
     }
   });

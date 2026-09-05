@@ -53,6 +53,14 @@ export class HealthController {
             'SELECT "goldMinPoints", "platinumMinPoints", "cardRequestMinPoints", "createdAt" FROM loyalty.club_tier_rules LIMIT 0',
           );
         }
+        if (
+          this.config.get<string>('LOYALTY_TIER_RULES_PROJECTION_ENABLED') ===
+          'true'
+        ) {
+          await tx.query(
+            'SELECT "goldMinPoints", "platinumMinPoints", "cardRequestMinPoints", "updatedAt", "updatedById", "createdAt" FROM loyalty.club_tier_rules LIMIT 0',
+          );
+        }
       });
       return this.live();
     } catch {

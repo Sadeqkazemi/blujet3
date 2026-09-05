@@ -18,14 +18,13 @@ import {
   MemberResponse,
   OwnerParams,
   ReadQuery,
+  TierRulesResponse,
 } from './loyalty.dto';
 import { LoyaltyService } from './loyalty.service';
 
 @ApiTags('internal-loyalty')
 @ApiHeader({ name: 'X-Internal-Token', required: true })
-@ApiHeader({ name: 'X-Loyalty-User-Id', required: true })
 @ApiResponse({ status: 401, description: 'هویت سرویس نامعتبر است' })
-@ApiResponse({ status: 403, description: 'مالک درخواست مطابقت ندارد' })
 @ApiResponse({ status: 400, description: 'ورودی نامعتبر است' })
 @UseGuards(InternalAuthGuard)
 @Controller('internal/v1/loyalty')
@@ -35,7 +34,25 @@ export class LoyaltyController {
     private readonly config: ConfigService,
   ) {}
 
+  @Get('tier-rules')
+  @Header('Cache-Control', 'no-store')
+  @ApiOperation({ summary: 'نمای خواندنی قوانین سطوح وفاداری' })
+  @ApiResponse({ status: 200, type: TierRulesResponse })
+  @ApiResponse({ status: 404, description: 'projection غیرفعال یا ردیف غایب' })
+  async tierRules() {
+    if (
+      this.config.get<string>('LOYALTY_TIER_RULES_PROJECTION_ENABLED') !==
+      'true'
+    )
+      throw new NotFoundException();
+    const data = await this.loyalty.tierRules();
+    if (!data) throw new NotFoundException();
+    return { success: true, data };
+  }
+
   @Get('membership/:userId')
+  @ApiHeader({ name: 'X-Loyalty-User-Id', required: true })
+  @ApiResponse({ status: 403, description: 'مالک درخواست مطابقت ندارد' })
   @Header('Cache-Control', 'no-store')
   @ApiOperation({ summary: 'نمای کامل و امن عضویت مالک' })
   @ApiResponse({ status: 200, type: MembershipResponse })
@@ -56,6 +73,8 @@ export class LoyaltyController {
   }
 
   @Get('members/:userId')
+  @ApiHeader({ name: 'X-Loyalty-User-Id', required: true })
+  @ApiResponse({ status: 403, description: 'مالک درخواست مطابقت ندارد' })
   @Header('Cache-Control', 'no-store')
   @ApiOperation({ summary: 'نمای امن عضویت مالک' })
   @ApiResponse({
@@ -75,6 +94,8 @@ export class LoyaltyController {
   }
 
   @Get('price-locks/:userId')
+  @ApiHeader({ name: 'X-Loyalty-User-Id', required: true })
+  @ApiResponse({ status: 403, description: 'مالک درخواست مطابقت ندارد' })
   @Header('Cache-Control', 'no-store')
   @ApiOperation({ summary: 'قفل‌های فعال مالک بدون دسترسی به موجودی پرواز' })
   @ApiResponse({
@@ -99,6 +120,8 @@ export class LoyaltyController {
   }
 
   @Get('price-lock-history/:userId')
+  @ApiHeader({ name: 'X-Loyalty-User-Id', required: true })
+  @ApiResponse({ status: 403, description: 'مالک درخواست مطابقت ندارد' })
   @Header('Cache-Control', 'no-store')
   @ApiOperation({ summary: 'تاریخچه همه وضعیت‌های قفل قیمت مالک' })
   @ApiResponse({

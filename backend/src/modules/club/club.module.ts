@@ -11,6 +11,7 @@ import { ClubCardRequest } from '../../database/entities/club-card-request.entit
 import { ClubPointsEntry } from '../../database/entities/club-points-entry.entity';
 import { User } from '../../database/entities/user.entity';
 import { LoyaltyMembershipClient } from './loyalty-membership.client';
+import { LoyaltyTierRulesClient } from './loyalty-tier-rules.client';
 
 @Module({
   imports: [
@@ -25,7 +26,7 @@ import { LoyaltyMembershipClient } from './loyalty-membership.client';
     AuditModule,
   ],
   controllers: [ClubController, MyClubController],
-  providers: [ClubService, LoyaltyMembershipClient],
+  providers: [ClubService, LoyaltyMembershipClient, LoyaltyTierRulesClient],
   exports: [ClubService],
 })
 export class ClubModule {}

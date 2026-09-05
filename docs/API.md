@@ -1,5 +1,19 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## A6.13 — Compatible Loyalty tier-rules integration
+
+`GET /api/v1/club/tier-rules` keeps its current staff role/permission guards,
+response envelope and fields. Default-off `LOYALTY_TIER_RULES_READ_ENABLED`
+selects service-authenticated `GET /internal/v1/loyalty/tier-rules`; disabled,
+absent or unavailable reads use the existing Core query. Malformed successful
+responses fail closed with a sanitized 503.
+
+Loyalty returns only the three thresholds, update timestamp and updater UUID.
+Backend keeps resolving `updatedByLabelFa` from its current Identity data and
+computing `preview`, so the Loyalty reader never joins another schema. PATCH,
+tier recomputation and all writes remain Core-only. See
+`docs/features/loyalty-tier-rules-read-cutover.md` for rollout and rollback.
+
 ## A6.12 — Compatible Loyalty membership integration
 
 `GET /api/v1/my/club/membership` keeps its current `USER` guard, response

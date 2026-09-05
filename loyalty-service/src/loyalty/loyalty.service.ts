@@ -13,6 +13,7 @@ import {
   MembershipView,
   MemberView,
   TierRulesView,
+  TierRulesProjection,
 } from './loyalty.dto';
 
 interface MemberViewWithCard extends MemberView {
@@ -22,6 +23,19 @@ interface MemberViewWithCard extends MemberView {
 @Injectable()
 export class LoyaltyService {
   constructor(private readonly db: DataSource) {}
+
+  async tierRules(): Promise<TierRulesProjection | null> {
+    const rows = await this.db.transaction('REPEATABLE READ', async (tx) => {
+      await tx.query('SET TRANSACTION READ ONLY');
+      return tx.query<TierRulesProjection[]>(
+        `SELECT "goldMinPoints", "platinumMinPoints", "cardRequestMinPoints",
+          to_char("updatedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "updatedAt",
+          "updatedById"
+         FROM loyalty.club_tier_rules ORDER BY "createdAt" ASC LIMIT 1`,
+      );
+    });
+    return rows[0] ?? null;
+  }
 
   private assertOwner(userId: string, callerId: string | undefined): void {
     if (callerId !== userId)

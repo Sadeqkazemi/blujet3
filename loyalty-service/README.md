@@ -40,9 +40,9 @@ or nginx location exposes this service.
 ## Internal API
 
 See `docs/API.md` and DTO Swagger annotations for the complete contract.
-Both data routes require `X-Internal-Token` (minimum 32-character random
-secret), `X-Loyalty-User-Id` equal to the path UUID, and a request correlation
-ID (generated if omitted).
+Every data route requires `X-Internal-Token` (minimum 32-character random
+secret) and a request correlation ID (generated if omitted). Owner-scoped
+routes also require `X-Loyalty-User-Id` equal to the path UUID.
 
 The owner header is an assertion from a trusted backend caller, **not**
 proof of an end user's identity by itself. Never proxy this header from a
@@ -63,6 +63,10 @@ must derive the owner from its authenticated session.
   `LOYALTY_MEMBERSHIP_PROJECTION_ENABLED=true`, returns the complete PII-free
   customer membership view (ledger balance, card state, tier thresholds and
   newest non-rejected card request). History is capped at 32 entries.
+- `GET /internal/v1/loyalty/tier-rules`: when
+  `LOYALTY_TIER_RULES_PROJECTION_ENABLED=true`, returns only thresholds,
+  update timestamp and updater UUID. Backend resolves the updater role; this
+  service never joins Identity.
 - `GET /health`: liveness, version, commit.
 - `GET /ready`: required schema/column access, safe 503 on failure.
 
@@ -89,6 +93,10 @@ When the membership projection flag is enabled, additionally grant only:
 - `club_card_requests`: id, memberId, status, history, cardNo, createdAt
 - `club_tier_rules`: goldMinPoints, platinumMinPoints, cardRequestMinPoints,
   createdAt
+
+When the tier-rules projection flag is enabled, grant only these columns on
+`club_tier_rules`: goldMinPoints, platinumMinPoints, cardRequestMinPoints,
+updatedAt, updatedById, createdAt.
 
 The route flag defaults to false so an existing minimal reader stays ready.
 Enable the service flag only after the expanded reader passes
