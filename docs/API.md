@@ -2,6 +2,9 @@
 
 ## Kafka durable transport foundation
 
+Real TLS/SCRAM tests exercise the existing publisher with synthetic events only;
+no HTTP or event contract change (`docs/features/kafka-tls-scram.md`).
+
 Backend lint cleanup changes formatting and redundant TypeScript assertions only;
 all HTTP/event contracts remain unchanged (`docs/features/backend-lint-cleanup.md`).
 

@@ -19,7 +19,19 @@ below for what's landed from that port so far.
 
 ## Status
 
-### 2026-09-05 — Real Kafka required CI job (local)
+### 2026-09-05 — Kafka TLS/SCRAM tests (local, awaiting publication)
+
+- [x] Add isolated per-run certificate/credentials; TLS with SCRAM-SHA-256/512.
+- [x] Exact synthetic envelope delivery; reject wrong password, unknown user,
+  untrusted certificate and wrong hostname. No record on authentication failure.
+- [x] All 9 real-broker tests pass, including the 3 outbox regression tests;
+  full read-only backend lint, typecheck and 4 CI contract tests pass.
+- [x] Generated private key/config removed; owned broker stopped.
+- [ ] Owner-approved push and Linux/ARM CI before merge.
+- Evidence: `docs/features/kafka-tls-scram.md`. No production code, database,
+  runtime flag or server deployment changes.
+
+### 2026-09-05 — Real Kafka required CI job (merged)
 
 - [x] Add isolated PostgreSQL 16 + Java 21 + checksum-verified Kafka 3.9.1 job
   for existing real-broker commit/rollback/crash-recovery tests.
@@ -28,7 +40,8 @@ below for what's landed from that port so far.
 - [x] Add four workflow contract tests; all pass after reproducing the missing job.
 - [x] Rerun existing real Kafka/PostgreSQL suite: 3/3 tests pass; shell syntax,
   pinned archive checksum and CI failure/cancellation propagation verified locally.
-- [ ] Owner-approved push and actual Linux/ARM CI verification before merge.
+- [x] Owner-approved PR #54 merged as `5e87a8d`; CI 33974163455 and
+  CodeQL 33974163389 passed, including actual Linux/ARM Kafka execution.
 - Evidence and remaining gates: `docs/features/kafka-ci-gate.md`.
 
 ### 2026-09-05 — Backend lint cleanup (local)

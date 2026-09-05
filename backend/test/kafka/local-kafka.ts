@@ -1,12 +1,13 @@
 import { spawn, execFile, type ChildProcess } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
-import { access, mkdtemp, writeFile } from 'node:fs/promises';
+import { access, chmod, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createServer, createConnection } from 'node:net';
 import { promisify } from 'node:util';
 import { setTimeout as delay } from 'node:timers/promises';
+import { LocalKafkaSecurity } from './local-kafka-security';
 
 const execute = promisify(execFile);
 
@@ -47,9 +48,10 @@ export class LocalKafka {
     readonly port: number,
     private readonly java: string,
     private readonly classpath: string,
+    readonly security?: LocalKafkaSecurity,
   ) {}
 
-  static async create(): Promise<LocalKafka> {
+  static async create(secure = false): Promise<LocalKafka> {
     const java = process.env.KAFKA_TEST_JAVA;
     const home = process.env.KAFKA_TEST_HOME;
     if (!java || !home)
@@ -59,6 +61,7 @@ export class LocalKafka {
     await access(java);
     await access(join(home, 'libs', 'kafka_2.13-3.9.1.jar'));
     const directory = await mkdtemp(join(tmpdir(), 'blujet-kafka-'));
+    await chmod(directory, 0o700);
     const port = await reservePort();
     let controllerPort = await reservePort();
     while (controllerPort === port) controllerPort = await reservePort();
@@ -67,46 +70,56 @@ export class LocalKafka {
       port,
       resolve(java),
       join(resolve(home), 'libs', '*'),
+      secure ? new LocalKafkaSecurity(directory) : undefined,
     );
-    await writeFile(
-      join(directory, 'log4j.properties'),
-      'log4j.rootLogger=WARN, stderr\nlog4j.appender.stderr=org.apache.log4j.ConsoleAppender\nlog4j.appender.stderr.layout=org.apache.log4j.PatternLayout\nlog4j.appender.stderr.layout.ConversionPattern=%p %m%n\n',
-    );
-    await writeFile(
-      join(directory, 'server.properties'),
-      [
-        'process.roles=broker,controller',
-        'node.id=1',
-        `controller.quorum.voters=1@127.0.0.1:${controllerPort}`,
-        `listeners=PLAINTEXT://127.0.0.1:${port},CONTROLLER://127.0.0.1:${controllerPort}`,
-        `advertised.listeners=PLAINTEXT://127.0.0.1:${port}`,
-        'controller.listener.names=CONTROLLER',
-        'listener.security.protocol.map=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT',
-        'inter.broker.listener.name=PLAINTEXT',
-        `log.dirs=${join(directory, 'data').replaceAll('\\', '/')}`,
-        'offsets.topic.replication.factor=1',
-        'transaction.state.log.replication.factor=1',
-        'transaction.state.log.min.isr=1',
-        'group.initial.rebalance.delay.ms=0',
-        'auto.create.topics.enable=false',
-        'num.partitions=1',
-        'log.cleaner.enable=false',
-        'num.network.threads=2',
-        'num.io.threads=2',
-      ].join('\n'),
-    );
-    const generated = await broker.tool('random-uuid');
-    const id = generated.stdout.trim();
-    if (!/^[A-Za-z0-9_-]{22}$/.test(id))
-      throw new Error('Invalid generated Kafka cluster ID');
-    await broker.tool(
-      'format',
-      '-t',
-      id,
-      '-c',
-      join(directory, 'server.properties'),
-    );
-    return broker;
+    try {
+      await broker.security?.generate(resolve(java));
+      await writeFile(
+        join(directory, 'log4j.properties'),
+        'log4j.rootLogger=WARN, stderr\nlog4j.appender.stderr=org.apache.log4j.ConsoleAppender\nlog4j.appender.stderr.layout=org.apache.log4j.PatternLayout\nlog4j.appender.stderr.layout.ConversionPattern=%p %m%n\n',
+      );
+      await writeFile(
+        join(directory, 'server.properties'),
+        [
+          'process.roles=broker,controller',
+          'node.id=1',
+          `controller.quorum.voters=1@127.0.0.1:${controllerPort}`,
+          `listeners=CLIENT://127.0.0.1:${port},CONTROLLER://127.0.0.1:${controllerPort}`,
+          `advertised.listeners=CLIENT://127.0.0.1:${port}`,
+          'controller.listener.names=CONTROLLER',
+          `listener.security.protocol.map=CONTROLLER:PLAINTEXT,CLIENT:${secure ? 'SASL_SSL' : 'PLAINTEXT'}`,
+          'inter.broker.listener.name=CLIENT',
+          ...(broker.security?.properties() ?? []),
+          `log.dirs=${join(directory, 'data').replaceAll('\\', '/')}`,
+          'offsets.topic.replication.factor=1',
+          'transaction.state.log.replication.factor=1',
+          'transaction.state.log.min.isr=1',
+          'group.initial.rebalance.delay.ms=0',
+          'auto.create.topics.enable=false',
+          'num.partitions=1',
+          'log.cleaner.enable=false',
+          'num.network.threads=2',
+          'num.io.threads=2',
+        ].join('\n'),
+        { mode: 0o600 },
+      );
+      const generated = await broker.tool('random-uuid');
+      const id = generated.stdout.trim();
+      if (!/^[A-Za-z0-9_-]{22}$/.test(id))
+        throw new Error('Invalid generated Kafka cluster ID');
+      await broker.tool(
+        'format',
+        '-t',
+        id,
+        '-c',
+        join(directory, 'server.properties'),
+        ...(broker.security?.formatArgs() ?? []),
+      );
+      return broker;
+    } catch {
+      await broker.security?.cleanup();
+      throw new Error('Kafka fixture initialization failed');
+    }
   }
 
   private args(): string[] {
