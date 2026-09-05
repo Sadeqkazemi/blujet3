@@ -21,15 +21,17 @@ below for what's landed from that port so far.
 
 ### 2026-09-05 — Backend lint cleanup (local)
 
-- [x] Reproduce and mechanically correct 473 formatting errors plus 6 redundant
-  non-null assertions in 45 backend TypeScript files; retain all lint/type rules.
+- [x] Resolve 473 formatting findings plus 6 redundant non-null assertions.
+  After CI feedback, restore eight immutable migrations and exempt only their
+  exact paths from formatting lint (owner approved); type/safety rules stay on.
 - [x] Normalize touched files to LF to remove mixed-line-ending whitespace errors.
 - [x] Compare normalized emitted JavaScript against main for all 45 files:
   zero runtime differences, including existing migration SQL behavior.
 - [x] Final read-only lint: zero errors/warnings; typecheck/build and diff check
   pass; 767 unit tests and 23 flight approval/definition E2E tests pass.
 - Verification details: `docs/features/backend-lint-cleanup.md`.
-- [ ] Separate owner approval and CI before publishing/merging this cleanup.
+- [x] Owner approved publishing/merging PR #53 and the migration-safe correction.
+- [ ] Verify corrected CI and merge PR #53.
 - No API/schema/dependency changes, producer activation or server deployment.
 
 ### 2026-09-05 — Real Kafka/PostgreSQL boundary tests (local)

@@ -5,7 +5,9 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * individually assignable manager permissions. Null means unrestricted and
  * intentionally stays null.
  */
-export class SeniorManagerPermissionCatalog1787644800000 implements MigrationInterface {
+export class SeniorManagerPermissionCatalog1787644800000
+  implements MigrationInterface
+{
   name = 'SeniorManagerPermissionCatalog1787644800000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
