@@ -1,5 +1,18 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Kafka durable transport foundation
+
+No new public or internal HTTP endpoint. `CommerceOutboxService.enqueue`
+requires the caller's active Core transaction and persists an encrypted v1
+canonical event; it never contacts Kafka. Same producer/idempotency key and
+same semantic content returns the existing event ID; changed content conflicts.
+An opt-in worker publishes after commit with all-replica acknowledgements.
+Failures remain pending with backoff; exhausted/invalid events are durably
+quarantined in PostgreSQL, not discarded or sent to a failing broker.
+Delivery is at-least-once: consumers must deduplicate by persisted event ID.
+No business producer or financial consumer is enabled in this foundation.
+See `docs/features/kafka-commerce-outbox.md` for security and release gates.
+
 ## A6.19 — Agency credit-request history read integration
 
 GET `/api/v1/agency-portal/credit-requests` preserves ownership, fields and UAT

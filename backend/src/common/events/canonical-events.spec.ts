@@ -35,7 +35,21 @@ describe('canonical event envelope', () => {
     { occurredAt: 'not-a-date' },
     { aggregateId: '' },
     { payload: undefined },
-  ])('rejects malformed envelope changes: %j', (change) => {
+    { payload: null },
+    { payload: [] },
+    { payload: { amount: 1.5 } },
+    { payload: { amount: Number.MAX_SAFE_INTEGER + 1 } },
+    { payload: { amount: Number.NaN } },
+    { payload: { amount: BigInt(1) } },
+    { payload: { date: new Date() } },
+    { payload: { value: undefined } },
+    { payload: { large: 'x'.repeat(256 * 1024) } },
+    { eventId: 'not-a-uuid' },
+    { occurredAt: '2026-01-01' },
+    { extra: true },
+    { producer: ' leading-space' },
+    { correlationId: 'x'.repeat(257) },
+  ])('rejects malformed envelope changes (case %#)', (change) => {
     const event = createCanonicalEvent({
       eventType: CanonicalEventType.PAYMENT_CONFIRMED,
       producer: 'core-commerce',
@@ -47,5 +61,23 @@ describe('canonical event envelope', () => {
     });
     const malformed = { ...event, ...change };
     expect(isCanonicalEvent(malformed)).toBe(false);
+  });
+
+  it('rejects cyclic payloads without throwing', () => {
+    const payload: Record<string, unknown> = {};
+    payload.self = payload;
+    expect(
+      isCanonicalEvent(
+        createCanonicalEvent({
+          eventType: CanonicalEventType.ORDER_CREATED,
+          producer: 'core',
+          aggregateType: 'Order',
+          aggregateId: 'id',
+          correlationId: 'request',
+          idempotencyKey: 'command',
+          payload,
+        }),
+      ),
+    ).toBe(false);
   });
 });

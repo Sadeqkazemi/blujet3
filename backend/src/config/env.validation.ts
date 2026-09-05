@@ -1,4 +1,5 @@
 import { plainToInstance } from 'class-transformer';
+import { kafkaEventsConfig } from './kafka-events.config';
 import { agencyInvoiceReadConfig } from './agency-invoice-read.config';
 import { agencyCreditRequestsReadConfig } from './agency-credit-requests-read.config';
 import { agencyProfileReadConfig } from './agency-profile-read.config';
@@ -267,6 +268,7 @@ class EnvironmentVariables {
 }
 
 export function validateEnv(config: Record<string, unknown>) {
+  kafkaEventsConfig(config);
   agencyInvoiceReadConfig(config);
   agencyCreditRequestsReadConfig(config);
   agencyProfileReadConfig(config);

@@ -1,5 +1,16 @@
 # DB_SCHEMA.md — blujet data model
 
+## Kafka commerce delivery outbox
+
+Additive Core-owned `orders.commerce_outbox_events`: event ID, producer and
+idempotency key (unique pair), encrypted envelope, semantic SHA-256 fingerprint,
+attempt count, next attempt, lease token/time, delivered/dead-letter timestamps,
+sanitized failure code and creation timestamp. It has no cross-domain FK.
+The same caller transaction commits business state and enqueue together;
+no Notify table or existing writer changes. Seed intentionally creates no
+outbox events. Quarantined rows are retained; replay requires a later reviewed
+operator workflow. Do not revert/drop this table to roll back application code.
+
 ## A6.19 — Agency credit-request projection
 
 No migration or automatic grants. Optional SELECT-only access to existing

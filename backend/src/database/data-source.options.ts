@@ -70,6 +70,7 @@ import { ManagerReferralRecipient } from './entities/manager-referral-recipient.
 import { ManagerReferralReport } from './entities/manager-referral-report.entity';
 import { Notification } from './entities/notification.entity';
 import { NotifyOutboxEvent } from './entities/notify-outbox-event.entity';
+import { CommerceOutboxEvent } from './entities/commerce-outbox-event.entity';
 import { PanelAccessFlag } from './entities/panel-access-flag.entity';
 import { Passenger } from './entities/passenger.entity';
 import { PasswordResetEvent } from './entities/password-reset-event.entity';
@@ -196,6 +197,7 @@ export const dataSourceOptions: DataSourceOptions = {
     ManagerReferralReport,
     Notification,
     NotifyOutboxEvent,
+    CommerceOutboxEvent,
     PanelAccessFlag,
     Passenger,
     PasswordResetEvent,

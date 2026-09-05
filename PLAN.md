@@ -19,6 +19,23 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-05 — Kafka durable commerce outbox (local branch)
+
+- [x] Add an encrypted, Core-owned outbox in `orders` with active-transaction
+  enqueue, semantic idempotency and an additive TypeORM migration.
+- [x] Add default-off dispatch, fenced SKIP LOCKED leases, bounded retries,
+  durable quarantine and graceful shutdown; preserve existing business writers.
+- [x] Validate Kafka security configuration; require TLS/SCRAM in production,
+  share connection initialization and redact raw transport failures.
+- [x] Pass 47 focused unit tests and 15 real-PostgreSQL E2E tests (Kafka mocked).
+- [x] Pass all 751 Backend unit tests, typecheck, build and scoped lint; see
+  `docs/features/kafka-commerce-outbox.md` for evidence and open acceptance gates.
+- [ ] Run GitHub CI after publication and obtain approval before merge.
+- [ ] Real-broker integration, payload schemas, domain producer integration,
+  consumers/deduplication, backlog alerts/load tests and controlled replay.
+- No HTTP contract, financial writer, cutover flag activation or server deploy.
+  Branch: `codex/kafka-commerce-outbox`; this slice is not pushed or merged.
+
 ### KafkaJS dependency installation from GitHub
 
 - [x] Install KafkaJS 2.2.4 from the official GitHub HTTPS archive pinned to

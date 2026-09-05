@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { CommerceOutboxModule } from './modules/commerce-outbox/commerce-outbox.module';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -194,6 +195,7 @@ import { IdentityCutoverModule } from './modules/identity-cutover/identity-cutov
     AgencyBulletinsModule,
     PssModule,
     IdentityCutoverModule,
+    CommerceOutboxModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
