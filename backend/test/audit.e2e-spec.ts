@@ -71,16 +71,13 @@ describe('Audit (e2e)', () => {
           detail: 'resource/date filter fixture row',
           entityType: resourceTag,
           entityId: crypto.randomUUID(),
+          createdAt: new Date('2020-01-01T00:00:00.000Z'),
         },
       ]),
     );
     resourceFilterEntryId = saved[3].id;
-    // Backdated well outside any dateFrom used below, so the dateFrom
-    // filter test has a deterministic row to exclude.
-    await auditRepo.update(
-      { id: resourceFilterEntryId },
-      { createdAt: new Date('2020-01-01T00:00:00.000Z') },
-    );
+    // Backdated at insert time (immutable rows cannot be updated later), well
+    // outside any dateFrom used below, so the filter remains deterministic.
 
     await setupDataSource.destroy();
   });

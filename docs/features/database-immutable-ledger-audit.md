@@ -41,6 +41,7 @@ fixture cleanup now retains immutable audit and ledger rows: temporary actors
 are tombstoned, while test flights are cancelled and hidden from sale instead
 of deleting their evidence graph. Accountable ticketing fixtures likewise keep
 their uniquely identified booking, passenger and document history.
+Audit and survey fixtures use the same insert-time/retirement policy.
 
 ## API impact
 

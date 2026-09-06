@@ -27,6 +27,8 @@ below for what's landed from that port so far.
   deleting their immutable history.
 - [x] Preserve accountable ticketing fixture graphs whose bookings own
   append-only lifecycle events; rely on unique PNRs in the disposable E2E DB.
+- [x] Move audit backdating to insert time and retain survey booking evidence;
+  no E2E fixture deletes an append-only row.
 
 ### 2026-09-06 — Database-enforced append-only financial and audit records
 
