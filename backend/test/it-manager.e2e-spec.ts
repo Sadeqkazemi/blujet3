@@ -622,7 +622,25 @@ describe('IT Manager (e2e)', () => {
       .get('/it/backups/schedule')
       .set(auth(accessToken));
     expect(schedule.status).toBe(200);
-    expect(schedule.body.data.retentionDays).toBe(30);
+    expect(schedule.body.data).toEqual(
+      expect.objectContaining({
+        databaseBackup: 'روزانه ۰۳:۰۰ (cron سرور)',
+        fileBackup: 'پیکربندی نشده',
+        retentionDays: 7,
+        cloudStorage: 'متصل نیست',
+      }),
+    );
+    if (created.body.data.status === 'SUCCESS') {
+      expect(schedule.body.data.lastSuccessfulBackupAt).toEqual(
+        expect.any(String),
+      );
+      expect(schedule.body.data.lastSuccessfulBackupFile).toBe(
+        created.body.data.fileName,
+      );
+    } else {
+      expect(schedule.body.data.lastSuccessfulBackupAt).toBeNull();
+      expect(schedule.body.data.lastSuccessfulBackupFile).toBeNull();
+    }
   }, 30000);
 
   // ── Dashboard ────────────────────────────────────────────────────────

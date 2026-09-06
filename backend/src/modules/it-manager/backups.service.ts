@@ -103,15 +103,23 @@ export class BackupsService {
     }
   }
 
-  /** Static — describes the server-side cron already documented in
-   * docs/RUNBOOK.md / scripts/backup-db.sh; this phase does not add a
-   * second, competing scheduler. */
-  schedule() {
+  /** Reports the repository-enforced policy plus persisted evidence.
+   * Cron and off-site storage remain operator-managed; never claim either is
+   * active without a recorded configuration or successful operation. */
+  async schedule() {
+    const latestSuccessful = await this.backupRecordRepo.findOne({
+      where: { status: 'SUCCESS' },
+      order: { completedAt: 'DESC' },
+    });
+
     return {
-      databaseBackup: 'هر ۶ ساعت',
-      fileBackup: 'روزانه ۰۳:۰۰',
-      retentionDays: 30,
-      cloudStorage: 'متصل',
+      databaseBackup: 'روزانه ۰۳:۰۰ (cron سرور)',
+      fileBackup: 'پیکربندی نشده',
+      retentionDays: 7,
+      cloudStorage: 'متصل نیست',
+      lastSuccessfulBackupAt:
+        latestSuccessful?.completedAt?.toISOString() ?? null,
+      lastSuccessfulBackupFile: latestSuccessful?.fileName ?? null,
     };
   }
 }

@@ -68,7 +68,7 @@ jobs:
             fi
           }
 
-          emit backend '^(backend/|scripts/kafka-ci\.test\.mjs$)'
+          emit backend '^(backend/|scripts/(kafka-ci\.test\.mjs|verify-backup-restore\.sh)$)'
           emit backend_migration '^(backend/|scripts/check-expand-only-migrations\.mjs$)'
           emit experience '^(experience-service/|backend/(package(-lock)?\.json$|src/database/))'
           emit loyalty '^(loyalty-service/|backend/(package(-lock)?\.json$|tsconfig[^/]*\.json$|nest-cli\.json$|src/database/|src/common/money\.ts$|src/modules/loyalty-shadow/))'
@@ -442,6 +442,48 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
       - run: npm test
+
+  backend-backup-restore:
+    name: Backend backup restore proof
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: blujet
+          POSTGRES_PASSWORD: blujet
+          POSTGRES_DB: blujet_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U blujet -d blujet_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Build the primary schema
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_test
+        run: |
+          npm ci
+          cp .env.test .env
+          npm run migration:run
+      - name: Verify dump and throwaway restore
+        env:
+          POSTGRES_USER: blujet
+          POSTGRES_PASSWORD: blujet
+          POSTGRES_DB: blujet_test
+        run: sh scripts/verify-backup-restore.sh
 
   backend-kafka:
     name: Backend real Kafka

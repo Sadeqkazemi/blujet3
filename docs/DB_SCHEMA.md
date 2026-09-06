@@ -3820,3 +3820,14 @@ into Core tables.
 No migration or grant is added. Loyalty reads the existing `loyalty` schema
 through its restricted projection; Core remains the only writer and retains a
 read fallback while `LOYALTY_POINTS_READ_ENABLED` is disabled or unavailable.
+
+### Database reliability — backup evidence
+
+No table or migration is added. `ops.backup_records` remains the append-only
+operational record for dump attempts (`RUNNING`, `SUCCESS`, `FAILED`, size,
+timestamps and failure reason). `GET /it/backups/schedule` derives its latest
+successful evidence from this table and reports the repository policy of a
+nightly 03:00 dump with seven-day retention. File backup and off-site/cloud
+storage are explicitly reported as unconfigured until an operator adds and
+verifies those capabilities. Restore verification runs against a throwaway
+database in CI and never overwrites the primary database.

@@ -101,6 +101,13 @@ Row counts should look sane (non-zero, roughly matching production). If the
 restore fails or counts look wrong, investigate immediately — don't wait
 for a real incident to find out backups are broken.
 
+Every backend pull request also runs `scripts/verify-backup-restore.sh` against
+a fresh PostgreSQL 16 service. It restores a custom-format dump into a unique
+throwaway database and verifies the migration table plus the `ops.backup_records`
+and `orders.bookings` tables before cleaning up. This CI check proves dump
+restorability; it does not replace the monthly production restore drill or
+configure off-site storage.
+
 ## Rolling back a bad deploy
 
 Deployments are serialized by the GitHub `uat` environment and always check

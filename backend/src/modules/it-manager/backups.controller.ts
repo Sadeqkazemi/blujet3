@@ -29,7 +29,7 @@ export class BackupsController {
 
   @Get('schedule')
   @ApiOperation({ summary: 'زمان‌بندی خودکار پشتیبان‌گیری' })
-  schedule() {
-    return { success: true, data: this.backups.schedule() };
+  async schedule() {
+    return { success: true, data: await this.backups.schedule() };
   }
 }
