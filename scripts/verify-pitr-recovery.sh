@@ -15,7 +15,15 @@ archive_dir="$work_dir/archive"
 
 cleanup() {
   docker rm -f "$primary_container" "$recovery_container" >/dev/null 2>&1 || true
-  rm -rf "$work_dir"
+  if [ -d "$work_dir" ]; then
+    # pg_basebackup creates files as the container's postgres UID. Normalize
+    # disposable bind-mount permissions so the unprivileged runner can always
+    # remove the test fixture, including after an early failure.
+    docker run --rm --user 0 --entrypoint sh \
+      -v "$work_dir:/cleanup" "$postgres_image" \
+      -c 'chmod -R ugo+rwx /cleanup' >/dev/null 2>&1 || true
+    rm -rf "$work_dir"
+  fi
 }
 trap cleanup EXIT HUP INT TERM
 
@@ -108,10 +116,12 @@ fi
 
 # Replays are idempotent only for identical bytes; a conflicting file must make
 # archive_command fail so PostgreSQL never silently overwrites recovery data.
-docker exec "$primary_container" sh /usr/local/bin/blujet-archive-wal \
+docker exec -e WAL_ARCHIVE_DIR=/archive "$primary_container" \
+  sh /usr/local/bin/blujet-archive-wal \
   "/archive/$wal_name" "$wal_name"
 printf 'different-bytes\n' > "$archive_dir/collision-source"
-if docker exec "$primary_container" sh /usr/local/bin/blujet-archive-wal \
+if docker exec -e WAL_ARCHIVE_DIR=/archive "$primary_container" \
+  sh /usr/local/bin/blujet-archive-wal \
   /archive/collision-source "$wal_name" >/dev/null 2>&1; then
   echo "WAL archive collision was not rejected" >&2
   exit 1
