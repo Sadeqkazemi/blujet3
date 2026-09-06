@@ -1,3 +1,4 @@
+import { Inject, Injectable } from '@nestjs/common';
 import {
   parseCoreItineraryEvent,
   type CoreItineraryEvent,
@@ -8,15 +9,21 @@ import {
  * port so event admission can be tested before a separate read-model service
  * and database are introduced.
  */
+export type ReportingProjectionResult = 'applied' | 'duplicate' | 'stale';
+export const REPORTING_READ_MODEL_SINK = Symbol('REPORTING_READ_MODEL_SINK');
 export interface ReportingReadModelSink {
-  project(event: CoreItineraryEvent): Promise<void>;
+  project(event: CoreItineraryEvent): Promise<ReportingProjectionResult>;
 }
 
+@Injectable()
 export class ReportingEventConsumer {
-  constructor(private readonly sink: ReportingReadModelSink) {}
+  constructor(
+    @Inject(REPORTING_READ_MODEL_SINK)
+    private readonly sink: ReportingReadModelSink,
+  ) {}
 
-  async consume(input: unknown): Promise<void> {
+  async consume(input: unknown): Promise<ReportingProjectionResult> {
     const event = parseCoreItineraryEvent(input);
-    await this.sink.project(event);
+    return this.sink.project(event);
   }
 }

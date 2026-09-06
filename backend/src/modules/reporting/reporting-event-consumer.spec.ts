@@ -29,18 +29,18 @@ const event = () =>
 
 describe('ReportingEventConsumer', () => {
   it('validates and forwards a detached typed event to the read-model sink', async () => {
-    const project = jest.fn<Promise<void>, [CoreItineraryEvent]>();
-    project.mockResolvedValue(undefined);
+    const project = jest.fn<Promise<'applied'>, [CoreItineraryEvent]>();
+    project.mockResolvedValue('applied');
     const consumer = new ReportingEventConsumer({ project });
     const input = event();
-    await consumer.consume(input);
+    await expect(consumer.consume(input)).resolves.toBe('applied');
     input.payload.totalIrr = '0';
     expect(project).toHaveBeenCalledTimes(1);
     expect(project.mock.calls[0][0].payload.totalIrr).toBe('120');
   });
 
   it('rejects malformed events before touching the read model', async () => {
-    const project = jest.fn<Promise<void>, [CoreItineraryEvent]>();
+    const project = jest.fn<Promise<'applied'>, [CoreItineraryEvent]>();
     const consumer = new ReportingEventConsumer({ project });
     await expect(
       consumer.consume({ ...event(), payload: { totalIrr: '120' } }),
@@ -50,7 +50,7 @@ describe('ReportingEventConsumer', () => {
 
   it('does not swallow projection failures', async () => {
     const failure = new Error('projection unavailable');
-    const project = jest.fn<Promise<void>, [CoreItineraryEvent]>();
+    const project = jest.fn<Promise<'applied'>, [CoreItineraryEvent]>();
     project.mockRejectedValue(failure);
     const consumer = new ReportingEventConsumer({ project });
     await expect(consumer.consume(event())).rejects.toBe(failure);

@@ -57,6 +57,20 @@ below for what's landed from that port so far.
 - [ ] Add an idempotent Reporting projection store and stale-version policy in
   a separately reviewed read-model phase.
 - [ ] Owner-approved push, CI and merge. No server deployment.
+
+### 2026-09-06 — Reporting projection store (validated locally)
+
+- [x] Add Reporting-owned latest-event projection and append-only receipt tables
+  through one expand-only migration, with no cross-domain foreign keys or PII.
+- [x] Implement atomic idempotency, same-version conflict detection and
+  per-event-type stale-version protection.
+- [x] Prove replay, historical event-ID reuse, concurrency, rollback and
+  migration behavior on PostgreSQL.
+- [x] Wire the existing typed consumer to the store without activating Kafka
+  subscription or changing public routes.
+- [x] All 899 unit tests, 19 Reporting/PostgreSQL E2E tests, read-only lint,
+  typecheck and production build pass.
+- [ ] Owner-approved push, CI and merge. No server deployment.
 - `FlightDisrupted` remains blocked on the owner-approved external
   operations/NIRA schema; no external writer or subscription is enabled.
 

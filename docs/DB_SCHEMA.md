@@ -1,5 +1,31 @@
 # DB_SCHEMA.md — blujet data model
 
+## Reporting itinerary event projections
+
+Additive Reporting-owned schema/table
+`reporting.core_itinerary_event_projections`: composite primary key
+`(orderId, eventType)`, unique `eventId` (uuid), semantic `fingerprint`
+(char(64)), positive `orderVersion`, `currency=IRR`, exact validated `payload`
+(jsonb), authoritative `occurredAt` (timestamptz) and projection timestamps.
+There is no foreign key to Core: `orderId` is a stable cross-service reference.
+
+Each row is the latest accepted fact for one order/event-type slot. Same event
+or same semantic payload/version is idempotent; reuse of an event ID with other
+content and conflicting content at the same version fail closed. A lower
+version returns stale without overwriting the row. Different event types may
+legitimately share one order version, so their slots are independent. The
+store contains only the already allowlisted, non-PII event payloads. No seed,
+public route, subscription, Core writer or cross-domain grant is introduced.
+Rollback code must retain this projection table after application rollback.
+
+Additive Reporting-owned receipt table
+`reporting.core_itinerary_event_receipts`: primary key `eventId` (uuid), full
+event `fingerprint` (char(64)), `orderId`, `eventType`, positive
+`orderVersion`, and `receivedAt` (timestamptz). A receipt is written in the
+same transaction for every accepted, duplicate-semantic, or stale delivery,
+so an event ID cannot later be reused after its projection slot advances. The
+receipt stores no event payload or PII and has no foreign key to Core.
+
 ## Kafka commerce delivery outbox
 
 Typed itinerary event builders read allowlisted fields of

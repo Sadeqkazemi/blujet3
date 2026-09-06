@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
@@ -11,22 +10,12 @@ import {
   isCanonicalEvent,
 } from '../../common/events/canonical-events';
 import { ErrorCode } from '../../common/errors';
+import { fingerprintJson } from '../../common/events/event-fingerprint';
 import { CommerceInboxReceipt } from '../../database/entities/commerce-inbox-receipt.entity';
 import {
   parseCoreItineraryEvent,
   type CoreItineraryEvent,
 } from '../../common/events/core-itinerary-events';
-
-// Only called on validated JSON. Array order matters; object property order does not.
-function stableJson(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
-  if (value !== null && typeof value === 'object')
-    return `{${Object.entries(value)
-      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-      .map(([key, entry]) => `${JSON.stringify(key)}:${stableJson(entry)}`)
-      .join(',')}}`;
-  return JSON.stringify(value);
-}
 
 @Injectable()
 export class CommerceInboxService {
@@ -65,9 +54,7 @@ export class CommerceInboxService {
       });
     // Snapshot before waiting for a DB lock; caller mutation cannot change the receipt.
     const event = JSON.parse(JSON.stringify(input)) as CanonicalEvent;
-    const fingerprint = createHash('sha256')
-      .update(stableJson(event))
-      .digest('hex');
+    const fingerprint = fingerprintJson(event);
     const eventId = event.eventId.toLowerCase();
     return this.db.transaction('READ COMMITTED', async (manager) => {
       await manager.query("SET LOCAL lock_timeout = '5s'");
