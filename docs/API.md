@@ -2,6 +2,13 @@
 
 ## Kafka durable transport foundation
 
+Core internal receive contract: `CommerceInboxService.consume` atomically stores
+a receipt and applies local DB work, returning `processed` or `duplicate` only
+after commit. Invalid v1 input is VALIDATION_FAILED; unexpected producer is
+FORBIDDEN; changed content under the same consumer/event ID is
+IDEMPOTENCY_PAYLOAD_MISMATCH. No HTTP route or active consumer is added. Full
+caller/acknowledgement rules: `docs/features/commerce-inbox-contract.md`.
+
 ACK-gap integration tests verify identical-ID redelivery after Kafka ACK and
 worker DB connection loss; no contract or consumer deduplication change
 (`docs/features/kafka-ack-gap.md`).
