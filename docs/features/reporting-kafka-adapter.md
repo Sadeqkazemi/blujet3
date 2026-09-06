@@ -26,8 +26,8 @@ receipt and does not create another projection.
 - [x] Reporting commits offsets only after `applied`, `duplicate`, or `stale`;
   no acknowledgement occurs on validation/projection/heartbeat failure
   (`reporting-kafka.handler.spec.ts`).
-- [ ] A real Kafka/PostgreSQL acknowledgement-gap replay produces one projection
-  and one durable receipt (`reporting-projection.kafka-spec.ts`; implemented,
-  pending the required CI Java/Kafka fixture).
+- [x] A real Kafka/PostgreSQL acknowledgement-gap replay produces one projection
+  and one durable receipt (`reporting-projection.kafka-spec.ts`; passed in PR
+  #67 required CI Kafka fixture).
 - [x] Reporting module exports the handler but no runtime subscription or route
   is enabled.

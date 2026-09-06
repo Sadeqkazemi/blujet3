@@ -15,6 +15,10 @@ import { ReportingItineraryEventReceipt } from '../../src/database/entities/repo
 import { ReportingEventConsumer } from '../../src/modules/reporting/reporting-event-consumer';
 import { ReportingItineraryProjectionStore } from '../../src/modules/reporting/reporting-itinerary-projection.store';
 import { ReportingKafkaHandler } from '../../src/modules/reporting/reporting-kafka.handler';
+import {
+  ReportingKafkaRuntime,
+  type ReportingKafkaRuntimeClient,
+} from '../../src/modules/reporting/reporting-kafka.runtime';
 import { LocalKafka } from './local-kafka';
 
 describe('Reporting projection with real Kafka acknowledgement', () => {
@@ -26,7 +30,7 @@ describe('Reporting projection with real Kafka acknowledgement', () => {
   let adapter: ReportingKafkaHandler;
   let topic: string;
   let group: string;
-  const consumers: Consumer[] = [];
+  const runtimes: ReportingKafkaRuntime[] = [];
   const orderIds = new Set<string>();
 
   const event = () => {
@@ -89,24 +93,38 @@ describe('Reporting projection with real Kafka acknowledgement', () => {
     });
   }
 
-  async function start(commit?: Consumer['commitOffsets']): Promise<Consumer> {
+  async function start(
+    commit?: Consumer['commitOffsets'],
+  ): Promise<ReportingKafkaRuntime> {
     const client = kafka.consumer({
       groupId: group,
       allowAutoTopicCreation: false,
       retry: { retries: 5, restartOnFailure: () => Promise.resolve(false) },
     });
-    consumers.push(client);
-    await client.connect();
-    await client.subscribe({ topic, fromBeginning: true });
-    await client.run(
-      adapter.runConfig(
-        {
-          commitOffsets: commit ?? ((offsets) => client.commitOffsets(offsets)),
-        },
-        { topic },
-      ),
+    const runtimeClient: ReportingKafkaRuntimeClient = {
+      connect: () => client.connect(),
+      subscribe: (subscription) => client.subscribe(subscription),
+      run: (config) => client.run(config),
+      stop: () => client.stop(),
+      disconnect: () => client.disconnect(),
+      commitOffsets: commit ?? ((offsets) => client.commitOffsets(offsets)),
+    };
+    const runtime = new ReportingKafkaRuntime(
+      {
+        enabled: true,
+        topic,
+        fromBeginning: true,
+        maxBytes: 256 * 1024,
+        client: { brokers: [`127.0.0.1:${broker.port}`] },
+        consumer: { groupId: group },
+      },
+      runtimeClient,
+      adapter,
+      { log: () => undefined, error: () => undefined } as never,
     );
-    return client;
+    runtimes.push(runtime);
+    await runtime.onApplicationBootstrap();
+    return runtime;
   }
 
   beforeAll(async () => {
@@ -150,10 +168,8 @@ describe('Reporting projection with real Kafka acknowledgement', () => {
   });
 
   afterEach(async () => {
-    for (const client of consumers.splice(0)) {
-      await client.stop();
-      await client.disconnect();
-    }
+    for (const runtime of runtimes.splice(0))
+      await runtime.onApplicationShutdown();
     if (db?.isInitialized && orderIds.size) {
       const ids = [...orderIds];
       await db
@@ -203,8 +219,7 @@ describe('Reporting projection with real Kafka acknowledgement', () => {
     });
     await send(value);
     await until(() => Promise.resolve(acknowledgementFailed));
-    await first.stop();
-    await first.disconnect();
+    await first.onApplicationShutdown();
     expect(BigInt(await offset())).toBeLessThan(1n);
     expect(
       await db.getRepository(ReportingItineraryEventProjection).countBy({

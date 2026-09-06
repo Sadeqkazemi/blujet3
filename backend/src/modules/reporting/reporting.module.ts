@@ -22,6 +22,13 @@ import {
 } from './reporting-event-consumer';
 import { ReportingItineraryProjectionStore } from './reporting-itinerary-projection.store';
 import { ReportingKafkaHandler } from './reporting-kafka.handler';
+import { reportingKafkaConsumerConfig } from '../../config/reporting-kafka-consumer.config';
+import {
+  createReportingKafkaClient,
+  REPORTING_KAFKA_CLIENT,
+  REPORTING_KAFKA_CONFIG,
+  ReportingKafkaRuntime,
+} from './reporting-kafka.runtime';
 
 @Module({
   imports: [
@@ -48,6 +55,16 @@ import { ReportingKafkaHandler } from './reporting-kafka.handler';
     ReportingItineraryProjectionStore,
     ReportingEventConsumer,
     ReportingKafkaHandler,
+    ReportingKafkaRuntime,
+    {
+      provide: REPORTING_KAFKA_CONFIG,
+      useFactory: reportingKafkaConsumerConfig,
+    },
+    {
+      provide: REPORTING_KAFKA_CLIENT,
+      useFactory: createReportingKafkaClient,
+      inject: [REPORTING_KAFKA_CONFIG],
+    },
     {
       provide: REPORTING_READ_MODEL_SINK,
       useExisting: ReportingItineraryProjectionStore,
