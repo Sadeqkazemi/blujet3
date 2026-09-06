@@ -62,3 +62,22 @@ approval, and financial decisions remain in their existing domain modules.
 | `HTTPS_ENABLED` | `false` | Enables HSTS when TLS terminates at the edge |
 
 No database migration or schema change is required.
+
+## Internal service identity regression (2026-09-06)
+
+This verifies existing shared-token guards, not mTLS or a new identity system.
+Identity registers its guard globally; Agency and Loyalty guard their internal
+domain controllers. Public health endpoints remain intentionally separate.
+No route, token, runtime flag, network policy or database change is planned.
+
+- [x] Identity guard accepts its own configured token, rejects missing/empty,
+  incorrect, another service's token and array-valued headers; only explicit
+  public metadata bypasses the check (`identity-service/src/common/internal-auth.guard.spec.ts`).
+- [x] Agency and Loyalty enforce the same rejection cases and consult their
+  service-specific configuration keys (`{agency,loyalty}-service/src/common/internal-auth.guard.spec.ts`).
+- [x] All three guards fail closed when configuration is unavailable and accept
+  the replacement token, rejecting the old token, after configuration changes.
+- [x] All 25 new guard tests (Identity 9, Agency 8, Loyalty 8), service typechecks
+  and changed-file lint pass locally. These are guard-level tests, not an
+  end-to-end route-registration or live service audit.
+- [ ] Production mTLS/network isolation and cutover acceptance remain unverified.

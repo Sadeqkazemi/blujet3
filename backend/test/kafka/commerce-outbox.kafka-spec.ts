@@ -14,6 +14,8 @@ import {
   type CanonicalEvent,
 } from '../../src/common/events/canonical-events';
 import { LocalKafka } from './local-kafka';
+import { CommerceInboxService } from '../../src/modules/commerce-inbox/commerce-inbox.service';
+import { CommerceInboxReceipt } from '../../src/database/entities/commerce-inbox-receipt.entity';
 
 describe('real Kafka / PostgreSQL outbox boundary', () => {
   let broker: LocalKafka;
@@ -27,6 +29,8 @@ describe('real Kafka / PostgreSQL outbox boundary', () => {
   const env = { ...process.env };
   const producer = `broker-test-${randomUUID()}`;
   const topic = `blujet-test-${randomUUID()}`;
+  const inboxConsumer = `kafka-inbox-${randomUUID()}`;
+  const effectProducer = `kafka-effect-${randomUUID()}`;
   const received: {
     offset: string;
     value: string;
@@ -136,6 +140,18 @@ describe('real Kafka / PostgreSQL outbox boundary', () => {
         () => consumer?.disconnect(),
         () => admin?.disconnect(),
         () => broker?.stop(),
+        () =>
+          db?.isInitialized
+            ? db
+                .getRepository(CommerceInboxReceipt)
+                .delete({ consumer: inboxConsumer })
+            : undefined,
+        () =>
+          db?.isInitialized
+            ? db
+                .getRepository(CommerceOutboxEvent)
+                .delete({ producer: effectProducer })
+            : undefined,
         () =>
           db?.isInitialized
             ? db.getRepository(CommerceOutboxEvent).delete({ producer })
@@ -341,5 +357,33 @@ describe('real Kafka / PostgreSQL outbox boundary', () => {
       String(beforeOffset + 2n),
     );
     expect((await row(event.eventId)).attempts).toBe(2);
+    // Process both distinct physical Kafka offsets through the real Core inbox.
+    const outcomes: string[] = [];
+    for (const entry of deliveries().values()) {
+      outcomes.push(
+        await new CommerceInboxService(db).consume(
+          inboxConsumer,
+          producer,
+          JSON.parse(entry.value) as unknown,
+          async (manager) => {
+            await outbox.enqueue(manager, {
+              ...makeEvent(),
+              producer: effectProducer,
+            });
+          },
+        ),
+      );
+    }
+    expect(outcomes).toEqual(['processed', 'duplicate']);
+    expect(
+      await db
+        .getRepository(CommerceInboxReceipt)
+        .countBy({ consumer: inboxConsumer }),
+    ).toBe(1);
+    expect(
+      await db
+        .getRepository(CommerceOutboxEvent)
+        .countBy({ producer: effectProducer }),
+    ).toBe(1);
   });
 });

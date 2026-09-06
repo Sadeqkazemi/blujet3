@@ -2,6 +2,13 @@
 
 ## Kafka commerce delivery outbox
 
+Additive Core-owned `orders.commerce_inbox_receipts`: composite primary key
+`consumer` (varchar 128) + `eventId` (uuid), `fingerprint` (varchar 64), and
+`receivedAt` (timestamptz(3), default now). Receipt and handler DB effects commit
+or roll back together. No payload, cross-service FK, grants, seed or retention
+deletion. Other services own separate inboxes. Rollback code must retain this
+table (`docs/features/commerce-inbox-contract.md`).
+
 ACK-gap tests close only their dedicated worker connection pool and age only
 their uniquely identified fixture lease in the local `_test` DB. No migration,
 shared database shutdown or production row changes (`docs/features/kafka-ack-gap.md`).

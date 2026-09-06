@@ -19,6 +19,24 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-06 — Core transactional inbox and service-identity regression (local)
+
+- [x] Add Core-owned receipt table and exported inbox module: validate v1 envelope
+  and configured producer, serialize per consumer/event ID, fingerprint retries,
+  and commit local handler writes with the receipt in one transaction.
+- [x] Prove rollback/retry, lock timeout recovery, concurrent duplicate delivery,
+  content conflict, consumer isolation and migration/schema parity on PostgreSQL.
+- [x] Two real Kafka ACK-gap deliveries create only one committed inbox effect;
+  all 13 broker tests and all 777 backend unit tests pass.
+- [x] Add 25 Identity/Agency/Loyalty token-guard regression tests; service
+  typechecks and changed-file lint pass. Backend full lint/typecheck/build pass.
+- [x] Final exported-module wiring PostgreSQL regression: all 8 tests pass.
+- [ ] Owner-approved push, required CI and merge. No server deployment.
+- Evidence: `docs/features/commerce-inbox-contract.md` and
+  `docs/features/api-gateway.md`. Roadmap step 13 remains in progress:
+  typed domain payloads and an authorized active consumer/offset-commit contract
+  are still needed. No Order/Inventory/Payment extraction or runtime activation.
+
 ### 2026-09-05 — Kafka ACK/database gap recovery (local)
 
 - [x] After real broker ACK, close only a dedicated worker DB pool; verify
