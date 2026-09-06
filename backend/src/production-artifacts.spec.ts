@@ -35,6 +35,18 @@ const localStartScript = readFileSync(
   join(backendRoot, '..', 'scripts', 'start-local.sh'),
   'utf8',
 );
+const walArchiveScript = readFileSync(
+  join(backendRoot, '..', 'scripts', 'archive-wal.sh'),
+  'utf8',
+);
+const pitrBaseBackupScript = readFileSync(
+  join(backendRoot, '..', 'scripts', 'backup-base-pitr.sh'),
+  'utf8',
+);
+const pitrRecoveryProofScript = readFileSync(
+  join(backendRoot, '..', 'scripts', 'verify-pitr-recovery.sh'),
+  'utf8',
+);
 const notifyDockerfile = readFileSync(
   join(backendRoot, '..', 'notify-service', 'Dockerfile'),
   'utf8',
@@ -121,6 +133,32 @@ describe('production backend artifacts', () => {
   it('ships the PostgreSQL client required by the real backup endpoint', () => {
     expect(dockerfile).toContain('postgresql-client');
     expect(dockerfile).toContain('pg_dump');
+  });
+
+  it('configures collision-safe WAL archiving and proves point-in-time recovery', () => {
+    expect(compose).toContain('wal_level=replica');
+    expect(compose).toContain('archive_mode=on');
+    expect(compose).toContain(
+      'archive_timeout=${POSTGRES_ARCHIVE_TIMEOUT:-300s}',
+    );
+    expect(compose).toContain(
+      'archive_command=sh /usr/local/bin/blujet-archive-wal %p %f',
+    );
+    expect(compose).toContain('db_wal_archive:/var/lib/postgresql/wal-archive');
+    expect(walArchiveScript).toContain('cmp -s "$source_path" "$target_path"');
+    expect(walArchiveScript).toContain('refusing to overwrite');
+    expect(pitrBaseBackupScript).toContain('--wal-method=stream');
+    expect(pitrBaseBackupScript).toContain('backup_manifest');
+    expect(pitrBaseBackupScript).toContain('pg_archivecleanup');
+    expect(pitrBaseBackupScript.indexOf('pg_basebackup')).toBeLessThan(
+      pitrBaseBackupScript.indexOf('expired_bases'),
+    );
+    expect(pitrRecoveryProofScript).toContain('recovery_target_lsn');
+    expect(pitrRecoveryProofScript).toContain('0:before-target');
+    expect(ciWorkflow).toContain('Backend PITR recovery proof');
+    expect(ciWorkflow).toContain('sh scripts/verify-pitr-recovery.sh');
+    expect(ciWorkflow).toContain('      - backend-backup-restore');
+    expect(ciWorkflow).toContain('      - backend-pitr-recovery');
   });
 
   it('does not reference the stale dist/src layout', () => {

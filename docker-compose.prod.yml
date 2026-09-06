@@ -2,12 +2,27 @@ services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
+    entrypoint: ['sh', '/usr/local/bin/blujet-db-entrypoint']
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_timeout=${POSTGRES_ARCHIVE_TIMEOUT:-300s}
+      - -c
+      - archive_command=sh /usr/local/bin/blujet-archive-wal %p %f
     environment:
       POSTGRES_USER: blujet
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: blujet
     volumes:
       - db_data:/var/lib/postgresql/data
+      - db_wal_archive:/var/lib/postgresql/wal-archive
+      - ${BACKUP_DIR:-/opt/app/backups}:/var/lib/postgresql/base-backups
+      - ./scripts/database-entrypoint.sh:/usr/local/bin/blujet-db-entrypoint:ro
+      - ./scripts/archive-wal.sh:/usr/local/bin/blujet-archive-wal:ro
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U blujet']
       interval: 5s
@@ -288,6 +303,7 @@ services:
 
 volumes:
   db_data:
+  db_wal_archive:
   pss_db_data:
   backend_uploads:
   backend_backups:

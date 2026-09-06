@@ -3832,6 +3832,25 @@ storage are explicitly reported as unconfigured until an operator adds and
 verifies those capabilities. Restore verification runs against a throwaway
 database in CI and never overwrites the primary database.
 
+### Database reliability — WAL archive and PITR
+
+No application table or TypeORM migration is added. The writable PostgreSQL 16
+primary keeps `wal_level=replica` and `archive_mode=on`, and archives completed
+WAL segments into a Docker volume distinct from `PGDATA`. Logical `pg_dump`
+archives remain a separate recovery mechanism; PITR uses a physical
+`pg_basebackup` base plus every required archived WAL segment after that base.
+
+Physical base backups are created in plain format with streamed WAL, packaged
+atomically outside `PGDATA`, and retained long enough to preserve at least one
+base for the seven-day recovery window. WAL cleanup is allowed only after a new
+base backup succeeds and uses the oldest retained base's start-WAL filename as
+the cleanup boundary. A failed backup cannot advance that boundary.
+
+The initial WAL volume and base-backup directory are host-local. They do not
+satisfy off-site disaster recovery until both artifacts are replicated to
+independently credentialed storage and a restore drill from that copy passes.
+The PII encryption key must not be stored beside either backup class.
+
 ### Database schema privilege hardening
 
 Migration `1791810000000-HardenDomainSchemaPrivileges` removes the default

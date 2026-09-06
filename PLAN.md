@@ -4554,6 +4554,20 @@ contracts and retires the production mock adapters.
 - [ ] Run migration compatibility and full CI, then request approval before
   merge; no server deploy.
 
+## PostgreSQL WAL archive and PITR proof (2026-09-06)
+
+- [ ] Enable continuous WAL archiving for the production primary into a volume
+  separate from `PGDATA`, with collision-safe archive behavior.
+- [ ] Add atomic physical base backups with streamed WAL and fail-safe retention
+  cleanup based on the oldest retained base backup.
+- [ ] Prove point-in-time recovery in CI by restoring only the transaction before
+  a captured LSN and excluding the later committed transaction.
+- [ ] Add the PITR proof and the existing logical restore proof to the required
+  CI gate dependencies.
+- [ ] Document operator scheduling, monitoring, recovery and the still-pending
+  off-site storage cutover.
+- [ ] Commit/push and merge only after explicit user approval; do not deploy.
+
 ## Microservices architecture v1.1 — phase 0 foundation (2026-09-02)
 
 - [x] Store the owner-provided architecture ADR and make its Core Platform
