@@ -23,8 +23,9 @@ phase. Recovery is intentionally an operator-only, destructive runbook action.
   volume, and an existing archive file is accepted only when byte-identical —
   `scripts/archive-wal.sh` and `backend/src/production-artifacts.spec.ts`
 - [ ] `scripts/backup-base-pitr.sh` creates a plain physical base backup with
-  streamed WAL, packages it atomically, validates the archive, and removes its
-  staging directory on success or failure — shell implementation and
+  streamed WAL, verifies the base with `pg_verifybackup`, packages it
+  atomically, validates the archive, and removes its staging directory on
+  success or failure — shell implementation and
   `backend/src/production-artifacts.spec.ts`
 - [ ] A failed base backup never prunes the WAL archive; successful retention
   cleanup keeps WAL from the oldest retained base backup — shell implementation

@@ -148,6 +148,7 @@ describe('production backend artifacts', () => {
     expect(walArchiveScript).toContain('cmp -s "$source_path" "$target_path"');
     expect(walArchiveScript).toContain('refusing to overwrite');
     expect(pitrBaseBackupScript).toContain('--wal-method=stream');
+    expect(pitrBaseBackupScript).toContain('pg_verifybackup');
     expect(pitrBaseBackupScript).toContain('backup_manifest');
     expect(pitrBaseBackupScript).toContain('pg_archivecleanup');
     expect(pitrBaseBackupScript.indexOf('pg_basebackup')).toBeLessThan(

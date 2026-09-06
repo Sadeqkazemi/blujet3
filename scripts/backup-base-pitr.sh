@@ -51,6 +51,9 @@ docker compose -f docker-compose.prod.yml exec -T -u postgres \
   --checkpoint=fast \
   --no-password
 
+docker compose -f docker-compose.prod.yml exec -T -u postgres db \
+  pg_verifybackup "/var/lib/postgresql/base-backups/$staging_name"
+
 tar -C "$staging_path" -czf "$partial_path" .
 tar -tzf "$partial_path" > "$archive_list"
 grep -qx './PG_VERSION' "$archive_list"

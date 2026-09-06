@@ -120,8 +120,9 @@ the logical dump:
 0 4 * * * cd /opt/app && ./scripts/backup-base-pitr.sh >> /var/log/blujet-pitr.log 2>&1
 ```
 
-`backup-base-pitr.sh` uses `pg_basebackup` with streamed WAL, validates and
-atomically publishes `/opt/app/backups/blujet-pitr-base-<UTC timestamp>.tar.gz`,
+`backup-base-pitr.sh` uses `pg_basebackup` with streamed WAL, runs
+`pg_verifybackup`, validates and atomically publishes
+`/opt/app/backups/blujet-pitr-base-<UTC timestamp>.tar.gz`,
 and only then performs retention cleanup. It keeps the newest base older than
 the seven-day boundary as the recovery anchor, then removes WAL older than that
 base. If backup or validation fails, WAL cleanup does not run.
