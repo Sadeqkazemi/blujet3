@@ -19,6 +19,48 @@ below for what's landed from that port so far.
 
 ## Status
 
+- [x] Shorten the Backend E2E critical path by splitting the complete serial
+  Jest suite from four into eight isolated PostgreSQL/Redis shards; keep the
+  stable CI gate dependent on the full matrix and update its contract test.
+- [x] Align legacy Backend E2E cleanup with append-only audit and financial
+  evidence: tombstone temporary UAT actors and retire test flights without
+  deleting their immutable history.
+- [x] Preserve accountable ticketing fixture graphs whose bookings own
+  append-only lifecycle events; rely on unique PNRs in the disposable E2E DB.
+- [x] Move audit backdating to insert time and retain survey booking evidence;
+  no E2E fixture deletes an append-only row.
+- [x] Remove webhook-event finalization updates; immutable ingestion claims are
+  preserved and outcome authority remains in loan/application and wallet state.
+- [x] Make isolated Backend E2E jobs exit after completed assertions so leaked
+  CI-only handles cannot hold a green shard open until the job timeout.
+
+### 2026-09-06 — Database-enforced append-only financial and audit records
+
+- [x] Document the acceptance boundary before implementation.
+- [x] Add a reusable PostgreSQL trigger function and guards for
+  `payments.ledger_entries`, `payments.wallet_entries`,
+  `payments.bank_loan_webhook_events`, `loyalty.club_points_entries`, and
+  `audit.audit_logs`.
+- [x] Preserve insert/reversal flows and leave mutable reconciliation workflow
+  rows outside the guard.
+- [x] Add PostgreSQL integration coverage for trigger inventory, insert
+  allowance, update/delete rejection, and migration down/up idempotence.
+- [x] Run the focused test and full backend verification; the diff is pushed
+  on the feature branch for owner review. No merge or server deployment.
+
+### 2026-09-06 — Database-enforced order evidence immutability
+
+- [x] Add deterministic PostgreSQL guards for booking hold lifecycle,
+  Core-itinerary lifecycle, and per-coupon refund evidence rows.
+- [x] Keep mutable ticket, refund-request, and reconciliation workflow tables
+  outside this boundary.
+- [x] Extend trigger inventory and migration down/up regression coverage.
+- [x] Align Loyalty CI cleanup with the append-only points ledger: mutable
+  request/lock fixtures are removed, while synthetic member/points evidence is
+  retained only until the isolated CI database is discarded.
+- [ ] Obtain owner approval before merging PR #73 (target `main`); no
+  deployment.
+
 ### 2026-09-06 — Reporting Kafka consumer lifecycle (contract first)
 
 - [x] Record the default-off lifecycle, dedicated broker identity, exact-topic
@@ -4553,6 +4595,21 @@ contracts and retires the production mock adapters.
 - [x] Pass backend lint, typecheck and focused migration tests locally.
 - [ ] Run migration compatibility and full CI, then request approval before
   merge; no server deploy.
+
+## PostgreSQL WAL archive and PITR proof (2026-09-06)
+
+- [x] Enable continuous WAL archiving for the production primary into a volume
+  separate from `PGDATA`, with collision-safe archive behavior.
+- [x] Add atomic physical base backups with streamed WAL and fail-safe retention
+  cleanup based on the oldest retained base backup.
+- [x] Prove point-in-time recovery in CI by restoring only the transaction before
+  a captured LSN and excluding the later committed transaction.
+- [x] Add the PITR proof and the existing logical restore proof to the required
+  CI gate dependencies.
+- [x] Document operator scheduling, monitoring, recovery and the still-pending
+  off-site storage cutover.
+- [x] Commit and push the reviewed feature branch; all PR #72 CI checks passed.
+- [ ] Merge only after explicit user approval; do not deploy.
 
 ## Microservices architecture v1.1 — phase 0 foundation (2026-09-02)
 

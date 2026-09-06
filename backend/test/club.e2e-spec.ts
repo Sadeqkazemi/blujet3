@@ -846,15 +846,17 @@ describe('Club (e2e)', () => {
   ) {
     const memberRepo = dataSource.getRepository(ClubMember);
     await memberRepo.update({ userId }, { userId: null });
-    await dataSource
-      .getRepository(ClubPointsEntry)
-      .delete({ clubMemberId: memberId });
     const pointsEntryRepo = dataSource.getRepository(ClubPointsEntry);
+    const balance = await pointsEntryRepo
+      .createQueryBuilder('entry')
+      .select('COALESCE(SUM(entry.signedPoints), 0)', 'points')
+      .where('entry.clubMemberId = :memberId', { memberId })
+      .getRawOne<{ points: string }>();
     await pointsEntryRepo.save(
       pointsEntryRepo.create({
         clubMemberId: memberId,
         type: 'EARN',
-        signedPoints: points,
+        signedPoints: points - Number(balance?.points ?? 0),
       }),
     );
     await memberRepo.update(

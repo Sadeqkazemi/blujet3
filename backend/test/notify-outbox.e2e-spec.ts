@@ -12,7 +12,6 @@ describe('Notify outbox transaction boundary (e2e)', () => {
   let app: INestApplication<App>;
   let dataSource: DataSource;
   let notifications: NotificationsService;
-  const auditIds: string[] = [];
   const dedupeKeys: string[] = [];
   const previousEnv = {
     enabled: process.env.NOTIFY_INTEGRATION_ENABLED,
@@ -39,11 +38,7 @@ describe('Notify outbox transaction boundary (e2e)', () => {
         .getRepository(NotifyOutboxEvent)
         .delete(dedupeKeys.map((dedupeKey) => ({ dedupeKey })));
     }
-    if (auditIds.length > 0) {
-      await dataSource
-        .getRepository(AuditLog)
-        .delete(auditIds.map((id) => ({ id })));
-    }
+    // Retain immutable audit evidence in the disposable database.
     if (previousEnv.enabled === undefined) {
       delete process.env.NOTIFY_INTEGRATION_ENABLED;
     } else process.env.NOTIFY_INTEGRATION_ENABLED = previousEnv.enabled;
@@ -61,7 +56,6 @@ describe('Notify outbox transaction boundary (e2e)', () => {
     });
     const auditId = randomUUID();
     const dedupeKey = `notify-atomic:${auditId}`;
-    auditIds.push(auditId);
     dedupeKeys.push(dedupeKey);
 
     await dataSource.transaction(async (manager) => {

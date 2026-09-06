@@ -5,17 +5,11 @@ import { DataSource, In } from 'typeorm';
 import { AncillaryService } from '../src/database/entities/ancillary-service.entity';
 import { AuditLog } from '../src/database/entities/audit-log.entity';
 import { Booking } from '../src/database/entities/booking.entity';
-import { ClubPointsEntry } from '../src/database/entities/club-points-entry.entity';
 import { FareRule } from '../src/database/entities/fare-rule.entity';
 import { Flight } from '../src/database/entities/flight.entity';
 import { FlightInstance } from '../src/database/entities/flight-instance.entity';
-import { LedgerEntry } from '../src/database/entities/ledger-entry.entity';
 import { Passenger } from '../src/database/entities/passenger.entity';
-import { PaymentReconciliation } from '../src/database/entities/payment-reconciliation.entity';
-import { PaymentAttempt } from '../src/database/entities/payment-attempt.entity';
 import { Route } from '../src/database/entities/route.entity';
-import { Schedule } from '../src/database/entities/schedule.entity';
-import { WalletEntry } from '../src/database/entities/wallet-entry.entity';
 import { CabinClass, FlightInstanceStatus } from '../src/database/enums';
 import { createTestApp } from './helpers/app.helper';
 import { loginAs, loginAsCustomer } from './helpers/login.helper';
@@ -28,65 +22,55 @@ describe('Flight engine completion', () => {
   let app: INestApplication<App>;
   let dataSource: DataSource;
 
+  const fixtureFlightNumbers = [
+    'BJ-77',
+    'BJ-78',
+    'BJ-81',
+    'BJ-82',
+    'BJ-83',
+    'BJ-84',
+    'BJ-85',
+    'BJ-86',
+  ];
+
+  async function retireFixtureFlights() {
+    const flights = await dataSource.getRepository(Flight).findBy({
+      flightNo: In(fixtureFlightNumbers),
+    });
+    const flightIds = flights.map(({ id }) => id);
+    if (flightIds.length === 0) return;
+
+    await dataSource
+      .getRepository(FlightInstance)
+      .createQueryBuilder()
+      .update()
+      .set({
+        status: FlightInstanceStatus.CANCELLED,
+        publicSaleEnabled: false,
+        agencySaleEnabled: false,
+        cancelledAt: new Date(),
+        cancellationReason: 'Retired E2E fixture',
+      })
+      .where('"flightId" IN (:...flightIds)', { flightIds })
+      .execute();
+
+    for (const flight of flights) {
+      await dataSource.getRepository(Flight).update(flight.id, {
+        flightNo: `__e2e_retired__${flight.id}`,
+      });
+    }
+  }
+
   beforeAll(async () => {
     app = await createTestApp();
     dataSource = app.get(DataSource);
+    await retireFixtureFlights();
   });
 
   afterAll(async () => {
-    // Clean up everything this spec created — other suites (reservation,
-    // finance-reports) pick instances by ordering and break on leftovers.
-    const flights = await dataSource.getRepository(Flight).findBy({
-      flightNo: In([
-        'BJ-77',
-        'BJ-78',
-        'BJ-81',
-        'BJ-82',
-        'BJ-83',
-        'BJ-84',
-        'BJ-85',
-        'BJ-86',
-      ]),
-    });
-    const fids = flights.map((f) => f.id);
-    const instances =
-      fids.length > 0
-        ? await dataSource
-            .getRepository(FlightInstance)
-            .createQueryBuilder('fi')
-            .where('fi.flightId IN (:...fids)', { fids })
-            .getMany()
-        : [];
-    const iids = instances.map((i) => i.id);
-    const bookings =
-      iids.length > 0
-        ? await dataSource
-            .getRepository(Booking)
-            .createQueryBuilder('b')
-            .where('b.flightInstanceId IN (:...iids)', { iids })
-            .getMany()
-        : [];
-    const bids = bookings.map((b) => b.id);
-    await dataSource
-      .getRepository(PaymentAttempt)
-      .delete({ bookingId: In(bids) });
-    await dataSource
-      .getRepository(PaymentReconciliation)
-      .delete({ bookingId: In(bids) });
-    await dataSource.getRepository(LedgerEntry).delete({ bookingId: In(bids) });
-    await dataSource
-      .getRepository(ClubPointsEntry)
-      .delete({ bookingId: In(bids) });
-    await dataSource.getRepository(WalletEntry).delete({ bookingId: In(bids) });
-    await dataSource.getRepository(Passenger).delete({ bookingId: In(bids) });
-    await dataSource.getRepository(Booking).delete({ id: In(bids) });
-    await dataSource
-      .getRepository(FareRule)
-      .delete({ flightInstanceId: In(iids) });
-    await dataSource.getRepository(FlightInstance).delete({ id: In(iids) });
-    await dataSource.getRepository(Schedule).delete({ flightId: In(fids) });
-    await dataSource.getRepository(Flight).delete({ id: In(fids) });
-
+    // Financial and loyalty ledgers are append-only. Retire the test flights
+    // so later suites cannot sell them, while preserving their evidence graph.
+    await retireFixtureFlights();
     await app.close();
   });
 

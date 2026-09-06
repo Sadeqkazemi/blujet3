@@ -26,16 +26,19 @@ is changed by this optimization.
 ## Backend E2E stability
 
 The Backend validation job and the database-backed E2E suite run as separate
-CI jobs. E2E specs are split across four Jest shards; every shard receives its
+CI jobs. E2E specs are split across eight Jest shards; every shard receives its
 own PostgreSQL and Redis service and prepares its own test schema through the
-existing Jest global setup. This avoids repeating migration/seed work inside a
-single job and prevents accumulated database load from exhausting the old
-30-minute Backend timeout.
+existing Jest global setup. The finer split keeps the complete suite covered
+while reducing the critical-path duration of each serial shard. This avoids
+accumulated database load from exhausting the old 30-minute Backend timeout.
+The CI command uses Jest `--forceExit` only after assertions complete, because
+the application bootstrap opens shared clients that are intentionally not
+reused across isolated jobs.
 
 Acceptance evidence:
 
 - [x] Changed-file lint, typecheck, build and all 116 unit suites pass locally.
-- [ ] All four Backend E2E shards pass against isolated PostgreSQL 16 services.
+- [ ] All eight Backend E2E shards pass against isolated PostgreSQL 16 services.
 - [x] `destination-stats.e2e-spec.ts` passes and closes safely when application setup
       fails or times out.
 - [x] The stable `CI gate` requires both Backend validation and the complete

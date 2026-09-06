@@ -1,15 +1,12 @@
 import type { INestApplication } from '@nestjs/common';
 import type { App } from 'supertest/types';
 import request from 'supertest';
-import { DataSource, In, IsNull, MoreThan } from 'typeorm';
+import { DataSource, IsNull, MoreThan } from 'typeorm';
 import { AircraftSeatMap } from '../src/database/entities/aircraft-seat-map.entity';
 import { Booking } from '../src/database/entities/booking.entity';
 import { Flight } from '../src/database/entities/flight.entity';
 import { FlightInstance } from '../src/database/entities/flight-instance.entity';
-import { LedgerEntry } from '../src/database/entities/ledger-entry.entity';
 import { Passenger } from '../src/database/entities/passenger.entity';
-import { PaymentReconciliation } from '../src/database/entities/payment-reconciliation.entity';
-import { PaymentAttempt } from '../src/database/entities/payment-attempt.entity';
 import { Route } from '../src/database/entities/route.entity';
 import { SeatLock } from '../src/database/entities/seat-lock.entity';
 import { User } from '../src/database/entities/user.entity';
@@ -105,35 +102,20 @@ describe('Phase 13 Part D — managerial lock governance', () => {
     await dataSource
       .getRepository(SeatLock)
       .delete({ flightInstanceId: instanceId });
-    const passengers = await dataSource
-      .getRepository(Passenger)
-      .createQueryBuilder('p')
-      .innerJoin('p.booking', 'b')
-      .where('b.flightInstanceId = :instanceId', { instanceId })
-      .getMany();
-    const bookingIds = passengers.map((p) => p.bookingId);
-    if (bookingIds.length > 0) {
-      await dataSource
-        .getRepository(PaymentAttempt)
-        .delete({ bookingId: In(bookingIds) });
-      await dataSource
-        .getRepository(PaymentReconciliation)
-        .delete({ bookingId: In(bookingIds) });
-      await dataSource
-        .getRepository(LedgerEntry)
-        .delete({ bookingId: In(bookingIds) });
-      await dataSource
-        .getRepository(Passenger)
-        .delete({ bookingId: In(bookingIds) });
-      await dataSource.getRepository(Booking).delete({ id: In(bookingIds) });
-    }
-    await dataSource.getRepository(FlightInstance).delete({ id: instanceId });
-    await dataSource.getRepository(Flight).delete({ flightNo: 'P13D-1' });
-    // Route THR-MHD is left in place — it may be shared with unrelated
-    // seed/load-test flights (FK-restricted delete would 500 here).
+    // Retire the fixture but preserve its immutable financial and ticket history.
     await dataSource
-      .getRepository(AircraftSeatMap)
-      .delete({ aircraftType: AIRCRAFT_TYPE });
+      .getRepository(FlightInstance)
+      .createQueryBuilder()
+      .update()
+      .set({
+        status: FlightInstanceStatus.CANCELLED,
+        publicSaleEnabled: false,
+        agencySaleEnabled: false,
+        cancelledAt: new Date(),
+        cancellationReason: 'E2E fixture retired',
+      })
+      .where('id = :instanceId', { instanceId })
+      .execute();
 
     await app.close();
   });

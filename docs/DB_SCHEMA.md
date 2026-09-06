@@ -794,6 +794,33 @@ dedicated pricing tab). Confirmed 3-step flow, verbatim from the CEO
 banner: «۱ پیشنهاد مدیر بازرگانی → ۲ تحلیل هوش مصنوعی → ۳ تأیید و ثبت
 مدیر عامل».
 
+## Database-enforced append-only financial and audit records (2026-09-06)
+
+Migration `1791900000000-ImmutableFinancialAuditRows` installs the shared
+`audit.reject_immutable_row_mutation()` PostgreSQL trigger function and a
+`BEFORE UPDATE OR DELETE` guard on:
+
+- `payments.ledger_entries`
+- `payments.wallet_entries`
+- `payments.bank_loan_webhook_events`
+- `loyalty.club_points_entries`
+- `audit.audit_logs`
+
+These tables accept inserts only. A correction is a new reversal/adjustment
+entry linked by the existing business reference; historical rows are never
+edited or deleted. The guard raises SQLSTATE `55000`, including for a no-op
+update, so the rule is enforced independently of TypeORM and the public
+compatibility views. This does not protect mutable workflow tables such as
+`payments.payment_reconciliations`, whose resolution fields are intentionally
+updated by the reconciliation process.
+
+Migration `1791990000000-ImmutableOrderEvidenceRows` extends the same guard to
+the immutable transition evidence in `orders.booking_lifecycle_events`,
+`orders.core_itinerary_lifecycle_events`, and
+`orders.core_itinerary_coupon_events`. The migration removes only its own
+triggers on rollback; the shared function and financial/audit guards remain
+owned by the preceding migration.
+
 - `FarePricingProposal { id, flightInstanceId→FlightInstance @unique (one live proposal per flight — ⚑ fixes the mocks' broken id scheme where the two panels wrote the same array under incompatible `PP-####`vs`PP-{flightNo}` keys and seeded proposals never matched any flight row), basePriceIrr, competitorPriceIrr, proposedPriceIrr, legalRateIrr?, note?, proposedById→User, status: PENDING|REGISTERED, registeredPriceIrr?, approvedById→User?, approvedAt?, aiSuggestion Json? of { priceIrr, reason, factors[], season, occasion, confidence, modelVersion, generatedAt }, createdAt, updatedAt }`
 - ⚑ **AI suggestion is persisted on the proposal** (with the model version, per the ML-service traceability rule) — in the mocks it lives in component state and evaporates on reload, hiding the «ثبت با AI» button. Advisory-only stands: generation never mutates prices; registration is always an explicit CEO click.
 - **Registration** («تأیید بازرگانی» / «ثبت با AI»): CEO picks one of the two computed values — the design has no free-price input at approval. Transitions PENDING→REGISTERED with `registeredPriceIrr`, audited (`category=PRICING`). The original proposal remains immutable, but the Commercial Manager may update the current `registeredPriceIrr` of a `PUBLISHED` flight through the dedicated price endpoint; every change stores previous/new IRR values and reason in append-only `AuditLog`, bumps `FlightInstance.version`, and invalidates search cache.
@@ -3831,6 +3858,25 @@ nightly 03:00 dump with seven-day retention. File backup and off-site/cloud
 storage are explicitly reported as unconfigured until an operator adds and
 verifies those capabilities. Restore verification runs against a throwaway
 database in CI and never overwrites the primary database.
+
+### Database reliability — WAL archive and PITR
+
+No application table or TypeORM migration is added. The writable PostgreSQL 16
+primary keeps `wal_level=replica` and `archive_mode=on`, and archives completed
+WAL segments into a Docker volume distinct from `PGDATA`. Logical `pg_dump`
+archives remain a separate recovery mechanism; PITR uses a physical
+`pg_basebackup` base plus every required archived WAL segment after that base.
+
+Physical base backups are created in plain format with streamed WAL, packaged
+atomically outside `PGDATA`, and retained long enough to preserve at least one
+base for the seven-day recovery window. WAL cleanup is allowed only after a new
+base backup succeeds and uses the oldest retained base's start-WAL filename as
+the cleanup boundary. A failed backup cannot advance that boundary.
+
+The initial WAL volume and base-backup directory are host-local. They do not
+satisfy off-site disaster recovery until both artifacts are replicated to
+independently credentialed storage and a restore drill from that copy passes.
+The PII encryption key must not be stored beside either backup class.
 
 ### Database schema privilege hardening
 

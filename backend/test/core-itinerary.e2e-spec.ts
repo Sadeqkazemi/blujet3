@@ -28,6 +28,7 @@ import { toJsonValue } from '../src/database/json-types';
 import { TicketDocumentStock } from '../src/database/entities/ticket-document-stock.entity';
 import { createTestApp } from './helpers/app.helper';
 import { CoreItineraryHoldExpiryService } from '../src/modules/pss/core-itinerary-hold-expiry.service';
+import { BookingStatus } from '../src/database/enums';
 
 describe('Core itinerary internal API', () => {
   let app: INestApplication<App>;
@@ -41,64 +42,35 @@ describe('Core itinerary internal API', () => {
   const fareRuleIds = [randomUUID(), randomUUID()];
   const airportId = randomUUID();
   const extraId = randomUUID();
-  const holdOwnerId = randomUUID();
+  let holdOwnerId = randomUUID();
 
-  async function cleanupHoldOrders() {
+  async function cleanupHoldOrders(replaceOwner = true) {
     const orders = await dataSource
       .getRepository(CoreItineraryOrder)
       .find({ where: { ownerId: holdOwnerId }, select: { id: true } });
     const orderIds = orders.map((order) => order.id);
     if (orderIds.length > 0) {
-      const documents = await dataSource
-        .getRepository(CoreItineraryTicketDocument)
-        .find({ where: { orderId: In(orderIds) }, select: { id: true } });
-      const documentIds = documents.map((document) => document.id);
-      const refunds = await dataSource
-        .getRepository(CoreItineraryRefund)
-        .find({ where: { orderId: In(orderIds) }, select: { id: true } });
-      if (refunds.length > 0) {
-        await dataSource
-          .getRepository(CoreItineraryCouponEvent)
-          .delete({ refundId: In(refunds.map((refund) => refund.id)) });
-        await dataSource
-          .getRepository(CoreItineraryTicketDocument)
-          .update(
-            { orderId: In(orderIds) },
-            { servicingStatus: null, servicedAt: null, servicingId: null },
-          );
-        if (documentIds.length > 0) {
-          await dataSource
-            .getRepository(CoreItineraryFlightCoupon)
-            .update(
-              { ticketDocumentId: In(documentIds) },
-              { servicingStatus: null, servicedAt: null, servicingId: null },
-            );
-        }
-        await dataSource
-          .getRepository(CoreItineraryRefund)
-          .delete({ orderId: In(orderIds) });
-      }
-      if (documentIds.length > 0) {
-        await dataSource
-          .getRepository(CoreItineraryFlightCoupon)
-          .delete({ ticketDocumentId: In(documentIds) });
-      }
-      await dataSource
-        .getRepository(CoreItineraryTicketDocument)
-        .delete({ orderId: In(orderIds) });
-      await dataSource
-        .getRepository(LedgerEntry)
-        .delete({ itineraryOrderId: In(orderIds) });
-      await dataSource
-        .getRepository(CoreItineraryPaymentConfirmation)
-        .delete({ orderId: In(orderIds) });
-      await dataSource
-        .getRepository(CoreItineraryLifecycleEvent)
-        .delete({ orderId: In(orderIds) });
       await dataSource
         .getRepository(CoreItineraryOrder)
-        .delete({ id: In(orderIds) });
+        .update({ id: In(orderIds) }, { status: BookingStatus.CANCELLED });
     }
+    if (!replaceOwner) return;
+    await dataSource
+      .getRepository(User)
+      .update(
+        { id: holdOwnerId },
+        { isActive: false, deletedAt: new Date(), updatedAt: new Date() },
+      );
+    holdOwnerId = randomUUID();
+    await dataSource.getRepository(User).save(
+      dataSource.getRepository(User).create({
+        id: holdOwnerId,
+        role: 'USER',
+        fullName: 'مالک تست سفر چندسگمنتی',
+        isActive: true,
+        updatedAt: new Date(),
+      }),
+    );
   }
 
   beforeAll(async () => {
@@ -252,17 +224,20 @@ describe('Core itinerary internal API', () => {
   });
 
   afterAll(async () => {
-    await cleanupHoldOrders();
+    await cleanupHoldOrders(false);
     await dataSource.getRepository(TravelExtraSetting).delete({ id: extraId });
     await dataSource.getRepository(FareRule).delete({ id: In(fareRuleIds) });
+    // Retain the referenced inventory and actor graph with the evidence.
     await dataSource
       .getRepository(FlightInstance)
-      .delete({ id: In(instanceIds) });
-    await dataSource.getRepository(Flight).delete({ id: In(flightIds) });
-    await dataSource.getRepository(Route).delete({ id: In(routeIds) });
-    await dataSource.getRepository(Airport).delete({ id: airportId });
-    await dataSource.getRepository(AircraftSeatMap).delete({ aircraftType });
-    await dataSource.getRepository(User).delete({ id: holdOwnerId });
+      .update(
+        { id: In(instanceIds) },
+        { publicSaleEnabled: false, agencySaleEnabled: false },
+      );
+    await dataSource.getRepository(User).update(holdOwnerId, {
+      isActive: false,
+      deletedAt: new Date(),
+    });
     await app.close();
   });
 
@@ -626,7 +601,13 @@ describe('Core itinerary internal API', () => {
           .count({ where: { orderId } }),
       ).toBe(2);
       expect(
-        await dataSource.getRepository(CoreItineraryTravellerSegment).count(),
+        await dataSource
+          .getRepository(CoreItineraryTravellerSegment)
+          .createQueryBuilder('link')
+          .innerJoin('link.segment', 'segment')
+          .innerJoin('segment.order', 'ownerOrder')
+          .where('ownerOrder.ownerId = :ownerId', { ownerId: holdOwnerId })
+          .getCount(),
       ).toBe(4);
       expect(
         await dataSource.getRepository(Booking).count({
@@ -781,9 +762,12 @@ describe('Core itinerary internal API', () => {
             .count({ where: { ownerId: holdOwnerId } }),
         ).toBe(0);
         expect(
-          await dataSource.getRepository(CoreItinerarySegment).count({
-            where: { flightInstanceId: In(instanceIds) },
-          }),
+          await dataSource
+            .getRepository(CoreItinerarySegment)
+            .createQueryBuilder('segment')
+            .innerJoin('segment.order', 'ownerOrder')
+            .where('ownerOrder.ownerId = :ownerId', { ownerId: holdOwnerId })
+            .getCount(),
         ).toBe(0);
       } finally {
         await fareRuleRepo.update(fareRuleIds[1], { siteSeatsReleased: 3 });
@@ -933,7 +917,12 @@ describe('Core itinerary internal API', () => {
         }),
       ).toBe(2);
       expect(
-        await dataSource.getRepository(CoreItineraryFlightCoupon).count(),
+        await dataSource
+          .getRepository(CoreItineraryFlightCoupon)
+          .createQueryBuilder('coupon')
+          .innerJoin('coupon.ticketDocument', 'document')
+          .where('document.orderId = :orderId', { orderId })
+          .getCount(),
       ).toBe(4);
       expect(
         await dataSource.getRepository(LedgerEntry).count({
@@ -1339,7 +1328,12 @@ describe('Core itinerary internal API', () => {
           }),
         ).toBe(0);
         expect(
-          await dataSource.getRepository(CoreItineraryFlightCoupon).count(),
+          await dataSource
+            .getRepository(CoreItineraryFlightCoupon)
+            .createQueryBuilder('coupon')
+            .innerJoin('coupon.ticketDocument', 'document')
+            .where('document.orderId = :orderId', { orderId })
+            .getCount(),
         ).toBe(0);
         expect(
           await dataSource.getRepository(LedgerEntry).count({

@@ -793,6 +793,13 @@ deployment rules treat restore as a manual, RUNBOOK-documented operation
 a database-overwriting action behind a panel button would contradict that,
 not implement it faster.
 
+Continuous WAL archiving and physical PITR base backups are also operational
+controls, not HTTP APIs. They do not change the three `/it/backups` contracts
+above and must be restored only through the guarded procedure in
+`docs/RUNBOOK.md`. The panel continues to report logical `pg_dump` evidence; it
+does not claim off-site PITR readiness until storage replication and a drill
+from that independent copy are configured.
+
 ### `backend/src/modules/it-manager/` — dashboard ("داشبورد فنی")
 
 | Method | Path            | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |

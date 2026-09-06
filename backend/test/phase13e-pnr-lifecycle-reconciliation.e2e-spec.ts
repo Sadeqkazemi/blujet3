@@ -7,10 +7,7 @@ import { AircraftSeatMap } from '../src/database/entities/aircraft-seat-map.enti
 import { Booking } from '../src/database/entities/booking.entity';
 import { Flight } from '../src/database/entities/flight.entity';
 import { FlightInstance } from '../src/database/entities/flight-instance.entity';
-import { LedgerEntry } from '../src/database/entities/ledger-entry.entity';
-import { Passenger } from '../src/database/entities/passenger.entity';
 import { PaymentReconciliation } from '../src/database/entities/payment-reconciliation.entity';
-import { PaymentAttempt } from '../src/database/entities/payment-attempt.entity';
 import { PromoCode } from '../src/database/entities/promo-code.entity';
 import {
   PAYMENT_GATEWAY,
@@ -91,32 +88,16 @@ describe('Phase 13 Part E — PNR lifecycle + payment reconciliation', () => {
   });
 
   afterAll(async () => {
-    if (createdBookingIds.length > 0) {
-      await dataSource
-        .getRepository(PaymentAttempt)
-        .delete({ bookingId: In(createdBookingIds) });
-      await dataSource
-        .getRepository(PaymentReconciliation)
-        .delete({ bookingId: In(createdBookingIds) });
-      await dataSource
-        .getRepository(Passenger)
-        .delete({ bookingId: In(createdBookingIds) });
-      await dataSource
-        .getRepository(LedgerEntry)
-        .delete({ bookingId: In(createdBookingIds) });
-      await dataSource
-        .getRepository(Booking)
-        .delete({ id: In(createdBookingIds) });
-    }
+    // Preserve booking and financial evidence in the disposable database.
     if (createdInstanceIds.length > 0) {
-      await dataSource
-        .getRepository(FlightInstance)
-        .delete({ id: In(createdInstanceIds) });
+      await dataSource.getRepository(FlightInstance).update(
+        { id: In(createdInstanceIds) },
+        {
+          publicSaleEnabled: false,
+          agencySaleEnabled: false,
+        },
+      );
     }
-    await dataSource.getRepository(Flight).delete({ id: flightId });
-    await dataSource
-      .getRepository(AircraftSeatMap)
-      .delete({ aircraftType: AIRCRAFT_TYPE });
 
     await app.close();
   });

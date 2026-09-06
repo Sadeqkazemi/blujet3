@@ -26,15 +26,10 @@ describe('Commerce B3.2 accountable ticketing (e2e)', () => {
     ).id;
   });
 
-  afterEach(async () => {
-    if (bookingIds.length === 0) return;
-    await dataSource.getRepository(TicketDocument).delete({
-      bookingId: In(bookingIds),
-    });
-    await dataSource.getRepository(Passenger).delete({
-      bookingId: In(bookingIds),
-    });
-    await dataSource.getRepository(Booking).delete({ id: In(bookingIds) });
+  afterEach(() => {
+    // Issuance creates append-only booking lifecycle evidence. Keep the
+    // uniquely identified test booking/document graph in this disposable
+    // database instead of cascading a forbidden evidence deletion.
     bookingIds.length = 0;
   });
 

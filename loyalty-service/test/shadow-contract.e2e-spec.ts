@@ -243,13 +243,8 @@ describe('Built backend shadow CLI -> Loyalty HTTP -> restricted PostgreSQL', ()
               'DELETE FROM loyalty.price_locks WHERE "userId" IN ($1,$2)',
               [owner, other],
             );
-            await tx.query(
-              'DELETE FROM loyalty.club_points_entries WHERE "clubMemberId"=$1',
-              [memberId],
-            );
-            await tx.query('DELETE FROM loyalty.club_members WHERE id=$1', [
-              memberId,
-            ]);
+            // Preserve append-only synthetic points evidence and its member
+            // aggregate until this isolated CI database is discarded.
             await tx.query('DELETE FROM identity.users WHERE id IN ($1,$2)', [
               owner,
               other,

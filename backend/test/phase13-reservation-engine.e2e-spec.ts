@@ -5,14 +5,9 @@ import { DataSource, In } from 'typeorm';
 import { AircraftSeatMap } from '../src/database/entities/aircraft-seat-map.entity';
 import { AuditLog } from '../src/database/entities/audit-log.entity';
 import { Booking } from '../src/database/entities/booking.entity';
-import { ClubPointsEntry } from '../src/database/entities/club-points-entry.entity';
 import { Flight } from '../src/database/entities/flight.entity';
 import { FlightInstance } from '../src/database/entities/flight-instance.entity';
 import { LedgerEntry } from '../src/database/entities/ledger-entry.entity';
-import { Passenger } from '../src/database/entities/passenger.entity';
-import { PaymentReconciliation } from '../src/database/entities/payment-reconciliation.entity';
-import { PaymentAttempt } from '../src/database/entities/payment-attempt.entity';
-import { PayIdempotencyRecord } from '../src/database/entities/pay-idempotency-record.entity';
 import { Route } from '../src/database/entities/route.entity';
 import { WalletEntry } from '../src/database/entities/wallet-entry.entity';
 import { FlightInstanceStatus } from '../src/database/enums';
@@ -35,7 +30,6 @@ describe('Phase 13 — reservation engine completion', () => {
   let customerToken: string;
   let customerUserId: string;
   let staffToken: string;
-  const createdWalletEntryIds: string[] = [];
 
   async function upsertSeatMap(
     aircraftType: string,
@@ -110,60 +104,20 @@ describe('Phase 13 — reservation engine completion', () => {
   });
 
   afterAll(async () => {
-    if (createdWalletEntryIds.length > 0) {
-      await dataSource
-        .getRepository(WalletEntry)
-        .delete({ id: In(createdWalletEntryIds) });
-    }
-    const instances = await dataSource
-      .getRepository(FlightInstance)
-      .createQueryBuilder('fi')
-      .where('fi.flightId = :flightId', { flightId })
-      .getMany();
-    const iids = instances.map((i) => i.id);
-    const bookings =
-      iids.length > 0
-        ? await dataSource
-            .getRepository(Booking)
-            .createQueryBuilder('b')
-            .where('b.flightInstanceId IN (:...iids)', { iids })
-            .getMany()
-        : [];
-    const bids = bookings.map((b) => b.id);
-    // Paying a booking creates LedgerEntry/ClubPointsEntry/WalletEntry rows
-    // — must be cleaned up too, or their revenue lingers in reporting's
-    // aggregates (which sum LedgerEntry directly) even after the Booking
-    // row itself is gone.
-    if (bids.length > 0) {
-      await dataSource
-        .getRepository(PaymentAttempt)
-        .delete({ bookingId: In(bids) });
-      await dataSource
-        .getRepository(PayIdempotencyRecord)
-        .delete({ bookingId: In(bids) });
-      await dataSource
-        .getRepository(PaymentReconciliation)
-        .delete({ bookingId: In(bids) });
-      await dataSource
-        .getRepository(LedgerEntry)
-        .delete({ bookingId: In(bids) });
-      await dataSource
-        .getRepository(ClubPointsEntry)
-        .delete({ bookingId: In(bids) });
-      await dataSource
-        .getRepository(WalletEntry)
-        .delete({ bookingId: In(bids) });
-      await dataSource.getRepository(Passenger).delete({ bookingId: In(bids) });
-      await dataSource.getRepository(Booking).delete({ id: In(bids) });
-    }
-    if (iids.length > 0) {
-      await dataSource.getRepository(FlightInstance).delete({ id: In(iids) });
-    }
-    await dataSource.getRepository(Flight).delete({ id: flightId });
-    await dataSource.getRepository(Route).delete({ id: routeId });
+    // Keep immutable wallet/ledger evidence and its booking graph intact.
     await dataSource
-      .getRepository(AircraftSeatMap)
-      .delete({ aircraftType: In([AIRCRAFT_SMALL, AIRCRAFT_LARGE]) });
+      .getRepository(FlightInstance)
+      .createQueryBuilder()
+      .update()
+      .set({
+        status: FlightInstanceStatus.CANCELLED,
+        publicSaleEnabled: false,
+        agencySaleEnabled: false,
+        cancelledAt: new Date(),
+        cancellationReason: 'E2E fixture retired',
+      })
+      .where('flightId = :flightId', { flightId })
+      .execute();
 
     await app.close();
   });
@@ -241,7 +195,7 @@ describe('Phase 13 — reservation engine completion', () => {
   it('wallet payment atomically debits the wallet, tickets the booking, records the finance sale, and replays idempotently', async () => {
     const instance = await freshInstance({ capacity: 4, daysAhead: 61 });
     const walletRepo = dataSource.getRepository(WalletEntry);
-    const credit = await walletRepo.save(
+    await walletRepo.save(
       walletRepo.create({
         userId: customerUserId,
         type: 'TOPUP',
@@ -249,7 +203,6 @@ describe('Phase 13 — reservation engine completion', () => {
         bookingId: null,
       }),
     );
-    createdWalletEntryIds.push(credit.id);
 
     const created = await request(app.getHttpServer())
       .post('/bookings')
@@ -366,7 +319,7 @@ describe('Phase 13 — reservation engine completion', () => {
       .getRawOne<{ balance: string }>();
     const currentBalance = BigInt(balanceRow?.balance ?? '0');
     if (currentBalance !== 0n) {
-      const adjustment = await walletRepo.save(
+      await walletRepo.save(
         walletRepo.create({
           userId: customerUserId,
           type: 'ADJUST',
@@ -374,9 +327,8 @@ describe('Phase 13 — reservation engine completion', () => {
           bookingId: null,
         }),
       );
-      createdWalletEntryIds.push(adjustment.id);
     }
-    const credit = await walletRepo.save(
+    await walletRepo.save(
       walletRepo.create({
         userId: customerUserId,
         type: 'TOPUP',
@@ -384,7 +336,6 @@ describe('Phase 13 — reservation engine completion', () => {
         bookingId: null,
       }),
     );
-    createdWalletEntryIds.push(credit.id);
 
     const pay = (bookingId: string) =>
       request(app.getHttpServer())

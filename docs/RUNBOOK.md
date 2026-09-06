@@ -65,7 +65,7 @@ See `docs/DEPLOY_IP.md`'s "مقیاس‌پذیری بک‌اند" section —
 nginx re-resolves the backend hostname via Docker's embedded DNS, so this
 actually spreads load across replicas.
 
-## Restoring a backup
+## Logical database backup and restore
 
 Backups are written nightly by `scripts/backup-db.sh` (via cron) to
 `/opt/app/backups/blujet-<timestamp>.sql.gz`, retained 7 days.
@@ -107,6 +107,65 @@ throwaway database and verifies the migration table plus the `ops.backup_records
 and `orders.bookings` tables before cleaning up. This CI check proves dump
 restorability; it does not replace the monthly production restore drill or
 configure off-site storage.
+
+## Point-in-time recovery (physical base + WAL)
+
+The logical dump above cannot perform PITR. The production `db` service also
+archives completed WAL segments continuously to the dedicated
+`db_wal_archive` volume. A daily physical base backup must be scheduled after
+the logical dump:
+
+```cron
+0 3 * * * cd /opt/app && ./scripts/backup-db.sh >> /var/log/blujet-backup.log 2>&1
+0 4 * * * cd /opt/app && ./scripts/backup-base-pitr.sh >> /var/log/blujet-pitr.log 2>&1
+```
+
+`backup-base-pitr.sh` uses `pg_basebackup` with streamed WAL, runs
+`pg_verifybackup`, validates and atomically publishes
+`/opt/app/backups/blujet-pitr-base-<UTC timestamp>.tar.gz`,
+and only then performs retention cleanup. It keeps the newest base older than
+the seven-day boundary as the recovery anchor, then removes WAL older than that
+base. If backup or validation fails, WAL cleanup does not run.
+
+Check archive health daily and alert if `failed_count` increases or
+`last_archived_time` stops advancing while writes continue:
+
+```bash
+cd /opt/app
+docker compose -f docker-compose.prod.yml exec -T db psql -U blujet -d blujet -x -c \
+  "SELECT archived_count, failed_count, last_archived_wal, last_archived_time, last_failed_wal, last_failed_time FROM pg_stat_archiver;"
+docker compose -f docker-compose.prod.yml exec -T db psql -U blujet -d blujet -Atc \
+  "SELECT current_setting('wal_level'), current_setting('archive_mode'), current_setting('archive_timeout');"
+```
+
+### PITR drill or incident recovery
+
+PITR is destructive if pointed at the active data volume. Always restore first
+into a new empty volume/container and keep the original `db_data` untouched:
+
+1. Stop every writer (`backend`, extracted writer services and workers) and
+   record the requested UTC recovery time or LSN.
+2. Select the newest physical base whose completion time is before the target.
+3. Extract that archive into a new empty PostgreSQL data volume. Remove a stale
+   `postmaster.pid`, add `recovery.signal`, and set `restore_command` to copy
+   `%f` from a read-only mount of `db_wal_archive` into `%p`.
+4. Set exactly one of `recovery_target_time` (UTC) or `recovery_target_lsn`, plus
+   `recovery_target_action='promote'`. Start a PostgreSQL 16 recovery container.
+5. Verify the target state, migration history, Core booking/inventory totals and
+   ledger invariants before changing any application connection.
+6. Preserve the failed/original volume for forensics. Cut over only after the
+   incident owner approves the verified recovered volume.
+
+`scripts/verify-pitr-recovery.sh` automates this procedure only against
+disposable CI containers: its base predates two writes, it recovers to the LSN
+between them, and it proves the later write is absent. It must never be pointed
+at production.
+
+The base backups and WAL volume are currently on the same host. This protects
+against bad releases and accidental data changes, but not loss of the server.
+Before production disaster-recovery sign-off, replicate both backup classes to
+independently credentialed off-site object storage and pass a restore drill from
+that copy. Keep `PII_ENCRYPTION_KEY` in the secret store, never beside backups.
 
 ## Rolling back a bad deploy
 

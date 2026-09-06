@@ -10,7 +10,6 @@ import { AgencyCreditLine } from '../src/database/entities/agency-credit-line.en
 import { AgencyProfile } from '../src/database/entities/agency-profile.entity';
 import { AgencyDocument } from '../src/database/entities/agency-document.entity';
 import { AgencySeatRequest } from '../src/database/entities/agency-seat-request.entity';
-import { AuditLog } from '../src/database/entities/audit-log.entity';
 import { Booking } from '../src/database/entities/booking.entity';
 import { CartableTask } from '../src/database/entities/cartable-task.entity';
 import { LedgerEntry } from '../src/database/entities/ledger-entry.entity';
@@ -124,6 +123,22 @@ describe('UAT shared panel password — bootstrap & rotation (e2e, Phase: shared
   let dataSource: DataSource;
   let displacedReservedPhoneOwners: Array<{ id: string; phone: string }> = [];
 
+  async function retireTemporaryUsers(ids: string[]) {
+    if (ids.length === 0) return;
+    await dataSource.getRepository(User).update(
+      { id: In(ids) },
+      {
+        username: null,
+        phone: null,
+        passwordHash: null,
+        isActive: false,
+        deletedAt: new Date(),
+        temporaryPasswordOnlyUntil: null,
+        updatedAt: new Date(),
+      },
+    );
+  }
+
   async function cleanupTemporaryAccounts() {
     const userRepo = dataSource.getRepository(User);
     const existing = await userRepo.find({
@@ -132,14 +147,14 @@ describe('UAT shared panel password — bootstrap & rotation (e2e, Phase: shared
     });
     if (existing.length > 0) {
       const ids = existing.map((u) => u.id);
-      // AuditLog.actorId is ON DELETE RESTRICT (every bootstrap/rotate run
-      // writes one) — must be cleared before the users delete.
-      await dataSource.getRepository(AuditLog).delete({ actorId: In(ids) });
       await dataSource.getRepository(RefreshToken).delete({ userId: In(ids) });
       await dataSource
         .getRepository(CartableTask)
         .delete({ assigneeId: In(ids) });
-      await userRepo.delete({ username: In(ALL_USERNAMES) });
+      // Audit history is append-only and retains its actor FK. Retire the
+      // disposable identities while releasing their login keys for the next
+      // test; never delete immutable audit evidence.
+      await retireTemporaryUsers(ids);
     }
     for (const displaced of displacedReservedPhoneOwners) {
       await userRepo.update(
@@ -510,9 +525,8 @@ describe('UAT shared panel password — bootstrap & rotation (e2e, Phase: shared
         expect(agencyLogin.status).toBe(200);
         expect(agencyLogin.body.data.accessToken).toBeDefined();
       } finally {
-        await dataSource.getRepository(AuditLog).delete({ actorId: shadow.id });
         await refreshRepository.delete({ userId: shadow.id });
-        await userRepository.delete(shadow.id);
+        await retireTemporaryUsers([shadow.id]);
       }
     });
   });

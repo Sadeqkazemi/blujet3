@@ -35,6 +35,18 @@ const localStartScript = readFileSync(
   join(backendRoot, '..', 'scripts', 'start-local.sh'),
   'utf8',
 );
+const walArchiveScript = readFileSync(
+  join(backendRoot, '..', 'scripts', 'archive-wal.sh'),
+  'utf8',
+);
+const pitrBaseBackupScript = readFileSync(
+  join(backendRoot, '..', 'scripts', 'backup-base-pitr.sh'),
+  'utf8',
+);
+const pitrRecoveryProofScript = readFileSync(
+  join(backendRoot, '..', 'scripts', 'verify-pitr-recovery.sh'),
+  'utf8',
+);
 const notifyDockerfile = readFileSync(
   join(backendRoot, '..', 'notify-service', 'Dockerfile'),
   'utf8',
@@ -123,6 +135,33 @@ describe('production backend artifacts', () => {
     expect(dockerfile).toContain('pg_dump');
   });
 
+  it('configures collision-safe WAL archiving and proves point-in-time recovery', () => {
+    expect(compose).toContain('wal_level=replica');
+    expect(compose).toContain('archive_mode=on');
+    expect(compose).toContain(
+      'archive_timeout=${POSTGRES_ARCHIVE_TIMEOUT:-300s}',
+    );
+    expect(compose).toContain(
+      'archive_command=sh /usr/local/bin/blujet-archive-wal %p %f',
+    );
+    expect(compose).toContain('db_wal_archive:/var/lib/postgresql/wal-archive');
+    expect(walArchiveScript).toContain('cmp -s "$source_path" "$target_path"');
+    expect(walArchiveScript).toContain('refusing to overwrite');
+    expect(pitrBaseBackupScript).toContain('--wal-method=stream');
+    expect(pitrBaseBackupScript).toContain('pg_verifybackup');
+    expect(pitrBaseBackupScript).toContain('backup_manifest');
+    expect(pitrBaseBackupScript).toContain('pg_archivecleanup');
+    expect(pitrBaseBackupScript.indexOf('pg_basebackup')).toBeLessThan(
+      pitrBaseBackupScript.indexOf('expired_bases'),
+    );
+    expect(pitrRecoveryProofScript).toContain('recovery_target_lsn');
+    expect(pitrRecoveryProofScript).toContain('0:before-target');
+    expect(ciWorkflow).toContain('Backend PITR recovery proof');
+    expect(ciWorkflow).toContain('sh scripts/verify-pitr-recovery.sh');
+    expect(ciWorkflow).toContain('      - backend-backup-restore');
+    expect(ciWorkflow).toContain('      - backend-pitr-recovery');
+  });
+
   it('does not reference the stale dist/src layout', () => {
     const productionCommands = [
       packageJson.scripts['migration:run:prod'],
@@ -189,9 +228,11 @@ describe('production backend artifacts', () => {
 
   it('runs the complete backend E2E suite in isolated parallel shards', () => {
     expect(ciWorkflow).toContain('backend-e2e:');
-    expect(ciWorkflow).toContain("shard: ['1/4', '2/4', '3/4', '4/4']");
     expect(ciWorkflow).toContain(
-      'npm run test:e2e -- --shard=${{ matrix.shard }}',
+      "shard: ['1/8', '2/8', '3/8', '4/8', '5/8', '6/8', '7/8', '8/8']",
+    );
+    expect(ciWorkflow).toContain(
+      'npm run test:e2e -- --shard=${{ matrix.shard }} --forceExit',
     );
     expect(ciWorkflow).toContain('- backend-e2e');
   });

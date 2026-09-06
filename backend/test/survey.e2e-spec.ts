@@ -106,17 +106,8 @@ describe('Survey (e2e)', () => {
         .getRepository(SurveyQuestion)
         .delete({ id: In(createdQuestionIds) });
     }
-    if (createdBookingIds.length > 0) {
-      await fixtureDataSource
-        .getRepository(Booking)
-        .delete({ id: In(createdBookingIds) });
-    }
-    if (createdInstanceIds.length > 0) {
-      await fixtureDataSource
-        .getRepository(FlightInstance)
-        .delete({ id: In(createdInstanceIds) });
-    }
-    await fixtureDataSource.getRepository(Flight).delete({ id: flightId });
+    // Booking lifecycle evidence is append-only. Keep this uniquely identified
+    // survey fixture graph in the disposable database rather than deleting it.
     await fixtureDataSource
       .createQueryBuilder()
       .update(SurveySettings)

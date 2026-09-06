@@ -11,6 +11,8 @@ set +a
 
 BACKUP_DIR="${BACKUP_DIR:-/opt/app/backups}"
 RETENTION_DAYS="${RETENTION_DAYS:-7}"
+POSTGRES_USER="${POSTGRES_USER:-blujet}"
+POSTGRES_DB="${POSTGRES_DB:-blujet}"
 mkdir -p "$BACKUP_DIR"
 
 STAMP="$(date +%Y%m%d-%H%M%S)"

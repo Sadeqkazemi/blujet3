@@ -68,7 +68,7 @@ jobs:
             fi
           }
 
-          emit backend '^(backend/|scripts/kafka-ci\.test\.mjs$|scripts/verify-backup-restore\.sh$)'
+          emit backend '^(backend/|scripts/kafka-ci\.test\.mjs$|scripts/(verify-backup-restore\.sh|verify-pitr-recovery\.sh|archive-wal\.sh|database-entrypoint\.sh|backup-base-pitr\.sh)$)'
           emit backend_migration '^(backend/|scripts/check-expand-only-migrations\.mjs$)'
           emit experience '^(experience-service/|backend/(package(-lock)?\.json$|src/database/))'
           emit loyalty '^(loyalty-service/|backend/(package(-lock)?\.json$|tsconfig[^/]*\.json$|nest-cli\.json$|src/database/|src/common/money\.ts$|src/modules/loyalty-shadow/))'
@@ -485,6 +485,17 @@ jobs:
           POSTGRES_DB: blujet_test
         run: sh scripts/verify-backup-restore.sh
 
+  backend-pitr-recovery:
+    name: Backend PITR recovery proof
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify WAL archive and point-in-time recovery
+        run: sh scripts/verify-pitr-recovery.sh
+
   backend-kafka:
     name: Backend real Kafka
     needs: changes
@@ -551,7 +562,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: ['1/4', '2/4', '3/4', '4/4']
+        shard: ['1/8', '2/8', '3/8', '4/8', '5/8', '6/8', '7/8', '8/8']
     services:
       postgres:
         image: postgres:16-alpine
@@ -587,7 +598,7 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - run: cp .env.test .env
-      - run: npm run test:e2e -- --shard=${{ matrix.shard }}
+      - run: npm run test:e2e -- --shard=${{ matrix.shard }} --forceExit
 
   frontend:
     name: Frontend
@@ -642,6 +653,8 @@ jobs:
       - backend-migration-compatibility
       - pss-service
       - backend
+      - backend-backup-restore
+      - backend-pitr-recovery
       - backend-kafka
       - backend-e2e
       - frontend
