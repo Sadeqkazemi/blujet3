@@ -21,6 +21,7 @@ import {
   ReportingEventConsumer,
 } from './reporting-event-consumer';
 import { ReportingItineraryProjectionStore } from './reporting-itinerary-projection.store';
+import { ReportingKafkaHandler } from './reporting-kafka.handler';
 
 @Module({
   imports: [
@@ -46,11 +47,12 @@ import { ReportingItineraryProjectionStore } from './reporting-itinerary-project
     ReportingService,
     ReportingItineraryProjectionStore,
     ReportingEventConsumer,
+    ReportingKafkaHandler,
     {
       provide: REPORTING_READ_MODEL_SINK,
       useExisting: ReportingItineraryProjectionStore,
     },
   ],
-  exports: [ReportingEventConsumer],
+  exports: [ReportingEventConsumer, ReportingKafkaHandler],
 })
 export class ReportingModule {}

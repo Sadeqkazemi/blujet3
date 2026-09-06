@@ -71,6 +71,22 @@ below for what's landed from that port so far.
 - [x] All 899 unit tests, 19 Reporting/PostgreSQL E2E tests, read-only lint,
   typecheck and production build pass.
 - [ ] Owner-approved push, CI and merge. No server deployment.
+
+### 2026-09-06 — Reporting Kafka acknowledgement adapter (locally validated)
+
+- [x] Share the canonical Kafka transport parser between Core Inbox and
+  Reporting without weakening topic, producer, key, header, size or offset
+  validation.
+- [x] Apply only typed Core itinerary events to the Reporting projection and
+  commit the consumer offset strictly after the database transaction succeeds.
+- [ ] Prove malformed-event rejection, database failure, acknowledgement-gap
+  replay and exactly-one projection behavior with unit and real-broker tests;
+  the real-broker test is implemented and awaits the required CI Kafka fixture.
+- [x] Export the adapter without starting a runtime subscription or changing
+  any public route, environment flag or server deployment.
+- [x] All 917 unit tests, 19 Reporting/PostgreSQL E2E tests, read-only lint,
+  typecheck and production build pass locally.
+- [ ] Owner-approved push, CI and merge. No server deployment.
 - `FlightDisrupted` remains blocked on the owner-approved external
   operations/NIRA schema; no external writer or subscription is enabled.
 

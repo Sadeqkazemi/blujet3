@@ -17,6 +17,10 @@ persists the latest validated fact per
 `orderId + eventType` in a Reporting-owned schema with idempotent and
 stale-version handling. It exposes no HTTP endpoint and enables no runtime
 subscription: `docs/features/reporting-event-read-model.md`.
+The Reporting Kafka acknowledgement adapter reuses the canonical transport
+validation and commits Kafka offsets only after the projection transaction.
+It is an internal transport component, adds no HTTP contract, and does not
+start a consumer by itself: `docs/features/reporting-kafka-adapter.md`.
 
 Kafka receive adapter: `CommerceInboxKafkaHandler.runConfig` validates the
 existing publisher wire metadata and returns manual-ack, sequential KafkaJS
