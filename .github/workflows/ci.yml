@@ -598,7 +598,7 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - run: cp .env.test .env
-      - run: npm run test:e2e -- --shard=${{ matrix.shard }}
+      - run: npm run test:e2e -- --shard=${{ matrix.shard }} --forceExit
 
   frontend:
     name: Frontend

@@ -31,6 +31,8 @@ below for what's landed from that port so far.
   no E2E fixture deletes an append-only row.
 - [x] Remove webhook-event finalization updates; immutable ingestion claims are
   preserved and outcome authority remains in loan/application and wallet state.
+- [x] Make isolated Backend E2E jobs exit after completed assertions so leaked
+  CI-only handles cannot hold a green shard open until the job timeout.
 
 ### 2026-09-06 — Database-enforced append-only financial and audit records
 

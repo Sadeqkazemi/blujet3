@@ -31,6 +31,9 @@ own PostgreSQL and Redis service and prepares its own test schema through the
 existing Jest global setup. The finer split keeps the complete suite covered
 while reducing the critical-path duration of each serial shard. This avoids
 accumulated database load from exhausting the old 30-minute Backend timeout.
+The CI command uses Jest `--forceExit` only after assertions complete, because
+the application bootstrap opens shared clients that are intentionally not
+reused across isolated jobs.
 
 Acceptance evidence:
 

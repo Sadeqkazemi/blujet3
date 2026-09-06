@@ -232,7 +232,7 @@ describe('production backend artifacts', () => {
       "shard: ['1/8', '2/8', '3/8', '4/8', '5/8', '6/8', '7/8', '8/8']",
     );
     expect(ciWorkflow).toContain(
-      'npm run test:e2e -- --shard=${{ matrix.shard }}',
+      'npm run test:e2e -- --shard=${{ matrix.shard }} --forceExit',
     );
     expect(ciWorkflow).toContain('- backend-e2e');
   });
