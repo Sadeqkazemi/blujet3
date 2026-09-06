@@ -36,7 +36,10 @@ Protected tables:
 
 Evidence: `backend/test/database-immutable-financial-audit.e2e-spec.ts`
 (`installs the guard trigger...`, `allows an insert but rejects...`, and
-`can reverse and reapply...`), plus 944/944 Backend unit tests.
+`can reverse and reapply...`), plus 944/944 Backend unit tests. Legacy E2E
+fixture cleanup now retains immutable audit and ledger rows: temporary actors
+are tombstoned, while test flights are cancelled and hidden from sale instead
+of deleting their evidence graph.
 
 ## API impact
 
