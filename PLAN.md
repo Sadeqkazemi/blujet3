@@ -19,6 +19,20 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-06 — Database-enforced append-only financial and audit records
+
+- [x] Document the acceptance boundary before implementation.
+- [x] Add a reusable PostgreSQL trigger function and guards for
+  `payments.ledger_entries`, `payments.wallet_entries`,
+  `payments.bank_loan_webhook_events`, `loyalty.club_points_entries`, and
+  `audit.audit_logs`.
+- [x] Preserve insert/reversal flows and leave mutable reconciliation workflow
+  rows outside the guard.
+- [x] Add PostgreSQL integration coverage for trigger inventory, insert
+  allowance, update/delete rejection, and migration down/up idempotence.
+- [ ] Run the focused test and full backend verification, then present the
+  diff for owner approval. No push, merge, or server deployment yet.
+
 ### 2026-09-06 — Reporting Kafka consumer lifecycle (contract first)
 
 - [x] Record the default-off lifecycle, dedicated broker identity, exact-topic

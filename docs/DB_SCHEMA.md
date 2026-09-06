@@ -794,6 +794,26 @@ dedicated pricing tab). Confirmed 3-step flow, verbatim from the CEO
 banner: «۱ پیشنهاد مدیر بازرگانی → ۲ تحلیل هوش مصنوعی → ۳ تأیید و ثبت
 مدیر عامل».
 
+## Database-enforced append-only financial and audit records (2026-09-06)
+
+Migration `1791900000000-ImmutableFinancialAuditRows` installs the shared
+`audit.reject_immutable_row_mutation()` PostgreSQL trigger function and a
+`BEFORE UPDATE OR DELETE` guard on:
+
+- `payments.ledger_entries`
+- `payments.wallet_entries`
+- `payments.bank_loan_webhook_events`
+- `loyalty.club_points_entries`
+- `audit.audit_logs`
+
+These tables accept inserts only. A correction is a new reversal/adjustment
+entry linked by the existing business reference; historical rows are never
+edited or deleted. The guard raises SQLSTATE `55000`, including for a no-op
+update, so the rule is enforced independently of TypeORM and the public
+compatibility views. This does not protect mutable workflow tables such as
+`payments.payment_reconciliations`, whose resolution fields are intentionally
+updated by the reconciliation process.
+
 - `FarePricingProposal { id, flightInstanceId→FlightInstance @unique (one live proposal per flight — ⚑ fixes the mocks' broken id scheme where the two panels wrote the same array under incompatible `PP-####`vs`PP-{flightNo}` keys and seeded proposals never matched any flight row), basePriceIrr, competitorPriceIrr, proposedPriceIrr, legalRateIrr?, note?, proposedById→User, status: PENDING|REGISTERED, registeredPriceIrr?, approvedById→User?, approvedAt?, aiSuggestion Json? of { priceIrr, reason, factors[], season, occasion, confidence, modelVersion, generatedAt }, createdAt, updatedAt }`
 - ⚑ **AI suggestion is persisted on the proposal** (with the model version, per the ML-service traceability rule) — in the mocks it lives in component state and evaporates on reload, hiding the «ثبت با AI» button. Advisory-only stands: generation never mutates prices; registration is always an explicit CEO click.
 - **Registration** («تأیید بازرگانی» / «ثبت با AI»): CEO picks one of the two computed values — the design has no free-price input at approval. Transitions PENDING→REGISTERED with `registeredPriceIrr`, audited (`category=PRICING`). The original proposal remains immutable, but the Commercial Manager may update the current `registeredPriceIrr` of a `PUBLISHED` flight through the dedicated price endpoint; every change stores previous/new IRR values and reason in append-only `AuditLog`, bumps `FlightInstance.version`, and invalidates search cache.
