@@ -30,6 +30,9 @@ The Reporting Kafka acknowledgement adapter adds no schema or migration. It
 writes only through the existing atomic projection store and its Reporting-owned
 receipt table. Offset acknowledgement is broker state and happens only after
 that database transaction commits (`docs/features/reporting-kafka-adapter.md`).
+The opt-in Reporting Kafka lifecycle also adds no schema or migration. Its
+consumer-group offset remains broker state; disabling it preserves projection
+and receipt rows for a safe later resume (`docs/features/reporting-kafka-runtime.md`).
 
 ## Kafka commerce delivery outbox
 

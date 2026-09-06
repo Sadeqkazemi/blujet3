@@ -19,8 +19,12 @@ stale-version handling. It exposes no HTTP endpoint and enables no runtime
 subscription: `docs/features/reporting-event-read-model.md`.
 The Reporting Kafka acknowledgement adapter reuses the canonical transport
 validation and commits Kafka offsets only after the projection transaction.
-It is an internal transport component, adds no HTTP contract, and does not
-start a consumer by itself: `docs/features/reporting-kafka-adapter.md`.
+It is an internal transport component and adds no HTTP contract:
+`docs/features/reporting-kafka-adapter.md`.
+An independent, default-off Reporting lifecycle may connect that adapter to
+the exact Core event topic with its own consumer group and broker identity.
+It performs no broker call while disabled and has no public/internal route:
+`docs/features/reporting-kafka-runtime.md`.
 
 Kafka receive adapter: `CommerceInboxKafkaHandler.runConfig` validates the
 existing publisher wire metadata and returns manual-ack, sequential KafkaJS

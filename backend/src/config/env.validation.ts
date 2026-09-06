@@ -8,6 +8,7 @@ import { loyaltyPriceLockReadConfig } from './loyalty-price-lock-read.config';
 import { loyaltyTierRulesReadConfig } from './loyalty-tier-rules-read.config';
 import { loyaltyMembersListReadConfig } from './loyalty-members-list-read.config';
 import { loyaltyCardRequestsReadConfig } from './loyalty-card-requests-read.config';
+import { reportingKafkaConsumerConfig } from './reporting-kafka-consumer.config';
 import {
   IsIn,
   IsNotEmpty,
@@ -269,6 +270,7 @@ class EnvironmentVariables {
 
 export function validateEnv(config: Record<string, unknown>) {
   kafkaEventsConfig(config);
+  reportingKafkaConsumerConfig(config);
   agencyInvoiceReadConfig(config);
   agencyCreditRequestsReadConfig(config);
   agencyProfileReadConfig(config);

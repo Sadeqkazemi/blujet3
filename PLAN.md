@@ -19,6 +19,20 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-06 — Reporting Kafka consumer lifecycle (contract first)
+
+- [x] Record the default-off lifecycle, dedicated broker identity, exact-topic
+  subscription, replay and configuration-only rollback contract before code.
+- [x] Implement fail-fast configuration plus connect/subscribe/run/disconnect
+  lifecycle around the existing manual-ack Reporting handler.
+- [x] Prove disabled behavior, startup/shutdown ordering and sanitization with
+  40 focused tests; all 939 Backend unit tests, typecheck, build, scoped and
+  repository-wide read-only lint pass locally.
+- [ ] Retain the real Kafka/PostgreSQL ACK-gap proof through the required CI
+  fixture; the local Windows workspace has no Kafka/Java fixture.
+- [ ] Present the completed diff for owner approval before push/merge. No server
+  deployment or production flag/credential change.
+
 ### 2026-09-06 — Typed Core itinerary event contracts (local)
 
 - [x] Add exact OrderCreated/PaymentConfirmed payloads and builders from
@@ -72,21 +86,22 @@ below for what's landed from that port so far.
   typecheck and production build pass.
 - [ ] Owner-approved push, CI and merge. No server deployment.
 
-### 2026-09-06 — Reporting Kafka acknowledgement adapter (locally validated)
+### 2026-09-06 — Reporting Kafka acknowledgement adapter (merged)
 
 - [x] Share the canonical Kafka transport parser between Core Inbox and
   Reporting without weakening topic, producer, key, header, size or offset
   validation.
 - [x] Apply only typed Core itinerary events to the Reporting projection and
   commit the consumer offset strictly after the database transaction succeeds.
-- [ ] Prove malformed-event rejection, database failure, acknowledgement-gap
-  replay and exactly-one projection behavior with unit and real-broker tests;
-  the real-broker test is implemented and awaits the required CI Kafka fixture.
+- [x] Prove malformed-event rejection, database failure, acknowledgement-gap
+  replay and exactly-one projection behavior with unit and real-broker tests.
 - [x] Export the adapter without starting a runtime subscription or changing
   any public route, environment flag or server deployment.
 - [x] All 917 unit tests, 19 Reporting/PostgreSQL E2E tests, read-only lint,
   typecheck and production build pass locally.
-- [ ] Owner-approved push, CI and merge. No server deployment.
+- [x] Owner-approved PR #67 merged as `1909e2e`; all four Backend E2E shards,
+  real Kafka, migration compatibility, Backend, CodeQL and CI gate passed. No
+  server deployment.
 - `FlightDisrupted` remains blocked on the owner-approved external
   operations/NIRA schema; no external writer or subscription is enabled.
 
