@@ -13,6 +13,7 @@ import { PaymentReconciliation } from '../src/database/entities/payment-reconcil
 import { PaymentAttempt } from '../src/database/entities/payment-attempt.entity';
 import { SeatLock } from '../src/database/entities/seat-lock.entity';
 import { TicketDocument } from '../src/database/entities/ticket-document.entity';
+import { FlightInstanceStatus } from '../src/database/enums';
 import { loginAs } from './helpers/login.helper';
 import { createTestApp } from './helpers/app.helper';
 
@@ -50,17 +51,22 @@ describe('Reservation (e2e)', () => {
         await dataSource
           .getRepository(PaymentReconciliation)
           .delete({ bookingId: In(bookingIds) });
-        await dataSource
-          .getRepository(LedgerEntry)
-          .delete({ bookingId: In(bookingIds) });
-        await dataSource
-          .getRepository(Passenger)
-          .delete({ bookingId: In(bookingIds) });
-        await dataSource.getRepository(Booking).delete({ id: In(bookingIds) });
+        // Booking lifecycle and financial evidence are append-only. Preserve
+        // the fixture graph; only its seat locks are disposable.
       }
       await dataSource
         .getRepository(FlightInstance)
-        .delete({ id: In(createdInstanceIds) });
+        .createQueryBuilder()
+        .update()
+        .set({
+          status: FlightInstanceStatus.CANCELLED,
+          publicSaleEnabled: false,
+          agencySaleEnabled: false,
+          cancelledAt: new Date(),
+          cancellationReason: 'Retired E2E fixture',
+        })
+        .where('id IN (:...ids)', { ids: createdInstanceIds })
+        .execute();
     }
     await app.close();
   });

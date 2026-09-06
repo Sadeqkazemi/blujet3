@@ -38,9 +38,23 @@ export async function resetCustomerPhones(
     await dataSource
       .getRepository(ClubCardRequest)
       .delete({ memberId: In(memberIds) });
-    await dataSource
-      .getRepository(ClubPointsEntry)
-      .delete({ clubMemberId: In(memberIds) });
+    const entries = dataSource.getRepository(ClubPointsEntry);
+    for (const memberId of memberIds) {
+      const balance = await entries
+        .createQueryBuilder('entry')
+        .select('COALESCE(SUM(entry.signedPoints), 0)', 'points')
+        .where('entry.clubMemberId = :memberId', { memberId })
+        .getRawOne<{ points: string }>();
+      const points = Number(balance?.points ?? 0);
+      if (points !== 0)
+        await entries.save(
+          entries.create({
+            clubMemberId: memberId,
+            type: 'ADJUST',
+            signedPoints: -points,
+          }),
+        );
+    }
     await clubMemberRepo.update(
       { id: In(memberIds) },
       { userId: null, cardStatus: 'NONE', cardNo: null, points: 0 },

@@ -48,5 +48,11 @@ applied, duplicate or ignored outcome without mutating the event log.
 
 ## API impact
 
+Focused fixture regression verification: 82 tests pass across `club`,
+`core-itinerary`, `reservation`, `notify-outbox`, and
+`phase13e-pnr-lifecycle-reconciliation` E2E suites. Customer reset helpers
+append compensating points entries; itinerary assertions count only their
+own order or owner. Full CI remains a separate merge requirement.
+
 No public endpoint or response envelope changes. Existing correction flows
 must create reversal/adjustment rows instead of editing historical entries.
