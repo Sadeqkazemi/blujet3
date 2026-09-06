@@ -30,8 +30,17 @@ below for what's landed from that port so far.
   rows outside the guard.
 - [x] Add PostgreSQL integration coverage for trigger inventory, insert
   allowance, update/delete rejection, and migration down/up idempotence.
-- [ ] Run the focused test and full backend verification, then present the
-  diff for owner approval. No push, merge, or server deployment yet.
+- [x] Run the focused test and full backend verification; the diff is pushed
+  on the feature branch for owner review. No merge or server deployment.
+
+### 2026-09-06 — Database-enforced order evidence immutability
+
+- [x] Add deterministic PostgreSQL guards for booking hold lifecycle,
+  Core-itinerary lifecycle, and per-coupon refund evidence rows.
+- [x] Keep mutable ticket, refund-request, and reconciliation workflow tables
+  outside this boundary.
+- [x] Extend trigger inventory and migration down/up regression coverage.
+- [ ] Obtain owner approval before merging the stacked PR; no deployment.
 
 ### 2026-09-06 — Reporting Kafka consumer lifecycle (contract first)
 

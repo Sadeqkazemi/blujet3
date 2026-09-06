@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { DataSource } from 'typeorm';
 import { dataSourceOptions } from '../src/database/data-source.options';
 import { ImmutableFinancialAuditRows1791900000000 } from '../src/database/migrations/1791900000000-ImmutableFinancialAuditRows';
+import { ImmutableOrderEvidenceRows1791990000000 } from '../src/database/migrations/1791990000000-ImmutableOrderEvidenceRows';
 
 type ProtectedTable = {
   schema: string;
@@ -40,6 +41,9 @@ describe('database append-only financial and audit rows', () => {
     expect(rows).toEqual([
       { table_schema: 'audit', table_name: 'audit_logs' },
       { table_schema: 'loyalty', table_name: 'club_points_entries' },
+      { table_schema: 'orders', table_name: 'booking_lifecycle_events' },
+      { table_schema: 'orders', table_name: 'core_itinerary_coupon_events' },
+      { table_schema: 'orders', table_name: 'core_itinerary_lifecycle_events' },
       { table_schema: 'payments', table_name: 'bank_loan_webhook_events' },
       { table_schema: 'payments', table_name: 'ledger_entries' },
       { table_schema: 'payments', table_name: 'wallet_entries' },
@@ -123,8 +127,12 @@ describe('database append-only financial and audit rows', () => {
     await runner.startTransaction();
     try {
       const migration = new ImmutableFinancialAuditRows1791900000000();
+      const orderEvidenceMigration =
+        new ImmutableOrderEvidenceRows1791990000000();
+      await orderEvidenceMigration.down(runner);
       await migration.down(runner);
       await migration.up(runner);
+      await orderEvidenceMigration.up(runner);
       const [{ count }] = await runner.query<Array<{ count: string }>>(
         `SELECT count(*)::text AS count
          FROM pg_trigger t
@@ -132,7 +140,7 @@ describe('database append-only financial and audit rows', () => {
          JOIN pg_namespace n ON n.oid = c.relnamespace
          WHERE NOT t.tgisinternal AND t.tgname LIKE '%_append_only_guard'`,
       );
-      expect(count).toBe('5');
+      expect(count).toBe('8');
     } finally {
       await runner.rollbackTransaction();
       await runner.release();

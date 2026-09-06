@@ -814,6 +814,13 @@ compatibility views. This does not protect mutable workflow tables such as
 `payments.payment_reconciliations`, whose resolution fields are intentionally
 updated by the reconciliation process.
 
+Migration `1791990000000-ImmutableOrderEvidenceRows` extends the same guard to
+the immutable transition evidence in `orders.booking_lifecycle_events`,
+`orders.core_itinerary_lifecycle_events`, and
+`orders.core_itinerary_coupon_events`. The migration removes only its own
+triggers on rollback; the shared function and financial/audit guards remain
+owned by the preceding migration.
+
 - `FarePricingProposal { id, flightInstanceId→FlightInstance @unique (one live proposal per flight — ⚑ fixes the mocks' broken id scheme where the two panels wrote the same array under incompatible `PP-####`vs`PP-{flightNo}` keys and seeded proposals never matched any flight row), basePriceIrr, competitorPriceIrr, proposedPriceIrr, legalRateIrr?, note?, proposedById→User, status: PENDING|REGISTERED, registeredPriceIrr?, approvedById→User?, approvedAt?, aiSuggestion Json? of { priceIrr, reason, factors[], season, occasion, confidence, modelVersion, generatedAt }, createdAt, updatedAt }`
 - ⚑ **AI suggestion is persisted on the proposal** (with the model version, per the ML-service traceability rule) — in the mocks it lives in component state and evaporates on reload, hiding the «ثبت با AI» button. Advisory-only stands: generation never mutates prices; registration is always an explicit CEO click.
 - **Registration** («تأیید بازرگانی» / «ثبت با AI»): CEO picks one of the two computed values — the design has no free-price input at approval. Transitions PENDING→REGISTERED with `registeredPriceIrr`, audited (`category=PRICING`). The original proposal remains immutable, but the Commercial Manager may update the current `registeredPriceIrr` of a `PUBLISHED` flight through the dedicated price endpoint; every change stores previous/new IRR values and reason in append-only `AuditLog`, bumps `FlightInstance.version`, and invalidates search cache.
