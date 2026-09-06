@@ -11,6 +11,9 @@ No public route or writer activation: `docs/features/itinerary-event-contracts.m
 The NIRA/DCS boundary currently has a versioned validation-only contract;
 vendor calls remain disabled pending the airline's protocol and sandbox:
 `docs/features/nira-dcs-contract.md`.
+Reporting now has a validation-only event-consumer seam for a future
+independent read model; no projection store or subscription is enabled:
+`docs/features/reporting-event-read-model.md`.
 
 Kafka receive adapter: `CommerceInboxKafkaHandler.runConfig` validates the
 existing publisher wire metadata and returns manual-ack, sequential KafkaJS

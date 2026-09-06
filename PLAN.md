@@ -47,6 +47,16 @@ below for what's landed from that port so far.
 - [x] Existing PostgreSQL Inbox/Outbox replay regression remains green; full
   unit regression passes (896 tests / 141 suites) with the additive extension.
 - [ ] Owner-approved push, CI and merge. No server deployment.
+
+### 2026-09-06 — Reporting read-model seam (local)
+
+- [x] Add a validation-first `ReportingEventConsumer` port that forwards
+  detached typed Core events to a future independent projection sink.
+- [x] Cover forwarding, malformed-event admission and failure propagation;
+  no table, migration, endpoint, subscription or writer is enabled.
+- [ ] Add an idempotent Reporting projection store and stale-version policy in
+  a separately reviewed read-model phase.
+- [ ] Owner-approved push, CI and merge. No server deployment.
 - `FlightDisrupted` remains blocked on the owner-approved external
   operations/NIRA schema; no external writer or subscription is enabled.
 
