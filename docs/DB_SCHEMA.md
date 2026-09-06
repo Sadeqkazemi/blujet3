@@ -2,6 +2,12 @@
 
 ## Kafka commerce delivery outbox
 
+Typed itinerary event builders read allowlisted fields of
+`orders.core_itinerary_orders` and `payments.core_itinerary_payment_confirmations`;
+the existing outbox/inbox tables store these events without new columns or
+migrations. Audit IDs must reference real audit rows supplied by future
+transactional writers; no fake seed/audit row is introduced.
+
 Kafka receive acknowledgement uses the existing Core inbox table without schema
 changes: the receipt/local effect commits before the consumer-group offset.
 An acknowledgement failure retains the receipt for deduplicated replay. No

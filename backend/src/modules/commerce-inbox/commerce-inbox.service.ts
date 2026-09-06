@@ -12,6 +12,10 @@ import {
 } from '../../common/events/canonical-events';
 import { ErrorCode } from '../../common/errors';
 import { CommerceInboxReceipt } from '../../database/entities/commerce-inbox-receipt.entity';
+import {
+  parseCoreItineraryEvent,
+  type CoreItineraryEvent,
+} from '../../common/events/core-itinerary-events';
 
 // Only called on validated JSON. Array order matters; object property order does not.
 function stableJson(value: unknown): string {
@@ -27,6 +31,17 @@ function stableJson(value: unknown): string {
 @Injectable()
 export class CommerceInboxService {
   constructor(private readonly db: DataSource) {}
+
+  consumeItinerary(
+    consumer: string,
+    input: unknown,
+    apply: (manager: EntityManager, event: CoreItineraryEvent) => Promise<void>,
+  ): Promise<'processed' | 'duplicate'> {
+    const event = parseCoreItineraryEvent(input);
+    return this.consume(consumer, 'core-commerce', event, (manager, snapshot) =>
+      apply(manager, parseCoreItineraryEvent(snapshot)),
+    );
+  }
 
   async consume(
     consumer: string,
