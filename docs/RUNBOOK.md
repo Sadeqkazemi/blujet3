@@ -110,6 +110,20 @@ configure off-site storage.
 
 ## Point-in-time recovery (physical base + WAL)
 
+### Read-only database observation
+
+After separate authorization to inspect the target environment, run:
+
+```bash
+docker compose -f docker-compose.prod.yml exec -T db \
+  psql -X -v ON_ERROR_STOP=1 -U blujet -d blujet < scripts/database-readiness.sql
+```
+
+This runs a bounded read-only transaction and rolls it back. It reports metadata
+only and does not enable archiving or perform recovery. See
+`docs/features/database-readiness-observation.md` for limitations. Do not pass
+passwords on the command line or interpret a completed query as DR sign-off.
+
 The logical dump above cannot perform PITR. The production `db` service also
 archives completed WAL segments continuously to the dedicated
 `db_wal_archive` volume. A daily physical base backup must be scheduled after
