@@ -289,14 +289,9 @@ describe('Built Core membership -> real Loyalty HTTP -> restricted PostgreSQL', 
               'DELETE FROM loyalty.club_card_requests WHERE "memberId"=ANY($1::text[])',
               [members],
             );
-            await tx.query(
-              'DELETE FROM loyalty.club_points_entries WHERE "clubMemberId"=ANY($1::text[])',
-              [members],
-            );
-            await tx.query(
-              'DELETE FROM loyalty.club_members WHERE id=ANY($1::text[])',
-              [members],
-            );
+            // Retain the synthetic member and points rows in this disposable
+            // database. The points ledger is append-only by contract and test
+            // cleanup must not disable or bypass its database guard.
             await tx.query(
               'DELETE FROM identity.users WHERE id=ANY($1::text[])',
               [owners],
@@ -312,8 +307,6 @@ describe('Built Core membership -> real Loyalty HTTP -> restricted PostgreSQL', 
           }
           const remaining = await snapshot();
           expect(remaining.users).toEqual([]);
-          expect(remaining.members).toEqual([]);
-          expect(remaining.points).toEqual([]);
           expect(remaining.requests).toEqual([]);
         } finally {
           await admin.destroy();

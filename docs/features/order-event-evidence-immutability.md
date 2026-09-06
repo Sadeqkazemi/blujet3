@@ -15,14 +15,17 @@ Protected tables:
 
 ## Acceptance checklist
 
-- [ ] A TypeORM migration installs a `BEFORE UPDATE OR DELETE` guard on all
+- [x] A TypeORM migration installs a `BEFORE UPDATE OR DELETE` guard on all
       three order-evidence tables, reusing the shared audit trigger function.
-- [ ] Trigger names are deterministic and the migration is safe to rerun.
-- [ ] Trigger inventory is verified against `pg_trigger`.
-- [ ] Existing append-only financial/audit guards remain installed.
-- [ ] Migration `down` removes only the three new triggers; the shared
+- [x] Trigger names are deterministic and the migration is safe to rerun.
+- [x] Trigger inventory is verified against `pg_trigger`.
+- [x] Existing append-only financial/audit guards remain installed.
+- [x] Migration `down` removes only the three new triggers; the shared
       function remains owned by the financial/audit migration.
-- [ ] No ticket, refund-request, or reconciliation workflow row is locked;
+- [x] No ticket, refund-request, or reconciliation workflow row is locked;
       those tables intentionally transition status during processing.
-- [ ] Typecheck, lint, build and the focused PostgreSQL migration regression
+- [x] Typecheck, lint, build and the focused PostgreSQL migration regression
       pass. No public API or deployment change is included.
+
+Evidence: `backend/test/database-immutable-financial-audit.e2e-spec.ts`
+verifies all eight trigger registrations and the ordered down/up chain.

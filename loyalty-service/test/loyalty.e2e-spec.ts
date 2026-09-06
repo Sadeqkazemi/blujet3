@@ -14,6 +14,8 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
   const other = randomUUID();
   const memberId = randomUUID();
   const otherMemberId = randomUUID();
+  const ownerEmail = `owner-only-${owner}@example.invalid`;
+  const otherEmail = `other-only-${other}@example.invalid`;
   const lockId = randomUUID();
   const cardRequestId = randomUUID();
   const at = '2026-09-04T12:00:00.000Z';
@@ -39,13 +41,8 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
         );
       }
       for (const [id, userId, fullName, email] of [
-        [memberId, owner, 'Private name', 'owner-only@example.invalid'],
-        [
-          otherMemberId,
-          other,
-          'Other private name',
-          'other-only@example.invalid',
-        ],
+        [memberId, owner, 'Private name', ownerEmail],
+        [otherMemberId, other, 'Other private name', otherEmail],
       ]) {
         await tx.query(
           'INSERT INTO loyalty.club_members (id, "userId", "fullName", email, "nationalIdEnc", "nationalIdHash", points) VALUES ($1, $2, $3, $4, $5, $6, 999)',
@@ -137,14 +134,9 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
           'DELETE FROM loyalty.price_locks WHERE "userId" IN ($1,$2)',
           [owner, other],
         );
-        await tx.query(
-          'DELETE FROM loyalty.club_points_entries WHERE "clubMemberId" IN ($1,$2)',
-          [memberId, otherMemberId],
-        );
-        await tx.query('DELETE FROM loyalty.club_members WHERE id IN ($1,$2)', [
-          memberId,
-          otherMemberId,
-        ]);
+        // Points and their member aggregate remain as synthetic evidence in
+        // this disposable test database: production migrations make the
+        // points ledger append-only, so cleanup must not bypass that guard.
         await tx.query('DELETE FROM identity.users WHERE id IN ($1,$2)', [
           owner,
           other,
@@ -213,7 +205,7 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
   it('returns a bounded members list with reconciling whole-club KPIs and no national-ID fields', async () => {
     const response = await request(app.getHttpServer())
       .get(`${path}/members-list`)
-      .query({ level: 'SILVER', q: 'owner-only@example.invalid' })
+      .query({ level: 'SILVER', q: ownerEmail })
       .set({ 'X-Internal-Token': token, 'X-Request-Id': 'members-list-e2e' })
       .expect(200);
     expect(response.headers['cache-control'] as unknown).toBe('no-store');
@@ -253,7 +245,7 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
       id: memberId,
       userId: owner,
       fullName: 'Private name',
-      email: 'owner-only@example.invalid',
+      email: ownerEmail,
       level: 'SILVER',
       points: 999,
     });
@@ -301,7 +293,7 @@ describe('Loyalty read boundary (real PostgreSQL)', () => {
           member: {
             id: memberId,
             fullName: 'Private name',
-            email: 'owner-only@example.invalid',
+            email: ownerEmail,
             points: 999,
             level: 'SILVER',
           },

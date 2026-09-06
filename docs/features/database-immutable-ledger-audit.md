@@ -17,22 +17,26 @@ Protected tables:
 
 ## Acceptance checklist
 
-- [ ] A TypeORM migration installs one reusable trigger function and a
+- [x] A TypeORM migration installs one reusable trigger function and a
       `BEFORE UPDATE OR DELETE` trigger on every protected table.
-- [ ] Inserts remain permitted so sales, refunds, wallet credits, points and
+- [x] Inserts remain permitted so sales, refunds, wallet credits, points and
       audit events continue to work.
-- [ ] An attempted `UPDATE` is rejected with a stable PostgreSQL
+- [x] An attempted `UPDATE` is rejected with a stable PostgreSQL
       `55000` (`object_not_in_prerequisite_state`) error.
-- [ ] An attempted `DELETE` is rejected with the same error.
-- [ ] Trigger coverage is verified against `pg_trigger` for all five tables.
-- [ ] Migration `down` removes the triggers and function and `up` can install
+- [x] An attempted `DELETE` is rejected with the same error.
+- [x] Trigger coverage is verified against `pg_trigger` for all five tables.
+- [x] Migration `down` removes the triggers and function and `up` can install
       them again without leaving duplicate objects.
-- [ ] Automated PostgreSQL integration coverage exercises insert, update and
+- [x] Automated PostgreSQL integration coverage exercises insert, update and
       delete behavior in an isolated transaction; no business rows remain.
-- [ ] `docs/DB_SCHEMA.md` and `PLAN.md` describe the database-enforced
+- [x] `docs/DB_SCHEMA.md` and `PLAN.md` describe the database-enforced
       immutability boundary and the reversal-only correction rule.
-- [ ] Backend typecheck, lint, focused migration test and the existing unit
+- [x] Backend typecheck, lint, focused migration test and the existing unit
       suite pass. No deployment is performed in this phase.
+
+Evidence: `backend/test/database-immutable-financial-audit.e2e-spec.ts`
+(`installs the guard trigger...`, `allows an insert but rejects...`, and
+`can reverse and reapply...`), plus 944/944 Backend unit tests.
 
 ## API impact
 

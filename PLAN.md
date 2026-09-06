@@ -40,6 +40,9 @@ below for what's landed from that port so far.
 - [x] Keep mutable ticket, refund-request, and reconciliation workflow tables
   outside this boundary.
 - [x] Extend trigger inventory and migration down/up regression coverage.
+- [x] Align Loyalty CI cleanup with the append-only points ledger: mutable
+  request/lock fixtures are removed, while synthetic member/points evidence is
+  retained only until the isolated CI database is discarded.
 - [ ] Obtain owner approval before merging PR #73 (target `main`); no
   deployment.
 
