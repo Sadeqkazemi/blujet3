@@ -6,6 +6,8 @@ import { isCanonicalEvent } from './canonical-events';
 import {
   createItineraryOrderCreated,
   createItineraryPaymentConfirmed,
+  createItineraryRefundRequested,
+  createItineraryTicketIssued,
   parseCoreItineraryEvent,
 } from './core-itinerary-events';
 
@@ -44,6 +46,28 @@ describe('Core itinerary typed events', () => {
       confirmation,
       context,
     );
+  const documents: Parameters<typeof createItineraryTicketIssued>[1] = [
+    {
+      id: 'ticket-document-1',
+      orderId: order.id,
+      status: 'ISSUED',
+      accountabilityStatus: 'ACCOUNTABLE',
+      issueSource: 'CORE_ITINERARY_PAYMENT',
+      issuedAt: new Date('2026-09-06T00:06:00.000Z'),
+    },
+  ];
+  const refund: Parameters<typeof createItineraryRefundRequested>[1] = {
+    id: 'refund-1',
+    orderId: order.id,
+    status: 'RECEIVED',
+    refundReference: 'refund-reference-1',
+    quoteReference: 'quote-reference-1',
+    grossAmountIrr: 1000n,
+    penaltyAmountIrr: 300n,
+    refundableIrr: 700n,
+    currency: 'IRR',
+    createdAt: new Date('2026-09-06T00:07:00.000Z'),
+  };
   it('builds exact historical OrderCreated with lossless money and no entity PII', () => {
     const source = {
       ...order,
@@ -96,6 +120,49 @@ describe('Core itinerary typed events', () => {
     expect(event.occurredAt).toBe(confirmation.updatedAt.toISOString());
     expect(isCanonicalEvent(event)).toBe(true);
     expect(JSON.stringify(event)).not.toContain('private-reference');
+  });
+  it('builds a ticket event from accountable issued documents only', () => {
+    const event = createItineraryTicketIssued(
+      { ...order, status: 'TICKETED' },
+      documents,
+      context,
+    );
+    expect(event.payload).toEqual({
+      auditId: 'audit-1',
+      orderVersion: 1,
+      currency: 'IRR',
+      status: 'TICKETED',
+      ticketDocumentIds: ['ticket-document-1'],
+      issuedAt: '2026-09-06T00:06:00.000Z',
+    });
+    expect(Object.keys(event.payload).sort()).toEqual([
+      'auditId',
+      'currency',
+      'issuedAt',
+      'orderVersion',
+      'status',
+      'ticketDocumentIds',
+    ]);
+  });
+  it('builds a refund request with an immutable IRR quote snapshot', () => {
+    const event = createItineraryRefundRequested(
+      { id: order.id, version: 2, status: 'TICKETED' },
+      refund,
+      context,
+    );
+    expect(event.payload).toEqual({
+      auditId: 'audit-1',
+      orderVersion: 2,
+      currency: 'IRR',
+      refundId: 'refund-1',
+      refundReference: 'refund-reference-1',
+      quoteReference: 'quote-reference-1',
+      status: 'RECEIVED',
+      grossAmountIrr: '1000',
+      penaltyAmountIrr: '300',
+      refundableIrr: '700',
+    });
+    expect(isCanonicalEvent(event)).toBe(true);
   });
   it('detaches the parsed event and preserves discriminated payload types', () => {
     const input = created();
@@ -158,6 +225,47 @@ describe('Core itinerary typed events', () => {
     );
   });
   it.each([
+    { status: 'PAID' },
+    { ticketDocumentIds: [] },
+    { ticketDocumentIds: ['ticket-document-1', 'ticket-document-1'] },
+    { ticketDocumentIds: ['private data'] },
+    { issuedAt: '2026-09-06T00:06:00Z' },
+    { paymentReference: 'private' },
+  ])('rejects invalid ticket payload (%#)', (change) => {
+    const event = createItineraryTicketIssued(
+      { ...order, status: 'TICKETED' },
+      documents,
+      context,
+    );
+    expect(() =>
+      parseCoreItineraryEvent({
+        ...event,
+        payload: { ...event.payload, ...change },
+      }),
+    ).toThrow(BadRequestException);
+  });
+  it.each([
+    { status: 'COMPLETED' },
+    { grossAmountIrr: '1' },
+    { penaltyAmountIrr: '1001' },
+    { refundableIrr: '0' },
+    { refundReference: '' },
+    { quoteReference: 'private quote' },
+    { ownerId: 'private-owner' },
+  ])('rejects invalid refund payload (%#)', (change) => {
+    const event = createItineraryRefundRequested(
+      { id: order.id, version: 2, status: 'TICKETED' },
+      refund,
+      context,
+    );
+    expect(() =>
+      parseCoreItineraryEvent({
+        ...event,
+        payload: { ...event.payload, ...change },
+      }),
+    ).toThrow(BadRequestException);
+  });
+  it.each([
     { status: 'RECEIVED' },
     { status: 'REVIEW_REQUIRED' },
     { confirmationId: '' },
@@ -213,6 +321,38 @@ describe('Core itinerary typed events', () => {
         createItineraryPaymentConfirmed(
           ticketed,
           { ...confirmation, ...change },
+          context,
+        ),
+      ).toThrow(BadRequestException);
+  });
+  it('rejects ticket and refund builders when their source state is unsafe', () => {
+    expect(() =>
+      createItineraryTicketIssued(order, documents, context),
+    ).toThrow(BadRequestException);
+    for (const change of [
+      { orderId: 'other' },
+      { status: 'RECEIVED' as const },
+      { accountabilityStatus: 'OTHER' as never },
+      { issueSource: 'NIRA' as never },
+      { issuedAt: new Date('invalid') },
+    ])
+      expect(() =>
+        createItineraryTicketIssued(
+          { ...order, status: 'TICKETED' },
+          [{ ...documents[0], ...change }],
+          context,
+        ),
+      ).toThrow(BadRequestException);
+    for (const change of [
+      { orderId: 'other' },
+      { status: 'REVIEW_REQUIRED' as const },
+      { currency: 'USD' as never },
+      { grossAmountIrr: 1n },
+    ])
+      expect(() =>
+        createItineraryRefundRequested(
+          { id: order.id, version: 2, status: 'TICKETED' },
+          { ...refund, ...change },
           context,
         ),
       ).toThrow(BadRequestException);

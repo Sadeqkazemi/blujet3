@@ -34,8 +34,20 @@ below for what's landed from that port so far.
   `8ae873b6dfb0c4f7ae66634efbcacaf91335b2a0`. No server deployment.
 - No writer/subscription activation, fake audit row, new schema or dependency.
   Future producers must supply a real audit ID in the same transaction.
-  TicketIssued/RefundRequested/FlightDisrupted and single-flight payloads remain
-  separate. Evidence: `docs/features/itinerary-event-contracts.md`.
+  FlightDisrupted and single-flight payloads remain separate. Evidence:
+  `docs/features/itinerary-event-contracts.md`.
+
+### 2026-09-06 — Typed ticket/refund event contracts (local)
+
+- [x] Add strict `TicketIssued` and `RefundRequested` contracts and builders
+  from accountable Core ticket/refund snapshots; preserve IRR precision and
+  omit PII, payment references and owner data.
+- [x] Add regression cases for state, exact-field, duplicate-document,
+  quote-total and malformed-input rejection; focused static checks pass.
+- [ ] PostgreSQL replay and full unit regression for this additive extension.
+- [ ] Owner-approved push, CI and merge. No server deployment.
+- `FlightDisrupted` remains blocked on the owner-approved external
+  operations/NIRA schema; no external writer or subscription is enabled.
 
 ### 2026-09-06 — Core transactional inbox and service-identity regression (merged)
 
