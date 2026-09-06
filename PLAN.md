@@ -19,7 +19,7 @@ below for what's landed from that port so far.
 
 ## Status
 
-### 2026-09-06 — Core transactional inbox and service-identity regression (local)
+### 2026-09-06 — Core transactional inbox and service-identity regression (merged)
 
 - [x] Add Core-owned receipt table and exported inbox module: validate v1 envelope
   and configured producer, serialize per consumer/event ID, fingerprint retries,
@@ -31,11 +31,29 @@ below for what's landed from that port so far.
 - [x] Add 25 Identity/Agency/Loyalty token-guard regression tests; service
   typechecks and changed-file lint pass. Backend full lint/typecheck/build pass.
 - [x] Final exported-module wiring PostgreSQL regression: all 8 tests pass.
-- [ ] Owner-approved push, required CI and merge. No server deployment.
+- [x] Owner-approved PR #59 merged as `53090ac`; CI `34012896403` and
+  CodeQL `34012896395` passed. No server deployment.
 - Evidence: `docs/features/commerce-inbox-contract.md` and
   `docs/features/api-gateway.md`. Roadmap step 13 remains in progress:
   typed domain payloads and an authorized active consumer/offset-commit contract
   are still needed. No Order/Inventory/Payment extraction or runtime activation.
+
+### 2026-09-06 — Kafka receive acknowledgement adapter (locally verified)
+
+- [x] Add a manual-ack KafkaJS run-config adapter. It validates topic, bounded
+  payload, canonical envelope, publisher key and event headers before DB access;
+  it runs the Core inbox then commits offset + 1 only after commit.
+- [x] Fix callback forwarding to preserve the actual inbox transaction manager;
+  regression was red before the fix. Add UTF-8 rejection, bounded bigint offset
+  validation, trusted subscription snapshot and safe error propagation.
+- [x] Three real Kafka/PostgreSQL tests prove no ack before commit, replay after
+  injected offset-commit failure, and handler-write rollback/retry.
+- [x] All 809 unit tests (including 32 adapter cases), 8 PostgreSQL inbox tests,
+  16 real Kafka tests, full read-only lint, typecheck, build and diff checks pass.
+- Production lifecycle/lag/DLQ policy and domain payload schemas remain open.
+  No active subscription, business consumer or new database migration is enabled.
+- [ ] Owner-approved push, CI and merge. No server deployment.
+- Evidence: `docs/features/kafka-inbox-ack.md`.
 
 ### 2026-09-05 — Kafka ACK/database gap recovery (local)
 

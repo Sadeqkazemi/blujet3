@@ -2,6 +2,13 @@
 
 ## Kafka durable transport foundation
 
+Kafka receive adapter: `CommerceInboxKafkaHandler.runConfig` validates the
+existing publisher wire metadata and returns manual-ack, sequential KafkaJS
+handling. It commits offset + 1 only after the Core inbox DB transaction commits.
+Failures do not acknowledge and expose only sanitized internal errors to KafkaJS.
+No runtime subscription or public endpoint is enabled; caller/lifecycle rules:
+`docs/features/kafka-inbox-ack.md`.
+
 Core internal receive contract: `CommerceInboxService.consume` atomically stores
 a receipt and applies local DB work, returning `processed` or `duplicate` only
 after commit. Invalid v1 input is VALIDATION_FAILED; unexpected producer is
