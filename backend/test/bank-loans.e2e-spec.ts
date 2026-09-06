@@ -210,6 +210,11 @@ describe('Bank loans adapter (e2e)', () => {
       where: { eventId: payload.eventId },
     });
     expect(events).toBe(1);
+    expect(
+      await dataSource.getRepository(BankLoanWebhookEvent).findOneByOrFail({
+        eventId: payload.eventId,
+      }),
+    ).toMatchObject({ processingResult: 'APPLIED' });
   });
 
   it('site-admin list/detail include the related real customer identity and remain read-only', async () => {
@@ -506,6 +511,11 @@ describe('Bank loans adapter (e2e)', () => {
     });
     expect(stale.status).toBe(200);
     expect(stale.body.data.ignored).toBe(true);
+    expect(
+      await dataSource.getRepository(BankLoanWebhookEvent).findOneByOrFail({
+        eventId: `evt-old-${key}`,
+      }),
+    ).toMatchObject({ processingResult: 'IGNORED_STALE' });
 
     const got = await request(app.getHttpServer())
       .get(`/me/loan-applications/${created.body.data.id}`)

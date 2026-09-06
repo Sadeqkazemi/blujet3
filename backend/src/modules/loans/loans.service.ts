@@ -891,6 +891,7 @@ export class LoansService {
       bankStatus: string | null;
       occurredAt: Date | null;
       payload: Record<string, unknown>;
+      processingResult: string;
     },
   ): Promise<string | null> {
     const id = randomUUID();
@@ -900,7 +901,7 @@ export class LoansService {
       INSERT INTO "payments"."bank_loan_webhook_events"
         ("id", "provider", "eventId", "bankReferenceId", "loanApplicationId",
          "bankStatus", "occurredAt", "payloadRedacted", "processingResult", "createdAt")
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, 'CLAIMED', CURRENT_TIMESTAMP)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, CURRENT_TIMESTAMP)
       ON CONFLICT ("provider", "eventId") DO NOTHING
       RETURNING "id"
       `,
@@ -913,6 +914,7 @@ export class LoansService {
         args.bankStatus,
         args.occurredAt,
         redacted == null ? null : JSON.stringify(redacted),
+        args.processingResult,
       ],
     );
     return rows[0]?.id ?? null;
@@ -932,6 +934,24 @@ export class LoansService {
   ): Promise<string> {
     return this.dataSource.transaction(async (manager) => {
       const provider = this.providerKey();
+      const locked = await manager.findOne(BankLoanApplication, {
+        where: { id: row.id },
+        lock: { mode: 'pessimistic_write' },
+      });
+      let processingResult = 'APPLIED';
+      if (!locked) {
+        processingResult = 'IGNORED_MISSING_LOAN';
+      } else if (
+        locked.lastWebhookOccurredAt &&
+        opts.occurredAt.getTime() < locked.lastWebhookOccurredAt.getTime() &&
+        bankStatus !== locked.bankStatus
+      ) {
+        processingResult = 'IGNORED_STALE';
+      } else if (!canTransitionBankStatus(locked.bankStatus, bankStatus)) {
+        processingResult = 'IGNORED_TRANSITION';
+      }
+      // The final outcome and business effects commit together; never update
+      // the immutable event after claiming its unique provider/event key.
       const eventRowId = await this.claimWebhookEvent(manager, {
         provider,
         eventId: opts.eventId,
@@ -940,29 +960,14 @@ export class LoansService {
         bankStatus,
         occurredAt: opts.occurredAt,
         payload: opts.sourcePayload,
+        processingResult,
       });
       if (!eventRowId) {
         return 'DUPLICATE';
       }
 
-      const locked = await manager.findOne(BankLoanApplication, {
-        where: { id: row.id },
-        lock: { mode: 'pessimistic_write' },
-      });
-      if (!locked) {
-        return 'IGNORED_MISSING_LOAN';
-      }
-
-      if (
-        locked.lastWebhookOccurredAt &&
-        opts.occurredAt.getTime() < locked.lastWebhookOccurredAt.getTime() &&
-        bankStatus !== locked.bankStatus
-      ) {
-        return 'IGNORED_STALE';
-      }
-
-      if (!canTransitionBankStatus(locked.bankStatus, bankStatus)) {
-        return 'IGNORED_TRANSITION';
+      if (!locked || processingResult !== 'APPLIED') {
+        return processingResult;
       }
 
       locked.bankStatus = bankStatus;
