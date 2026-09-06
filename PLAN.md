@@ -44,10 +44,21 @@ below for what's landed from that port so far.
   omit PII, payment references and owner data.
 - [x] Add regression cases for state, exact-field, duplicate-document,
   quote-total and malformed-input rejection; focused static checks pass.
-- [ ] PostgreSQL replay and full unit regression for this additive extension.
+- [x] Existing PostgreSQL Inbox/Outbox replay regression remains green; full
+  unit regression passes (896 tests / 141 suites) with the additive extension.
 - [ ] Owner-approved push, CI and merge. No server deployment.
 - `FlightDisrupted` remains blocked on the owner-approved external
   operations/NIRA schema; no external writer or subscription is enabled.
+
+### 2026-09-06 — NIRA/DCS validation boundary (local)
+
+- [x] Add versioned manifest and acknowledgement contracts with exact fields,
+  bounded identifiers/passengers, UTC timestamps and detached validation.
+- [x] Add 18 unit cases; no provider call, credential, route, migration or
+  runtime flag changed.
+- [ ] Implement the real NIRA/DCS adapter, retry/dead-letter and acknowledgement
+  reconciliation after vendor protocol and sandbox delivery.
+- [ ] Owner-approved push, CI and merge. No server deployment.
 
 ### 2026-09-06 — Core transactional inbox and service-identity regression (merged)
 

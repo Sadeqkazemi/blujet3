@@ -8,6 +8,9 @@ with exact payload keys, IRR decimal
 strings and required audit reference. New `enqueueItinerary`/`consumeItinerary`
 methods validate them without tightening the existing generic transport API.
 No public route or writer activation: `docs/features/itinerary-event-contracts.md`.
+The NIRA/DCS boundary currently has a versioned validation-only contract;
+vendor calls remain disabled pending the airline's protocol and sandbox:
+`docs/features/nira-dcs-contract.md`.
 
 Kafka receive adapter: `CommerceInboxKafkaHandler.runConfig` validates the
 existing publisher wire metadata and returns manual-ack, sequential KafkaJS
