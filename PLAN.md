@@ -19,6 +19,23 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-06 — Typed Core itinerary event contracts (local)
+
+- [x] Add exact OrderCreated/PaymentConfirmed payloads and builders from
+  Core itinerary snapshots: audit reference, persisted order version, IRR
+  decimal strings, amount/state consistency and allowlisted fields.
+- [x] Add strict inbox/outbox entry points without changing generic v1 methods.
+- [x] All 862 unit tests pass, including 53 typed-contract tests; reject array
+  channel values without coercion (red/green regression).
+- [x] All 25 PostgreSQL inbox/outbox regression tests and full read-only lint,
+  typecheck/build pass. Pin the Outbox test DB session to UTC to match Node;
+  local Asia/Tehran defaults previously delayed claims by 3.5 hours.
+- [ ] Owner-approved push, CI and merge. No server deployment.
+- No writer/subscription activation, fake audit row, new schema or dependency.
+  Future producers must supply a real audit ID in the same transaction.
+  TicketIssued/RefundRequested/FlightDisrupted and single-flight payloads remain
+  separate. Evidence: `docs/features/itinerary-event-contracts.md`.
+
 ### 2026-09-06 — Core transactional inbox and service-identity regression (merged)
 
 - [x] Add Core-owned receipt table and exported inbox module: validate v1 envelope
@@ -38,7 +55,7 @@ below for what's landed from that port so far.
   typed domain payloads and an authorized active consumer/offset-commit contract
   are still needed. No Order/Inventory/Payment extraction or runtime activation.
 
-### 2026-09-06 — Kafka receive acknowledgement adapter (locally verified)
+### 2026-09-06 — Kafka receive acknowledgement adapter (merged)
 
 - [x] Add a manual-ack KafkaJS run-config adapter. It validates topic, bounded
   payload, canonical envelope, publisher key and event headers before DB access;
@@ -52,7 +69,8 @@ below for what's landed from that port so far.
   16 real Kafka tests, full read-only lint, typecheck, build and diff checks pass.
 - Production lifecycle/lag/DLQ policy and domain payload schemas remain open.
   No active subscription, business consumer or new database migration is enabled.
-- [ ] Owner-approved push, CI and merge. No server deployment.
+- [x] Owner-approved PR #60 merged as `41785f4`; CI `34014081649` and
+  CodeQL `34014081599` passed. No server deployment.
 - Evidence: `docs/features/kafka-inbox-ack.md`.
 
 ### 2026-09-05 — Kafka ACK/database gap recovery (local)

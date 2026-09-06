@@ -10,6 +10,12 @@ import { CommerceInbox1791648000000 } from '../src/database/migrations/179164800
 import { CommerceInboxService } from '../src/modules/commerce-inbox/commerce-inbox.service';
 import { CommerceInboxModule } from '../src/modules/commerce-inbox/commerce-inbox.module';
 import { CommerceInboxKafkaHandler } from '../src/modules/commerce-inbox/commerce-inbox-kafka.handler';
+import {
+  createItineraryOrderCreated,
+  createItineraryPaymentConfirmed,
+  parseCoreItineraryEvent,
+} from '../src/common/events/core-itinerary-events';
+import { decryptPii } from '../src/common/pii-crypto';
 import { CommerceOutboxService } from '../src/modules/commerce-outbox/commerce-outbox.service';
 import {
   CanonicalEventType,
@@ -189,6 +195,96 @@ describe('Core inbox PostgreSQL transactions', () => {
     );
     expect(await effects()).toBe(1);
   }, 15000);
+  it.each(['OrderCreated', 'PaymentConfirmed'] as const)(
+    'roundtrips typed %s through the outbox and transactional inbox',
+    async (eventType) => {
+      const context = {
+        auditId: randomUUID(),
+        correlationId: randomUUID(),
+        idempotencyKey: randomUUID(),
+      };
+      const order = {
+        id: randomUUID(),
+        version: 1,
+        status: 'HELD' as const,
+        channel: 'SYSTEM' as const,
+        currency: 'IRR' as const,
+        fareIrr: 9007199254740993n,
+        taxIrr: 7n,
+        extrasIrr: 0n,
+        totalIrr: 9007199254741000n,
+        createdAt: new Date('2026-09-06T00:00:00.000Z'),
+        holdExpiresAt: new Date('2026-09-06T00:15:00.000Z'),
+      };
+      const event =
+        eventType === 'OrderCreated'
+          ? createItineraryOrderCreated(order, context)
+          : createItineraryPaymentConfirmed(
+              { ...order, status: 'TICKETED', version: 2 },
+              {
+                id: randomUUID(),
+                orderId: order.id,
+                amountIrr: order.totalIrr,
+                currency: 'IRR',
+                status: 'COMPLETED',
+                failureCode: null,
+                updatedAt: new Date('2026-09-06T00:05:00.000Z'),
+              },
+              context,
+            );
+      const outbox = new CommerceOutboxService();
+      try {
+        const first = await db.transaction((manager) =>
+          outbox.enqueueItinerary(manager, event),
+        );
+        const replay = await db.transaction((manager) =>
+          outbox.enqueueItinerary(manager, { ...event, eventId: randomUUID() }),
+        );
+        expect(replay).toEqual(first);
+        const row = await db
+          .getRepository(CommerceOutboxEvent)
+          .findOneByOrFail({ id: first.eventId });
+        const received = parseCoreItineraryEvent(
+          JSON.parse(decryptPii(row.envelopeEncrypted)) as unknown,
+        );
+        expect(received).toEqual(event);
+        await expect(
+          inbox.consumeItinerary(consumer, received, async (manager, typed) => {
+            expect(manager.queryRunner?.isTransactionActive).toBe(true);
+            expect(typed.eventType).toBe(eventType);
+            await effect(manager);
+            throw new Error('typed fixture rollback');
+          }),
+        ).rejects.toThrow('typed fixture rollback');
+        expect(await effects()).toBe(0);
+        expect(
+          await db.getRepository(CommerceInboxReceipt).countBy({ consumer }),
+        ).toBe(0);
+        expect(await inbox.consumeItinerary(consumer, received, effect)).toBe(
+          'processed',
+        );
+        expect(await inbox.consumeItinerary(consumer, received, effect)).toBe(
+          'duplicate',
+        );
+        expect(await effects()).toBe(1);
+        await expect(
+          inbox.consumeItinerary(
+            consumer,
+            {
+              ...received,
+              payload: { ...received.payload, auditId: randomUUID() },
+            },
+            effect,
+          ),
+        ).rejects.toBeInstanceOf(ConflictException);
+        expect(await effects()).toBe(1);
+      } finally {
+        await db
+          .getRepository(CommerceOutboxEvent)
+          .delete({ id: event.eventId });
+      }
+    },
+  );
   it('propagates a closed database failure without running handler', async () => {
     const closed = new DataSource(dataSourceOptions);
     let called = false;

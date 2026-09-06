@@ -58,6 +58,8 @@ describe('Commerce outbox (PostgreSQL)', () => {
     db = await new DataSource({
       ...dataSourceOptions,
       logging: false,
+      // Match the UTC Node test process regardless of the local PG default.
+      extra: { options: '-c timezone=UTC' },
     }).initialize();
   });
   beforeEach(async () => {

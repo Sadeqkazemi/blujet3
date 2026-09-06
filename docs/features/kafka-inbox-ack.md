@@ -66,7 +66,8 @@ least-privilege Core DB grants and cutover acceptance remain open.
 - [x] Local regression: all 809 backend unit tests (139 suites), 8 PostgreSQL
   inbox tests and 16 real Kafka tests (3 suites) pass. Full read-only lint,
   typecheck, build and `git diff --check` pass.
-- [ ] Owner-approved push, CI and merge; no server deployment.
+- [x] Owner-approved PR #60 merged as `41785f4`; CI `34014081649` and
+  CodeQL `34014081599` passed. No server deployment.
 
 Files: inbox Kafka handler/spec/module, real Kafka receive spec, docs/API,
 DB_SCHEMA and PLAN. No new dependency, table, migration, HTTP endpoint or seed.

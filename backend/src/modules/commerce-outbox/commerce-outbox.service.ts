@@ -12,6 +12,7 @@ import {
   type CanonicalEvent,
 } from '../../common/events/canonical-events';
 import { CommerceOutboxEvent } from '../../database/entities/commerce-outbox-event.entity';
+import { parseCoreItineraryEvent } from '../../common/events/core-itinerary-events';
 
 // Key order is not part of semantic equality. Called only after JSON validation.
 function stableJson(value: unknown): string {
@@ -27,6 +28,13 @@ function stableJson(value: unknown): string {
 
 @Injectable()
 export class CommerceOutboxService {
+  enqueueItinerary(
+    manager: EntityManager,
+    input: unknown,
+  ): Promise<{ eventId: string }> {
+    return this.enqueue(manager, parseCoreItineraryEvent(input));
+  }
+
   async enqueue(
     manager: EntityManager,
     event: CanonicalEvent,
