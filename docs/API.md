@@ -2,8 +2,9 @@
 
 ## Kafka durable transport foundation
 
-Typed Core itinerary v1 contracts cover OrderCreated (HELD quote snapshot) and
-PaymentConfirmed (COMPLETED confirmation) with exact payload keys, IRR decimal
+Typed Core itinerary v1 contracts cover OrderCreated (HELD quote snapshot),
+PaymentConfirmed (COMPLETED confirmation), TicketIssued and RefundRequested
+with exact payload keys, IRR decimal
 strings and required audit reference. New `enqueueItinerary`/`consumeItinerary`
 methods validate them without tightening the existing generic transport API.
 No public route or writer activation: `docs/features/itinerary-event-contracts.md`.

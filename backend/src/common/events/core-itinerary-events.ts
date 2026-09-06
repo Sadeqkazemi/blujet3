@@ -28,6 +28,20 @@ export interface ItineraryPaymentConfirmedPayload extends ItineraryEventBase {
   status: 'COMPLETED';
   amountIrr: string;
 }
+export interface ItineraryTicketIssuedPayload extends ItineraryEventBase {
+  status: 'TICKETED';
+  ticketDocumentIds: string[];
+  issuedAt: string;
+}
+export interface ItineraryRefundRequestedPayload extends ItineraryEventBase {
+  refundId: string;
+  refundReference: string;
+  quoteReference: string;
+  status: 'RECEIVED';
+  grossAmountIrr: string;
+  penaltyAmountIrr: string;
+  refundableIrr: string;
+}
 type Envelope<P, T extends CanonicalEvent['eventType']> = CanonicalEvent<P> & {
   eventType: T;
   aggregateType: 'CoreItineraryOrder';
@@ -41,8 +55,19 @@ export type ItineraryPaymentConfirmedEvent = Envelope<
   ItineraryPaymentConfirmedPayload,
   'PaymentConfirmed'
 >;
+export type ItineraryTicketIssuedEvent = Envelope<
+  ItineraryTicketIssuedPayload,
+  'TicketIssued'
+>;
+export type ItineraryRefundRequestedEvent = Envelope<
+  ItineraryRefundRequestedPayload,
+  'RefundRequested'
+>;
 export type CoreItineraryEvent =
-  ItineraryOrderCreatedEvent | ItineraryPaymentConfirmedEvent;
+  | ItineraryOrderCreatedEvent
+  | ItineraryPaymentConfirmedEvent
+  | ItineraryTicketIssuedEvent
+  | ItineraryRefundRequestedEvent;
 export interface ItineraryEventContext {
   auditId: string;
   correlationId: string;
@@ -75,6 +100,28 @@ type ConfirmationSnapshot = Pick<
   | 'amountIrr'
   | 'failureCode'
   | 'updatedAt'
+>;
+type TicketDocumentSnapshot = Pick<
+  import('../../database/entities/core-itinerary-ticket-document.entity').CoreItineraryTicketDocument,
+  | 'id'
+  | 'orderId'
+  | 'status'
+  | 'accountabilityStatus'
+  | 'issueSource'
+  | 'issuedAt'
+>;
+type RefundSnapshot = Pick<
+  import('../../database/entities/core-itinerary-refund.entity').CoreItineraryRefund,
+  | 'id'
+  | 'orderId'
+  | 'status'
+  | 'refundReference'
+  | 'quoteReference'
+  | 'grossAmountIrr'
+  | 'penaltyAmountIrr'
+  | 'refundableIrr'
+  | 'currency'
+  | 'createdAt'
 >;
 
 function invalid(): never {
@@ -180,6 +227,53 @@ export function parseCoreItineraryEvent(input: unknown): CoreItineraryEvent {
       toIrr(payload.amountIrr) <= 0n
     )
       invalid();
+  } else if (input.eventType === 'TicketIssued') {
+    if (
+      !exact(payload, [
+        'auditId',
+        'orderVersion',
+        'currency',
+        'status',
+        'ticketDocumentIds',
+        'issuedAt',
+      ]) ||
+      payload.status !== 'TICKETED' ||
+      !Array.isArray(payload.ticketDocumentIds) ||
+      payload.ticketDocumentIds.length < 1 ||
+      payload.ticketDocumentIds.length > 1000 ||
+      new Set(payload.ticketDocumentIds).size !==
+        payload.ticketDocumentIds.length ||
+      !payload.ticketDocumentIds.every(identifier) ||
+      !utc(payload.issuedAt)
+    )
+      invalid();
+  } else if (input.eventType === 'RefundRequested') {
+    if (
+      !exact(payload, [
+        'auditId',
+        'orderVersion',
+        'currency',
+        'refundId',
+        'refundReference',
+        'quoteReference',
+        'status',
+        'grossAmountIrr',
+        'penaltyAmountIrr',
+        'refundableIrr',
+      ]) ||
+      !identifier(payload.refundId) ||
+      !identifier(payload.refundReference) ||
+      !identifier(payload.quoteReference) ||
+      payload.status !== 'RECEIVED' ||
+      !amount(payload.grossAmountIrr) ||
+      !amount(payload.penaltyAmountIrr) ||
+      !amount(payload.refundableIrr) ||
+      toIrr(payload.grossAmountIrr) <= 0n ||
+      toIrr(payload.refundableIrr) <= 0n ||
+      addIrr(toIrr(payload.penaltyAmountIrr), toIrr(payload.refundableIrr)) !==
+        toIrr(payload.grossAmountIrr)
+    )
+      invalid();
   } else invalid();
   // Validation above establishes the discriminated payload; detach caller-owned data.
   return JSON.parse(JSON.stringify(input)) as CoreItineraryEvent;
@@ -250,5 +344,86 @@ export function createItineraryPaymentConfirmed(
   });
   const parsed = parseCoreItineraryEvent(event);
   if (parsed.eventType !== 'PaymentConfirmed') invalid();
+  return parsed;
+}
+
+export function createItineraryTicketIssued(
+  order: Pick<CoreItineraryOrder, 'id' | 'version' | 'status' | 'currency'>,
+  documents: TicketDocumentSnapshot[],
+  context: ItineraryEventContext,
+): ItineraryTicketIssuedEvent {
+  if (
+    order.status !== 'TICKETED' ||
+    order.currency !== 'IRR' ||
+    documents.length < 1 ||
+    documents.some(
+      (document) =>
+        document.orderId !== order.id ||
+        document.status !== 'ISSUED' ||
+        document.accountabilityStatus !== 'ACCOUNTABLE' ||
+        document.issueSource !== 'CORE_ITINERARY_PAYMENT',
+    )
+  )
+    invalid();
+  const issuedAt = new Date(
+    Math.max(...documents.map((document) => document.issuedAt.getTime())),
+  );
+  const event = createCanonicalEvent({
+    eventType: 'TicketIssued',
+    producer: 'core-commerce',
+    aggregateType: 'CoreItineraryOrder',
+    aggregateId: order.id,
+    correlationId: context.correlationId,
+    idempotencyKey: context.idempotencyKey,
+    occurredAt: issuedAt,
+    payload: {
+      auditId: context.auditId,
+      orderVersion: order.version,
+      currency: order.currency,
+      status: order.status,
+      ticketDocumentIds: documents.map((document) => document.id),
+      issuedAt: date(issuedAt),
+    },
+  });
+  const parsed = parseCoreItineraryEvent(event);
+  if (parsed.eventType !== 'TicketIssued') invalid();
+  return parsed;
+}
+
+export function createItineraryRefundRequested(
+  order: Pick<CoreItineraryOrder, 'id' | 'version' | 'status'>,
+  refund: RefundSnapshot,
+  context: ItineraryEventContext,
+): ItineraryRefundRequestedEvent {
+  if (
+    order.status !== 'TICKETED' ||
+    refund.orderId !== order.id ||
+    refund.status !== 'RECEIVED' ||
+    refund.currency !== 'IRR'
+  )
+    invalid();
+  const event = createCanonicalEvent({
+    eventType: 'RefundRequested',
+    producer: 'core-commerce',
+    aggregateType: 'CoreItineraryOrder',
+    aggregateId: order.id,
+    correlationId: context.correlationId,
+    idempotencyKey: context.idempotencyKey,
+    occurredAt: new Date(date(refund.createdAt)),
+    payload: {
+      auditId: context.auditId,
+      orderVersion: order.version,
+      currency: refund.currency,
+      refundId: refund.id,
+      refundReference: refund.refundReference,
+      quoteReference: refund.quoteReference,
+      status: refund.status,
+      grossAmountIrr: money(refund.grossAmountIrr),
+      penaltyAmountIrr: money(refund.penaltyAmountIrr),
+      refundableIrr: money(refund.refundableIrr),
+    },
+  });
+  const parsed = parseCoreItineraryEvent(event);
+  if (parsed.eventType !== 'RefundRequested') invalid();
   return parsed;
 }
