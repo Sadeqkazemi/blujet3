@@ -918,21 +918,6 @@ export class LoansService {
     return rows[0]?.id ?? null;
   }
 
-  private async finalizeWebhookEvent(
-    manager: EntityManager,
-    eventRowId: string,
-    processingResult: string,
-  ) {
-    await manager.query(
-      `
-      UPDATE "payments"."bank_loan_webhook_events"
-      SET "processingResult" = $2
-      WHERE "id" = $1
-      `,
-      [eventRowId, processingResult],
-    );
-  }
-
   private async applyBankUpdate(
     row: BankLoanApplication,
     bankStatus: BankLoanStatus,
@@ -965,11 +950,6 @@ export class LoansService {
         lock: { mode: 'pessimistic_write' },
       });
       if (!locked) {
-        await this.finalizeWebhookEvent(
-          manager,
-          eventRowId,
-          'IGNORED_MISSING_LOAN',
-        );
         return 'IGNORED_MISSING_LOAN';
       }
 
@@ -978,16 +958,10 @@ export class LoansService {
         opts.occurredAt.getTime() < locked.lastWebhookOccurredAt.getTime() &&
         bankStatus !== locked.bankStatus
       ) {
-        await this.finalizeWebhookEvent(manager, eventRowId, 'IGNORED_STALE');
         return 'IGNORED_STALE';
       }
 
       if (!canTransitionBankStatus(locked.bankStatus, bankStatus)) {
-        await this.finalizeWebhookEvent(
-          manager,
-          eventRowId,
-          'IGNORED_TRANSITION',
-        );
         return 'IGNORED_TRANSITION';
       }
 
@@ -1006,7 +980,6 @@ export class LoansService {
         opts.walletCreditReference,
       );
 
-      await this.finalizeWebhookEvent(manager, eventRowId, 'APPLIED');
       return 'APPLIED';
     });
   }
