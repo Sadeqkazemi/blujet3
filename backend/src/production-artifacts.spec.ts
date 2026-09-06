@@ -228,7 +228,9 @@ describe('production backend artifacts', () => {
 
   it('runs the complete backend E2E suite in isolated parallel shards', () => {
     expect(ciWorkflow).toContain('backend-e2e:');
-    expect(ciWorkflow).toContain("shard: ['1/4', '2/4', '3/4', '4/4']");
+    expect(ciWorkflow).toContain(
+      "shard: ['1/8', '2/8', '3/8', '4/8', '5/8', '6/8', '7/8', '8/8']",
+    );
     expect(ciWorkflow).toContain(
       'npm run test:e2e -- --shard=${{ matrix.shard }}',
     );
