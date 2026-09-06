@@ -30,7 +30,8 @@ below for what's landed from that port so far.
 - [x] All 25 PostgreSQL inbox/outbox regression tests and full read-only lint,
   typecheck/build pass. Pin the Outbox test DB session to UTC to match Node;
   local Asia/Tehran defaults previously delayed claims by 3.5 hours.
-- [ ] Owner-approved push, CI and merge. No server deployment.
+- [x] Owner-approved push, CI and merge completed in PR #61; merge commit
+  `8ae873b6dfb0c4f7ae66634efbcacaf91335b2a0`. No server deployment.
 - No writer/subscription activation, fake audit row, new schema or dependency.
   Future producers must supply a real audit ID in the same transaction.
   TicketIssued/RefundRequested/FlightDisrupted and single-flight payloads remain

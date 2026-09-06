@@ -66,7 +66,8 @@ contracts remain separate; no claim that all five events are complete.
   (`commerce-inbox.e2e-spec.ts`, all 10 tests pass).
 - [x] All 862 units (140 suites), 25 PostgreSQL Inbox/Outbox tests,
   full read-only lint, typecheck/build and diff check pass locally.
-- [ ] Owner-approved push, CI and merge. No deployment.
+- [x] Owner-approved push, CI and merge completed in PR #61 (merge commit
+  `8ae873b6dfb0c4f7ae66634efbcacaf91335b2a0`). No deployment.
 
 Regression evidence: `channel: ['SYSTEM']` initially passed via string
 coercion. The added test failed before replacing coercion with exact string
