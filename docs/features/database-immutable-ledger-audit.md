@@ -39,7 +39,8 @@ Evidence: `backend/test/database-immutable-financial-audit.e2e-spec.ts`
 `can reverse and reapply...`), plus 944/944 Backend unit tests. Legacy E2E
 fixture cleanup now retains immutable audit and ledger rows: temporary actors
 are tombstoned, while test flights are cancelled and hidden from sale instead
-of deleting their evidence graph.
+of deleting their evidence graph. Accountable ticketing fixtures likewise keep
+their uniquely identified booking, passenger and document history.
 
 ## API impact
 

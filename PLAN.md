@@ -25,6 +25,8 @@ below for what's landed from that port so far.
 - [x] Align legacy Backend E2E cleanup with append-only audit and financial
   evidence: tombstone temporary UAT actors and retire test flights without
   deleting their immutable history.
+- [x] Preserve accountable ticketing fixture graphs whose bookings own
+  append-only lifecycle events; rely on unique PNRs in the disposable E2E DB.
 
 ### 2026-09-06 — Database-enforced append-only financial and audit records
 
