@@ -4530,6 +4530,20 @@ contracts and retires the production mock adapters.
 - [ ] Complete visual browser verification when localhost browser access is available.
 - [ ] Commit/push, merge, and deploy only after explicit user approval.
 
+## Database reliability foundation — truthful backup and restore proof (2026-09-06)
+
+- [x] Align the IT backup schedule with the repository's real nightly 03:00
+  policy and seven-day retention instead of the stale six-hour/30-day claim.
+- [x] Report file backup and cloud storage as unconfigured, and derive the
+  latest successful dump evidence from `ops.backup_records`.
+- [x] Add a PostgreSQL 16 CI job that migrates, dumps, restores to a unique
+  throwaway database, verifies Core schemas/tables, and always cleans up.
+- [x] Document the API, data evidence, restore workflow, and acceptance tests.
+- [x] Pass backend lint, typecheck, build, 941/941 unit tests, shell syntax and
+  `git diff --check` locally.
+- [ ] Run the container-backed restore proof and IT-manager E2E in GitHub CI.
+- [ ] Commit/push and merge only after explicit user approval; do not deploy.
+
 ## Microservices architecture v1.1 — phase 0 foundation (2026-09-02)
 
 - [x] Store the owner-provided architecture ADR and make its Core Platform
