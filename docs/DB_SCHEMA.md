@@ -3831,3 +3831,14 @@ nightly 03:00 dump with seven-day retention. File backup and off-site/cloud
 storage are explicitly reported as unconfigured until an operator adds and
 verifies those capabilities. Restore verification runs against a throwaway
 database in CI and never overwrites the primary database.
+
+### Database schema privilege hardening
+
+Migration `1791810000000-HardenDomainSchemaPrivileges` removes the default
+`CREATE` privilege from `PUBLIC` on the `public` compatibility schema and every
+domain schema (`identity`, `inventory`, `orders`, `payments`, `loyalty`,
+`agency`, `notify`, `experience`, `ops`, and `audit`). It does not change table
+ownership, application-role privileges, rows, or the Core transaction boundary.
+The migration is reversible for the schema `CREATE` defaults only; explicit
+service-reader grants remain operator-managed and are not fabricated by a
+TypeORM migration.

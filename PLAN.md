@@ -4544,6 +4544,16 @@ contracts and retires the production mock adapters.
 - [ ] Run the container-backed restore proof and IT-manager E2E in GitHub CI.
 - [ ] Commit/push and merge only after explicit user approval; do not deploy.
 
+## Database schema privilege hardening (2026-09-06)
+
+- [x] Revoke the default `PUBLIC` schema `CREATE` privilege from `public` and
+  every domain schema without changing table ownership or application access.
+- [x] Add reversible TypeORM migration and contract tests for all 11 schemas.
+- [x] Document the privilege boundary and retain operator-managed reader grants.
+- [x] Pass backend lint, typecheck and focused migration tests locally.
+- [ ] Run migration compatibility and full CI, then request approval before
+  merge; no server deploy.
+
 ## Microservices architecture v1.1 — phase 0 foundation (2026-09-02)
 
 - [x] Store the owner-provided architecture ADR and make its Core Platform
