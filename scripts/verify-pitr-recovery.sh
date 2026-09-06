@@ -46,7 +46,13 @@ docker run -d --name "$primary_container" \
 
 ready=false
 for _attempt in $(seq 1 45); do
-  if docker exec "$primary_container" pg_isready -U "$database_user" -d "$database_name" >/dev/null 2>&1; then
+  # The official image briefly exposes its temporary init server before
+  # shutting it down and starting the final postmaster. Do not mistake that
+  # transient pg_isready success for stable readiness.
+  if docker logs "$primary_container" 2>&1 | \
+      grep -q 'PostgreSQL init process complete; ready for start up' &&
+    docker exec "$primary_container" pg_isready \
+      -U "$database_user" -d "$database_name" >/dev/null 2>&1; then
     ready=true
     break
   fi
