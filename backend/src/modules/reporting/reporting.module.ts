@@ -14,6 +14,13 @@ import { ReportingController } from './reporting.controller';
 import { ReportingService } from './reporting.service';
 import { PanelsModule } from '../panels/panels.module';
 import { AgenciesModule } from '../agencies/agencies.module';
+import { ReportingItineraryEventProjection } from '../../database/entities/reporting-itinerary-event-projection.entity';
+import { ReportingItineraryEventReceipt } from '../../database/entities/reporting-itinerary-event-receipt.entity';
+import {
+  REPORTING_READ_MODEL_SINK,
+  ReportingEventConsumer,
+} from './reporting-event-consumer';
+import { ReportingItineraryProjectionStore } from './reporting-itinerary-projection.store';
 
 @Module({
   imports: [
@@ -28,11 +35,22 @@ import { AgenciesModule } from '../agencies/agencies.module';
       Airport,
       RefundRequest,
       SupportTicket,
+      ReportingItineraryEventProjection,
+      ReportingItineraryEventReceipt,
     ]),
     PanelsModule,
     AgenciesModule,
   ],
   controllers: [ReportingController],
-  providers: [ReportingService],
+  providers: [
+    ReportingService,
+    ReportingItineraryProjectionStore,
+    ReportingEventConsumer,
+    {
+      provide: REPORTING_READ_MODEL_SINK,
+      useExisting: ReportingItineraryProjectionStore,
+    },
+  ],
+  exports: [ReportingEventConsumer],
 })
 export class ReportingModule {}

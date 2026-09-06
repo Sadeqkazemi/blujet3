@@ -85,6 +85,8 @@ import { PromoRedemption } from './entities/promo-redemption.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { RefundPenaltyRule } from './entities/refund-penalty-rule.entity';
 import { RefundRequest } from './entities/refund-request.entity';
+import { ReportingItineraryEventProjection } from './entities/reporting-itinerary-event-projection.entity';
+import { ReportingItineraryEventReceipt } from './entities/reporting-itinerary-event-receipt.entity';
 import { Route } from './entities/route.entity';
 import { SavedBankAccount } from './entities/saved-bank-account.entity';
 import { SavedFlight } from './entities/saved-flight.entity';
@@ -213,6 +215,8 @@ export const dataSourceOptions: DataSourceOptions = {
     RefreshToken,
     RefundPenaltyRule,
     RefundRequest,
+    ReportingItineraryEventProjection,
+    ReportingItineraryEventReceipt,
     Route,
     SavedBankAccount,
     SavedFlight,

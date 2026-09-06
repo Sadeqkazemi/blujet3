@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
@@ -6,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { ErrorCode } from '../../common/errors';
+import { fingerprintJson } from '../../common/events/event-fingerprint';
 import { encryptPii } from '../../common/pii-crypto';
 import {
   isCanonicalEvent,
@@ -13,18 +13,6 @@ import {
 } from '../../common/events/canonical-events';
 import { CommerceOutboxEvent } from '../../database/entities/commerce-outbox-event.entity';
 import { parseCoreItineraryEvent } from '../../common/events/core-itinerary-events';
-
-// Key order is not part of semantic equality. Called only after JSON validation.
-function stableJson(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
-  if (value !== null && typeof value === 'object') {
-    return `{${Object.entries(value)
-      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-      .map(([key, v]) => `${JSON.stringify(key)}:${stableJson(v)}`)
-      .join(',')}}`;
-  }
-  return JSON.stringify(value);
-}
 
 @Injectable()
 export class CommerceOutboxService {
@@ -48,18 +36,14 @@ export class CommerceOutboxService {
         message: 'ساختار رویداد معتبر نیست.',
       });
     }
-    const fingerprint = createHash('sha256')
-      .update(
-        stableJson({
-          eventType: event.eventType,
-          eventVersion: event.eventVersion,
-          aggregateType: event.aggregateType,
-          aggregateId: event.aggregateId,
-          producer: event.producer,
-          payload: event.payload,
-        }),
-      )
-      .digest('hex');
+    const fingerprint = fingerprintJson({
+      eventType: event.eventType,
+      eventVersion: event.eventVersion,
+      aggregateType: event.aggregateType,
+      aggregateId: event.aggregateId,
+      producer: event.producer,
+      payload: event.payload,
+    });
     const repo = manager.getRepository(CommerceOutboxEvent);
     // Serialize a logical command without aborting the caller on duplicate INSERT.
     await manager.query(
