@@ -26,6 +26,11 @@ same transaction for every accepted, duplicate-semantic, or stale delivery,
 so an event ID cannot later be reused after its projection slot advances. The
 receipt stores no event payload or PII and has no foreign key to Core.
 
+The Reporting Kafka acknowledgement adapter adds no schema or migration. It
+writes only through the existing atomic projection store and its Reporting-owned
+receipt table. Offset acknowledgement is broker state and happens only after
+that database transaction commits (`docs/features/reporting-kafka-adapter.md`).
+
 ## Kafka commerce delivery outbox
 
 Typed itinerary event builders read allowlisted fields of
