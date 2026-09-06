@@ -2,6 +2,11 @@
 
 ## Kafka commerce delivery outbox
 
+Kafka receive acknowledgement uses the existing Core inbox table without schema
+changes: the receipt/local effect commits before the consumer-group offset.
+An acknowledgement failure retains the receipt for deduplicated replay. No
+retention deletion, new grants or migration (`docs/features/kafka-inbox-ack.md`).
+
 Additive Core-owned `orders.commerce_inbox_receipts`: composite primary key
 `consumer` (varchar 128) + `eventId` (uuid), `fingerprint` (varchar 64), and
 `receivedAt` (timestamptz(3), default now). Receipt and handler DB effects commit

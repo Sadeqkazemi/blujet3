@@ -9,6 +9,7 @@ import { CommerceOutboxEvent } from '../src/database/entities/commerce-outbox-ev
 import { CommerceInbox1791648000000 } from '../src/database/migrations/1791648000000-CommerceInbox';
 import { CommerceInboxService } from '../src/modules/commerce-inbox/commerce-inbox.service';
 import { CommerceInboxModule } from '../src/modules/commerce-inbox/commerce-inbox.module';
+import { CommerceInboxKafkaHandler } from '../src/modules/commerce-inbox/commerce-inbox-kafka.handler';
 import { CommerceOutboxService } from '../src/modules/commerce-outbox/commerce-outbox.service';
 import {
   CanonicalEventType,
@@ -111,6 +112,9 @@ describe('Core inbox PostgreSQL transactions', () => {
     }).compile();
     try {
       await module.init();
+      expect(module.get(CommerceInboxKafkaHandler)).toBeInstanceOf(
+        CommerceInboxKafkaHandler,
+      );
       expect(
         await module
           .get(CommerceInboxService)

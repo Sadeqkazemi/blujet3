@@ -55,7 +55,8 @@ apply again. Lock wait is bounded to 5 seconds; errors propagate for retry.
 - [x] Exported Nest module wiring commits through its real injected service;
   all 8 PostgreSQL tests and final changed-file lint pass
   (`test/commerce-inbox.e2e-spec.ts`).
-- [ ] Owner-approved push and CI before merge. No server deployment.
+- [x] Owner-approved PR #59 merged as `53090ac`; CI `34012896403` and
+  CodeQL `34012896395` passed. No server deployment.
 
 Files: Core inbox service/module/spec, receipt entity/migration/data-source
 registration, PostgreSQL and existing Kafka tests; docs/API, DB_SCHEMA, PLAN.
