@@ -96,7 +96,9 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3200
-      NOTIFY_DATABASE_URL: postgresql://blujet:${POSTGRES_PASSWORD}@db:5432/blujet?schema=public
+      # The notify process must use a dedicated non-superuser role scoped to
+      # the notify schema. The core owner URL must never be reused here.
+      NOTIFY_DATABASE_URL: ${NOTIFY_DATABASE_URL:?Supply a dedicated notify writer URL}
       NOTIFY_INTERNAL_TOKEN: ${NOTIFY_INTERNAL_TOKEN}
       PII_ENCRYPTION_KEY: ${PII_ENCRYPTION_KEY}
       SMS_PROVIDER_TIMEOUT_MS: ${SMS_PROVIDER_TIMEOUT_MS:-10000}
@@ -121,7 +123,9 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3300
-      EXPERIENCE_DATABASE_URL: postgresql://blujet:${POSTGRES_PASSWORD}@db:5432/blujet?schema=public
+      # The experience process must use a dedicated non-superuser role scoped
+      # to the experience schema. The core owner URL must never be reused here.
+      EXPERIENCE_DATABASE_URL: ${EXPERIENCE_DATABASE_URL:?Supply a dedicated experience writer URL}
       EXPERIENCE_INTERNAL_TOKEN: ${EXPERIENCE_INTERNAL_TOKEN}
       PII_ENCRYPTION_KEY: ${PII_ENCRYPTION_KEY}
       EXPERIENCE_UPLOAD_DIR: /app/uploads

@@ -14,6 +14,10 @@ const compose = readFileSync(
   join(backendRoot, '..', 'docker-compose.prod.yml'),
   'utf8',
 );
+const productionEnvExample = readFileSync(
+  join(backendRoot, '..', '.env.production.example'),
+  'utf8',
+);
 const notifyComposeSection =
   compose.split('\n  notify-service:')[1]?.split('\n  ml-service:')[0] ?? '';
 const experienceComposeSection =
@@ -224,6 +228,24 @@ describe('production backend artifacts', () => {
     );
     expect(notifyFeature).toContain('notify_outbox_events');
     expect(notifyFeature).toContain('NOTIFY_INTEGRATION_ENABLED=false');
+  });
+
+  it('requires dedicated production database credentials for extracted services', () => {
+    expect(notifyComposeSection).toContain(
+      'NOTIFY_DATABASE_URL: ${NOTIFY_DATABASE_URL:?Supply a dedicated notify writer URL}',
+    );
+    expect(experienceComposeSection).toContain(
+      'EXPERIENCE_DATABASE_URL: ${EXPERIENCE_DATABASE_URL:?Supply a dedicated experience writer URL}',
+    );
+    expect(notifyComposeSection).not.toContain(
+      'postgresql://blujet:${POSTGRES_PASSWORD}@db:5432/blujet',
+    );
+    expect(experienceComposeSection).not.toContain(
+      'postgresql://blujet:${POSTGRES_PASSWORD}@db:5432/blujet',
+    );
+    expect(productionEnvExample).toContain('NOTIFY_DATABASE_URL=');
+    expect(productionEnvExample).toContain('EXPERIENCE_DATABASE_URL=');
+    expect(productionEnvExample).toContain('non-superuser');
   });
 
   it('runs the complete backend E2E suite in isolated parallel shards', () => {
