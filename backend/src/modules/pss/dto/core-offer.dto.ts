@@ -13,6 +13,10 @@ import {
   QuoteCoreItineraryDto,
   QuotedCoreItineraryDto,
 } from './quote-core-itinerary.dto';
+import {
+  HeldCoreItineraryDto,
+  HoldCoreItineraryDto,
+} from './hold-core-itinerary.dto';
 
 const SELLER_TYPES = ['USER', 'AGENCY'] as const;
 export type CoreOfferSellerType = (typeof SELLER_TYPES)[number];
@@ -125,4 +129,26 @@ export class CoreOfferRepriceResponseDto {
     description: 'نتیجهٔ بازقیمت‌گذاری',
   })
   data!: CoreOfferRepriceResultDto;
+}
+
+export class CoreOfferHoldDto extends HoldCoreItineraryDto {
+  @ApiProperty({
+    description: 'توکن یکپارچگی HMAC صادرشده برای همین Offer',
+    example: 'eyJ2IjoxLCJvZmZlcklkIjoi...signature',
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(4096)
+  integrityToken!: string;
+}
+
+export class CoreOfferHoldResponseDto {
+  @ApiProperty({ example: true, description: 'موفقیت درخواست' })
+  success!: true;
+
+  @ApiProperty({
+    type: HeldCoreItineraryDto,
+    description: 'Order/Hold ایجادشده از Offer مصرف‌شده',
+  })
+  data!: HeldCoreItineraryDto & { sourceOfferId: string };
 }

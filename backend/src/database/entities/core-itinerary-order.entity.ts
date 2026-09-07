@@ -19,6 +19,10 @@ import { User } from './user.entity';
 @Index('core_itinerary_orders_idempotencyKey_key', ['idempotencyKey'], {
   unique: true,
 })
+@Index('core_itinerary_orders_sourceOfferId_key', ['sourceOfferId'], {
+  unique: true,
+  where: '"sourceOfferId" IS NOT NULL',
+})
 @Index('core_itinerary_orders_due_expiry_idx', ['holdExpiresAt', 'id'], {
   where: `"status" = 'HELD'`,
 })
@@ -54,6 +58,10 @@ export class CoreItineraryOrder {
 
   @Column({ type: 'text', nullable: true })
   contactPhone!: string | null;
+
+  /** UUID of the stateless signed Offer consumed by this Order, if any. */
+  @Column({ type: 'text', nullable: true })
+  sourceOfferId!: string | null;
 
   @Column({
     type: 'enum',

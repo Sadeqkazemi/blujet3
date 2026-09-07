@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash, createHmac, randomUUID } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
 import type { App } from 'supertest/types';
 import request from 'supertest';
@@ -296,6 +296,29 @@ describe('Core itinerary internal API', () => {
       ...validQuoteRequest(),
       seller: { type: 'USER', id: holdOwnerId },
     };
+  }
+
+  function validOfferHoldRequest(integrityToken: string) {
+    return { ...validHoldRequest(), integrityToken };
+  }
+
+  function expiredOfferToken(token: string): string {
+    const [encodedPayload] = token.split('.');
+    const payload = JSON.parse(
+      Buffer.from(encodedPayload, 'base64url').toString('utf8'),
+    ) as Record<string, unknown>;
+    payload.expiresAtMs = Date.now() - 1;
+    const expiredPayload = Buffer.from(
+      JSON.stringify(payload),
+      'utf8',
+    ).toString('base64url');
+    const signature = createHmac(
+      'sha256',
+      process.env.CORE_OFFER_SIGNING_SECRET!,
+    )
+      .update(expiredPayload, 'utf8')
+      .digest('base64url');
+    return `${expiredPayload}.${signature}`;
   }
 
   it('requires the internal service token', async () => {
@@ -698,6 +721,170 @@ describe('Core itinerary internal API', () => {
           sitePriceIrr: 10_000_000n,
         });
       }
+    });
+  });
+
+  describe('POST /internal/v1/offers/:offerId/hold', () => {
+    afterEach(async () => {
+      await cleanupHoldOrders();
+    });
+
+    async function createOffer() {
+      const response = await request(app.getHttpServer())
+        .post('/internal/v1/offers/search')
+        .set('X-Internal-Token', token)
+        .send(validOfferRequest());
+      expect(response.status).toBe(200);
+      return response.body.data as {
+        offerId: string;
+        integrityToken: string;
+        quote: { totalIrr: string };
+      };
+    }
+
+    it('enforces internal auth and idempotency validation', async () => {
+      const offer = await createOffer();
+      const body = validOfferHoldRequest(offer.integrityToken);
+      const unauthorized = await request(app.getHttpServer())
+        .post(`/internal/v1/offers/${offer.offerId}/hold`)
+        .send(body);
+      const missingKey = await request(app.getHttpServer())
+        .post(`/internal/v1/offers/${offer.offerId}/hold`)
+        .set('X-Internal-Token', token)
+        .send(body);
+      const invalidOfferId = await request(app.getHttpServer())
+        .post('/internal/v1/offers/not-a-uuid/hold')
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', `offer-invalid-id-${suffix}`)
+        .send(body);
+
+      expect(unauthorized.status).toBe(401);
+      expect(missingKey.status).toBe(400);
+      expect(invalidOfferId.status).toBe(400);
+    });
+
+    it('consumes one Offer, persists its source and replays after Offer expiry', async () => {
+      const offer = await createOffer();
+      const key = `offer-hold-${suffix}`;
+      const first = await request(app.getHttpServer())
+        .post(`/internal/v1/offers/${offer.offerId}/hold`)
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', key)
+        .send(validOfferHoldRequest(offer.integrityToken));
+
+      expect(first.status).toBe(201);
+      expect(first.body.data).toMatchObject({
+        status: 'HELD',
+        sourceOfferId: offer.offerId,
+        totalIrr: offer.quote.totalIrr,
+      });
+      expect(
+        await dataSource.getRepository(CoreItineraryOrder).count({
+          where: { sourceOfferId: offer.offerId },
+        }),
+      ).toBe(1);
+
+      const replay = await request(app.getHttpServer())
+        .post(`/internal/v1/offers/${offer.offerId}/hold`)
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', key)
+        .send(validOfferHoldRequest(expiredOfferToken(offer.integrityToken)));
+
+      expect(replay.status).toBe(201);
+      expect(replay.body.data.id).toBe(first.body.data.id);
+    });
+
+    it('rejects an expired Offer for a new command without writing an Order', async () => {
+      const offer = await createOffer();
+      const response = await request(app.getHttpServer())
+        .post(`/internal/v1/offers/${offer.offerId}/hold`)
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', `offer-expired-${suffix}`)
+        .send(validOfferHoldRequest(expiredOfferToken(offer.integrityToken)));
+
+      expect(response.status).toBe(409);
+      expect(response.body.error.code).toBe('OFFER_EXPIRED');
+      expect(
+        await dataSource.getRepository(CoreItineraryOrder).count({
+          where: { ownerId: holdOwnerId },
+        }),
+      ).toBe(0);
+    });
+
+    it('rejects a changed price after inventory locking without creating a hold', async () => {
+      const offer = await createOffer();
+      const fareRuleRepo = dataSource.getRepository(FareRule);
+      try {
+        await fareRuleRepo.update(fareRuleIds[0], {
+          sitePriceIrr: 11_000_000n,
+        });
+        const response = await request(app.getHttpServer())
+          .post(`/internal/v1/offers/${offer.offerId}/hold`)
+          .set('X-Internal-Token', token)
+          .set('Idempotency-Key', `offer-price-${suffix}`)
+          .send(validOfferHoldRequest(offer.integrityToken));
+
+        expect(response.status).toBe(409);
+        expect(response.body.error.code).toBe('OFFER_PRICE_CHANGED');
+        expect(
+          await dataSource.getRepository(CoreItineraryOrder).count({
+            where: { ownerId: holdOwnerId },
+          }),
+        ).toBe(0);
+      } finally {
+        await fareRuleRepo.update(fareRuleIds[0], {
+          sitePriceIrr: 10_000_000n,
+        });
+      }
+    });
+
+    it('allows one consumption per Offer and rejects a second idempotency key', async () => {
+      const offer = await createOffer();
+      const first = await request(app.getHttpServer())
+        .post(`/internal/v1/offers/${offer.offerId}/hold`)
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', `offer-used-a-${suffix}`)
+        .send(validOfferHoldRequest(offer.integrityToken));
+      const second = await request(app.getHttpServer())
+        .post(`/internal/v1/offers/${offer.offerId}/hold`)
+        .set('X-Internal-Token', token)
+        .set('Idempotency-Key', `offer-used-b-${suffix}`)
+        .send(validOfferHoldRequest(offer.integrityToken));
+
+      expect(first.status).toBe(201);
+      expect(second.status).toBe(409);
+      expect(second.body.error.code).toBe('OFFER_ALREADY_USED');
+      expect(
+        await dataSource.getRepository(CoreItineraryOrder).count({
+          where: { ownerId: holdOwnerId },
+        }),
+      ).toBe(1);
+    });
+
+    it('serializes concurrent attempts to consume the same Offer', async () => {
+      const offer = await createOffer();
+      const body = validOfferHoldRequest(offer.integrityToken);
+      const attempts = await Promise.all([
+        request(app.getHttpServer())
+          .post(`/internal/v1/offers/${offer.offerId}/hold`)
+          .set('X-Internal-Token', token)
+          .set('Idempotency-Key', `offer-race-a-${suffix}`)
+          .send(body),
+        request(app.getHttpServer())
+          .post(`/internal/v1/offers/${offer.offerId}/hold`)
+          .set('X-Internal-Token', token)
+          .set('Idempotency-Key', `offer-race-b-${suffix}`)
+          .send(body),
+      ]);
+
+      expect(attempts.map((result) => result.status).sort()).toEqual([
+        201, 409,
+      ]);
+      expect(
+        await dataSource.getRepository(CoreItineraryOrder).count({
+          where: { ownerId: holdOwnerId },
+        }),
+      ).toBe(1);
     });
   });
 

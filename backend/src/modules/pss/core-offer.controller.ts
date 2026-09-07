@@ -1,6 +1,7 @@
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
+  ApiCreatedResponse,
   ApiHeader,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -13,6 +14,7 @@ import {
 import {
   Body,
   Controller,
+  Headers,
   HttpCode,
   Param,
   ParseUUIDPipe,
@@ -24,6 +26,8 @@ import {
   CoreOfferRepriceDto,
   CoreOfferRepriceResponseDto,
   CoreOfferResponseDto,
+  CoreOfferHoldDto,
+  CoreOfferHoldResponseDto,
   CoreOfferSearchDto,
 } from './dto/core-offer.dto';
 import { PssInternalAuthGuard } from './pss-internal-auth.guard';
@@ -77,5 +81,35 @@ export class CoreOfferController {
       success: true,
       data: await this.offers.reprice(offerId, dto),
     };
+  }
+
+  @Post(':offerId/hold')
+  @HttpCode(201)
+  @ApiOperation({ summary: 'مصرف اتمیک Offer و ایجاد Hold سفارش' })
+  @ApiParam({ name: 'offerId', description: 'شناسهٔ Offer' })
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    description: 'کلید یکتای تکرار امن فرمان رزرو',
+    required: true,
+  })
+  @ApiCreatedResponse({ type: CoreOfferHoldResponseDto })
+  @ApiUnauthorizedResponse({ description: 'توکن سرویس داخلی نامعتبر است.' })
+  @ApiBadRequestResponse({
+    description: 'سفر، مسافران یا کلید تکرار معتبر نیست.',
+  })
+  @ApiNotFoundResponse({
+    description: 'پرواز، کابین یا کلاس نرخ قابل فروش نیست.',
+  })
+  @ApiConflictResponse({
+    description:
+      'Offer منقضی/مصرف‌شده یا قیمت و ظرفیت در زمان قفل‌کردن تغییر کرده است.',
+  })
+  async hold(
+    @Param('offerId', ParseUUIDPipe) offerId: string,
+    @Body() dto: CoreOfferHoldDto,
+    @Headers('idempotency-key') idempotencyKey?: string,
+  ) {
+    const data = await this.offers.hold(offerId, dto, idempotencyKey);
+    return { success: true, data };
   }
 }

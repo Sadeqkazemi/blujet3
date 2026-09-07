@@ -12,8 +12,11 @@ import {
 } from 'node:crypto';
 import { ErrorCode } from '../../common/errors';
 import { CoreItineraryQuoteService } from './core-itinerary-quote.service';
+import { CoreItineraryHoldService } from './core-itinerary-hold.service';
+import type { HoldCoreItineraryDto } from './dto/hold-core-itinerary.dto';
 import type {
   CoreOfferDto,
+  CoreOfferHoldDto,
   CoreOfferRepriceDto,
   CoreOfferRepriceResultDto,
   CoreOfferSearchDto,
@@ -36,10 +39,15 @@ type OfferTokenPayload = {
   totalIrr: string;
 };
 
+export type CoreOfferHoldVerification = {
+  expectedTotalIrr: string;
+};
+
 @Injectable()
 export class CoreOfferService {
   constructor(
     private readonly quotes: CoreItineraryQuoteService,
+    private readonly holds: CoreItineraryHoldService,
     private readonly config: ConfigService,
   ) {}
 
@@ -98,12 +106,65 @@ export class CoreOfferService {
     };
   }
 
+  async hold(
+    offerId: string,
+    dto: CoreOfferHoldDto,
+    idempotencyKey: string | undefined,
+  ) {
+    const { integrityToken, ...holdDto } = dto;
+    return this.holds.hold(holdDto, idempotencyKey, {
+      offerId,
+      verify: () => this.verifyForHold(offerId, integrityToken, holdDto),
+    });
+  }
+
+  verifyForHold(
+    offerId: string,
+    integrityToken: string,
+    dto: HoldCoreItineraryDto,
+  ): CoreOfferHoldVerification {
+    const seller: CoreOfferSellerDto = {
+      type: dto.channel === 'AGENCY' ? 'AGENCY' : 'USER',
+      id: dto.ownerId,
+    };
+    const payload = this.decode(integrityToken);
+    if (
+      payload.offerId !== offerId ||
+      payload.sellerType !== seller.type ||
+      payload.sellerId !== seller.id ||
+      payload.requestDigest !==
+        this.requestDigest({
+          channel: dto.channel,
+          seller,
+          segments: dto.segments,
+          travellers: dto.travellers.map((traveller) => ({
+            passengerType: traveller.passengerType,
+            birthDate: traveller.birthDate,
+          })),
+        })
+    ) {
+      this.invalidOffer();
+    }
+    if (payload.expiresAtMs <= Date.now()) {
+      throw new ConflictException({
+        code: ErrorCode.OFFER_EXPIRED,
+        message: 'پیشنهاد منقضی شده است و باید دوباره دریافت شود.',
+      });
+    }
+    return { expectedTotalIrr: payload.totalIrr };
+  }
+
   private assertSellerChannel(dto: CoreOfferSearchDto): void {
     const expected = dto.channel === 'AGENCY' ? 'AGENCY' : 'USER';
     if (dto.seller.type !== expected) this.invalidOffer();
   }
 
-  private requestDigest(dto: CoreOfferSearchDto): string {
+  private requestDigest(dto: {
+    channel: CoreOfferSearchDto['channel'];
+    seller: CoreOfferSellerDto;
+    segments: CoreOfferSearchDto['segments'];
+    travellers: CoreOfferSearchDto['travellers'];
+  }): string {
     const request = {
       channel: dto.channel,
       seller: dto.seller,

@@ -4789,15 +4789,16 @@ tables are discrepancies, never implicit zero agreement.
 
 ### Internal offer and availability API
 
-The first implemented Core-owned slice is a read-only itinerary resolver. It
-does not create an offer, hold a seat, price an itinerary, or write to the PSS
-shadow database.
+The first Core-owned slices are an authenticated read-only itinerary resolver,
+stateless signed Offers and an additive Offer-to-Hold command. They do not
+write to the historical PSS shadow database.
 
 | Method | Path | Behaviour |
 | --- | --- | --- |
 | POST | `/internal/v1/core/itineraries/resolve` | Implemented. Authenticated read-only validation of one to three ordered Core flight instances, sale channel, route/time continuity, cabin/fare-class eligibility, and current seat availability. |
 | POST | `/internal/v1/offers/search` | Returns priced, expiring offers for ordered one-or-more-segment itineraries from authoritative inventory. |
 | POST | `/internal/v1/offers/:offerId/reprice` | Revalidates fare, tax, currency and every segment's inventory version immediately before hold/payment. |
+| POST | `/internal/v1/offers/:offerId/hold` | Implemented additive command: verifies and consumes one signed Offer, then creates one atomic multi-segment Order/Hold. |
 | GET | `/internal/v1/flights/:flightInstanceId/seatmap` | Returns PSS-authoritative held/sold/blocked seat state. |
 
 An offer contains `offerId`, `expiresAt`, `currency`, ordered `segments`,
@@ -4826,6 +4827,23 @@ Core. A successful response contains the newly calculated `quote`,
 `previousTotalIrr`, `currentTotalIrr` and `priceChanged`. All money remains
 decimal-string IRR. Repricing is observational: Core hold/payment continues to
 perform its own transactional repricing and inventory locking.
+
+`POST /internal/v1/offers/:offerId/hold` requires service auth and
+`Idempotency-Key`. Its body is the existing Core hold DTO plus the Offer
+`integrityToken`; seller type/ID are derived from `channel` and `ownerId`, not
+accepted as an independently selectable identity. For a new command, Core
+validates the signed binding and expiry, locks all affected flight rows, then
+reprices inside the existing Order/Inventory transaction. The Order is created
+only if the locked current total equals the signed total. A change returns
+`409 OFFER_PRICE_CHANGED` with no hold side effects and requires a new Offer.
+
+One signed Offer may create at most one Order. The nullable unique persisted
+`sourceOfferId` supplies that replay boundary without persisting the Offer or
+its token. The original idempotency-key replay returns the already-created
+Order even if the Offer has since expired; another request under that key is
+`IDEMPOTENCY_PAYLOAD_MISMATCH`, while another key attempting to consume the
+same Offer is `OFFER_ALREADY_USED`. The legacy internal hold route stays
+unchanged until a separately approved, feature-flagged facade cutover.
 
 `POST /internal/v1/core/itineraries/resolve` requires `X-Internal-Token` and
 accepts `channel` (`SYSTEM` or `AGENCY`) plus `segments[]` containing

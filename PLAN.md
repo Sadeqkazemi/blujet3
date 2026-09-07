@@ -19,6 +19,20 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-07 — Bind signed Offer to atomic Order/Hold
+
+- [x] Audit the existing signed Offer, idempotent hold and last-seat locking
+      paths against architecture v1.1.
+- [x] Specify the additive Offer-consumption endpoint, exact-price gate,
+      idempotent replay and single-use Offer rule before implementation in
+      `docs/features/core-offer-hold-binding.md`.
+- [x] Specify an expand-only nullable unique `sourceOfferId` Order link; keep
+      the integrity token stateless and out of PostgreSQL.
+- [x] Owner approved the contract and implementation on 2026-09-07.
+- [x] Implement and test the Offer-consuming atomic Hold with single-use,
+      exact-price and idempotent replay guarantees.
+- [ ] Merge only after explicit owner approval; no server deployment.
+
 ### 2026-09-07 — Core signed Offer/Pricing contract
 
 - [x] Confirm the existing Core itinerary resolver, quote, atomic hold,
