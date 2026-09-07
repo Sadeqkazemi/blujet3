@@ -28,7 +28,8 @@ below for what's landed from that port so far.
   behavior. No lag claim, offset query, DLQ, schema or credential change.
 - [x] Add 31 focused health/runtime/handler tests; scoped lint, typecheck and
   diff checks pass.
-- [ ] CI/real-broker verification and owner-approved publication/merge.
+- [x] Owner-approved PR #76 merged as `ea4f95e`; all 18 selected checks passed,
+  including eight Backend E2E shards, real Kafka and CodeQL.
 - `/ready` does not prove broker lag, off-site recovery, or production
   availability; server deployment remains out of scope.
 
@@ -40,9 +41,23 @@ below for what's landed from that port so far.
   broker/database error details, replay, skip, new schema or HTTP route.
 - [x] Red/green regression and 27 runtime/handler tests pass; scoped ESLint,
   backend typecheck and diff checks pass.
-- [ ] CI/real-broker verification and owner-approved publication/merge.
+- [x] Owner-approved PR #75 merged as `ad4f883`; all 18 selected checks passed,
+  including eight Backend E2E shards, real Kafka and CodeQL.
 - Lag metrics, durable failure records, DLQ policy and runtime-crash monitoring
   are not implemented by this slice. No server deployment or activation.
+
+### 2026-09-07 — Reporting process activity observation (local)
+
+- [x] Extend the safe runtime snapshot with process-local last-message and
+  last-success UTC timestamps.
+- [x] Prove failed processing advances receipt/failure observations but not
+  success, while successful processing advances both receipt and success.
+- [x] Preserve the readiness decision, manual ACK contract, sanitized logging,
+  disabled-by-default runtime and schema/API compatibility.
+- [x] 31 focused tests, scoped ESLint, backend typecheck and diff checks pass.
+- [ ] CI/real-broker verification and owner-approved publication/merge.
+- These timestamps reset on restart and are not Kafka lag, an offset measure or
+  a durable failure history. No server deployment or activation.
 
 - [x] Shorten the Backend E2E critical path by splitting the complete serial
   Jest suite from four into eight isolated PostgreSQL/Redis shards; keep the

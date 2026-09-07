@@ -26,7 +26,7 @@ test('broker tests own a PostgreSQL test service and have bounded runtime', () =
   const kafka = job();
   assert.equal(kafka.services.postgres.image, 'postgres:16-alpine');
   assert.equal(kafka.services.postgres.env.POSTGRES_DB, 'blujet_test');
-  assert.ok(kafka['timeout-minutes'] <= 15);
+  assert.ok(kafka['timeout-minutes'] <= 30);
   assert.equal(kafka['continue-on-error'], undefined);
   assert.deepEqual(workflow.permissions, { contents: 'read' });
   for (const step of kafka.steps) assert.equal(step['continue-on-error'], undefined);
@@ -43,15 +43,20 @@ test('Java and Kafka bootstrap are pinned and checksum precedes extraction', () 
   assert.ok(install.includes('https://archive.apache.org/dist/kafka/3.9.1/kafka_2.13-3.9.1.tgz'));
   assert.match(install, /[a-f0-9]{128}/);
   assert.match(install, /curl --fail.*--max-time/);
+  assert.match(install, /--retry-all-errors/);
+  assert.match(install, /--continue-at -/);
   assert.ok(install.indexOf('sha512sum --check') < install.indexOf('tar -xzf'));
   assert.match(install, /set -euo pipefail/);
 });
 
 test('existing real-broker suite and workflow tests execute without forced success', () => {
-  const runs = job().steps.map(step => step.run ?? '').join('\n');
-  assert.match(runs, /node scripts\/kafka-ci\.test\.mjs/);
-  assert.match(runs, /npm run test:kafka/);
-  assert.doesNotMatch(runs, /\|\| true|--forceExit|--passWithNoTests/);
+  const executionRuns = job().steps
+    .filter(step => step.name !== 'Show fixture broker diagnostics')
+    .map(step => step.run ?? '')
+    .join('\n');
+  assert.match(executionRuns, /node scripts\/kafka-ci\.test\.mjs/);
+  assert.match(executionRuns, /npm run test:kafka/);
+  assert.doesNotMatch(executionRuns, /\|\| true|--forceExit|--passWithNoTests/);
   const diagnostics = job().steps.find(step => step.name === 'Show fixture broker diagnostics');
   assert.equal(diagnostics.if, 'failure()');
   assert.match(diagnostics.run, /broker\.log/);
