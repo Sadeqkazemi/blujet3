@@ -29,6 +29,8 @@ below for what's landed from that port so far.
 - [x] Add a manual isolated Compose staging smoke gate with disposable project,
   schema-scoped runtime roles, service health/commit checks and gateway smoke;
   no server deployment. See `docs/features/staging-compose-smoke.md`.
+- [x] Execute the isolated staging Compose smoke successfully in GitHub Actions
+  run `34114641282` on `main`; no server deployment.
 - [ ] Add durable Reporting lag/offset, retry and DLQ policy after the retention
   and replay rules are approved.
 - [x] Add a bounded, operator-driven Loyalty parity sampler that reports only

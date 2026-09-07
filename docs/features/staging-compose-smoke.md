@@ -15,5 +15,10 @@ the environment down.
   for the migration step.
 - [x] Health, readiness/commit identity and frontend gateway smoke are required.
 - [x] Cleanup removes containers, networks and staging volumes on exit.
-- [ ] Run the workflow successfully before the next transactional extraction or
-  any real UAT/production deployment.
+- [x] Run the workflow successfully before the next transactional extraction
+  or any real UAT/production deployment (GitHub Actions run `34114641282` on
+  main commit `fea6247`).
+
+Evidence: the isolated Compose project completed migration, schema-scoped
+Notify/Experience runtime-role setup, service health/commit checks and
+frontend gateway smoke, then removed its containers, network and volumes.
