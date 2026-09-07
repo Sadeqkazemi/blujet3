@@ -1,6 +1,6 @@
 # Core signed offers — contract before implementation
 
-Status: **proposed for owner approval**
+Status: **implemented and verified locally; awaiting PR review/merge**
 
 This slice turns the existing read-only Core itinerary quote into an expiring,
 seller-bound offer contract. It stays inside the NestJS Core Platform and the
@@ -10,8 +10,8 @@ Payment, enable the historical shadow PSS writer, or change any public
 
 ## Proposed product and security decisions
 
-- An offer is valid for **five minutes**. The duration is configuration, capped
-  between 60 and 900 seconds, and defaults to 300 seconds.
+- An offer is valid for **15 minutes**. The duration is configuration, capped
+  between 60 and 900 seconds, and defaults to 900 seconds.
 - A `SYSTEM` offer is bound to one authenticated customer UUID; an `AGENCY`
   offer is bound to one authenticated agency UUID. The public compatibility
   facade must derive this identity from the authenticated principal and must
@@ -35,25 +35,29 @@ Payment, enable the historical shadow PSS writer, or change any public
 
 ## Acceptance checklist
 
-- [ ] `POST /internal/v1/offers/search` returns a five-minute, seller-bound,
+- [x] `POST /internal/v1/offers/search` returns a 15-minute, seller-bound,
       signed offer calculated by the existing Core quote service —
       `backend/src/modules/pss/core-offer.service.spec.ts` and
-      `backend/test/core-offer.e2e-spec.ts`.
-- [ ] `POST /internal/v1/offers/:offerId/reprice` verifies the signature,
+      `backend/test/core-itinerary.e2e-spec.ts`.
+- [x] `POST /internal/v1/offers/:offerId/reprice` verifies the signature,
       offer ID, seller binding, exact request digest and expiry before reading
       current pricing — the same unit/E2E suites.
-- [ ] Repricing reports an unchanged quote and a changed price using decimal
+- [x] Repricing reports an unchanged quote and a changed price using decimal
       string IRR without JavaScript-number conversion — unit/E2E suites.
-- [ ] Tampered, expired, wrong-seller, wrong-offer and changed-request tokens
+- [x] Tampered, expired, wrong-seller, wrong-offer and changed-request tokens
       fail closed with stable error envelopes — unit/E2E suites.
-- [ ] Missing/weak signing configuration fails closed and never leaks the
+- [x] Missing/weak signing configuration fails closed and never leaks the
       secret or token in errors/logs — env-validation and HTTP tests.
-- [ ] Auth failure (401), DTO validation (400), non-sellable flight (404) and
+- [x] Auth failure (401), DTO validation (400), non-sellable flight (404) and
       depleted capacity (409) remain covered — E2E suite.
-- [ ] Offer search and repricing create no order, hold, ledger or outbox row —
+- [x] Offer search and repricing create no order, hold, ledger or outbox row —
       PostgreSQL E2E row-count assertions.
-- [ ] Existing public search/booking APIs, Core quote/hold/payment tests and
+- [x] Existing public search/booking APIs, Core quote/hold/payment tests and
       gateway exposure remain unchanged.
+
+Local evidence: 13 focused unit/configuration tests, 35 real-PostgreSQL Core
+itinerary/Offer E2E tests, four edge-routing tests, scoped zero-warning ESLint,
+backend typecheck and production build. No schema migration is required.
 
 ## Explicitly deferred
 

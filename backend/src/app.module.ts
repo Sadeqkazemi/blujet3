@@ -106,6 +106,7 @@ import { IdentityCutoverModule } from './modules/identity-cutover/identity-cutov
           'req.body.passportNumber',
           'req.body.cardNumber',
           'req.body.accountNumber',
+          'req.body.integrityToken',
         ],
       },
     }),

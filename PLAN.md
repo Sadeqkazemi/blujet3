@@ -19,7 +19,7 @@ below for what's landed from that port so far.
 
 ## Status
 
-### 2026-09-07 — Core signed Offer/Pricing contract (documentation gate)
+### 2026-09-07 — Core signed Offer/Pricing contract
 
 - [x] Confirm the existing Core itinerary resolver, quote, atomic hold,
   payment fulfilment and full-refund path already implement the safe
@@ -28,8 +28,15 @@ below for what's landed from that port so far.
   contract before implementation in `docs/features/core-signed-offers.md`.
 - [x] Keep public `/api/v1/**`, the shadow PSS writer, inventory authority and
   all server/deployment flags unchanged.
-- [ ] Obtain owner approval for the proposed five-minute expiry and
-  USER/AGENCY seller binding, then implement and test the contract.
+- [x] Owner approved USER/AGENCY seller binding and selected a 15-minute
+  expiry on 2026-09-07.
+- [x] Implement signed stateless Offer search/repricing with fail-closed
+  configuration, exact-request/seller binding, PII-safe token payload and
+  unchanged-price/changed-price handling.
+- [x] Pass 13 focused unit/config tests, 35 PostgreSQL E2E tests, four gateway
+  isolation tests, scoped lint, typecheck and production build.
+- [ ] Review and merge PR #86 after explicit owner approval; no server
+  deployment is included.
 
 ### 2026-09-07 — Continuation roadmap after Reporting PR #77
 

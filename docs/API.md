@@ -4813,7 +4813,7 @@ facade must derive both from its authenticated principal rather than accepting
 client-selected ownership.
 
 The response is `{ offerId, expiresAt, seller, quote, integrityToken }`.
-Offers expire after five minutes by default (configuration is bounded to
+Offers expire after 15 minutes by default (configuration is bounded to
 60–900 seconds). The opaque HMAC-SHA-256 token binds version, offer ID, seller,
 expiry, canonical request digest and quoted total; it contains no traveller
 birth date or other PII. The offer is stateless and creates no order, hold,
