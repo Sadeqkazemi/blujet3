@@ -22,6 +22,8 @@ export type ReportingKafkaRuntimeStatus = {
   state: 'disabled' | 'starting' | 'running' | 'failed' | 'stopped';
   processingFailures: number;
   lastProcessingFailureAt: string | null;
+  lastMessageAt: string | null;
+  lastProcessedAt: string | null;
 };
 
 export function createReportingKafkaClient(
@@ -43,6 +45,8 @@ export class ReportingKafkaRuntime
   private state: ReportingKafkaRuntimeStatus['state'];
   private processingFailures = 0;
   private lastProcessingFailureAt: string | null = null;
+  private lastMessageAt: string | null = null;
+  private lastProcessedAt: string | null = null;
 
   constructor(
     @Inject(REPORTING_KAFKA_CONFIG)
@@ -61,6 +65,8 @@ export class ReportingKafkaRuntime
       state: this.state,
       processingFailures: this.processingFailures,
       lastProcessingFailureAt: this.lastProcessingFailureAt,
+      lastMessageAt: this.lastMessageAt,
+      lastProcessedAt: this.lastProcessedAt,
     };
   }
 
@@ -84,8 +90,10 @@ export class ReportingKafkaRuntime
       const eachMessage = runConfig.eachMessage;
       if (eachMessage) {
         runConfig.eachMessage = async (payload) => {
+          this.lastMessageAt = new Date().toISOString();
           try {
             await eachMessage(payload);
+            this.lastProcessedAt = new Date().toISOString();
           } catch {
             // Kafka logging is disabled; report failure without broker/PII data.
             this.processingFailures += 1;

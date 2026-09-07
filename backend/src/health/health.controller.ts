@@ -24,6 +24,8 @@ export class HealthController {
       state: status.state,
       processingFailures: status.processingFailures,
       lastProcessingFailureAt: status.lastProcessingFailureAt,
+      lastMessageAt: status.lastMessageAt,
+      lastProcessedAt: status.lastProcessedAt,
     };
   }
 

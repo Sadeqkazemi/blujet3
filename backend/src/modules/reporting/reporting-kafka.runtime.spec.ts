@@ -153,7 +153,8 @@ describe('ReportingKafkaRuntime', () => {
       .mockRejectedValue(new Error('secret payload'));
     handler.runConfig.mockReturnValueOnce({ autoCommit: false, eachMessage });
     const kafkaClient = client();
-    await runtime(enabled, kafkaClient).onApplicationBootstrap();
+    const worker = runtime(enabled, kafkaClient);
+    await worker.onApplicationBootstrap();
     const active = kafkaClient.run.mock.calls[0][0]!;
     const delivery = { topic: 'secret-topic' } as EachMessagePayload;
 
@@ -167,16 +168,32 @@ describe('ReportingKafkaRuntime', () => {
       'Reporting Kafka processing failed',
     );
     expect(kafkaClient.commitOffsets).not.toHaveBeenCalled();
+    const status = worker.getStatus();
+    expect(status).toMatchObject({
+      state: 'running',
+      processingFailures: 1,
+      lastProcessedAt: null,
+    });
+    expect(typeof status.lastMessageAt).toBe('string');
+    expect(typeof status.lastProcessingFailureAt).toBe('string');
   });
 
   it('does not log an error when the message handler succeeds', async () => {
     const eachMessage = jest.fn().mockResolvedValue(undefined);
     handler.runConfig.mockReturnValueOnce({ autoCommit: false, eachMessage });
     const kafkaClient = client();
-    await runtime(enabled, kafkaClient).onApplicationBootstrap();
+    const worker = runtime(enabled, kafkaClient);
+    await worker.onApplicationBootstrap();
     const active = kafkaClient.run.mock.calls[0][0]!;
     await active.eachMessage!({} as EachMessagePayload);
     expect(eachMessage).toHaveBeenCalledTimes(1);
     expect(logger.error).not.toHaveBeenCalled();
+    const status = worker.getStatus();
+    expect(status).toMatchObject({
+      state: 'running',
+      processingFailures: 0,
+    });
+    expect(typeof status.lastMessageAt).toBe('string');
+    expect(typeof status.lastProcessedAt).toBe('string');
   });
 });

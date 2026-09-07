@@ -13,6 +13,8 @@ describe('HealthController', () => {
       state: 'disabled',
       processingFailures: 0,
       lastProcessingFailureAt: null,
+      lastMessageAt: null,
+      lastProcessedAt: null,
     }),
     isReady: jest.fn().mockReturnValue(true),
   };
@@ -87,6 +89,8 @@ describe('HealthController', () => {
       state: 'failed',
       processingFailures: 2,
       lastProcessingFailureAt: '2026-09-07T00:00:00.000Z',
+      lastMessageAt: '2026-09-07T00:00:01.000Z',
+      lastProcessedAt: null,
     });
     reportingRuntime.isReady.mockReturnValueOnce(false);
     const dataSource = {
