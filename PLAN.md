@@ -17,6 +17,20 @@ promo/wallet/points-ledger/GDPR/public frontend) onto this schema**,
 rather than reconciling two incompatible Prisma histories. See "Phase 13"
 below for what's landed from that port so far.
 
+### 2026-09-07 — Public Offer compatibility facade
+
+- [x] Record the additive authenticated `/api/v1/search/offers` contract,
+  seller binding, default-off flag and rollback in
+  `docs/features/public-offer-facade.md`.
+- [x] Preserve guest `/api/v1/search/**`, existing booking writers and the
+  Core ACID boundary; no schema, PSS writer, PSP/NIRA call or deployment.
+- [ ] Implement the default-off facade and derive USER/AGENCY ownership from
+  the authenticated principal only, after owner approval of this contract.
+- [ ] Cover disabled no-call, USER/AGENCY mapping, validation and HTTP auth
+  boundaries with focused tests.
+- [ ] Owner approval for implementation, flag activation, parity, push/merge;
+  deployment is a separate action.
+
 ## Status
 
 ### 2026-09-07 — Bind signed Offer to atomic Order/Hold
