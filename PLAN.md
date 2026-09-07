@@ -19,6 +19,18 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-07 — Reporting processing failure observation (local)
+
+- [x] Add fixed, sanitized application error logging around the existing
+  manual-ack handler because KafkaJS logging is disabled.
+- [x] Preserve rejection, ACK ownership and disabled behavior; no payload,
+  broker/database error details, replay, skip, new schema or HTTP route.
+- [x] Red/green regression and 27 runtime/handler tests pass; scoped ESLint,
+  backend typecheck and diff checks pass.
+- [ ] CI/real-broker verification and owner-approved publication/merge.
+- Lag metrics, durable failure records, DLQ policy and runtime-crash monitoring
+  are not implemented by this slice. No server deployment or activation.
+
 - [x] Shorten the Backend E2E critical path by splitting the complete serial
   Jest suite from four into eight isolated PostgreSQL/Redis shards; keep the
   stable CI gate dependent on the full matrix and update its contract test.

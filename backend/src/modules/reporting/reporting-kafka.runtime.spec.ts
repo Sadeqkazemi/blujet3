@@ -1,4 +1,4 @@
-import type { ConsumerRunConfig } from 'kafkajs';
+import type { ConsumerRunConfig, EachMessagePayload } from 'kafkajs';
 import type { Logger } from 'nestjs-pino';
 import type { ReportingKafkaConsumerConfig } from '../../config/reporting-kafka-consumer.config';
 import { ReportingKafkaHandler } from './reporting-kafka.handler';
@@ -145,5 +145,38 @@ describe('ReportingKafkaRuntime', () => {
     expect(logger.error).toHaveBeenCalledWith(
       'Reporting Kafka consumer shutdown failed',
     );
+  });
+
+  it('logs and propagates a sanitized processing failure without logging payload', async () => {
+    const eachMessage = jest
+      .fn()
+      .mockRejectedValue(new Error('secret payload'));
+    handler.runConfig.mockReturnValueOnce({ autoCommit: false, eachMessage });
+    const kafkaClient = client();
+    await runtime(enabled, kafkaClient).onApplicationBootstrap();
+    const active = kafkaClient.run.mock.calls[0][0]!;
+    const delivery = { topic: 'secret-topic' } as EachMessagePayload;
+
+    await expect(active.eachMessage!(delivery)).rejects.toThrow(
+      'Reporting Kafka processing failed',
+    );
+    expect(eachMessage).toHaveBeenCalledWith(delivery);
+    expect(active.autoCommit).toBe(false);
+    expect(logger.error).toHaveBeenCalledTimes(1);
+    expect(logger.error).toHaveBeenCalledWith(
+      'Reporting Kafka processing failed',
+    );
+    expect(kafkaClient.commitOffsets).not.toHaveBeenCalled();
+  });
+
+  it('does not log an error when the message handler succeeds', async () => {
+    const eachMessage = jest.fn().mockResolvedValue(undefined);
+    handler.runConfig.mockReturnValueOnce({ autoCommit: false, eachMessage });
+    const kafkaClient = client();
+    await runtime(enabled, kafkaClient).onApplicationBootstrap();
+    const active = kafkaClient.run.mock.calls[0][0]!;
+    await active.eachMessage!({} as EachMessagePayload);
+    expect(eachMessage).toHaveBeenCalledTimes(1);
+    expect(logger.error).not.toHaveBeenCalled();
   });
 });
