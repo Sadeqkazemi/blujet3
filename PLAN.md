@@ -19,6 +19,24 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-07 — Continuation roadmap after Reporting PR #77
+
+- [x] Reporting process-activity commits were published and merged in PR #77
+  as `10f4522`; no server deployment was performed.
+- [ ] Add the next database-architecture guard: extracted service processes
+  must receive dedicated, schema-scoped runtime credentials in production.
+- [ ] Add a staging smoke gate before extracting another transactional service.
+- [ ] Add durable Reporting lag/offset, retry and DLQ policy after the retention
+  and replay rules are approved.
+- [ ] Implement the real NIRA/DCS adapter only after its supplied contract is
+  reviewed; do not invent an external schema.
+- [ ] Implement the real PSP callback/reconciliation flow only after PSP
+  documentation and a test environment are supplied.
+- [ ] Keep `inventory`, `orders` and `payments` inside one PostgreSQL ACID Core
+  until event, idempotency, Saga and reconciliation evidence is complete.
+- [ ] Defer production role provisioning, TLS, replica/failover and deployment
+  until a target server and separate operations approval exist.
+
 ### 2026-09-07 — Reporting runtime readiness seam (local)
 
 - [x] Add safe `/ready` and `/api/v1/ready` responses that combine PostgreSQL
@@ -55,7 +73,8 @@ below for what's landed from that port so far.
 - [x] Preserve the readiness decision, manual ACK contract, sanitized logging,
   disabled-by-default runtime and schema/API compatibility.
 - [x] 31 focused tests, scoped ESLint, backend typecheck and diff checks pass.
-- [ ] CI/real-broker verification and owner-approved publication/merge.
+- [x] CI/real-broker verification passed and owner-approved PR #77 merged as
+  `10f4522`.
 - These timestamps reset on restart and are not Kafka lag, an offset measure or
   a durable failure history. No server deployment or activation.
 

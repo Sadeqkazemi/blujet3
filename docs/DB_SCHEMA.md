@@ -257,6 +257,17 @@ TypeORM entities and migrations under `backend/src/database/` describe the
 current production schema. Historical Prisma notes below explain the original
 schema only and do not supersede current TypeORM metadata or migrations.
 
+### Production runtime role contract
+
+The extracted `notify` and `experience` processes must not reuse the Core
+database-owner credentials. Production compose therefore requires
+`NOTIFY_DATABASE_URL` and `EXPERIENCE_DATABASE_URL` explicitly. Operations must
+provision non-superuser roles with `USAGE` on the owning schema and the minimum
+table privileges needed by that service; migration ownership stays with the
+release operator. Role creation, passwords and grants are environment secrets,
+not TypeORM migrations. Local development may continue to use the bundled
+single-user compose override.
+
 The target starts with schema-per-service in one PostgreSQL 16 cluster.
 `inventory`, `orders`, and `payments` remain in one ACID Core Platform and may
 cross schemas inside one local transaction. Runtime code must not join another
