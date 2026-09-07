@@ -4861,6 +4861,26 @@ or invalid MCT values (not a non-negative integer) fail with HTTP 400
 `VALIDATION_FAILED`; no universal fallback is assumed by this resolver.
 Single-segment requests do not require a transfer-airport lookup.
 
+### Proposed public signed-Offer compatibility facade (not implemented)
+
+| Method | Path | Behaviour |
+| --- | --- | --- |
+| POST | `/api/v1/search/offers` | Planned authenticated USER/AGENCY facade. It is not registered until the contract receives owner approval. |
+
+The request contains only the Core itinerary `segments[]`, common
+`travellers[]` and optional per-segment `extras[]`. A browser cannot select
+`seller`, `sellerId`, `ownerId` or `channel`. `USER` maps to `SYSTEM` and the
+authenticated user UUID; `AGENCY` maps to `AGENCY` and the authenticated agency
+user UUID. The response is the same signed Offer envelope documented above.
+
+The planned route will be controlled by `CORE_OFFER_PUBLIC_ENABLED`, strictly
+`true|false` and defaulting to `false`. While disabled it will make no Core
+quote call and return `503 OFFER_UNAVAILABLE`, so the existing public search
+and booking routes remain the rollback path. Guest `GET /search/flights` is
+intentionally unchanged until an owner decision defines a stable anonymous
+seller identity. Enabling the flag, canary parity and deployment are separate
+approval gates.
+
 ### Internal reservation/order API
 
 #### Core itinerary quote (read-only)
