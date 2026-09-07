@@ -1,6 +1,7 @@
 name: Database readiness observation
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - scripts/database-readiness.sql
@@ -52,3 +53,10 @@ jobs:
             (.unverified | length == 6) and
             (.public_schema_create_grants | type == "array")
           ' observation.json
+      - name: Upload sanitized observation evidence
+        if: always() && hashFiles('observation.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-readiness-postgres16
+          path: observation.json
+          if-no-files-found: error
