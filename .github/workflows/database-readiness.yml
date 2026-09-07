@@ -47,7 +47,7 @@ jobs:
           psql -X -qAt -v ON_ERROR_STOP=1 -f scripts/database-readiness.sql > observation.json
           jq -e '
             .transaction_read_only == "on" and
-            (.server_version_num | tonumber >= 160000 and . < 170000) and
+            (.server_version_num | tonumber | . >= 160000 and . < 170000) and
             (.observed_at_utc | endswith("+00:00")) and
             (.unverified | length == 6) and
             (.public_schema_create_grants | type == "array")
