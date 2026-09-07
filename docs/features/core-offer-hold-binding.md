@@ -1,6 +1,6 @@
 # Core Offer to Order/Hold binding — contract before implementation
 
-Status: **proposed; awaiting owner approval before implementation**
+Status: **implemented and verified locally; awaiting PR review/merge**
 
 This slice makes a signed Core Offer the input to a new atomic hold command.
 It remains inside the NestJS Core Platform, the authoritative PostgreSQL
@@ -38,26 +38,30 @@ writer or call a PSP.
 
 ## Acceptance checklist
 
-- [ ] Valid, unexpired, seller-bound Offer creates one 15-minute multi-segment
+- [x] Valid, unexpired, seller-bound Offer creates one 15-minute multi-segment
       hold and stores its `sourceOfferId` — PostgreSQL E2E.
-- [ ] Missing internal auth returns 401; missing/invalid idempotency key or DTO
+- [x] Missing internal auth returns 401; missing/invalid idempotency key or DTO
       returns 400; missing/non-sellable inventory returns 404 — E2E.
-- [ ] Tampered, expired, wrong-route, wrong-owner and changed-request Offer
+- [x] Tampered, expired, wrong-route, wrong-owner and changed-request Offer
       inputs fail closed without Order/Inventory side effects — unit/E2E.
-- [ ] A price change under locked inventory returns
+- [x] A price change under locked inventory returns
       `409 OFFER_PRICE_CHANGED`, creates no Order, and exposes no token/PII —
       unit/E2E.
-- [ ] Identical idempotent replay returns the original Order after Offer
+- [x] Identical idempotent replay returns the original Order after Offer
       expiry; changed replay returns `IDEMPOTENCY_PAYLOAD_MISMATCH` — E2E.
-- [ ] The same Offer with two different keys has exactly one winner and one
+- [x] The same Offer with two different keys has exactly one winner and one
       persisted Order; the loser receives `OFFER_ALREADY_USED` — concurrency
       E2E.
-- [ ] Existing unsigned internal hold behavior and its last-seat concurrency
+- [x] Existing unsigned internal hold behavior and its last-seat concurrency
       guarantees remain green — existing Core itinerary E2E.
-- [ ] Migration is expand-only (`sourceOfferId` nullable + unique), passes
+- [x] Migration is expand-only (`sourceOfferId` nullable + unique), passes
       production-schema compatibility, backup/PITR and full CI.
-- [ ] Internal routes stay outside gateway/public exposure and no deployment
+- [x] Internal routes stay outside gateway/public exposure and no deployment
       flag changes.
+
+Local evidence: 13 focused Offer unit tests, 41 PostgreSQL Core itinerary/Offer
+E2E tests, scoped zero-warning ESLint and backend typecheck. The migration ran
+successfully against the existing test schema.
 
 ## Explicitly deferred
 

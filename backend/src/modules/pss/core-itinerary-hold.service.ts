@@ -23,12 +23,18 @@ import { User } from '../../database/entities/user.entity';
 import type { BookingStatus } from '../../database/enums';
 import { CoreItineraryQuoteService } from './core-itinerary-quote.service';
 import { CoreItineraryHoldExpiryService } from './core-itinerary-hold-expiry.service';
+import type { CoreOfferHoldVerification } from './core-offer.service';
 import type {
   HeldCoreItineraryDto,
   HoldCoreItineraryDto,
 } from './dto/hold-core-itinerary.dto';
 
 const HOLD_TTL_MS = 15 * 60_000;
+
+export type CoreOfferHoldContext = {
+  offerId: string;
+  verify: () => CoreOfferHoldVerification;
+};
 
 @Injectable()
 export class CoreItineraryHoldService {
@@ -42,7 +48,8 @@ export class CoreItineraryHoldService {
   async hold(
     dto: HoldCoreItineraryDto,
     idempotencyKey: string | undefined,
-  ): Promise<HeldCoreItineraryDto> {
+    offer?: CoreOfferHoldContext,
+  ): Promise<HeldCoreItineraryDto & { sourceOfferId?: string }> {
     const key = idempotencyKey?.trim();
     if (!key || key.length > 200) {
       throw new BadRequestException({
@@ -51,7 +58,7 @@ export class CoreItineraryHoldService {
       });
     }
     this.validateIdentities(dto);
-    const requestHash = this.requestHash(dto);
+    const requestHash = this.requestHash(dto, offer?.offerId);
 
     return this.orderRepo.manager.transaction(async (tx) => {
       // One replay key is serialized even when two retries reference different
@@ -70,6 +77,25 @@ export class CoreItineraryHoldService {
         return this.loadResponse(tx.getRepository(CoreItineraryOrder), replay);
       }
 
+      let expectedTotalIrr: string | undefined;
+      if (offer) {
+        await tx.query(
+          'SELECT pg_advisory_xact_lock(hashtextextended($1, 0))',
+          [`core-offer:${offer.offerId}`],
+        );
+        const verification = offer.verify();
+        expectedTotalIrr = verification.expectedTotalIrr;
+        const consumed = await tx
+          .getRepository(CoreItineraryOrder)
+          .findOne({ where: { sourceOfferId: offer.offerId } });
+        if (consumed) {
+          throw new ConflictException({
+            code: ErrorCode.OFFER_ALREADY_USED,
+            message: 'این پیشنهاد قبلاً برای یک رزرو مصرف شده است.',
+          });
+        }
+      }
+
       await this.assertOwner(tx, dto);
 
       const flightIds = [
@@ -86,6 +112,15 @@ export class CoreItineraryHoldService {
       // single-flight writers lock the same rows, so none can slip between
       // this availability check and the atomic inserts below.
       const quote = await this.quotes.quote(dto, tx);
+      if (
+        expectedTotalIrr !== undefined &&
+        quote.totalIrr !== expectedTotalIrr
+      ) {
+        throw new ConflictException({
+          code: ErrorCode.OFFER_PRICE_CHANGED,
+          message: 'قیمت پیشنهاد تغییر کرده است؛ پیشنهاد جدید دریافت کنید.',
+        });
+      }
       const expiry = new Date(Date.now() + HOLD_TTL_MS);
       const order = await tx.save(
         tx.create(CoreItineraryOrder, {
@@ -100,6 +135,7 @@ export class CoreItineraryHoldService {
           extrasIrr: BigInt(quote.extrasIrr),
           totalIrr: BigInt(quote.totalIrr),
           holdExpiresAt: expiry,
+          sourceOfferId: offer?.offerId ?? null,
           idempotencyKey: key,
           idempotencyRequestHash: requestHash,
         }),
@@ -212,9 +248,15 @@ export class CoreItineraryHoldService {
   }
 
   /** Canonical replay digest; plaintext PII is never stored. */
-  private requestHash(dto: HoldCoreItineraryDto): string {
+  private requestHash(
+    dto: HoldCoreItineraryDto,
+    sourceOfferId?: string,
+  ): string {
     const payload = {
-      operation: 'core-itinerary-hold:v1',
+      operation: sourceOfferId
+        ? 'core-itinerary-hold-from-offer:v1'
+        : 'core-itinerary-hold:v1',
+      ...(sourceOfferId ? { sourceOfferId } : {}),
       ownerId: dto.ownerId,
       channel: dto.channel,
       contactPhone: dto.contactPhone?.trim() || null,
@@ -282,8 +324,8 @@ export class CoreItineraryHoldService {
   private toResponse(
     order: CoreItineraryOrder,
     segments: CoreItinerarySegment[],
-  ): HeldCoreItineraryDto {
-    return {
+  ): HeldCoreItineraryDto & { sourceOfferId?: string } {
+    const response: HeldCoreItineraryDto & { sourceOfferId?: string } = {
       id: order.id,
       pnr: order.pnr,
       status: order.status,
@@ -299,6 +341,8 @@ export class CoreItineraryHoldService {
       })),
       totalIrr: String(order.totalIrr),
     };
+    if (order.sourceOfferId) response.sourceOfferId = order.sourceOfferId;
+    return response;
   }
 
   private generatePnr(): string {

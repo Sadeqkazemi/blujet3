@@ -4789,16 +4789,16 @@ tables are discrepancies, never implicit zero agreement.
 
 ### Internal offer and availability API
 
-The first implemented Core-owned slice is a read-only itinerary resolver. It
-does not create an offer, hold a seat, price an itinerary, or write to the PSS
-shadow database.
+The first Core-owned slices are an authenticated read-only itinerary resolver,
+stateless signed Offers and an additive Offer-to-Hold command. They do not
+write to the historical PSS shadow database.
 
 | Method | Path | Behaviour |
 | --- | --- | --- |
 | POST | `/internal/v1/core/itineraries/resolve` | Implemented. Authenticated read-only validation of one to three ordered Core flight instances, sale channel, route/time continuity, cabin/fare-class eligibility, and current seat availability. |
 | POST | `/internal/v1/offers/search` | Returns priced, expiring offers for ordered one-or-more-segment itineraries from authoritative inventory. |
 | POST | `/internal/v1/offers/:offerId/reprice` | Revalidates fare, tax, currency and every segment's inventory version immediately before hold/payment. |
-| POST | `/internal/v1/offers/:offerId/hold` | Proposed additive command: verifies and consumes one signed Offer, then creates one atomic multi-segment Order/Hold. |
+| POST | `/internal/v1/offers/:offerId/hold` | Implemented additive command: verifies and consumes one signed Offer, then creates one atomic multi-segment Order/Hold. |
 | GET | `/internal/v1/flights/:flightInstanceId/seatmap` | Returns PSS-authoritative held/sold/blocked seat state. |
 
 An offer contains `offerId`, `expiresAt`, `currency`, ordered `segments`,
@@ -4828,7 +4828,7 @@ Core. A successful response contains the newly calculated `quote`,
 decimal-string IRR. Repricing is observational: Core hold/payment continues to
 perform its own transactional repricing and inventory locking.
 
-The proposed `POST /internal/v1/offers/:offerId/hold` requires service auth and
+`POST /internal/v1/offers/:offerId/hold` requires service auth and
 `Idempotency-Key`. Its body is the existing Core hold DTO plus the Offer
 `integrityToken`; seller type/ID are derived from `channel` and `ownerId`, not
 accepted as an independently selectable identity. For a new command, Core

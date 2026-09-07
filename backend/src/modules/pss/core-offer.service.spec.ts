@@ -1,8 +1,10 @@
 import { ConflictException, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CoreItineraryQuoteService } from './core-itinerary-quote.service';
+import { CoreItineraryHoldService } from './core-itinerary-hold.service';
 import { CoreOfferService } from './core-offer.service';
 import type {
+  CoreOfferHoldDto,
   CoreOfferRepriceDto,
   CoreOfferSearchDto,
 } from './dto/core-offer.dto';
@@ -45,6 +47,10 @@ describe('CoreOfferService', () => {
   const quoteService = {
     quote: quoteMock,
   } as unknown as CoreItineraryQuoteService;
+  const holdMock = jest.fn();
+  const holdService = {
+    hold: holdMock,
+  } as unknown as CoreItineraryHoldService;
   const config = {
     get: jest.fn((key: string) =>
       key === 'CORE_OFFER_SIGNING_SECRET'
@@ -54,11 +60,12 @@ describe('CoreOfferService', () => {
           : undefined,
     ),
   } as unknown as ConfigService;
-  const service = new CoreOfferService(quoteService, config);
+  const service = new CoreOfferService(quoteService, holdService, config);
 
   beforeEach(() => {
     jest.clearAllMocks();
     quoteMock.mockResolvedValue(quote());
+    holdMock.mockResolvedValue({ id: 'order-id', sourceOfferId: 'offer-id' });
   });
 
   it('creates a seller-bound signed offer without embedding PII in the token', async () => {
@@ -192,7 +199,11 @@ describe('CoreOfferService', () => {
     const missingConfig = {
       get: jest.fn().mockReturnValue(undefined),
     } as unknown as ConfigService;
-    const missing = new CoreOfferService(quoteService, missingConfig);
+    const missing = new CoreOfferService(
+      quoteService,
+      holdService,
+      missingConfig,
+    );
 
     await expect(missing.search(request())).rejects.toBeInstanceOf(
       ServiceUnavailableException,
@@ -209,5 +220,68 @@ describe('CoreOfferService', () => {
       }),
     ).rejects.toBeInstanceOf(ConflictException);
     expect(quoteMock).not.toHaveBeenCalled();
+  });
+
+  it('delegates Offer consumption without persisting the integrity token', async () => {
+    const original = request();
+    const created = await service.search(original);
+    const dto: CoreOfferHoldDto = {
+      ownerId: USER_ID,
+      channel: 'SYSTEM',
+      segments: original.segments,
+      travellers: [
+        {
+          fullName: 'علی رضایی',
+          passengerType: 'ADULT',
+          birthDate: '1990-01-01',
+        },
+      ],
+      integrityToken: created.integrityToken,
+    };
+
+    await service.hold(created.offerId, dto, 'hold-key');
+
+    expect(holdMock).toHaveBeenCalledWith(
+      expect.objectContaining({ ownerId: USER_ID }),
+      'hold-key',
+      expect.objectContaining({
+        offerId: created.offerId,
+      }),
+    );
+    expect(
+      service.verifyForHold(created.offerId, created.integrityToken, {
+        ownerId: USER_ID,
+        channel: 'SYSTEM',
+        segments: original.segments,
+        travellers: dto.travellers,
+      }),
+    ).toEqual({ expectedTotalIrr: '10000000' });
+  });
+
+  it('rejects Offer consumption when owner/channel binding differs', async () => {
+    const created = await service.search(request());
+    const dto: CoreOfferHoldDto = {
+      ownerId: AGENCY_ID,
+      channel: 'AGENCY',
+      segments: request().segments,
+      travellers: [
+        {
+          fullName: 'علی رضایی',
+          passengerType: 'ADULT',
+          birthDate: '1990-01-01',
+        },
+      ],
+      integrityToken: created.integrityToken,
+    };
+
+    await service.hold(created.offerId, dto, 'hold-key');
+    expect(() =>
+      service.verifyForHold(created.offerId, created.integrityToken, {
+        ownerId: AGENCY_ID,
+        channel: 'AGENCY',
+        segments: dto.segments,
+        travellers: dto.travellers,
+      }),
+    ).toThrow(ConflictException);
   });
 });

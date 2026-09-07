@@ -3726,7 +3726,7 @@ binding, then reruns the existing Core quote calculation. The existing atomic
 hold and payment services remain the only writers and still lock/reprice under
 the shared PostgreSQL transaction boundary.
 
-### Core signed-Offer consumption (proposed expand release)
+### Core signed-Offer consumption (implemented expand release)
 
 Add nullable text `sourceOfferId` to `orders.core_itinerary_orders` and a
 unique index over the column. PostgreSQL permits multiple `NULL` values, so
@@ -3754,7 +3754,8 @@ The hold slice adds four authoritative tables under the existing `orders`
 schema; it does not enable or write the historical shadow `pss_*` tables:
 
 - `core_itinerary_orders`: one PNR, owner/channel, lifecycle, common expiry,
-  exact IRR totals, idempotency key/digest and timestamps.
+  exact IRR totals, nullable unique `sourceOfferId`, idempotency key/digest and
+  timestamps.
 - `core_itinerary_segments`: ordered flight/route/schedule/fare/baggage/service
   snapshots and the number of occupied seats for each leg. Unique
   `(orderId, sequence)` and `(orderId, flightInstanceId)` prevent malformed
