@@ -70,6 +70,10 @@ import {
       useExisting: ReportingItineraryProjectionStore,
     },
   ],
-  exports: [ReportingEventConsumer, ReportingKafkaHandler],
+  exports: [
+    ReportingEventConsumer,
+    ReportingKafkaHandler,
+    ReportingKafkaRuntime,
+  ],
 })
 export class ReportingModule {}
