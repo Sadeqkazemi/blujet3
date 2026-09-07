@@ -51,12 +51,23 @@ export class ReportingKafkaRuntime
         topic: this.config.topic,
         fromBeginning: this.config.fromBeginning,
       });
-      await this.client.run(
-        this.handler.runConfig(this.client, {
-          topic: this.config.topic,
-          maxBytes: this.config.maxBytes,
-        }),
-      );
+      const runConfig = this.handler.runConfig(this.client, {
+        topic: this.config.topic,
+        maxBytes: this.config.maxBytes,
+      });
+      const eachMessage = runConfig.eachMessage;
+      if (eachMessage) {
+        runConfig.eachMessage = async (payload) => {
+          try {
+            await eachMessage(payload);
+          } catch {
+            // Kafka logging is disabled; report failure without broker/PII data.
+            this.logger.error('Reporting Kafka processing failed');
+            throw new Error('Reporting Kafka processing failed');
+          }
+        };
+      }
+      await this.client.run(runConfig);
       this.started = true;
       this.logger.log(
         { groupId: this.config.consumer.groupId },
