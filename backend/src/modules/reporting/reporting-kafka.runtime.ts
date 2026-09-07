@@ -17,6 +17,13 @@ export type ReportingKafkaRuntimeClient = Pick<
 export const REPORTING_KAFKA_CONFIG = Symbol('REPORTING_KAFKA_CONFIG');
 export const REPORTING_KAFKA_CLIENT = Symbol('REPORTING_KAFKA_CLIENT');
 
+export type ReportingKafkaRuntimeStatus = {
+  enabled: boolean;
+  state: 'disabled' | 'starting' | 'running' | 'failed' | 'stopped';
+  processingFailures: number;
+  lastProcessingFailureAt: string | null;
+};
+
 export function createReportingKafkaClient(
   config: ReportingKafkaConsumerConfig,
 ): ReportingKafkaRuntimeClient | null {
@@ -33,6 +40,9 @@ export class ReportingKafkaRuntime
 {
   private started = false;
   private stopped = false;
+  private state: ReportingKafkaRuntimeStatus['state'];
+  private processingFailures = 0;
+  private lastProcessingFailureAt: string | null = null;
 
   constructor(
     @Inject(REPORTING_KAFKA_CONFIG)
@@ -41,10 +51,26 @@ export class ReportingKafkaRuntime
     private readonly client: ReportingKafkaRuntimeClient | null,
     private readonly handler: ReportingKafkaHandler,
     private readonly logger: Logger,
-  ) {}
+  ) {
+    this.state = config.enabled ? 'stopped' : 'disabled';
+  }
+
+  getStatus(): ReportingKafkaRuntimeStatus {
+    return {
+      enabled: this.config.enabled,
+      state: this.state,
+      processingFailures: this.processingFailures,
+      lastProcessingFailureAt: this.lastProcessingFailureAt,
+    };
+  }
+
+  isReady(): boolean {
+    return !this.config.enabled || (this.started && !this.stopped);
+  }
 
   async onApplicationBootstrap(): Promise<void> {
     if (!this.config.enabled || !this.client || this.started) return;
+    this.state = 'starting';
     try {
       await this.client.connect();
       await this.client.subscribe({
@@ -62,6 +88,8 @@ export class ReportingKafkaRuntime
             await eachMessage(payload);
           } catch {
             // Kafka logging is disabled; report failure without broker/PII data.
+            this.processingFailures += 1;
+            this.lastProcessingFailureAt = new Date().toISOString();
             this.logger.error('Reporting Kafka processing failed');
             throw new Error('Reporting Kafka processing failed');
           }
@@ -69,11 +97,13 @@ export class ReportingKafkaRuntime
       }
       await this.client.run(runConfig);
       this.started = true;
+      this.state = 'running';
       this.logger.log(
         { groupId: this.config.consumer.groupId },
         'Reporting Kafka consumer started',
       );
     } catch {
+      this.state = 'failed';
       await this.client.disconnect().catch(() => undefined);
       this.logger.error('Reporting Kafka consumer startup failed');
       throw new Error('Reporting Kafka consumer startup failed');
@@ -83,6 +113,7 @@ export class ReportingKafkaRuntime
   async onApplicationShutdown(): Promise<void> {
     if (!this.client || this.stopped) return;
     this.stopped = true;
+    this.state = 'stopped';
     let failed = false;
     if (this.started) {
       try {

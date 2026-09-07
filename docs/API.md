@@ -540,6 +540,11 @@ viewer or returns pre-converted toman values.
 - `GET /health` and `GET /api/v1/health` are public, unauthenticated, and
   rate-limit-exempt. They report `service`, `version`, and the deployed
   `commit` together with database readiness, without secrets.
+- `GET /ready` and `GET /api/v1/ready` are public, unauthenticated, and
+  rate-limit-exempt. They return 200 only when PostgreSQL is reachable and the
+  optional Reporting Kafka runtime is either disabled or running; otherwise
+  they return safe 503 metadata. The response includes only runtime state,
+  process-local processing-failure count and its last UTC timestamp.
 - Swagger remains available in development/test. In production, `/docs` and
   `/docs-json` are not mounted. A future internal/VPN documentation deployment
   must use a separate private listener rather than a public runtime switch.

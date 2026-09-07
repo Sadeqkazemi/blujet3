@@ -19,6 +19,19 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-07 — Reporting runtime readiness seam (local)
+
+- [x] Add safe `/ready` and `/api/v1/ready` responses that combine PostgreSQL
+  reachability with the optional Reporting Kafka lifecycle state.
+- [x] Track process-local processing failure count and last UTC timestamp;
+  preserve no-payload logging, manual ACK ownership and disabled-by-default
+  behavior. No lag claim, offset query, DLQ, schema or credential change.
+- [x] Add 31 focused health/runtime/handler tests; scoped lint, typecheck and
+  diff checks pass.
+- [ ] CI/real-broker verification and owner-approved publication/merge.
+- `/ready` does not prove broker lag, off-site recovery, or production
+  availability; server deployment remains out of scope.
+
 ### 2026-09-07 — Reporting processing failure observation (local)
 
 - [x] Add fixed, sanitized application error logging around the existing
