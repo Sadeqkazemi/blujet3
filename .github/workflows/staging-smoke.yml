@@ -1,0 +1,50 @@
+name: Staging Compose Smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-compose-smoke
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Isolated staging compose smoke
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 35
+    env:
+      COMPOSE_PROJECT_NAME: blujet-staging-ci
+      STAGING_NOTIFY_DB_PASSWORD: notify-ci-runtime-password
+      STAGING_EXPERIENCE_DB_PASSWORD: experience-ci-runtime-password
+    steps:
+      - uses: actions/checkout@v5
+      - name: Create ephemeral staging environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          env_file="$RUNNER_TEMP/blujet-staging.env"
+          cat > "$env_file" <<EOF
+          DEPLOY_SHA=${GITHUB_SHA}
+          POSTGRES_PASSWORD=blujet-staging-owner
+          PSS_POSTGRES_PASSWORD=blujet-staging-pss
+          PSS_INTERNAL_TOKEN=blujet-staging-pss-token-at-least-32-characters
+          NOTIFY_DATABASE_URL=postgresql://notify_writer:${STAGING_NOTIFY_DB_PASSWORD}@db:5432/blujet?schema=notify
+          EXPERIENCE_DATABASE_URL=postgresql://experience_writer:${STAGING_EXPERIENCE_DB_PASSWORD}@db:5432/blujet?schema=experience
+          NOTIFY_INTERNAL_TOKEN=blujet-staging-notify-token-at-least-32-characters
+          EXPERIENCE_INTERNAL_TOKEN=blujet-staging-experience-token-at-least-32-characters
+          IDENTITY_INTERNAL_TOKEN=blujet-staging-identity-token-at-least-32-characters
+          ML_SERVICE_INTERNAL_TOKEN=blujet-staging-ml-token-at-least-32-characters
+          JWT_ACCESS_SECRET=blujet-staging-access-secret-at-least-32-characters
+          JWT_REFRESH_SECRET=blujet-staging-refresh-secret-at-least-32-characters
+          PII_ENCRYPTION_KEY=3a6dfd91b775e9cd09be8a576889adfe518a31ad1064af3d63c21ce9aadbdf10
+          PAYMENT_GATEWAY=disabled
+          SERVER_IP=127.0.0.1
+          SEED_ON_START=false
+          EOF
+          chmod 600 "$env_file"
+          echo "STAGING_ENV_FILE=$env_file" >> "$GITHUB_ENV"
+      - name: Run isolated compose smoke
+        run: sh scripts/staging-smoke.sh docker-compose.prod.yml "$STAGING_ENV_FILE"

@@ -2,12 +2,26 @@
 set -eu
 
 compose_file="${1:-docker-compose.prod.yml}"
+env_file="${2:-}"
+project_name="${COMPOSE_PROJECT_NAME:-}"
+
+compose() {
+  if [ -n "$env_file" ] && [ -n "$project_name" ]; then
+    docker compose --project-name "$project_name" --env-file "$env_file" -f "$compose_file" "$@"
+  elif [ -n "$env_file" ]; then
+    docker compose --env-file "$env_file" -f "$compose_file" "$@"
+  elif [ -n "$project_name" ]; then
+    docker compose --project-name "$project_name" -f "$compose_file" "$@"
+  else
+    docker compose -f "$compose_file" "$@"
+  fi
+}
 
 check_service() {
   service="$1"
   health_url="$2"
   expected_service="$3"
-  docker compose -f "$compose_file" exec -T "$service" node -e '
+  compose exec -T "$service" node -e '
     const [url, expectedService] = process.argv.slice(1);
     const expectedCommit = process.env.GIT_COMMIT_SHA;
     if (!expectedCommit || !/^[0-9a-f]{40}$/.test(expectedCommit)) {
