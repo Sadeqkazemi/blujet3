@@ -3726,6 +3726,28 @@ binding, then reruns the existing Core quote calculation. The existing atomic
 hold and payment services remain the only writers and still lock/reprice under
 the shared PostgreSQL transaction boundary.
 
+### Core signed-Offer consumption (proposed expand release)
+
+Add nullable text `sourceOfferId` to `orders.core_itinerary_orders` and a
+unique index over the column. PostgreSQL permits multiple `NULL` values, so
+existing and compatibility-created orders remain valid while every signed
+Offer can be linked to at most one new Order. The integrity token and its
+traveller request are never persisted in this column.
+
+The new Offer-based hold command acquires its existing idempotency advisory
+lock and an Offer-scoped advisory lock inside the same Core transaction before
+checking `sourceOfferId`. It then locks all referenced
+`inventory.flight_instances` rows in stable order, reprices and writes the
+Order plus child snapshots only when the current total matches the signed
+Offer total. Token failure, expiry, price change, duplicate consumption or
+capacity failure rolls back the complete writer transaction. No Redis lock,
+second writer database or historical `pss_*` table participates.
+
+This is an expand-only migration. Application rollback keeps the nullable
+column/index; the prior code ignores them. Migration `down` is for isolated
+test environments only because removing an Order-to-Offer audit reference is
+not an operational rollback.
+
 ### Core atomic itinerary hold
 
 The hold slice adds four authoritative tables under the existing `orders`
