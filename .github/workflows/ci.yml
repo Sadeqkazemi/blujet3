@@ -501,8 +501,8 @@ jobs:
     needs: changes
     if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-24.04-arm
-    # The verified Kafka distribution is ~122 MB; cold ARM runners need a
-    # resumable transfer window before the broker tests can start.
+    # The content-addressed official image avoids the slow Apache archive while
+    # still providing the exact Kafka distribution used by the fixture.
     timeout-minutes: 30
     services:
       postgres:
@@ -538,14 +538,16 @@ jobs:
         run: |
           set -euo pipefail
           kafka_dir=$(mktemp -d "$RUNNER_TEMP/kafka-tools.XXXXXX")
-          curl --fail --show-error --silent --location --proto '=https' --proto-redir '=https' --connect-timeout 30 --max-time 600 --retry 8 --retry-all-errors --retry-delay 5 --continue-at - \
-            https://archive.apache.org/dist/kafka/3.9.1/kafka_2.13-3.9.1.tgz \
-            --output "$kafka_dir/kafka.tgz"
-          printf '%s  %s\n' \
-            '1ea204ba73411737a275429ca976d440f007ff0957b90b19be41dc5a4bae52617267769be9f0b5791714d0b3c4c760605bd426faea39edd90763585523fa2cfe' \
-            "$kafka_dir/kafka.tgz" | sha512sum --check --strict
-          tar -xzf "$kafka_dir/kafka.tgz" -C "$kafka_dir"
-          echo "KAFKA_TEST_HOME=$kafka_dir/kafka_2.13-3.9.1" >> "$GITHUB_ENV"
+          kafka_image='apache/kafka@sha256:4ceccc577f03f51f6af8dbfda55194d0d892f4fa7913ffbded567ce3895622ed'
+          docker pull "$kafka_image"
+          container_id=$(docker create "$kafka_image")
+          trap 'docker rm -f "$container_id" >/dev/null 2>&1' EXIT
+          docker cp "$container_id:/opt/kafka/." "$kafka_dir"
+          docker rm "$container_id"
+          trap - EXIT
+          test -x "$kafka_dir/bin/kafka-server-start.sh"
+          test -f "$kafka_dir/libs/kafka_2.13-3.9.1.jar"
+          echo "KAFKA_TEST_HOME=$kafka_dir" >> "$GITHUB_ENV"
           echo "KAFKA_TEST_JAVA=$JAVA_HOME/bin/java" >> "$GITHUB_ENV"
       - name: Test real Kafka commit, rollback and crash recovery
         working-directory: backend
