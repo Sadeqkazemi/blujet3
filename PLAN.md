@@ -29,8 +29,8 @@ below for what's landed from that port so far.
   append-only lifecycle events; rely on unique PNRs in the disposable E2E DB.
 - [x] Move audit backdating to insert time and retain survey booking evidence;
   no E2E fixture deletes an append-only row.
-- [x] Remove webhook-event finalization updates; immutable ingestion claims are
-  preserved and outcome authority remains in loan/application and wallet state.
+- [x] Insert the final webhook outcome after locking the loan, atomically with
+  business effects; duplicate delivery preserves the original immutable event.
 - [x] Make isolated Backend E2E jobs exit after completed assertions so leaked
   CI-only handles cannot hold a green shard open until the job timeout.
 
@@ -45,8 +45,9 @@ below for what's landed from that port so far.
   rows outside the guard.
 - [x] Add PostgreSQL integration coverage for trigger inventory, insert
   allowance, update/delete rejection, and migration down/up idempotence.
-- [x] Run the focused test and full backend verification; the diff is pushed
-  on the feature branch for owner review. No merge or server deployment.
+- [x] Owner-approved PR #73 merged into `main` as `ae65496`; all 26 checks
+  passed on head `3add204`, including all eight E2E shards, restore/PITR,
+  migration compatibility, real Kafka and CodeQL. No server deployment.
 
 ### 2026-09-06 — Database-enforced order evidence immutability
 
@@ -58,8 +59,24 @@ below for what's landed from that port so far.
 - [x] Align Loyalty CI cleanup with the append-only points ledger: mutable
   request/lock fixtures are removed, while synthetic member/points evidence is
   retained only until the isolated CI database is discarded.
-- [ ] Obtain owner approval before merging PR #73 (target `main`); no
-  deployment.
+- [x] Owner-approved PR #73 merged as `ae65496`; no server deployment.
+
+### 2026-09-06 — Post-merge continuation boundary
+
+- [x] Start continuation from verified `origin/main` at `ae65496`, not from
+  an unmerged working-tree snapshot.
+- [x] Reconcile PR #73 status and final webhook outcome semantics above.
+- [x] Add metadata-only `scripts/database-readiness.sql` and document its
+  limits. Local PostgreSQL 18.2 execution verifies read-only mode, UTC and
+  final rollback; report privileges, SSL and archiver observations without
+  exposing connection secrets or business rows.
+- [ ] Verify the diagnostic on the CI PostgreSQL 16 baseline before release;
+  inspect the server only after separate authorization. Local results are
+  not evidence of production readiness.
+- [ ] Off-site backup provider/credentials, replica/failover topology and
+  retention policy require explicit operational decisions. Do not guess these
+  or declare disaster recovery complete based only on CI restore proofs.
+- External NIRA/PSP integration and server deployment remain separately gated.
 
 ### 2026-09-06 — Reporting Kafka consumer lifecycle (contract first)
 

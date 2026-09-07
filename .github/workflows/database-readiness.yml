@@ -1,0 +1,54 @@
+name: Database readiness observation
+
+on:
+  pull_request:
+    paths:
+      - scripts/database-readiness.sql
+      - .github/workflows/database-readiness.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/database-readiness.sql
+      - .github/workflows/database-readiness.yml
+
+permissions:
+  contents: read
+
+jobs:
+  observation:
+    name: PostgreSQL 16 read-only observation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: observation
+          POSTGRES_PASSWORD: observation-ci-only
+          POSTGRES_DB: observation
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U observation -d observation"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Validate bounded metadata observation
+        env:
+          PGHOST: localhost
+          PGUSER: observation
+          PGPASSWORD: observation-ci-only
+          PGDATABASE: observation
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X -qAt -v ON_ERROR_STOP=1 -f scripts/database-readiness.sql > observation.json
+          jq -e '
+            .transaction_read_only == "on" and
+            (.server_version_num | tonumber | . >= 160000 and . < 170000) and
+            (.observed_at_utc | endswith("+00:00")) and
+            (.unverified | length == 6) and
+            (.public_schema_create_grants | type == "array")
+          ' observation.json
