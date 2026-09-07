@@ -31,6 +31,9 @@ below for what's landed from that port so far.
   no server deployment. See `docs/features/staging-compose-smoke.md`.
 - [ ] Add durable Reporting lag/offset, retry and DLQ policy after the retention
   and replay rules are approved.
+- [x] Add a bounded, operator-driven Loyalty parity sampler that reports only
+  aggregate statuses; representative production sampling remains separately
+  approved and is not run automatically.
 - [ ] Implement the real NIRA/DCS adapter only after its supplied contract is
   reviewed; do not invent an external schema.
 - [ ] Implement the real PSP callback/reconciliation flow only after PSP

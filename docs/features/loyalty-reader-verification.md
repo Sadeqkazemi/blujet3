@@ -42,3 +42,25 @@ Test provisioning is confined to the existing isolated _test database, using
 a newly generated login role and password, an empty parent role, and synthetic
 sequence/function fixtures. The exact test objects, grants and roles are removed
 afterward. No production role is created.
+
+## Bounded parity sampler
+
+`../../scripts/loyalty-shadow-sample.sh` is an operator-driven helper for a
+separately approved comparison window. It accepts one to 32 explicit user UUIDs
+and invokes the existing `loyalty:compare:shadow` command for each value. It
+prints only aggregate counters (`sampled`, `match`, `mismatch`,
+`inconclusive`, `unavailable`); UUIDs, response bodies, request IDs, database
+errors and credentials never appear in its output. Exit code `0` means every
+sample matched; `2` means at least one sample was not a stable match; `1` means
+the invocation or configuration was invalid. The helper does not enable a
+public read flag, provision a role, or modify database state.
+
+Example (with an explicitly provisioned SELECT-only reader):
+
+```sh
+LOYALTY_SHADOW_ENABLED=true \
+LOYALTY_SERVICE_URL=http://localhost:3500 \
+LOYALTY_INTERNAL_TOKEN=<service-token> \
+./scripts/loyalty-shadow-sample.sh \
+  <user-uuid-1> <user-uuid-2>
+```
