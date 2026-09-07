@@ -538,7 +538,11 @@ CI  →  lint + typecheck + unit + e2e + migrate-from-prod-schema
      →  production / UAT با همان SHA
 ```
 
-سرور فعلی (`docker-compose.prod.yml` + GitHub Actions) همین مدل را دارد ولی **staging جدا** و **smoke اجباری بعد از up** هنوز کم است. قبل از استخراج سرویس سوم، این دو باید اضافه شوند وگرنه میکروسرویس فقط نقاط شکست را زیاد می‌کند.
+برای جلوگیری از مخلوط‌شدن staging و production، workflow دستی
+`.github/workflows/staging-smoke.yml` با project/volume مستقل اجرا می‌شود:
+ابتدا migration با مالک Core، سپس نقش‌های runtime محدود Notify/Experience، بعد
+`health` و gateway smoke و در پایان حذف volumeها. این workflow deploy سرور نیست
+و باید قبل از هر استخراج تراکنشی یا deploy واقعی با موفقیت اجرا شود.
 
 نسخهٔ قابل‌مشاهده: هر UI و هر `/health` فیلد `commit` و `service` برمی‌گرداند تا معلوم شود «آپدیت نشسته یا نه».
 

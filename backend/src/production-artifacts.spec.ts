@@ -35,6 +35,14 @@ const smokeScript = readFileSync(
   join(backendRoot, '..', 'scripts', 'smoke-service-health.sh'),
   'utf8',
 );
+const stagingSmokeScript = readFileSync(
+  join(backendRoot, '..', 'scripts', 'staging-smoke.sh'),
+  'utf8',
+);
+const stagingSmokeWorkflow = readFileSync(
+  join(backendRoot, '..', '.github', 'workflows', 'staging-smoke.yml'),
+  'utf8',
+);
 const localStartScript = readFileSync(
   join(backendRoot, '..', 'scripts', 'start-local.sh'),
   'utf8',
@@ -210,6 +218,25 @@ describe('production backend artifacts', () => {
     expect(frontendIndex).toContain(
       'name="blujet-build-commit" content="%VITE_GIT_COMMIT_SHA%"',
     );
+  });
+
+  it('provides an isolated staging compose smoke gate without deploying a server', () => {
+    expect(stagingSmokeWorkflow).toContain('workflow_dispatch:');
+    expect(stagingSmokeWorkflow).toContain('staging-smoke.sh');
+    expect(stagingSmokeWorkflow).toContain(
+      'COMPOSE_PROJECT_NAME: blujet-staging-ci',
+    );
+    expect(stagingSmokeScript).toContain(
+      'compose down --volumes --remove-orphans',
+    );
+    expect(stagingSmokeScript).toContain(
+      'Run candidate migrations with the Core owner',
+    );
+    expect(stagingSmokeScript).toContain('CREATE ROLE notify_writer');
+    expect(stagingSmokeScript).toContain('CREATE ROLE experience_writer');
+    expect(stagingSmokeScript).toContain('smoke-service-health.sh');
+    expect(smokeScript).toContain('env_file="${2:-}"');
+    expect(smokeScript).toContain('project_name="${COMPOSE_PROJECT_NAME:-}"');
   });
 
   it('keeps notify internal, asynchronous, authenticated and rollback-safe', () => {

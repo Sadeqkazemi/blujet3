@@ -23,9 +23,12 @@ below for what's landed from that port so far.
 
 - [x] Reporting process-activity commits were published and merged in PR #77
   as `10f4522`; no server deployment was performed.
-- [ ] Add the next database-architecture guard: extracted service processes
-  must receive dedicated, schema-scoped runtime credentials in production.
-- [ ] Add a staging smoke gate before extracting another transactional service.
+- [x] Add the database-architecture guard: extracted service processes receive
+  dedicated, schema-scoped runtime credentials in production (PR #78,
+  merge `c77db5f`; no server deployment).
+- [x] Add a manual isolated Compose staging smoke gate with disposable project,
+  schema-scoped runtime roles, service health/commit checks and gateway smoke;
+  no server deployment. See `docs/features/staging-compose-smoke.md`.
 - [ ] Add durable Reporting lag/offset, retry and DLQ policy after the retention
   and replay rules are approved.
 - [ ] Implement the real NIRA/DCS adapter only after its supplied contract is
