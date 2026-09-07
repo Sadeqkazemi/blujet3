@@ -18,7 +18,9 @@ import { RefundPenaltyRule } from '../../database/entities/refund-penalty-rule.e
 import { AncillaryServicesModule } from '../ancillary-services/ancillary-services.module';
 import { BookingEngineModule } from '../booking-engine/booking-engine.module';
 import { CoreItineraryController } from './core-itinerary.controller';
+import { CoreOfferController } from './core-offer.controller';
 import { CoreItineraryService } from './core-itinerary.service';
+import { CoreOfferService } from './core-offer.service';
 import { CoreItineraryQuoteService } from './core-itinerary-quote.service';
 import { CoreItineraryHoldService } from './core-itinerary-hold.service';
 import { CoreItineraryHoldExpiryService } from './core-itinerary-hold-expiry.service';
@@ -57,12 +59,14 @@ import { PSS_CLIENT } from './pss-client.interface';
   ],
   controllers: [
     CoreItineraryController,
+    CoreOfferController,
     CoreOrderServicingController,
     CoreOrderRetrievalController,
   ],
   providers: [
     HttpPssClient,
     CoreItineraryService,
+    CoreOfferService,
     CoreItineraryQuoteService,
     CoreItineraryHoldService,
     CoreItineraryHoldExpiryService,

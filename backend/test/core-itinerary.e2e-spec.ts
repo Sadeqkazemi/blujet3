@@ -29,6 +29,7 @@ import { TicketDocumentStock } from '../src/database/entities/ticket-document-st
 import { createTestApp } from './helpers/app.helper';
 import { CoreItineraryHoldExpiryService } from '../src/modules/pss/core-itinerary-hold-expiry.service';
 import { BookingStatus } from '../src/database/enums';
+import { CommerceOutboxEvent } from '../src/database/entities/commerce-outbox-event.entity';
 
 describe('Core itinerary internal API', () => {
   let app: INestApplication<App>;
@@ -290,6 +291,13 @@ describe('Core itinerary internal API', () => {
     };
   }
 
+  function validOfferRequest() {
+    return {
+      ...validQuoteRequest(),
+      seller: { type: 'USER', id: holdOwnerId },
+    };
+  }
+
   it('requires the internal service token', async () => {
     const response = await request(app.getHttpServer())
       .post('/internal/v1/core/itineraries/resolve')
@@ -537,6 +545,158 @@ describe('Core itinerary internal API', () => {
         expect(response.body.error.code).toBe('VALIDATION_FAILED');
       } finally {
         await extraRepo.update(extraId, { purchaseEnabled: true });
+      }
+    });
+  });
+
+  describe('POST /internal/v1/offers', () => {
+    beforeEach(async () => {
+      await dataSource
+        .getRepository(FareRule)
+        .update({ id: In(fareRuleIds) }, { siteSeatsReleased: 3 });
+    });
+
+    it('keeps the offer API internal and requires the service token', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/internal/v1/offers/search')
+        .send(validOfferRequest());
+
+      expect(response.status).toBe(401);
+      expect(response.body.error.code).toBe('UNAUTHORIZED');
+    });
+
+    it('validates seller ownership input before pricing', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/internal/v1/offers/search')
+        .set('X-Internal-Token', token)
+        .send({
+          ...validQuoteRequest(),
+          seller: { type: 'USER', id: 'invalid' },
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('VALIDATION_FAILED');
+    });
+
+    it('preserves not-found and depleted-inventory domain errors', async () => {
+      const missing = await request(app.getHttpServer())
+        .post('/internal/v1/offers/search')
+        .set('X-Internal-Token', token)
+        .send({
+          ...validOfferRequest(),
+          segments: [
+            {
+              flightInstanceId: randomUUID(),
+              sequence: 1,
+              cabin: 'ECONOMY',
+              fareClassCode: 'Y',
+            },
+          ],
+        });
+      expect(missing.status).toBe(404);
+      expect(missing.body.error.code).toBe('NOT_FOUND');
+
+      await dataSource
+        .getRepository(FareRule)
+        .update({ id: In(fareRuleIds) }, { siteSeatsReleased: 0 });
+      const depleted = await request(app.getHttpServer())
+        .post('/internal/v1/offers/search')
+        .set('X-Internal-Token', token)
+        .send(validOfferRequest());
+      expect(depleted.status).toBe(409);
+      expect(depleted.body.error.code).toBe('POOL_EXHAUSTED');
+    });
+
+    it('creates and reprices a signed offer without writing an order or hold', async () => {
+      const orderRepo = dataSource.getRepository(CoreItineraryOrder);
+      const ledgerRepo = dataSource.getRepository(LedgerEntry);
+      const outboxRepo = dataSource.getRepository(CommerceOutboxEvent);
+      const [beforeOrders, beforeLedger, beforeOutbox] = await Promise.all([
+        orderRepo.count(),
+        ledgerRepo.count(),
+        outboxRepo.count(),
+      ]);
+      const original = validOfferRequest();
+      const created = await request(app.getHttpServer())
+        .post('/internal/v1/offers/search')
+        .set('X-Internal-Token', token)
+        .send(original);
+
+      expect(created.status).toBe(200);
+      expect(created.body.data).toMatchObject({
+        seller: original.seller,
+        quote: { currency: 'IRR', requiresReprice: true },
+      });
+      expect(created.body.data.integrityToken).toEqual(expect.any(String));
+      const expiresAt: unknown = created.body.data.expiresAt;
+      expect(typeof expiresAt).toBe('string');
+      if (typeof expiresAt !== 'string') throw new Error('invalid expiresAt');
+      expect(new Date(expiresAt).getTime()).toBeGreaterThan(Date.now());
+
+      const repriced = await request(app.getHttpServer())
+        .post(`/internal/v1/offers/${created.body.data.offerId}/reprice`)
+        .set('X-Internal-Token', token)
+        .send({
+          ...original,
+          integrityToken: created.body.data.integrityToken,
+        });
+
+      expect(repriced.status).toBe(200);
+      expect(repriced.body.data).toMatchObject({
+        previousTotalIrr: created.body.data.quote.totalIrr,
+        currentTotalIrr: created.body.data.quote.totalIrr,
+        priceChanged: false,
+      });
+      const [afterOrders, afterLedger, afterOutbox] = await Promise.all([
+        orderRepo.count(),
+        ledgerRepo.count(),
+        outboxRepo.count(),
+      ]);
+      expect([afterOrders, afterLedger, afterOutbox]).toEqual([
+        beforeOrders,
+        beforeLedger,
+        beforeOutbox,
+      ]);
+    });
+
+    it('reports a current price change and rejects a changed request', async () => {
+      const original = validOfferRequest();
+      const created = await request(app.getHttpServer())
+        .post('/internal/v1/offers/search')
+        .set('X-Internal-Token', token)
+        .send(original);
+      const fareRuleRepo = dataSource.getRepository(FareRule);
+      try {
+        await fareRuleRepo.update(fareRuleIds[0], {
+          sitePriceIrr: 11_000_000n,
+        });
+        const repriced = await request(app.getHttpServer())
+          .post(`/internal/v1/offers/${created.body.data.offerId}/reprice`)
+          .set('X-Internal-Token', token)
+          .send({
+            ...original,
+            integrityToken: created.body.data.integrityToken,
+          });
+        expect(repriced.status).toBe(200);
+        expect(repriced.body.data.priceChanged).toBe(true);
+        expect(repriced.body.data.currentTotalIrr).not.toBe(
+          repriced.body.data.previousTotalIrr,
+        );
+
+        const changed = await request(app.getHttpServer())
+          .post(`/internal/v1/offers/${created.body.data.offerId}/reprice`)
+          .set('X-Internal-Token', token)
+          .send({
+            ...original,
+            travellers: [{ passengerType: 'ADULT', birthDate: '1991-01-01' }],
+            integrityToken: created.body.data.integrityToken,
+          });
+        expect(changed.status).toBe(409);
+        expect(changed.body.error.code).toBe('OFFER_INVALID');
+      } finally {
+        await fareRuleRepo.update(fareRuleIds[0], {
+          sitePriceIrr: 10_000_000n,
+        });
       }
     });
   });

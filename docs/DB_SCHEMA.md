@@ -3709,6 +3709,23 @@ Connection validation additionally reads `inventory.airports.code` and the
 existing `minConnectMin` integer column. The persisted airport value is the
 MCT authority; no new column, default override or migration is introduced.
 
+### Core stateless signed offers (contract-first)
+
+No schema migration is required for the proposed
+`POST /internal/v1/offers/search` and
+`POST /internal/v1/offers/:offerId/reprice` slice. An offer is a short-lived,
+read-only view over the authoritative `inventory` pricing/availability data.
+It is not persisted in PostgreSQL or Redis and it never becomes a second source
+of inventory truth.
+
+The integrity token signs only an offer UUID, seller type/UUID, UTC expiry,
+canonical request digest and exact decimal-string IRR total. Traveller birth
+dates and other PII remain in the authenticated request and are not embedded in
+the token. Repricing resubmits the original validated request, verifies the
+binding, then reruns the existing Core quote calculation. The existing atomic
+hold and payment services remain the only writers and still lock/reprice under
+the shared PostgreSQL transaction boundary.
+
 ### Core atomic itinerary hold
 
 The hold slice adds four authoritative tables under the existing `orders`

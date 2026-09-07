@@ -226,6 +226,15 @@ class EnvironmentVariables {
   @IsNumberString()
   PSS_REQUEST_TIMEOUT_MS?: string;
 
+  /** Dedicated HMAC key for the internal stateless Core offer token. */
+  @IsOptional()
+  @MinLength(32)
+  CORE_OFFER_SIGNING_SECRET?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  CORE_OFFER_TTL_SECONDS?: string;
+
   @IsOptional()
   @IsIn(['true', 'false'])
   IDENTITY_INTEGRATION_ENABLED?: string;
@@ -290,6 +299,19 @@ export function validateEnv(config: Record<string, unknown>) {
         .map((e) => Object.values(e.constraints ?? {}).join(', '))
         .join('\n')}`,
     );
+  }
+
+  if (validated.CORE_OFFER_TTL_SECONDS !== undefined) {
+    const offerTtlSeconds = Number(validated.CORE_OFFER_TTL_SECONDS);
+    if (
+      !Number.isInteger(offerTtlSeconds) ||
+      offerTtlSeconds < 60 ||
+      offerTtlSeconds > 900
+    ) {
+      throw new Error(
+        'Invalid environment configuration:\nCORE_OFFER_TTL_SECONDS must be between 60 and 900',
+      );
+    }
   }
 
   if (
