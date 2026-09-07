@@ -34,6 +34,8 @@ below for what's landed from that port so far.
 - [x] Add a bounded, operator-driven Loyalty parity sampler that reports only
   aggregate statuses; representative production sampling remains separately
   approved and is not run automatically.
+- [x] Fix the real-Kafka CI bootstrap timeout by extracting Kafka 3.9.1 from
+  the content-addressed official Apache image instead of the slow archive.
 - [ ] Implement the real NIRA/DCS adapter only after its supplied contract is
   reviewed; do not invent an external schema.
 - [ ] Implement the real PSP callback/reconciliation flow only after PSP

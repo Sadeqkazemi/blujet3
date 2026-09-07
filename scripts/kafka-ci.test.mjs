@@ -33,19 +33,20 @@ test('broker tests own a PostgreSQL test service and have bounded runtime', () =
   assert.doesNotMatch(JSON.stringify(kafka), /secrets\.|ssh|deploy\.yml/);
 });
 
-test('Java and Kafka bootstrap are pinned and checksum precedes extraction', () => {
+test('Java and Kafka bootstrap use a pinned official image', () => {
   const steps = job().steps;
   const java = steps.find(step => step.uses?.startsWith('actions/setup-java@'));
   assert.match(java.uses, /@[a-f0-9]{40}$/);
   assert.equal(java.with.distribution, 'temurin');
   assert.equal(java.with['java-version'], '21');
   const install = steps.find(step => step.name === 'Prepare verified Kafka').run;
-  assert.ok(install.includes('https://archive.apache.org/dist/kafka/3.9.1/kafka_2.13-3.9.1.tgz'));
-  assert.match(install, /[a-f0-9]{128}/);
-  assert.match(install, /curl --fail.*--max-time/);
-  assert.match(install, /--retry-all-errors/);
-  assert.match(install, /--continue-at -/);
-  assert.ok(install.indexOf('sha512sum --check') < install.indexOf('tar -xzf'));
+  assert.match(install, /apache\/kafka@sha256:[a-f0-9]{64}/);
+  assert.doesNotMatch(install, /apache\/kafka:latest/);
+  assert.match(install, /docker pull/);
+  assert.ok(install.indexOf('docker pull') < install.indexOf('docker create'));
+  assert.ok(install.indexOf('docker create') < install.indexOf('docker cp'));
+  assert.match(install, /\/opt\/kafka\/\./);
+  assert.match(install, /kafka_2\.13-3\.9\.1\.jar/);
   assert.match(install, /set -euo pipefail/);
 });
 
