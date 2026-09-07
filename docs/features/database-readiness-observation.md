@@ -11,8 +11,10 @@ is included. Run against an explicitly selected environment only.
 - [x] Verify the observation reports a read-only transaction and UTC timestamp.
 - [x] Verify unproven operational controls remain explicitly unverified.
 - [x] Verify the final successful command is ROLLBACK and close the connection.
-- Server execution, CI PostgreSQL 16 verification, and operational acceptance
-  remain separate; a successful local query proves none of these.
+- [ ] Run the manually dispatched PostgreSQL 16 CI observation and retain its
+  sanitized JSON artifact before release.
+- Server execution and operational acceptance remain separate; a successful CI
+  query proves only the diagnostic contract on the pinned PostgreSQL 16 image.
 
 Local evidence (2026-09-06): PostgreSQL 18.2, test database, Node `pg` execution
 with assertions on read-only mode, UTC offset, six unverified controls and

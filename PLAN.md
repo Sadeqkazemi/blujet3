@@ -133,8 +133,9 @@ below for what's landed from that port so far.
   final rollback; report privileges, SSL and archiver observations without
   exposing connection secrets or business rows.
 - [ ] Verify the diagnostic on the CI PostgreSQL 16 baseline before release;
-  inspect the server only after separate authorization. Local results are
-  not evidence of production readiness.
+  the workflow is manually dispatchable and uploads only sanitized metadata;
+  inspect the server only after separate authorization. Local results are not
+  evidence of production readiness.
 - [ ] Off-site backup provider/credentials, replica/failover topology and
   retention policy require explicit operational decisions. Do not guess these
   or declare disaster recovery complete based only on CI restore proofs.
