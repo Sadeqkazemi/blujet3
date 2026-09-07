@@ -132,10 +132,10 @@ below for what's landed from that port so far.
   limits. Local PostgreSQL 18.2 execution verifies read-only mode, UTC and
   final rollback; report privileges, SSL and archiver observations without
   exposing connection secrets or business rows.
-- [ ] Verify the diagnostic on the CI PostgreSQL 16 baseline before release;
-  the workflow is manually dispatchable and uploads only sanitized metadata;
-  inspect the server only after separate authorization. Local results are not
-  evidence of production readiness.
+- [x] Verify the diagnostic on the CI PostgreSQL 16 baseline before release;
+  the manually dispatched workflow passed in run `34109336485` and uploaded
+  only sanitized metadata. Inspect the server only after separate
+  authorization. This is not production-readiness evidence.
 - [ ] Off-site backup provider/credentials, replica/failover topology and
   retention policy require explicit operational decisions. Do not guess these
   or declare disaster recovery complete based only on CI restore proofs.

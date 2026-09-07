@@ -11,8 +11,8 @@ is included. Run against an explicitly selected environment only.
 - [x] Verify the observation reports a read-only transaction and UTC timestamp.
 - [x] Verify unproven operational controls remain explicitly unverified.
 - [x] Verify the final successful command is ROLLBACK and close the connection.
-- [ ] Run the manually dispatched PostgreSQL 16 CI observation and retain its
-  sanitized JSON artifact before release.
+- [x] Run the manually dispatched PostgreSQL 16 CI observation and retain its
+  sanitized JSON artifact before release (GitHub Actions run `34109336485`).
 - Server execution and operational acceptance remain separate; a successful CI
   query proves only the diagnostic contract on the pinned PostgreSQL 16 image.
 
