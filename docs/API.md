@@ -4804,6 +4804,29 @@ An offer contains `offerId`, `expiresAt`, `currency`, ordered `segments`,
 traveller pricing, fare/tax/ancillary breakdown, baggage terms and an opaque
 integrity token. An offer is never itself inventory authorization.
 
+The signed-offer contract is specified for the next Core implementation slice;
+it is not yet a public compatibility route. `POST /internal/v1/offers/search`
+accepts the same `channel`, `segments[]`, `travellers[]` and per-segment
+`extras[]` as the Core itinerary quote plus `seller { type, id }`. `type` is
+`USER` for `SYSTEM` and `AGENCY` for `AGENCY`; `id` is a UUID. A future public
+facade must derive both from its authenticated principal rather than accepting
+client-selected ownership.
+
+The response is `{ offerId, expiresAt, seller, quote, integrityToken }`.
+Offers expire after five minutes by default (configuration is bounded to
+60–900 seconds). The opaque HMAC-SHA-256 token binds version, offer ID, seller,
+expiry, canonical request digest and quoted total; it contains no traveller
+birth date or other PII. The offer is stateless and creates no order, hold,
+ledger, outbox or cache record.
+
+`POST /internal/v1/offers/:offerId/reprice` accepts the same seller and quote
+request plus `integrityToken`. It rejects a changed request, wrong seller,
+wrong route ID, invalid signature or expired offer before recalculating from
+Core. A successful response contains the newly calculated `quote`,
+`previousTotalIrr`, `currentTotalIrr` and `priceChanged`. All money remains
+decimal-string IRR. Repricing is observational: Core hold/payment continues to
+perform its own transactional repricing and inventory locking.
+
 `POST /internal/v1/core/itineraries/resolve` requires `X-Internal-Token` and
 accepts `channel` (`SYSTEM` or `AGENCY`) plus `segments[]` containing
 `flightInstanceId`, contiguous `sequence`, `cabin`, and optional

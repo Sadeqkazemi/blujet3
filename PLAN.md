@@ -19,6 +19,18 @@ below for what's landed from that port so far.
 
 ## Status
 
+### 2026-09-07 — Core signed Offer/Pricing contract (documentation gate)
+
+- [x] Confirm the existing Core itinerary resolver, quote, atomic hold,
+  payment fulfilment and full-refund path already implement the safe
+  transactional foundation; do not duplicate or extract their writers.
+- [x] Specify the next internal-only, stateless signed-offer and repricing
+  contract before implementation in `docs/features/core-signed-offers.md`.
+- [x] Keep public `/api/v1/**`, the shadow PSS writer, inventory authority and
+  all server/deployment flags unchanged.
+- [ ] Obtain owner approval for the proposed five-minute expiry and
+  USER/AGENCY seller binding, then implement and test the contract.
+
 ### 2026-09-07 — Continuation roadmap after Reporting PR #77
 
 - [x] Reporting process-activity commits were published and merged in PR #77
