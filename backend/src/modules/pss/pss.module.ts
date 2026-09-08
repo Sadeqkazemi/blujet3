@@ -19,8 +19,10 @@ import { AncillaryServicesModule } from '../ancillary-services/ancillary-service
 import { BookingEngineModule } from '../booking-engine/booking-engine.module';
 import { CoreItineraryController } from './core-itinerary.controller';
 import { CoreOfferController } from './core-offer.controller';
+import { PublicOfferFacadeController } from './public-offer-facade.controller';
 import { CoreItineraryService } from './core-itinerary.service';
 import { CoreOfferService } from './core-offer.service';
+import { PublicOfferFacadeService } from './public-offer-facade.service';
 import { CoreItineraryQuoteService } from './core-itinerary-quote.service';
 import { CoreItineraryHoldService } from './core-itinerary-hold.service';
 import { CoreItineraryHoldExpiryService } from './core-itinerary-hold-expiry.service';
@@ -60,6 +62,7 @@ import { PSS_CLIENT } from './pss-client.interface';
   controllers: [
     CoreItineraryController,
     CoreOfferController,
+    PublicOfferFacadeController,
     CoreOrderServicingController,
     CoreOrderRetrievalController,
   ],
@@ -67,6 +70,7 @@ import { PSS_CLIENT } from './pss-client.interface';
     HttpPssClient,
     CoreItineraryService,
     CoreOfferService,
+    PublicOfferFacadeService,
     CoreItineraryQuoteService,
     CoreItineraryHoldService,
     CoreItineraryHoldExpiryService,

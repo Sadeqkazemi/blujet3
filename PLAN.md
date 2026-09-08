@@ -24,9 +24,9 @@ below for what's landed from that port so far.
   `docs/features/public-offer-facade.md`.
 - [x] Preserve guest `/api/v1/search/**`, existing booking writers and the
   Core ACID boundary; no schema, PSS writer, PSP/NIRA call or deployment.
-- [ ] Implement the default-off facade and derive USER/AGENCY ownership from
+- [x] Implement the default-off facade and derive USER/AGENCY ownership from
   the authenticated principal only, after owner approval of this contract.
-- [ ] Cover disabled no-call, USER/AGENCY mapping, validation and HTTP auth
+- [x] Cover disabled no-call, USER/AGENCY mapping, validation and HTTP auth
   boundaries with focused tests.
 - [ ] Owner approval for implementation, flag activation, parity, push/merge;
   deployment is a separate action.

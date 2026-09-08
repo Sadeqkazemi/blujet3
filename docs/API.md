@@ -4861,11 +4861,11 @@ or invalid MCT values (not a non-negative integer) fail with HTTP 400
 `VALIDATION_FAILED`; no universal fallback is assumed by this resolver.
 Single-segment requests do not require a transfer-airport lookup.
 
-### Proposed public signed-Offer compatibility facade (not implemented)
+### Public signed-Offer compatibility facade (implemented, default-off)
 
 | Method | Path | Behaviour |
 | --- | --- | --- |
-| POST | `/api/v1/search/offers` | Planned authenticated USER/AGENCY facade. It is not registered until the contract receives owner approval. |
+| POST | `/api/v1/search/offers` | Authenticated USER/AGENCY facade. The request contains only `segments[]`, `travellers[]`, and per-segment `extras[]`; seller/channel are derived from JWT. With `CORE_OFFER_PUBLIC_ENABLED=false` (default), it fails closed with `503 OFFER_UNAVAILABLE` without calling Core. |
 
 The request contains only the Core itinerary `segments[]`, common
 `travellers[]` and optional per-segment `extras[]`. A browser cannot select
