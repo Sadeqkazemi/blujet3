@@ -20,11 +20,10 @@ case "$project_name" in
 esac
 
 compose build backend pss-service notify-service experience-service frontend
-compose up -d --wait db redis pss-db
-
-# Run candidate migrations with the Core owner before provisioning the extracted
-# service runtime roles. Runtime services never receive this URL.
-compose run --rm --no-deps --entrypoint sh backend -c 'npm run migration:run:prod'
+# Run candidate migrations with the Core owner in a short-lived job before
+# provisioning extracted service roles. The long-running Backend never
+# receives this owner URL.
+compose up -d --wait db redis pss-db db-migrate
 
 notify_password="${STAGING_NOTIFY_DB_PASSWORD:?STAGING_NOTIFY_DB_PASSWORD is required}"
 experience_password="${STAGING_EXPERIENCE_DB_PASSWORD:?STAGING_EXPERIENCE_DB_PASSWORD is required}"

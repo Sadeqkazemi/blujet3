@@ -60,6 +60,31 @@ services:
     expose:
       - '5432'
 
+  db-migrate:
+    image: blujet-backend:${DEPLOY_SHA:-local}
+    restart: 'no'
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://blujet:${POSTGRES_PASSWORD}@db:5432/blujet?schema=public
+      SEED_ON_START: 'false'
+    command: ['npm', 'run', 'migration:run:prod']
+
+  db-runtime-roles:
+    image: blujet-backend:${DEPLOY_SHA:-local}
+    restart: 'no'
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      MIGRATION_DATABASE_URL: postgresql://blujet:${POSTGRES_PASSWORD}@db:5432/blujet?schema=public
+      CORE_DATABASE_PASSWORD: ${CORE_DATABASE_PASSWORD:?Supply a separate Core runtime database password}
+      SEED_ON_START: 'false'
+    command: ['node', 'dist/database/provision-core-runtime-role.js']
+
   pss-service:
     build:
       context: ./pss-service
@@ -93,6 +118,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       PORT: 3200
@@ -120,6 +147,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       PORT: 3300
@@ -151,6 +180,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       PORT: 3500
@@ -218,6 +249,7 @@ services:
       - '8000'
 
   backend:
+    image: blujet-backend:${DEPLOY_SHA:-local}
     build:
       context: ./backend
       args:
@@ -226,6 +258,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      db-runtime-roles:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
       pss-service:
@@ -235,7 +269,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_URL: postgresql://blujet:${POSTGRES_PASSWORD}@db:5432/blujet?schema=public
+      # Owner credentials exist only in the two short-lived database jobs.
+      DATABASE_URL: postgresql://blujet_core_runtime:${CORE_DATABASE_PASSWORD}@db:5432/blujet?schema=public
       REDIS_URL: redis://redis:6379
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}

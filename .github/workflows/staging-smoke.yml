@@ -29,6 +29,7 @@ jobs:
           cat > "$env_file" <<EOF
           DEPLOY_SHA=${GITHUB_SHA}
           POSTGRES_PASSWORD=blujet-staging-owner
+          CORE_DATABASE_PASSWORD=blujet-staging-core-runtime-password
           PSS_POSTGRES_PASSWORD=blujet-staging-pss
           PSS_INTERNAL_TOKEN=blujet-staging-pss-token-at-least-32-characters
           NOTIFY_DATABASE_URL=postgresql://notify_writer:${STAGING_NOTIFY_DB_PASSWORD}@db:5432/blujet?schema=notify
