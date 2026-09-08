@@ -26,6 +26,9 @@ export class HealthController {
       lastProcessingFailureAt: status.lastProcessingFailureAt,
       lastMessageAt: status.lastMessageAt,
       lastProcessedAt: status.lastProcessedAt,
+      checkpointPartitions: status.checkpointPartitions,
+      maxObservedLag: status.maxObservedLag,
+      lastCheckpointAt: status.lastCheckpointAt,
     };
   }
 

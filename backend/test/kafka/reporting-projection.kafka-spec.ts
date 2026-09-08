@@ -12,6 +12,7 @@ import { createItineraryOrderCreated } from '../../src/common/events/core-itiner
 import { dataSourceOptions } from '../../src/database/data-source.options';
 import { ReportingItineraryEventProjection } from '../../src/database/entities/reporting-itinerary-event-projection.entity';
 import { ReportingItineraryEventReceipt } from '../../src/database/entities/reporting-itinerary-event-receipt.entity';
+import { ReportingKafkaConsumerCheckpoint } from '../../src/database/entities/reporting-kafka-consumer-checkpoint.entity';
 import { ReportingEventConsumer } from '../../src/modules/reporting/reporting-event-consumer';
 import { ReportingItineraryProjectionStore } from '../../src/modules/reporting/reporting-itinerary-projection.store';
 import { ReportingKafkaHandler } from '../../src/modules/reporting/reporting-kafka.handler';
@@ -120,6 +121,11 @@ describe('Reporting projection with real Kafka acknowledgement', () => {
       },
       runtimeClient,
       adapter,
+      new ReportingItineraryProjectionStore(
+        db.getRepository(ReportingItineraryEventProjection),
+        db.getRepository(ReportingItineraryEventReceipt),
+        db.getRepository(ReportingKafkaConsumerCheckpoint),
+      ),
       { log: () => undefined, error: () => undefined } as never,
     );
     runtimes.push(runtime);
@@ -143,6 +149,7 @@ describe('Reporting projection with real Kafka acknowledgement', () => {
     const store = new ReportingItineraryProjectionStore(
       db.getRepository(ReportingItineraryEventProjection),
       db.getRepository(ReportingItineraryEventReceipt),
+      db.getRepository(ReportingKafkaConsumerCheckpoint),
     );
     adapter = new ReportingKafkaHandler(new ReportingEventConsumer(store));
     broker = await LocalKafka.create();
@@ -179,6 +186,10 @@ describe('Reporting projection with real Kafka acknowledgement', () => {
         .getRepository(ReportingItineraryEventReceipt)
         .delete({ orderId: In(ids) });
     }
+    if (db?.isInitialized && group)
+      await db
+        .getRepository(ReportingKafkaConsumerCheckpoint)
+        .delete({ consumerGroup: group, topic });
     orderIds.clear();
   });
 
@@ -208,6 +219,13 @@ describe('Reporting projection with real Kafka acknowledgement', () => {
         eventId: value.eventId,
       }),
     ).toBe(1);
+    expect(
+      await db.getRepository(ReportingKafkaConsumerCheckpoint).findOneByOrFail({
+        consumerGroup: group,
+        topic,
+        partition: 0,
+      }),
+    ).toMatchObject({ nextOffset: '1' });
   });
 
   it('replays an ACK gap without duplicating the projection or receipt', async () => {
@@ -231,6 +249,13 @@ describe('Reporting projection with real Kafka acknowledgement', () => {
         eventId: value.eventId,
       }),
     ).toBe(1);
+    expect(
+      await db.getRepository(ReportingKafkaConsumerCheckpoint).findOneByOrFail({
+        consumerGroup: group,
+        topic,
+        partition: 0,
+      }),
+    ).toMatchObject({ nextOffset: '1' });
 
     await start();
     await until(async () => (await offset()) === '1');

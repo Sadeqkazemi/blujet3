@@ -87,6 +87,7 @@ import { RefundPenaltyRule } from './entities/refund-penalty-rule.entity';
 import { RefundRequest } from './entities/refund-request.entity';
 import { ReportingItineraryEventProjection } from './entities/reporting-itinerary-event-projection.entity';
 import { ReportingItineraryEventReceipt } from './entities/reporting-itinerary-event-receipt.entity';
+import { ReportingKafkaConsumerCheckpoint } from './entities/reporting-kafka-consumer-checkpoint.entity';
 import { Route } from './entities/route.entity';
 import { SavedBankAccount } from './entities/saved-bank-account.entity';
 import { SavedFlight } from './entities/saved-flight.entity';
@@ -217,6 +218,7 @@ export const dataSourceOptions: DataSourceOptions = {
     RefundRequest,
     ReportingItineraryEventProjection,
     ReportingItineraryEventReceipt,
+    ReportingKafkaConsumerCheckpoint,
     Route,
     SavedBankAccount,
     SavedFlight,

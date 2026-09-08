@@ -16,6 +16,7 @@ import { PanelsModule } from '../panels/panels.module';
 import { AgenciesModule } from '../agencies/agencies.module';
 import { ReportingItineraryEventProjection } from '../../database/entities/reporting-itinerary-event-projection.entity';
 import { ReportingItineraryEventReceipt } from '../../database/entities/reporting-itinerary-event-receipt.entity';
+import { ReportingKafkaConsumerCheckpoint } from '../../database/entities/reporting-kafka-consumer-checkpoint.entity';
 import {
   REPORTING_READ_MODEL_SINK,
   ReportingEventConsumer,
@@ -45,6 +46,7 @@ import {
       SupportTicket,
       ReportingItineraryEventProjection,
       ReportingItineraryEventReceipt,
+      ReportingKafkaConsumerCheckpoint,
     ]),
     PanelsModule,
     AgenciesModule,

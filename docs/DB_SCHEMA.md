@@ -30,9 +30,15 @@ The Reporting Kafka acknowledgement adapter adds no schema or migration. It
 writes only through the existing atomic projection store and its Reporting-owned
 receipt table. Offset acknowledgement is broker state and happens only after
 that database transaction commits (`docs/features/reporting-kafka-adapter.md`).
-The opt-in Reporting Kafka lifecycle also adds no schema or migration. Its
-consumer-group offset remains broker state; disabling it preserves projection
-and receipt rows for a safe later resume (`docs/features/reporting-kafka-runtime.md`).
+The opt-in Reporting Kafka lifecycle adds the Reporting-owned
+`reporting.kafka_consumer_checkpoints` table. Its composite primary key is
+`(consumerGroup, topic, partition)`; `nextOffset`, optional
+`highWatermark` and `updatedAt` are advanced monotonically in the same
+transaction as the projection/receipt. Broker acknowledgement still happens
+after that commit. An ACK gap therefore replays idempotently without moving
+the durable checkpoint backwards. The table contains no event payload or PII.
+Disabling the consumer preserves projection, receipt and checkpoint rows for
+safe resume (`docs/features/reporting-kafka-runtime.md`).
 
 ## Kafka commerce delivery outbox
 

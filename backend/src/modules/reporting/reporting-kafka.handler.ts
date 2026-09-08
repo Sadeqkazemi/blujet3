@@ -9,6 +9,7 @@ import { ReportingEventConsumer } from './reporting-event-consumer';
 export interface ReportingKafkaSubscription {
   topic: string;
   maxBytes?: number;
+  consumerGroup?: string;
 }
 
 @Injectable()
@@ -28,9 +29,23 @@ export class ReportingKafkaHandler {
       partitionsConsumedConcurrently: 1,
       eachMessage: async (payload) => {
         try {
-          const { event, offset } = parseKafkaEventDelivery(trusted, payload);
+          const { event, offset, highWatermark } = parseKafkaEventDelivery(
+            trusted,
+            payload,
+          );
           await payload.heartbeat();
-          await this.reporting.consume(event);
+          await this.reporting.consume(
+            event,
+            subscription.consumerGroup === undefined
+              ? undefined
+              : {
+                  consumerGroup: subscription.consumerGroup,
+                  topic: offset.topic,
+                  partition: offset.partition,
+                  nextOffset: offset.offset,
+                  highWatermark,
+                },
+          );
           await payload.heartbeat();
           await client.commitOffsets([offset]);
         } catch {

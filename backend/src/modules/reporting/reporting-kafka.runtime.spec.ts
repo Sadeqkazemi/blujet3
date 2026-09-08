@@ -7,6 +7,7 @@ import {
   ReportingKafkaRuntime,
   type ReportingKafkaRuntimeClient,
 } from './reporting-kafka.runtime';
+import type { ReportingItineraryProjectionStore } from './reporting-itinerary-projection.store';
 
 describe('ReportingKafkaRuntime', () => {
   const disabled = { enabled: false } as const;
@@ -31,6 +32,13 @@ describe('ReportingKafkaRuntime', () => {
     log: jest.fn(),
     error: jest.fn(),
   };
+  const projectionStore = {
+    getCheckpointSummary: jest.fn().mockResolvedValue({
+      partitions: 0,
+      maxLag: null,
+      lastCheckpointAt: null,
+    }),
+  };
 
   function client(): jest.Mocked<ReportingKafkaRuntimeClient> {
     return {
@@ -51,6 +59,7 @@ describe('ReportingKafkaRuntime', () => {
       config,
       kafkaClient,
       handler as unknown as ReportingKafkaHandler,
+      projectionStore as unknown as ReportingItineraryProjectionStore,
       logger as unknown as Logger,
     );
   }
@@ -92,10 +101,33 @@ describe('ReportingKafkaRuntime', () => {
     expect(handler.runConfig).toHaveBeenCalledWith(kafkaClient, {
       topic: 'blujet.events.v1',
       maxBytes: 4096,
+      consumerGroup: 'reporting-v1',
     });
     expect(kafkaClient.run).toHaveBeenCalledWith(runConfig);
     await worker.onApplicationBootstrap();
     expect(kafkaClient.connect).toHaveBeenCalledTimes(1);
+  });
+
+  it('restores durable checkpoint evidence before connecting', async () => {
+    projectionStore.getCheckpointSummary.mockResolvedValueOnce({
+      partitions: 2,
+      maxLag: '17',
+      lastCheckpointAt: '2026-09-08T00:00:00.000Z',
+    });
+    const kafkaClient = client();
+    const worker = runtime(enabled, kafkaClient);
+
+    await worker.onApplicationBootstrap();
+
+    expect(projectionStore.getCheckpointSummary).toHaveBeenCalledWith(
+      'reporting-v1',
+      'blujet.events.v1',
+    );
+    expect(worker.getStatus()).toMatchObject({
+      checkpointPartitions: 2,
+      maxObservedLag: '17',
+      lastCheckpointAt: '2026-09-08T00:00:00.000Z',
+    });
   });
 
   it.each(['connect', 'subscribe', 'run'] as const)(

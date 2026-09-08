@@ -10,9 +10,24 @@ import {
  * and database are introduced.
  */
 export type ReportingProjectionResult = 'applied' | 'duplicate' | 'stale';
+export type ReportingEventDelivery = {
+  consumerGroup: string;
+  topic: string;
+  partition: number;
+  nextOffset: string;
+  highWatermark?: string;
+};
+export type ReportingCheckpointSummary = {
+  partitions: number;
+  maxLag: string | null;
+  lastCheckpointAt: string | null;
+};
 export const REPORTING_READ_MODEL_SINK = Symbol('REPORTING_READ_MODEL_SINK');
 export interface ReportingReadModelSink {
-  project(event: CoreItineraryEvent): Promise<ReportingProjectionResult>;
+  project(
+    event: CoreItineraryEvent,
+    delivery?: ReportingEventDelivery,
+  ): Promise<ReportingProjectionResult>;
 }
 
 @Injectable()
@@ -22,8 +37,13 @@ export class ReportingEventConsumer {
     private readonly sink: ReportingReadModelSink,
   ) {}
 
-  async consume(input: unknown): Promise<ReportingProjectionResult> {
+  async consume(
+    input: unknown,
+    delivery?: ReportingEventDelivery,
+  ): Promise<ReportingProjectionResult> {
     const event = parseCoreItineraryEvent(input);
-    return this.sink.project(event);
+    return delivery === undefined
+      ? this.sink.project(event)
+      : this.sink.project(event, delivery);
   }
 }

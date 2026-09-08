@@ -15,6 +15,9 @@ describe('HealthController', () => {
       lastProcessingFailureAt: null,
       lastMessageAt: null,
       lastProcessedAt: null,
+      checkpointPartitions: 0,
+      maxObservedLag: null,
+      lastCheckpointAt: null,
     }),
     isReady: jest.fn().mockReturnValue(true),
   };

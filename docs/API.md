@@ -25,6 +25,11 @@ An independent, default-off Reporting lifecycle may connect that adapter to
 the exact Core event topic with its own consumer group and broker identity.
 It performs no broker call while disabled and has no public/internal route:
 `docs/features/reporting-kafka-runtime.md`.
+When enabled, Reporting also stores a monotonic per-partition checkpoint in
+its own schema in the same transaction as the projection. The internal
+`/health/ready` response exposes only aggregate partition count, maximum
+observed lag and checkpoint timestamp; it does not expose event data, topic
+names or consumer offsets.
 
 Kafka receive adapter: `CommerceInboxKafkaHandler.runConfig` validates the
 existing publisher wire metadata and returns manual-ack, sequential KafkaJS
