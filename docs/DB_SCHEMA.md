@@ -40,6 +40,13 @@ the durable checkpoint backwards. The table contains no event payload or PII.
 Disabling the consumer preserves projection, receipt and checkpoint rows for
 safe resume (`docs/features/reporting-kafka-runtime.md`).
 
+The separate Reporting worker opens a non-migrating TypeORM connection that
+registers only these three Reporting-owned entities. Its
+`REPORTING_DATABASE_URL` must identify a dedicated non-superuser role with the
+minimum required access to the `reporting` schema. The worker never receives
+the Core owner URL, runs migrations, or loads Core entities; schema evolution
+remains an explicit operator migration (`docs/features/reporting-worker-process.md`).
+
 ## Kafka commerce delivery outbox
 
 Typed itinerary event builders read allowlisted fields of

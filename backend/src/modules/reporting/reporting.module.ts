@@ -14,22 +14,7 @@ import { ReportingController } from './reporting.controller';
 import { ReportingService } from './reporting.service';
 import { PanelsModule } from '../panels/panels.module';
 import { AgenciesModule } from '../agencies/agencies.module';
-import { ReportingItineraryEventProjection } from '../../database/entities/reporting-itinerary-event-projection.entity';
-import { ReportingItineraryEventReceipt } from '../../database/entities/reporting-itinerary-event-receipt.entity';
-import { ReportingKafkaConsumerCheckpoint } from '../../database/entities/reporting-kafka-consumer-checkpoint.entity';
-import {
-  REPORTING_READ_MODEL_SINK,
-  ReportingEventConsumer,
-} from './reporting-event-consumer';
-import { ReportingItineraryProjectionStore } from './reporting-itinerary-projection.store';
-import { ReportingKafkaHandler } from './reporting-kafka.handler';
-import { reportingKafkaConsumerConfig } from '../../config/reporting-kafka-consumer.config';
-import {
-  createReportingKafkaClient,
-  REPORTING_KAFKA_CLIENT,
-  REPORTING_KAFKA_CONFIG,
-  ReportingKafkaRuntime,
-} from './reporting-kafka.runtime';
+import { ReportingProjectionModule } from './reporting-projection.module';
 
 @Module({
   imports: [
@@ -44,38 +29,13 @@ import {
       Airport,
       RefundRequest,
       SupportTicket,
-      ReportingItineraryEventProjection,
-      ReportingItineraryEventReceipt,
-      ReportingKafkaConsumerCheckpoint,
     ]),
     PanelsModule,
     AgenciesModule,
+    ReportingProjectionModule,
   ],
   controllers: [ReportingController],
-  providers: [
-    ReportingService,
-    ReportingItineraryProjectionStore,
-    ReportingEventConsumer,
-    ReportingKafkaHandler,
-    ReportingKafkaRuntime,
-    {
-      provide: REPORTING_KAFKA_CONFIG,
-      useFactory: reportingKafkaConsumerConfig,
-    },
-    {
-      provide: REPORTING_KAFKA_CLIENT,
-      useFactory: createReportingKafkaClient,
-      inject: [REPORTING_KAFKA_CONFIG],
-    },
-    {
-      provide: REPORTING_READ_MODEL_SINK,
-      useExisting: ReportingItineraryProjectionStore,
-    },
-  ],
-  exports: [
-    ReportingEventConsumer,
-    ReportingKafkaHandler,
-    ReportingKafkaRuntime,
-  ],
+  providers: [ReportingService],
+  exports: [ReportingProjectionModule],
 })
 export class ReportingModule {}

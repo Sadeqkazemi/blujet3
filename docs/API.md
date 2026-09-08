@@ -30,6 +30,11 @@ its own schema in the same transaction as the projection. The internal
 `/health/ready` response exposes only aggregate partition count, maximum
 observed lag and checkpoint timestamp; it does not expose event data, topic
 names or consumer offsets.
+The same consumer can now run in the dedicated `blujet-reporting` worker
+process. That process adds only internal `/health` and `/ready` probes; it does
+not expose reporting data or replace any public `/api/v1/reporting/**` route.
+Its Compose profile remains opt-in and production activation is separately
+approved (`docs/features/reporting-worker-process.md`).
 
 Kafka receive adapter: `CommerceInboxKafkaHandler.runConfig` validates the
 existing publisher wire metadata and returns manual-ack, sequential KafkaJS
