@@ -17,6 +17,21 @@ promo/wallet/points-ledger/GDPR/public frontend) onto this schema**,
 rather than reconciling two incompatible Prisma histories. See "Phase 13"
 below for what's landed from that port so far.
 
+### 2026-09-08 — Durable Reporting Kafka checkpoint (local)
+
+- [x] Add a Reporting-owned per-group/topic/partition checkpoint with monotonic
+  next-offset and observed high-watermark fields; no event payload or PII.
+- [x] Commit checkpoint, receipt and projection atomically before Kafka ACK so
+  an acknowledgement gap remains idempotently replayable.
+- [x] Restore aggregate checkpoint evidence on startup and expose only
+  partition count, maximum observed lag and last checkpoint time in readiness.
+- [x] Keep the consumer default-off and preserve all public APIs, Core writers,
+  NIRA/PSP boundaries and deployment state.
+- [x] Pass 37 focused unit/health tests, nine PostgreSQL projection/migration
+  tests, scoped ESLint, typecheck and production build.
+- [ ] Pass the required real-Kafka CI fixture and complete owner-approved
+  push/merge; no server deployment.
+
 ### 2026-09-07 — Public Offer compatibility facade
 
 - [x] Record the additive authenticated `/api/v1/search/offers` contract,
@@ -78,8 +93,10 @@ below for what's landed from that port so far.
   no server deployment. See `docs/features/staging-compose-smoke.md`.
 - [x] Execute the isolated staging Compose smoke successfully in GitHub Actions
   run `34114641282` on `main`; no server deployment.
-- [ ] Add durable Reporting lag/offset, retry and DLQ policy after the retention
-  and replay rules are approved.
+- [x] Add durable Reporting per-partition offset/high-watermark evidence and
+  aggregate lag observation without changing readiness.
+- [ ] Add bounded poison retry and DLQ only after retention, replay and
+  operator-acknowledgement rules are approved.
 - [x] Add a bounded, operator-driven Loyalty parity sampler that reports only
   aggregate statuses; representative production sampling remains separately
   approved and is not run automatically.
