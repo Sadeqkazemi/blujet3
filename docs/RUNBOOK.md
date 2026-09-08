@@ -58,6 +58,37 @@ Container-level health:
 docker compose -f docker-compose.prod.yml ps
 ```
 
+## Ticketing/Refund read-only shadow worker
+
+این worker به‌صورت پیش‌فرض خاموش است و Core همچنان تنها writer سفارش، بلیت،
+استرداد و ledger می‌ماند. پس از آماده‌سازی جداگانهٔ secrets، اجرای آن فقط با
+profile داخلی و از طریق GitHub Actions مجاز است؛ آن را با `up` معمولی فعال نکنید:
+
+```bash
+cd /opt/app
+docker compose -f docker-compose.prod.yml --profile ticketing-refund up -d \
+  db-ticketing-refund-reader-role ticketing-refund
+docker compose -f docker-compose.prod.yml --profile ticketing-refund ps
+```
+
+`TICKETING_REFUND_DATABASE_PASSWORD` باید credential نقش
+`blujet_ticketing_refund_reader` باشد و `TICKETING_REFUND_INTERNAL_TOKEN` حداقل
+۳۲ نویسه داشته باشد. worker با `GET /health/ready` باید نقش non-owner و
+`transaction_read_only=on` را تأیید کند. مسیرهای status و refund-quote داخلی و
+توکن‌دار هستند؛ هیچ apply/issue/void یا اتصال نیرا/PSP در این برش وجود ندارد.
+
+Rollback امن: ابتدا worker را متوقف کنید، سپس profile را حذف و credential آن
+را در secret store غیرفعال/rotate کنید. این کار جدول یا داده‌ای را حذف نمی‌کند
+و Core را تغییر نمی‌دهد:
+
+```bash
+docker compose -f docker-compose.prod.yml --profile ticketing-refund stop ticketing-refund
+docker compose -f docker-compose.prod.yml --profile ticketing-refund rm -f ticketing-refund db-ticketing-refund-reader-role
+```
+
+فعال‌سازی cutover یا تبدیل worker به writer نیازمند ADR و تأیید جداگانهٔ مالک
+محصول است.
+
 ## Scaling the backend
 
 See `docs/DEPLOY_IP.md`'s "مقیاس‌پذیری بک‌اند" section —

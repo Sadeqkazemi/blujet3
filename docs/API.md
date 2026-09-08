@@ -385,6 +385,23 @@ declared accountable stock. New stock-backed documents are `ACCOUNTABLE`.
 EMD, exchange, void/refund coupon transitions and Nira/DCS integration remain
 separate, input-gated slices.
 
+### Ticketing/Refund process boundary — read-only shadow slice
+
+The opt-in `ticketing-refund` worker exposes only internal, read-only contracts;
+the Core Platform remains the sole writer for orders, ticket documents, coupon
+servicing, refund evidence, stock and ledger rows. The worker authenticates with
+its own service token and a non-owner PostgreSQL role whose transactions are
+read-only.
+
+| Method | Path | Behavior |
+| --- | --- | --- |
+| GET | `/internal/v1/ticketing-refund/orders/:reference/status?ownerId=<uuid>` | Returns the existing Core order retrieval projection (travellers without PII, segments, accountable documents, coupon lifecycle and refund history). `reference` may be order UUID or PNR; owner mismatch is `404`. |
+| POST | `/internal/v1/ticketing-refund/orders/:id/refund-quote` | Recomputes the existing Core refund quote using `RefundPenaltyRule`; body is `{ ownerId }`. It creates no refund evidence and changes no state. |
+
+There is deliberately no `apply`, `issue`, `void`, `exchange`, stock-load or
+Nira/DCS endpoint in this worker. The Compose profile is disabled by default and
+there is no public Gateway route or cutover flag in this slice.
+
 ### Commerce B3.1 — durable hold expiry
 
 No public route or response shape changes. The existing 15-minute `HELD`

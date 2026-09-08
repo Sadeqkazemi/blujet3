@@ -99,6 +99,20 @@ services:
       SEED_ON_START: 'false'
     command: ['node', 'dist/database/provision-offer-reader-role.js']
 
+  db-ticketing-refund-reader-role:
+    profiles: ['ticketing-refund']
+    image: blujet-backend:${DEPLOY_SHA:-local}
+    restart: 'no'
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      MIGRATION_DATABASE_URL: postgresql://blujet:${POSTGRES_PASSWORD}@db:5432/blujet?schema=public
+      TICKETING_REFUND_DATABASE_PASSWORD: ${TICKETING_REFUND_DATABASE_PASSWORD:-}
+      SEED_ON_START: 'false'
+    command: ['node', 'dist/database/provision-ticketing-refund-reader-role.js']
+
   pss-service:
     build:
       context: ./pss-service
@@ -249,6 +263,35 @@ services:
       - '3600'
     healthcheck:
       test: ['CMD', 'node', '-e', "require('http').get('http://localhost:3600/health/ready', r => process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  ticketing-refund:
+    profiles: ['ticketing-refund']
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.ticketing-refund-worker
+      args:
+        GIT_COMMIT_SHA: ${DEPLOY_SHA:-unknown}
+    restart: unless-stopped
+    depends_on:
+      db-ticketing-refund-reader-role:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      PORT: 3620
+      TICKETING_REFUND_DATABASE_URL: postgresql://blujet_ticketing_refund_reader:${TICKETING_REFUND_DATABASE_PASSWORD:-}@db:5432/blujet?schema=public
+      TICKETING_REFUND_INTERNAL_TOKEN: ${TICKETING_REFUND_INTERNAL_TOKEN:-}
+      API_REQUEST_TIMEOUT_MS: ${TICKETING_REFUND_API_REQUEST_TIMEOUT_MS:-10000}
+      API_MAX_BODY_BYTES: ${TICKETING_REFUND_API_MAX_BODY_BYTES:-262144}
+      TRUST_PROXY_HOPS: '0'
+      HTTPS_ENABLED: 'false'
+    expose:
+      - '3620'
+    healthcheck:
+      test: ['CMD', 'node', '-e', "require('http').get('http://localhost:3620/health/ready', r => process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 12

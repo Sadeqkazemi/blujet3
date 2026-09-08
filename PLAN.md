@@ -4954,6 +4954,22 @@ contracts and retires the production mock adapters.
 - [ ] Pass unit, integration, build and container checks without deploying.
 - [ ] Merge only after explicit review approval.
 
+# Ticketing/Refund process boundary — read-only shadow slice
+
+- [x] Define the Core-preserving boundary and internal API in
+  `docs/features/ticketing-refund-process.md`, `docs/API.md` and
+  `docs/DB_SCHEMA.md`.
+- [x] Add an independently runnable NestJS worker for ticketing/refund status
+  retrieval and refund quote calculation; no public route or writer cutover.
+- [x] Add a non-owner, default-read-only PostgreSQL role with exact SELECT
+  grants for Core order, ticket, coupon, refund and penalty data.
+- [x] Add internal token authentication, fail-closed readiness and an opt-in
+  Docker Compose profile; keep Nira/DCS and PSP credentials disconnected.
+- [x] Add unit/CI coverage for role isolation, health, 401/400/404 behavior,
+  quote delegation and absence of apply/issue routes.
+- [ ] Run CI container and PostgreSQL proof, obtain explicit owner approval,
+  then commit/push/merge. Server deployment and cutover remain separate.
+
 # Channel inventory, message attachments, and aircraft alignment (2026-08-27)
 
 - [x] Connect public result inventory and checkout enforcement to the exact

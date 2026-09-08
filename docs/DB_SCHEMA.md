@@ -753,6 +753,26 @@ silently invented.
   `status=APPROVED`, `resolutionNote`, and `resolvedAt` columns to archive every
   OPEN row in a conversation without deleting messages or attachments.
 
+### Ticketing/Refund read-only worker
+
+The opt-in `ticketing-refund` process uses the existing Core tables and adds no
+table or migration. Its role `blujet_ticketing_refund_reader` receives `USAGE`
+only on `inventory`, `orders` and `payments`, plus `SELECT` on exactly:
+
+`inventory.flight_instances`, `inventory.flights`, `inventory.routes`,
+`orders.core_itinerary_orders`, `orders.core_itinerary_segments`,
+`orders.core_itinerary_travellers`, `orders.core_itinerary_traveller_segments`,
+`orders.core_itinerary_ticket_documents`, `orders.core_itinerary_flight_coupons`,
+`orders.core_itinerary_coupon_events`,
+`payments.core_itinerary_payment_confirmations`,
+`payments.core_itinerary_refunds`, `payments.refund_penalty_rules` and
+`payments.ledger_entries`.
+
+The role is `NOINHERIT`, has no memberships or ownership, has
+`default_transaction_read_only=on`, no sequence privilege and no `CREATE` on
+any schema. Core remains the only writer. Removing the Compose profile and
+revoking this role is the rollback; no historical data is touched.
+
 ### Current reporting and booking read models
 
 - Finance sales reports are derived read models over existing `Booking`,
