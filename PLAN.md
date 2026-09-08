@@ -17,7 +17,20 @@ promo/wallet/points-ledger/GDPR/public frontend) onto this schema**,
 rather than reconciling two incompatible Prisma histories. See "Phase 13"
 below for what's landed from that port so far.
 
-### 2026-09-08 — Durable Reporting Kafka checkpoint (local)
+### 2026-09-08 — Reporting worker process (local)
+
+- [x] Define a separate NestJS process that reuses the validated Reporting
+  Kafka admission, atomic projection/checkpoint and manual-ACK boundary.
+- [x] Load only Reporting-owned entities through a dedicated non-migrating
+  database connection and expose safe liveness/readiness probes.
+- [x] Add an opt-in production Compose profile and dedicated credential
+  contract; do not activate or deploy it.
+- [x] Pass 24 focused tests, all 985 Backend unit tests, 10 PostgreSQL
+  Reporting/schema-parity tests, read-only lint, typecheck and production build.
+- [ ] Present the diff for owner approval before push/merge; no server
+  deployment.
+
+### 2026-09-08 — Durable Reporting Kafka checkpoint (merged)
 
 - [x] Add a Reporting-owned per-group/topic/partition checkpoint with monotonic
   next-offset and observed high-watermark fields; no event payload or PII.
@@ -29,8 +42,10 @@ below for what's landed from that port so far.
   NIRA/PSP boundaries and deployment state.
 - [x] Pass 37 focused unit/health tests, nine PostgreSQL projection/migration
   tests, scoped ESLint, typecheck and production build.
-- [ ] Pass the required real-Kafka CI fixture and complete owner-approved
-  push/merge; no server deployment.
+- [x] Required real-Kafka, all eight Backend E2E shards, migration/backup/PITR,
+  Backend and CodeQL checks passed; corrective PR #92 merged as `ef35041`.
+  The correction removed files flattened into the repository root by PR #91
+  and restored the feature under canonical Backend/docs paths. No deployment.
 
 ### 2026-09-07 — Public Offer compatibility facade
 

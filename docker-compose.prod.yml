@@ -140,6 +140,44 @@ services:
       retries: 12
       start_period: 30s
 
+  reporting-worker:
+    profiles: ['reporting']
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.reporting-worker
+      args:
+        GIT_COMMIT_SHA: ${DEPLOY_SHA:-unknown}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3500
+      # This process never runs migrations and must not receive the Core owner
+      # URL. Schema changes remain an explicit operator-owned migration step.
+      REPORTING_DATABASE_URL: ${REPORTING_DATABASE_URL:?Supply a dedicated reporting writer URL}
+      REPORTING_KAFKA_CONSUMER_ENABLED: 'true'
+      REPORTING_KAFKA_CLIENT_ID: ${REPORTING_KAFKA_CLIENT_ID:-blujet-reporting}
+      REPORTING_KAFKA_GROUP_ID: ${REPORTING_KAFKA_GROUP_ID:-blujet-reporting-v1}
+      REPORTING_KAFKA_FROM_BEGINNING: ${REPORTING_KAFKA_FROM_BEGINNING:-true}
+      REPORTING_KAFKA_MAX_BYTES: ${REPORTING_KAFKA_MAX_BYTES:-262144}
+      REPORTING_KAFKA_SASL_MECHANISM: ${REPORTING_KAFKA_SASL_MECHANISM}
+      REPORTING_KAFKA_SASL_USERNAME: ${REPORTING_KAFKA_SASL_USERNAME}
+      REPORTING_KAFKA_SASL_PASSWORD: ${REPORTING_KAFKA_SASL_PASSWORD}
+      KAFKA_BROKERS: ${KAFKA_BROKERS}
+      KAFKA_EVENTS_TOPIC: ${KAFKA_EVENTS_TOPIC:-blujet.events.v1}
+      KAFKA_TLS_ENABLED: ${KAFKA_TLS_ENABLED:-true}
+      KAFKA_TLS_CA_PEM: ${KAFKA_TLS_CA_PEM:-}
+    expose:
+      - '3500'
+    healthcheck:
+      test: ['CMD', 'node', '-e', "require('http').get('http://localhost:3500/ready', r => process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
   identity-service:
     build:
       context: ./identity-service
