@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { CoreItineraryQuoteService } from './core-itinerary-quote.service';
 import { CoreItineraryHoldService } from './core-itinerary-hold.service';
 import { CoreOfferService } from './core-offer.service';
+import { CoreOfferPricingService } from './core-offer-pricing.service';
 import type {
   CoreOfferHoldDto,
   CoreOfferRepriceDto,
@@ -60,7 +61,8 @@ describe('CoreOfferService', () => {
           : undefined,
     ),
   } as unknown as ConfigService;
-  const service = new CoreOfferService(quoteService, holdService, config);
+  const pricing = new CoreOfferPricingService(quoteService, config);
+  const service = new CoreOfferService(pricing, holdService);
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -199,11 +201,7 @@ describe('CoreOfferService', () => {
     const missingConfig = {
       get: jest.fn().mockReturnValue(undefined),
     } as unknown as ConfigService;
-    const missing = new CoreOfferService(
-      quoteService,
-      holdService,
-      missingConfig,
-    );
+    const missing = new CoreOfferPricingService(quoteService, missingConfig);
 
     await expect(missing.search(request())).rejects.toBeInstanceOf(
       ServiceUnavailableException,
@@ -249,7 +247,7 @@ describe('CoreOfferService', () => {
       }),
     );
     expect(
-      service.verifyForHold(created.offerId, created.integrityToken, {
+      pricing.verifyForHold(created.offerId, created.integrityToken, {
         ownerId: USER_ID,
         channel: 'SYSTEM',
         segments: original.segments,
@@ -276,7 +274,7 @@ describe('CoreOfferService', () => {
 
     await service.hold(created.offerId, dto, 'hold-key');
     expect(() =>
-      service.verifyForHold(created.offerId, created.integrityToken, {
+      pricing.verifyForHold(created.offerId, created.integrityToken, {
         ownerId: AGENCY_ID,
         channel: 'AGENCY',
         segments: dto.segments,

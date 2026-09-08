@@ -4896,6 +4896,21 @@ intentionally unchanged until an owner decision defines a stable anonymous
 seller identity. Enabling the flag, canary parity and deployment are separate
 approval gates.
 
+### Offer/Pricing process cutover (opt-in)
+
+The separately runnable Offer process retains the read-only internal routes
+`POST /internal/v1/offers/search` and
+`POST /internal/v1/offers/:offerId/reprice`. Both require its dedicated
+`X-Internal-Token`. It intentionally has no Hold route. The existing Core
+`POST /internal/v1/offers/:offerId/hold` remains the only writer and verifies
+the same signed Offer inside the Order/Inventory transaction.
+
+`OFFER_SERVICE_ENABLED=false` (default) keeps the public facade on the local
+Core implementation. When explicitly enabled, Core calls `OFFER_SERVICE_URL`
+with a bounded timeout and fails closed on remote errors; it does not silently
+calculate a second local result. Rollback is the explicit flag change. Public
+paths and response envelopes do not change.
+
 ### Internal reservation/order API
 
 #### Core itinerary quote (read-only)

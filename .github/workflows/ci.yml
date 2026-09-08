@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     outputs:
       backend: ${{ steps.scope.outputs.backend }}
+      offer: ${{ steps.scope.outputs.offer }}
       backend_migration: ${{ steps.scope.outputs.backend_migration }}
       experience: ${{ steps.scope.outputs.experience }}
       loyalty: ${{ steps.scope.outputs.loyalty }}
@@ -37,7 +38,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          areas=(backend backend_migration experience loyalty agency identity notify pss frontend ml)
+          areas=(backend offer backend_migration experience loyalty agency identity notify pss frontend ml)
           if [[ "${{ github.event_name }}" != "pull_request" ]]; then
             for area in "${areas[@]}"; do
               echo "$area=true" >> "$GITHUB_OUTPUT"
@@ -69,6 +70,7 @@ jobs:
           }
 
           emit backend '^(backend/|scripts/kafka-ci\.test\.mjs$|scripts/(verify-backup-restore\.sh|verify-pitr-recovery\.sh|archive-wal\.sh|database-entrypoint\.sh|backup-base-pitr\.sh)$)'
+          emit offer '^(backend/(Dockerfile\.offer-worker|package(-lock)?\.json|tsconfig[^/]*\.json|nest-cli\.json|src/(offer-worker|config/offer-worker|database/(data-source\.options|entities/|provision-offer-reader-role)|modules/(offer-pricing|pss/)))|docker-compose\.prod\.yml$|docs/features/offer-pricing-process\.md$)'
           emit backend_migration '^(backend/|scripts/check-expand-only-migrations\.mjs$)'
           emit experience '^(experience-service/|backend/(package(-lock)?\.json$|src/database/))'
           emit loyalty '^(loyalty-service/|backend/(package(-lock)?\.json$|tsconfig[^/]*\.json$|nest-cli\.json$|src/database/|src/common/money\.ts$|src/modules/loyalty-shadow/))'
@@ -443,6 +445,90 @@ jobs:
       - run: npm run build
       - run: npm test
 
+  offer-pricing:
+    name: Offer/Pricing process
+    needs: changes
+    if: needs.changes.outputs.offer == 'true'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: blujet
+          POSTGRES_PASSWORD: blujet
+          POSTGRES_DB: blujet_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U blujet -d blujet_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: cp .env.test .env
+      - run: npm run migration:run
+      - run: npm run build
+      - name: Prove the restricted reader and Offer HTTP boundary
+        env:
+          MIGRATION_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_test
+          OFFER_DATABASE_PASSWORD: offer_reader_ci_password_2026_09_08
+          OFFER_DATABASE_URL: postgresql://blujet_offer_reader:offer_reader_ci_password_2026_09_08@localhost:5432/blujet_test
+          OFFER_INTERNAL_TOKEN: offer_internal_ci_token_2026_09_08
+          CORE_OFFER_SIGNING_SECRET: core_offer_ci_signing_secret_2026_09_08
+          CORE_OFFER_TTL_SECONDS: '900'
+          NODE_ENV: test
+          PORT: '3610'
+        run: |
+          set -euo pipefail
+          npm run database:provision-offer-reader:prod
+          node - <<'NODE'
+          const { Client } = require('pg');
+          (async () => {
+            const client = new Client({ connectionString: process.env.OFFER_DATABASE_URL });
+            await client.connect();
+            const state = await client.query('SHOW transaction_read_only');
+            if (state.rows[0]?.transaction_read_only !== 'on') process.exit(1);
+            await client.query('SELECT count(*) FROM inventory.fare_rules');
+            try {
+              await client.query('UPDATE inventory.fare_rules SET "classCode" = "classCode"');
+              process.exit(1);
+            } catch (error) {
+              if (error?.code !== '25006') process.exit(1);
+            } finally {
+              await client.end();
+            }
+          })().catch(() => process.exit(1));
+          NODE
+          node dist/offer-worker.main.js >/tmp/blujet-offer.log 2>&1 &
+          offer_pid=$!
+          trap 'kill "$offer_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent http://localhost:3610/health/ready >/tmp/offer-ready.json; then
+              break
+            fi
+            sleep 1
+          done
+          grep -q '"readOnly":true' /tmp/offer-ready.json
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request POST \
+            --header 'X-Internal-Token: offer_internal_ci_token_2026_09_08' \
+            --header 'Content-Type: application/json' \
+            --data '{}' \
+            http://localhost:3610/internal/v1/offers/11111111-1111-4111-8111-111111111111/hold)" = '404'
+      - name: Build the opt-in Offer container
+        run: docker build -f Dockerfile.offer-worker -t blujet-offer-pricing:ci .
+
   backend-backup-restore:
     name: Backend backup restore proof
     needs: changes
@@ -657,6 +743,7 @@ jobs:
       - backend-migration-compatibility
       - pss-service
       - backend
+      - offer-pricing
       - backend-backup-restore
       - backend-pitr-recovery
       - backend-kafka

@@ -1,7 +1,6 @@
 import type { EntityManager, Repository } from 'typeorm';
 import { FareRule } from '../../database/entities/fare-rule.entity';
 import { TravelExtraSetting } from '../../database/entities/travel-extra-setting.entity';
-import { AncillaryServicesService } from '../ancillary-services/ancillary-services.service';
 import { CoreItineraryQuoteService } from './core-itinerary-quote.service';
 import { CoreItineraryService } from './core-itinerary.service';
 import type { QuoteCoreItineraryDto } from './dto/quote-core-itinerary.dto';
@@ -59,7 +58,7 @@ describe('CoreItineraryQuoteService', () => {
     { resolve } as unknown as CoreItineraryService,
     { find: fareFind, manager } as unknown as Repository<FareRule>,
     { find: extraFind } as unknown as Repository<TravelExtraSetting>,
-    { overlayTravelExtras } as unknown as AncillaryServicesService,
+    { overlayTravelExtras },
   );
 
   beforeEach(() => {

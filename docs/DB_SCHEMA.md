@@ -3951,6 +3951,18 @@ satisfy off-site disaster recovery until both artifacts are replicated to
 independently credentialed storage and a restore drill from that copy passes.
 The PII encryption key must not be stored beside either backup class.
 
+### Offer/Pricing read boundary
+
+No table, schema, or ownership migration is introduced. The standalone Offer
+process connects only through `OFFER_DATABASE_URL`. Its operator-provisioned
+role is a non-owner, non-inheriting LOGIN role with
+`default_transaction_read_only=on` and exact `SELECT` grants for the existing
+Inventory/availability/price relations reached in `inventory`, `orders`,
+`agency`, and the registered-price relation in `ops`. It receives
+no sequence, write, DDL, Identity, Payment, Loyalty, Notify, Experience,
+Reporting, or Audit privileges. Core remains the sole writer for Hold, Order,
+Inventory and Payment.
+
 ### Database schema privilege hardening
 
 Migration `1791810000000-HardenDomainSchemaPrivileges` removes the default
