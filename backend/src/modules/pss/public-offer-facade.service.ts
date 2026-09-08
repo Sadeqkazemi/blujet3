@@ -1,19 +1,24 @@
 import {
   ForbiddenException,
+  Inject,
   Injectable,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ErrorCode } from '../../common/errors';
 import type { AuthenticatedUser } from '../../common/types/authenticated-user';
-import { CoreOfferService } from './core-offer.service';
 import type { CoreOfferDto } from './dto/core-offer.dto';
 import type { PublicOfferSearchDto } from './dto/public-offer-search.dto';
+import {
+  OFFER_PRICING_CLIENT,
+  type OfferPricingClient,
+} from './offer-pricing-client.interface';
 
 @Injectable()
 export class PublicOfferFacadeService {
   constructor(
-    private readonly coreOffers: CoreOfferService,
+    @Inject(OFFER_PRICING_CLIENT)
+    private readonly offers: OfferPricingClient,
     private readonly config: ConfigService,
   ) {}
 
@@ -35,7 +40,7 @@ export class PublicOfferFacadeService {
       });
     }
 
-    return this.coreOffers.search({
+    return this.offers.search({
       channel: actor.role === 'AGENCY' ? 'AGENCY' : 'SYSTEM',
       seller: {
         type: actor.role === 'AGENCY' ? 'AGENCY' : 'USER',

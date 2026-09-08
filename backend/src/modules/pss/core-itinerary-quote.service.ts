@@ -1,11 +1,10 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, In, Repository } from 'typeorm';
 import { ErrorCode } from '../../common/errors';
 import { addIrr, toIrr, type Irr } from '../../common/money';
 import { FareRule } from '../../database/entities/fare-rule.entity';
 import { TravelExtraSetting } from '../../database/entities/travel-extra-setting.entity';
-import { AncillaryServicesService } from '../ancillary-services/ancillary-services.service';
 import {
   passengerFareRows,
   validatePassengerManifest,
@@ -21,6 +20,10 @@ import type {
   QuotedCoreItineraryDto,
   QuotedCoreItinerarySegmentDto,
 } from './dto/quote-core-itinerary.dto';
+import {
+  TRAVEL_EXTRA_PRICING,
+  type TravelExtraPricing,
+} from './travel-extra-pricing.interface';
 
 @Injectable()
 export class CoreItineraryQuoteService {
@@ -30,7 +33,8 @@ export class CoreItineraryQuoteService {
     private readonly fareRuleRepo: Repository<FareRule>,
     @InjectRepository(TravelExtraSetting)
     private readonly travelExtraRepo: Repository<TravelExtraSetting>,
-    private readonly ancillary: AncillaryServicesService,
+    @Inject(TRAVEL_EXTRA_PRICING)
+    private readonly ancillary: TravelExtraPricing,
   ) {}
 
   async quote(

@@ -228,6 +228,7 @@ class EnvironmentVariables {
 
   /** Dedicated HMAC key for the internal stateless Core offer token. */
   @IsOptional()
+  @ValidateIf((_config: EnvironmentVariables, value: unknown) => value !== '')
   @MinLength(32)
   CORE_OFFER_SIGNING_SECRET?: string;
 
@@ -239,6 +240,23 @@ class EnvironmentVariables {
   @IsOptional()
   @IsIn(['true', 'false'])
   CORE_OFFER_PUBLIC_ENABLED?: string;
+
+  /** Default-off cutover from the local pricing implementation. */
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  OFFER_SERVICE_ENABLED?: string;
+
+  @IsOptional()
+  OFFER_SERVICE_URL?: string;
+
+  @IsOptional()
+  @ValidateIf((_config: EnvironmentVariables, value: unknown) => value !== '')
+  @MinLength(32)
+  OFFER_INTERNAL_TOKEN?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  OFFER_REQUEST_TIMEOUT_MS?: string;
 
   @IsOptional()
   @IsIn(['true', 'false'])
@@ -315,6 +333,37 @@ export function validateEnv(config: Record<string, unknown>) {
     ) {
       throw new Error(
         'Invalid environment configuration:\nCORE_OFFER_TTL_SECONDS must be between 60 and 900',
+      );
+    }
+  }
+
+  if (
+    validated.OFFER_SERVICE_ENABLED === 'true' &&
+    (!validated.OFFER_SERVICE_URL ||
+      !validated.OFFER_INTERNAL_TOKEN ||
+      validated.OFFER_INTERNAL_TOKEN.length < 32)
+  ) {
+    throw new Error(
+      'Invalid environment configuration:\nOFFER_SERVICE_URL and an OFFER_INTERNAL_TOKEN of at least 32 characters are required when OFFER_SERVICE_ENABLED=true',
+    );
+  }
+
+  if (
+    (validated.CORE_OFFER_PUBLIC_ENABLED === 'true' ||
+      validated.OFFER_SERVICE_ENABLED === 'true') &&
+    (!validated.CORE_OFFER_SIGNING_SECRET ||
+      validated.CORE_OFFER_SIGNING_SECRET.length < 32)
+  ) {
+    throw new Error(
+      'Invalid environment configuration:\nCORE_OFFER_SIGNING_SECRET of at least 32 characters is required when Offer exposure or cutover is enabled',
+    );
+  }
+
+  if (validated.OFFER_REQUEST_TIMEOUT_MS !== undefined) {
+    const timeout = Number(validated.OFFER_REQUEST_TIMEOUT_MS);
+    if (!Number.isInteger(timeout) || timeout < 100 || timeout > 30_000) {
+      throw new Error(
+        'Invalid environment configuration:\nOFFER_REQUEST_TIMEOUT_MS must be between 100 and 30000',
       );
     }
   }

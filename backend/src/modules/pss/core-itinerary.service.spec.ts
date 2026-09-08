@@ -9,7 +9,6 @@ import { FareRule } from '../../database/entities/fare-rule.entity';
 import { FlightInstance } from '../../database/entities/flight-instance.entity';
 import { Passenger } from '../../database/entities/passenger.entity';
 import { CoreItinerarySegment } from '../../database/entities/core-itinerary-segment.entity';
-import { SearchService } from '../booking-engine/search.service';
 import { CoreItineraryService } from './core-itinerary.service';
 import type { ResolveCoreItineraryDto } from './dto/resolve-core-itinerary.dto';
 
@@ -85,7 +84,7 @@ describe('CoreItineraryService', () => {
     {
       createQueryBuilder: jest.fn(() => usageQuery),
     } as unknown as Repository<Passenger>,
-    { cabinAvailability } as unknown as SearchService,
+    { cabinAvailability },
     { find: airportFind } as unknown as Repository<Airport>,
     {
       createQueryBuilder: jest.fn(() => itineraryUsageQuery),

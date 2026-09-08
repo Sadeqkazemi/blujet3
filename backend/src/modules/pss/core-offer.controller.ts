@@ -16,6 +16,7 @@ import {
   Controller,
   Headers,
   HttpCode,
+  Inject,
   Param,
   ParseUUIDPipe,
   Post,
@@ -31,6 +32,10 @@ import {
   CoreOfferSearchDto,
 } from './dto/core-offer.dto';
 import { PssInternalAuthGuard } from './pss-internal-auth.guard';
+import {
+  OFFER_PRICING_CLIENT,
+  type OfferPricingClient,
+} from './offer-pricing-client.interface';
 
 /** Internal Core route; never exposed as a public sales endpoint. */
 @ApiTags('internal-core-offers')
@@ -42,7 +47,11 @@ import { PssInternalAuthGuard } from './pss-internal-auth.guard';
 @Controller('internal/v1/offers')
 @UseGuards(PssInternalAuthGuard)
 export class CoreOfferController {
-  constructor(private readonly offers: CoreOfferService) {}
+  constructor(
+    @Inject(OFFER_PRICING_CLIENT)
+    private readonly pricing: OfferPricingClient,
+    private readonly offers: CoreOfferService,
+  ) {}
 
   @Post('search')
   @HttpCode(200)
@@ -56,7 +65,7 @@ export class CoreOfferController {
     description: 'کلید امضای Offer تنظیم نشده است.',
   })
   async search(@Body() dto: CoreOfferSearchDto) {
-    return { success: true, data: await this.offers.search(dto) };
+    return { success: true, data: await this.pricing.search(dto) };
   }
 
   @Post(':offerId/reprice')
@@ -79,7 +88,7 @@ export class CoreOfferController {
   ) {
     return {
       success: true,
-      data: await this.offers.reprice(offerId, dto),
+      data: await this.pricing.reprice(offerId, dto),
     };
   }
 

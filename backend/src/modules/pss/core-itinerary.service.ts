@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -14,7 +15,6 @@ import { Passenger } from '../../database/entities/passenger.entity';
 import { CoreItineraryOrder } from '../../database/entities/core-itinerary-order.entity';
 import { CoreItinerarySegment } from '../../database/entities/core-itinerary-segment.entity';
 import type { BookingChannel, CabinClass } from '../../database/enums';
-import { SearchService } from '../booking-engine/search.service';
 import { isSellableDefinitionStatus } from '../flights/definition-sellability';
 import {
   parseCommercialPanelSettings,
@@ -27,6 +27,10 @@ import type {
   ResolvedCoreItineraryDto,
   ResolvedCoreItinerarySegmentDto,
 } from './dto/resolve-core-itinerary.dto';
+import {
+  CABIN_AVAILABILITY_READER,
+  type CabinAvailabilityReader,
+} from './cabin-availability-reader.interface';
 
 const ACTIVE_BOOKING_STATUSES = ['DRAFT', 'HELD', 'PAID', 'TICKETED'] as const;
 
@@ -47,7 +51,8 @@ export class CoreItineraryService {
     private readonly fareRuleRepo: Repository<FareRule>,
     @InjectRepository(Passenger)
     private readonly passengerRepo: Repository<Passenger>,
-    private readonly search: SearchService,
+    @Inject(CABIN_AVAILABILITY_READER)
+    private readonly availability: CabinAvailabilityReader,
     @InjectRepository(Airport)
     private readonly airportRepo: Repository<Airport>,
     @InjectRepository(CoreItinerarySegment)
@@ -88,13 +93,17 @@ export class CoreItineraryService {
       const instance = byId.get(segment.flightInstanceId);
       this.assertInstanceSellable(instance, dto.channel, now);
       const available = excludeItineraryOrderId
-        ? await this.search.cabinAvailability(
+        ? await this.availability.cabinAvailability(
             instance,
             segment.cabin,
             manager,
             excludeItineraryOrderId,
           )
-        : await this.search.cabinAvailability(instance, segment.cabin, manager);
+        : await this.availability.cabinAvailability(
+            instance,
+            segment.cabin,
+            manager,
+          );
       if (!available) {
         throw new NotFoundException({
           code: ErrorCode.NOT_FOUND,

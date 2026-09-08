@@ -4945,6 +4945,15 @@ contracts and retires the production mock adapters.
 - [x] Pass focused frontend/backend tests, both production builds, and diff validation.
 - [ ] Merge and UAT deploy through GitHub Actions; verify protected pages after deployment.
 
+# Offer/Pricing process extraction
+
+- [x] Fix the process/API/data boundary before implementation.
+- [x] Add the read-only Offer runtime and dedicated authentication.
+- [x] Add default-off HTTP cutover with explicit rollback and no hidden fallback.
+- [x] Provision and verify a non-owner, exact-SELECT PostgreSQL role.
+- [ ] Pass unit, integration, build and container checks without deploying.
+- [ ] Merge only after explicit review approval.
+
 # Channel inventory, message attachments, and aircraft alignment (2026-08-27)
 
 - [x] Connect public result inventory and checkout enforcement to the exact

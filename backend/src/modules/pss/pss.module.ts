@@ -22,6 +22,7 @@ import { CoreOfferController } from './core-offer.controller';
 import { PublicOfferFacadeController } from './public-offer-facade.controller';
 import { CoreItineraryService } from './core-itinerary.service';
 import { CoreOfferService } from './core-offer.service';
+import { CoreOfferPricingService } from './core-offer-pricing.service';
 import { PublicOfferFacadeService } from './public-offer-facade.service';
 import { CoreItineraryQuoteService } from './core-itinerary-quote.service';
 import { CoreItineraryHoldService } from './core-itinerary-hold.service';
@@ -36,6 +37,14 @@ import { CoreOrderRetrievalController } from './core-order-retrieval.controller'
 import { HttpPssClient } from './http-pss.client';
 import { PssInternalAuthGuard } from './pss-internal-auth.guard';
 import { PSS_CLIENT } from './pss-client.interface';
+import { CABIN_AVAILABILITY_READER } from './cabin-availability-reader.interface';
+import { SearchService } from '../booking-engine/search.service';
+import { TRAVEL_EXTRA_PRICING } from './travel-extra-pricing.interface';
+import { AncillaryServicesService } from '../ancillary-services/ancillary-services.service';
+import { HttpOfferPricingClient } from './http-offer-pricing.client';
+import { LocalOfferPricingClient } from './local-offer-pricing.client';
+import { OFFER_PRICING_CLIENT } from './offer-pricing-client.interface';
+import { ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -70,6 +79,7 @@ import { PSS_CLIENT } from './pss-client.interface';
     HttpPssClient,
     CoreItineraryService,
     CoreOfferService,
+    CoreOfferPricingService,
     PublicOfferFacadeService,
     CoreItineraryQuoteService,
     CoreItineraryHoldService,
@@ -80,7 +90,21 @@ import { PSS_CLIENT } from './pss-client.interface';
     CoreItineraryRefundService,
     CoreItineraryRetrievalService,
     PssInternalAuthGuard,
+    HttpOfferPricingClient,
+    LocalOfferPricingClient,
     { provide: PSS_CLIENT, useExisting: HttpPssClient },
+    { provide: CABIN_AVAILABILITY_READER, useExisting: SearchService },
+    { provide: TRAVEL_EXTRA_PRICING, useExisting: AncillaryServicesService },
+    {
+      provide: OFFER_PRICING_CLIENT,
+      inject: [ConfigService, HttpOfferPricingClient, LocalOfferPricingClient],
+      useFactory: (
+        config: ConfigService,
+        remote: HttpOfferPricingClient,
+        local: LocalOfferPricingClient,
+      ) =>
+        config.get<string>('OFFER_SERVICE_ENABLED') === 'true' ? remote : local,
+    },
   ],
   exports: [PSS_CLIENT],
 })

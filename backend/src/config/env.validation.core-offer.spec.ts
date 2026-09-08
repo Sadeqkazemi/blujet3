@@ -48,4 +48,37 @@ describe('Core offer environment validation', () => {
       validateEnv({ ...base, CORE_OFFER_PUBLIC_ENABLED: 'yes' }),
     ).toThrow('CORE_OFFER_PUBLIC_ENABLED');
   });
+
+  it('requires a complete remote Offer configuration only at cutover', () => {
+    expect(() =>
+      validateEnv({
+        ...base,
+        CORE_OFFER_SIGNING_SECRET: '',
+        OFFER_INTERNAL_TOKEN: '',
+        OFFER_SERVICE_ENABLED: 'false',
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validateEnv({ ...base, OFFER_SERVICE_ENABLED: 'true' }),
+    ).toThrow('OFFER_SERVICE_URL');
+    expect(() =>
+      validateEnv({
+        ...base,
+        OFFER_SERVICE_ENABLED: 'true',
+        OFFER_SERVICE_URL: 'http://offer-pricing:3600',
+        OFFER_INTERNAL_TOKEN: 'x'.repeat(32),
+        CORE_OFFER_SIGNING_SECRET: 's'.repeat(32),
+        OFFER_REQUEST_TIMEOUT_MS: '3000',
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validateEnv({ ...base, OFFER_REQUEST_TIMEOUT_MS: '99' }),
+    ).toThrow('between 100 and 30000');
+  });
+
+  it('requires the shared signing secret before public exposure', () => {
+    expect(() =>
+      validateEnv({ ...base, CORE_OFFER_PUBLIC_ENABLED: 'true' }),
+    ).toThrow('CORE_OFFER_SIGNING_SECRET');
+  });
 });
