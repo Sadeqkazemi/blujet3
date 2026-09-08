@@ -113,6 +113,20 @@ services:
       SEED_ON_START: 'false'
     command: ['node', 'dist/database/provision-ticketing-refund-reader-role.js']
 
+  db-payment-reconciliation-reader-role:
+    profiles: ['payment-reconciliation']
+    image: blujet-backend:${DEPLOY_SHA:-local}
+    restart: 'no'
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      MIGRATION_DATABASE_URL: postgresql://blujet:${POSTGRES_PASSWORD}@db:5432/blujet?schema=public
+      PAYMENT_RECONCILIATION_DATABASE_PASSWORD: ${PAYMENT_RECONCILIATION_DATABASE_PASSWORD:-}
+      SEED_ON_START: 'false'
+    command: ['node', 'dist/database/provision-payment-reconciliation-reader-role.js']
+
   pss-service:
     build:
       context: ./pss-service
@@ -292,6 +306,35 @@ services:
       - '3620'
     healthcheck:
       test: ['CMD', 'node', '-e', "require('http').get('http://localhost:3620/health/ready', r => process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  payment-reconciliation:
+    profiles: ['payment-reconciliation']
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.payment-reconciliation-worker
+      args:
+        GIT_COMMIT_SHA: ${DEPLOY_SHA:-unknown}
+    restart: unless-stopped
+    depends_on:
+      db-payment-reconciliation-reader-role:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      PORT: 3630
+      PAYMENT_RECONCILIATION_DATABASE_URL: postgresql://blujet_payment_reconciliation_reader:${PAYMENT_RECONCILIATION_DATABASE_PASSWORD:-}@db:5432/blujet?schema=public
+      PAYMENT_RECONCILIATION_INTERNAL_TOKEN: ${PAYMENT_RECONCILIATION_INTERNAL_TOKEN:-}
+      API_REQUEST_TIMEOUT_MS: ${PAYMENT_RECONCILIATION_REQUEST_TIMEOUT_MS:-10000}
+      API_MAX_BODY_BYTES: 262144
+      TRUST_PROXY_HOPS: '0'
+      HTTPS_ENABLED: 'false'
+    expose:
+      - '3630'
+    healthcheck:
+      test: ['CMD', 'node', '-e', "require('http').get('http://localhost:3630/health/ready', r => process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 12
