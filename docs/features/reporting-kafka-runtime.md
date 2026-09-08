@@ -31,9 +31,10 @@ from available history.
   before any broker call (`reporting-kafka-consumer.config.spec.ts`).
 - [x] Startup and shutdown failures are sanitized; partial startup attempts a
   disconnect, and shutdown is idempotent (`reporting-kafka.runtime.spec.ts`).
-- [ ] The real Kafka/PostgreSQL suite uses the lifecycle and still proves
+- [x] The real Kafka/PostgreSQL suite uses the lifecycle and still proves
   projection-before-offset plus acknowledgement-gap replay without duplicate
-  projection/receipt (`reporting-projection.kafka-spec.ts`).
+  projection/receipt (`reporting-projection.kafka-spec.ts`). CI run `34188378807`
+  passed this fixture.
 - [x] No public/internal HTTP route, migration, Core writer, production grant,
   runtime activation, or server deployment is included.
 

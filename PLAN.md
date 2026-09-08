@@ -204,8 +204,8 @@ below for what's landed from that port so far.
 - [x] Prove disabled behavior, startup/shutdown ordering and sanitization with
   40 focused tests; all 939 Backend unit tests, typecheck, build, scoped and
   repository-wide read-only lint pass locally.
-- [ ] Retain the real Kafka/PostgreSQL ACK-gap proof through the required CI
-  fixture; the local Windows workspace has no Kafka/Java fixture.
+- [x] Retain the real Kafka/PostgreSQL ACK-gap proof through the required CI
+  fixture (`reporting-projection.kafka-spec.ts`, CI run `34188378807`).
 - [ ] Present the completed diff for owner approval before push/merge. No server
   deployment or production flag/credential change.
 
