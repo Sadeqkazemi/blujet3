@@ -71,6 +71,8 @@ describe('Ticketing/Refund reader database role provisioner', () => {
     );
     expect(sql).not.toContain('GRANT INSERT');
     expect(sql).not.toContain('GRANT USAGE ON SCHEMA "identity"');
+    expect(sql).toContain('FROM pg_sequence s');
+    expect(sql).toContain('has_sequence_privilege');
     expect(statements.at(-1)).toBe('COMMIT');
   });
 

@@ -147,9 +147,10 @@ export async function provisionTicketingRefundReaderRole(
         NOT EXISTS (SELECT 1 FROM domain_relations d LEFT JOIN expected e USING (schema_name, relation_name)
           WHERE has_table_privilege('${TICKETING_REFUND_READER_ROLE}', d.oid, 'SELECT') != (e.relation_name IS NOT NULL)) AS "exactReads",
         NOT EXISTS (SELECT 1 FROM domain_relations d WHERE has_table_privilege('${TICKETING_REFUND_READER_ROLE}', d.oid, 'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')) AS "noWrites",
-        NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+        NOT EXISTS (SELECT 1 FROM pg_sequence s JOIN pg_class c ON c.oid = s.seqrelid
+          JOIN pg_namespace n ON n.oid = c.relnamespace
           WHERE n.nspname = ANY(ARRAY[${DOMAIN_SCHEMAS.map((schema) => `'${schema}'`).join(',')}])
-            AND c.relkind = 'S' AND has_sequence_privilege('${TICKETING_REFUND_READER_ROLE}', c.oid, 'USAGE,SELECT,UPDATE')) AS "noSequences",
+            AND has_sequence_privilege('${TICKETING_REFUND_READER_ROLE}', s.seqrelid, 'USAGE,SELECT,UPDATE')) AS "noSequences",
         NOT EXISTS (SELECT 1 FROM pg_namespace n WHERE has_schema_privilege('${TICKETING_REFUND_READER_ROLE}', n.oid, 'CREATE')) AS "noDdl"`);
     const row = checked.rows[0];
     if (

@@ -94,7 +94,11 @@ describe('TicketingRefundController HTTP boundary', () => {
       .set('X-Internal-Token', token)
       .send({ ownerId })
       .expect(200)
-      .expect(({ body }) => {
+      .expect((response) => {
+        const body = response.body as unknown as {
+          success: boolean;
+          data: { currency: string };
+        };
         expect(body.success).toBe(true);
         expect(body.data.currency).toBe('IRR');
       });
