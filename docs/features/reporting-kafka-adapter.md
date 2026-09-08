@@ -19,6 +19,12 @@ transport error without event data, database details or credentials. An
 acknowledgement gap is safe: the same event ID replays through the Reporting
 receipt and does not create another projection.
 
+When the lifecycle supplies its validated consumer-group identity, the same
+projection transaction also advances the Reporting-owned partition checkpoint.
+The checkpoint is monotonic and contains only group/topic/partition progress;
+it does not contain the event payload. This keeps durable lag evidence aligned
+with the projection while Kafka remains authoritative for group offsets.
+
 ## Checklist
 
 - [x] Canonical transport parsing is shared with Core Inbox and retains all
@@ -27,7 +33,7 @@ receipt and does not create another projection.
   no acknowledgement occurs on validation/projection/heartbeat failure
   (`reporting-kafka.handler.spec.ts`).
 - [x] A real Kafka/PostgreSQL acknowledgement-gap replay produces one projection
-  and one durable receipt (`reporting-projection.kafka-spec.ts`; passed in PR
-  #67 required CI Kafka fixture).
+  and one durable receipt; the lifecycle extension also retains one monotonic
+  checkpoint (`reporting-projection.kafka-spec.ts`).
 - [x] Reporting module exports the handler but no runtime subscription or route
   is enabled.

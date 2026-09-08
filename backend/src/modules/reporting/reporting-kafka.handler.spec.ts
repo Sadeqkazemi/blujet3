@@ -104,12 +104,40 @@ describe('ReportingKafkaHandler', () => {
     },
   );
 
+  it('forwards validated broker progress to the atomic projection', async () => {
+    await handler.runConfig(
+      { commitOffsets },
+      { ...subscription, consumerGroup: 'blujet-reporting-v1' },
+    ).eachMessage!(
+      payload({
+        message: {
+          ...payload().message,
+          highWatermark: '9',
+        } as EachMessagePayload['message'],
+      }),
+    );
+
+    expect(reporting.consume).toHaveBeenCalledWith(event, {
+      consumerGroup: 'blujet-reporting-v1',
+      topic: subscription.topic,
+      partition: 0,
+      nextOffset: '5',
+      highWatermark: '9',
+    });
+  });
+
   it.each([
     { topic: 'other-topic' },
     { partition: -1 },
     { partition: 0.5 },
     { message: { ...payload().message, key: Buffer.from('wrong') } },
     { message: { ...payload().message, offset: '4x' } },
+    {
+      message: {
+        ...payload().message,
+        highWatermark: '9x',
+      } as EachMessagePayload['message'],
+    },
     { message: { ...payload().message, value: null } },
     { message: { ...payload().message, value: Buffer.from('{') } },
     {

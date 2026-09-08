@@ -18,6 +18,20 @@ resumes from the committed consumer-group offset. New groups replay retained
 events from the beginning by default so the idempotent projection can rebuild
 from available history.
 
+## Durable checkpoint and lag observation
+
+For each validated delivery, Reporting writes the consumer group, exact topic,
+partition, next offset and Kafka high watermark to
+`reporting.kafka_consumer_checkpoints`. The checkpoint write shares the
+projection transaction and advances offsets/high watermarks monotonically.
+Kafka acknowledgement remains the final step after the database commit.
+
+The readiness payload reports only aggregate checkpoint evidence: partition
+count, maximum observed lag and last checkpoint timestamp. It does not expose
+event payloads, topic names or raw offsets, and lag does not currently change
+readiness. The stored high watermark is an observation from consumed records,
+not a replacement for broker-side monitoring.
+
 ## Acceptance checklist
 
 - [x] Disabled/default configuration creates no Kafka client and performs no
@@ -35,9 +49,17 @@ from available history.
   projection-before-offset plus acknowledgement-gap replay without duplicate
   projection/receipt (`reporting-projection.kafka-spec.ts`). CI run `34188378807`
   passed this fixture.
-- [x] No public/internal HTTP route, migration, Core writer, production grant,
+- [x] Projection, receipt and per-partition checkpoint commit atomically;
+  exact replay and ACK-gap recovery cannot move a checkpoint backwards
+  (`reporting-event-projection.e2e-spec.ts`,
+  `reporting-projection.kafka-spec.ts`).
+- [x] Readiness exposes only aggregate durable progress fields and retains no
+  event payload in the checkpoint table.
+- [x] No new public/internal HTTP route, Core writer, production grant,
   runtime activation, or server deployment is included.
 
-Poison-event retry/dead-letter policy, lag/readiness reporting, historical
+Poison-event retry/dead-letter policy, lag alert thresholds, historical
 backfill outside broker retention, and production flag activation remain
-separate reviewed slices.
+separate reviewed slices. Until retention/replay policy is approved, poison
+records continue to fail closed without offset acknowledgement or automatic
+skip.

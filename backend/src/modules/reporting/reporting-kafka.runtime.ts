@@ -8,6 +8,7 @@ import { Kafka, logLevel, type Consumer } from 'kafkajs';
 import { Logger } from 'nestjs-pino';
 import type { ReportingKafkaConsumerConfig } from '../../config/reporting-kafka-consumer.config';
 import { ReportingKafkaHandler } from './reporting-kafka.handler';
+import { ReportingItineraryProjectionStore } from './reporting-itinerary-projection.store';
 
 export type ReportingKafkaRuntimeClient = Pick<
   Consumer,
@@ -24,6 +25,9 @@ export type ReportingKafkaRuntimeStatus = {
   lastProcessingFailureAt: string | null;
   lastMessageAt: string | null;
   lastProcessedAt: string | null;
+  checkpointPartitions: number;
+  maxObservedLag: string | null;
+  lastCheckpointAt: string | null;
 };
 
 export function createReportingKafkaClient(
@@ -47,6 +51,9 @@ export class ReportingKafkaRuntime
   private lastProcessingFailureAt: string | null = null;
   private lastMessageAt: string | null = null;
   private lastProcessedAt: string | null = null;
+  private checkpointPartitions = 0;
+  private maxObservedLag: bigint | null = null;
+  private lastCheckpointAt: string | null = null;
 
   constructor(
     @Inject(REPORTING_KAFKA_CONFIG)
@@ -54,6 +61,7 @@ export class ReportingKafkaRuntime
     @Inject(REPORTING_KAFKA_CLIENT)
     private readonly client: ReportingKafkaRuntimeClient | null,
     private readonly handler: ReportingKafkaHandler,
+    private readonly projectionStore: ReportingItineraryProjectionStore,
     private readonly logger: Logger,
   ) {
     this.state = config.enabled ? 'stopped' : 'disabled';
@@ -67,6 +75,9 @@ export class ReportingKafkaRuntime
       lastProcessingFailureAt: this.lastProcessingFailureAt,
       lastMessageAt: this.lastMessageAt,
       lastProcessedAt: this.lastProcessedAt,
+      checkpointPartitions: this.checkpointPartitions,
+      maxObservedLag: this.maxObservedLag?.toString() ?? null,
+      lastCheckpointAt: this.lastCheckpointAt,
     };
   }
 
@@ -78,6 +89,14 @@ export class ReportingKafkaRuntime
     if (!this.config.enabled || !this.client || this.started) return;
     this.state = 'starting';
     try {
+      const checkpoint = await this.projectionStore.getCheckpointSummary(
+        this.config.consumer.groupId,
+        this.config.topic,
+      );
+      this.checkpointPartitions = checkpoint.partitions;
+      this.maxObservedLag =
+        checkpoint.maxLag === null ? null : BigInt(checkpoint.maxLag);
+      this.lastCheckpointAt = checkpoint.lastCheckpointAt;
       await this.client.connect();
       await this.client.subscribe({
         topic: this.config.topic,
@@ -86,6 +105,7 @@ export class ReportingKafkaRuntime
       const runConfig = this.handler.runConfig(this.client, {
         topic: this.config.topic,
         maxBytes: this.config.maxBytes,
+        consumerGroup: this.config.consumer.groupId,
       });
       const eachMessage = runConfig.eachMessage;
       if (eachMessage) {
@@ -94,6 +114,7 @@ export class ReportingKafkaRuntime
           try {
             await eachMessage(payload);
             this.lastProcessedAt = new Date().toISOString();
+            this.observeCheckpoint(payload);
           } catch {
             // Kafka logging is disabled; report failure without broker/PII data.
             this.processingFailures += 1;
@@ -116,6 +137,34 @@ export class ReportingKafkaRuntime
       this.logger.error('Reporting Kafka consumer startup failed');
       throw new Error('Reporting Kafka consumer startup failed');
     }
+  }
+
+  private observeCheckpoint(payload: {
+    partition?: number;
+    message?: { offset?: string; highWatermark?: string };
+  }): void {
+    const partition = payload.partition;
+    const offset = payload.message?.offset;
+    const highWatermark = payload.message?.highWatermark;
+    if (
+      typeof partition !== 'number' ||
+      !Number.isSafeInteger(partition) ||
+      partition < 0 ||
+      offset === undefined ||
+      highWatermark === undefined ||
+      !/^\d+$/.test(offset) ||
+      !/^\d+$/.test(highWatermark)
+    )
+      return;
+    const lag = BigInt(highWatermark) - (BigInt(offset) + 1n);
+    const safeLag = lag > 0n ? lag : 0n;
+    if (this.maxObservedLag === null || safeLag > this.maxObservedLag)
+      this.maxObservedLag = safeLag;
+    this.checkpointPartitions = Math.max(
+      this.checkpointPartitions,
+      partition + 1,
+    );
+    this.lastCheckpointAt = new Date().toISOString();
   }
 
   async onApplicationShutdown(): Promise<void> {

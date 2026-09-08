@@ -11,7 +11,9 @@ import {
 import { dataSourceOptions } from '../src/database/data-source.options';
 import { ReportingItineraryEventProjection } from '../src/database/entities/reporting-itinerary-event-projection.entity';
 import { ReportingItineraryEventReceipt } from '../src/database/entities/reporting-itinerary-event-receipt.entity';
+import { ReportingKafkaConsumerCheckpoint } from '../src/database/entities/reporting-kafka-consumer-checkpoint.entity';
 import { ReportingItineraryProjections1791734400000 } from '../src/database/migrations/1791734400000-ReportingItineraryProjections';
+import { ReportingKafkaConsumerCheckpoints1792156800000 } from '../src/database/migrations/1792156800000-ReportingKafkaConsumerCheckpoints';
 import { ReportingEventConsumer } from '../src/modules/reporting/reporting-event-consumer';
 import { REPORTING_READ_MODEL_SINK } from '../src/modules/reporting/reporting-event-consumer';
 import { ReportingItineraryProjectionStore } from '../src/modules/reporting/reporting-itinerary-projection.store';
@@ -21,6 +23,7 @@ describe('Reporting itinerary projection (PostgreSQL)', () => {
   let db: DataSource;
   let consumer: ReportingEventConsumer;
   const orderIds = new Set<string>();
+  const consumerGroups = new Set<string>();
   const context = () => ({
     auditId: `audit-${randomUUID()}`,
     correlationId: `request-${randomUUID()}`,
@@ -68,6 +71,7 @@ describe('Reporting itinerary projection (PostgreSQL)', () => {
         TypeOrmModule.forFeature([
           ReportingItineraryEventProjection,
           ReportingItineraryEventReceipt,
+          ReportingKafkaConsumerCheckpoint,
         ]),
       ],
       providers: [
@@ -93,7 +97,12 @@ describe('Reporting itinerary projection (PostgreSQL)', () => {
       await db.getRepository(ReportingItineraryEventReceipt).delete({
         orderId: In([...orderIds]),
       });
+    if (consumerGroups.size)
+      await db.getRepository(ReportingKafkaConsumerCheckpoint).delete({
+        consumerGroup: In([...consumerGroups]),
+      });
     orderIds.clear();
+    consumerGroups.clear();
   });
 
   afterAll(async () => {
@@ -127,6 +136,51 @@ describe('Reporting itinerary projection (PostgreSQL)', () => {
         orderId,
       }),
     ).toBe(2);
+  });
+
+  it('commits monotonic Kafka progress in the projection transaction', async () => {
+    const orderId = nextOrderId();
+    const consumerGroup = `reporting-test-${randomUUID()}`;
+    consumerGroups.add(consumerGroup);
+    const first = orderCreated(orderId);
+
+    await expect(
+      consumer.consume(first, {
+        consumerGroup,
+        topic: 'blujet.events.v1',
+        partition: 0,
+        nextOffset: '5',
+        highWatermark: '10',
+      }),
+    ).resolves.toBe('applied');
+    await expect(
+      consumer.consume(first, {
+        consumerGroup,
+        topic: 'blujet.events.v1',
+        partition: 0,
+        nextOffset: '3',
+        highWatermark: '12',
+      }),
+    ).resolves.toBe('duplicate');
+
+    const checkpoint = await db
+      .getRepository(ReportingKafkaConsumerCheckpoint)
+      .findOneByOrFail({
+        consumerGroup,
+        topic: 'blujet.events.v1',
+        partition: 0,
+      });
+    expect(checkpoint).toMatchObject({
+      nextOffset: '5',
+      highWatermark: '12',
+    });
+    const store = module.get(ReportingItineraryProjectionStore);
+    await expect(
+      store.getCheckpointSummary(consumerGroup, 'blujet.events.v1'),
+    ).resolves.toMatchObject({
+      partitions: 1,
+      maxLag: '7',
+    });
   });
 
   it('does not regress a slot and fails closed on equal-version conflicts', async () => {
@@ -270,6 +324,26 @@ describe('Reporting itinerary projection (PostgreSQL)', () => {
       ).toBe(true);
       expect(
         await runner.hasTable('reporting.core_itinerary_event_receipts'),
+      ).toBe(true);
+    } finally {
+      await runner.rollbackTransaction();
+      await runner.release();
+    }
+  });
+
+  it('reverts and reapplies the additive Kafka checkpoint table', async () => {
+    const runner = db.createQueryRunner();
+    await runner.connect();
+    await runner.startTransaction();
+    try {
+      const migration = new ReportingKafkaConsumerCheckpoints1792156800000();
+      await migration.down(runner);
+      expect(
+        await runner.hasTable('reporting.kafka_consumer_checkpoints'),
+      ).toBe(false);
+      await migration.up(runner);
+      expect(
+        await runner.hasTable('reporting.kafka_consumer_checkpoints'),
       ).toBe(true);
     } finally {
       await runner.rollbackTransaction();

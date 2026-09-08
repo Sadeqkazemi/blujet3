@@ -19,6 +19,7 @@ export interface ValidatedKafkaEventSubscription {
 export interface ParsedKafkaEventDelivery {
   event: CanonicalEvent;
   offset: { topic: string; partition: number; offset: string };
+  highWatermark?: string;
 }
 
 function invalid(): BadRequestException {
@@ -70,6 +71,23 @@ export function parseKafkaEventDelivery(
     message.value.length > subscription.maxBytes
   )
     throw invalid();
+  const highWatermarkCandidate =
+    'highWatermark' in message ? message.highWatermark : undefined;
+  if (
+    highWatermarkCandidate !== undefined &&
+    typeof highWatermarkCandidate !== 'string'
+  )
+    throw invalid();
+  const highWatermark =
+    typeof highWatermarkCandidate === 'string'
+      ? highWatermarkCandidate
+      : undefined;
+  if (
+    highWatermark !== undefined &&
+    (!/^(0|[1-9][0-9]{0,18})$/.test(highWatermark) ||
+      BigInt(highWatermark) > 9223372036854775807n)
+  )
+    throw invalid();
   const parsed: unknown = (() => {
     try {
       return JSON.parse(
@@ -99,5 +117,6 @@ export function parseKafkaEventDelivery(
       partition: payload.partition,
       offset: (BigInt(message.offset) + 1n).toString(),
     },
+    highWatermark,
   };
 }
