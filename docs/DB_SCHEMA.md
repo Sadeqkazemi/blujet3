@@ -773,6 +773,21 @@ The role is `NOINHERIT`, has no memberships or ownership, has
 any schema. Core remains the only writer. Removing the Compose profile and
 revoking this role is the rollback; no historical data is touched.
 
+### Payment/Reconciliation read-only worker
+
+The opt-in `payment-reconciliation` process adds no table or migration. Its role
+`blujet_payment_reconciliation_reader` receives `USAGE` only on `payments` and
+`orders`, plus `SELECT` on exactly:
+
+`payments.payment_reconciliations`, `payments.payment_attempts`,
+`payments.ledger_entries` and `orders.bookings`.
+
+The role is `NOINHERIT`, has no memberships or ownership,
+`default_transaction_read_only=on`, no sequence privilege and no `CREATE` on
+any schema. Payment capture, PSP callbacks, refunds and reconciliation
+resolution remain Core writes. Removing the profile and revoking the role is
+the rollback; no financial history is changed.
+
 ### Current reporting and booking read models
 
 - Finance sales reports are derived read models over existing `Booking`,

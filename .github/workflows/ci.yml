@@ -20,6 +20,7 @@ jobs:
       backend: ${{ steps.scope.outputs.backend }}
       offer: ${{ steps.scope.outputs.offer }}
       ticketing_refund: ${{ steps.scope.outputs.ticketing_refund }}
+      payment_reconciliation: ${{ steps.scope.outputs.payment_reconciliation }}
       backend_migration: ${{ steps.scope.outputs.backend_migration }}
       experience: ${{ steps.scope.outputs.experience }}
       loyalty: ${{ steps.scope.outputs.loyalty }}
@@ -39,7 +40,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          areas=(backend offer ticketing_refund backend_migration experience loyalty agency identity notify pss frontend ml)
+          areas=(backend offer ticketing_refund payment_reconciliation backend_migration experience loyalty agency identity notify pss frontend ml)
           if [[ "${{ github.event_name }}" != "pull_request" ]]; then
             for area in "${areas[@]}"; do
               echo "$area=true" >> "$GITHUB_OUTPUT"
@@ -73,6 +74,7 @@ jobs:
           emit backend '^(backend/|scripts/kafka-ci\.test\.mjs$|scripts/(verify-backup-restore\.sh|verify-pitr-recovery\.sh|archive-wal\.sh|database-entrypoint\.sh|backup-base-pitr\.sh)$)'
           emit offer '^(backend/(Dockerfile\.offer-worker|package(-lock)?\.json|tsconfig[^/]*\.json|nest-cli\.json|src/(offer-worker|config/offer-worker|database/(data-source\.options|entities/|provision-offer-reader-role)|modules/(offer-pricing|pss/)))|docker-compose\.prod\.yml$|docs/features/offer-pricing-process\.md$)'
           emit ticketing_refund '^(backend/(Dockerfile\.ticketing-refund-worker|package(-lock)?\.json|tsconfig[^/]*\.json|nest-cli\.json|src/(ticketing-refund-worker|ticketing-refund-worker-health|ticketing-refund-worker\.module|config/ticketing-refund-worker|database/(data-source\.options|entities/|provision-ticketing-refund-reader-role)|modules/(ticketing-refund|pss/)))|docker-compose\.prod\.yml$|docs/features/ticketing-refund-process\.md$)'
+          emit payment_reconciliation '^(backend/(Dockerfile\.payment-reconciliation-worker|package(-lock)?\.json|tsconfig[^/]*\.json|nest-cli\.json|src/(payment-reconciliation-worker|payment-reconciliation-worker-health|payment-reconciliation-worker\.module|config/payment-reconciliation-worker|database/(data-source\.options|entities/|provision-payment-reconciliation-reader-role)|modules/payment-reconciliation))|docker-compose\.prod\.yml$|docs/features/payment-reconciliation-process\.md$)'
           emit backend_migration '^(backend/|scripts/check-expand-only-migrations\.mjs$)'
           emit experience '^(experience-service/|backend/(package(-lock)?\.json$|src/database/))'
           emit loyalty '^(loyalty-service/|backend/(package(-lock)?\.json$|tsconfig[^/]*\.json$|nest-cli\.json$|src/database/|src/common/money\.ts$|src/modules/loyalty-shadow/))'
@@ -611,6 +613,85 @@ jobs:
       - name: Build the opt-in Ticketing/Refund container
         run: docker build -f Dockerfile.ticketing-refund-worker -t blujet-ticketing-refund:ci .
 
+  payment-reconciliation:
+    name: Payment/Reconciliation process
+    needs: changes
+    if: needs.changes.outputs.payment_reconciliation == 'true'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: blujet
+          POSTGRES_PASSWORD: blujet
+          POSTGRES_DB: blujet_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U blujet -d blujet_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: cp .env.test .env
+      - run: npm run migration:run
+      - run: npm run build
+      - name: Prove the restricted reader and read-only HTTP boundary
+        env:
+          MIGRATION_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_test
+          PAYMENT_RECONCILIATION_DATABASE_PASSWORD: payment_reconciliation_reader_ci_password_2026
+          PAYMENT_RECONCILIATION_DATABASE_URL: postgresql://blujet_payment_reconciliation_reader:payment_reconciliation_reader_ci_password_2026@localhost:5432/blujet_test
+          PAYMENT_RECONCILIATION_INTERNAL_TOKEN: payment_reconciliation_internal_ci_token_2026
+          NODE_ENV: test
+          PORT: '3630'
+        run: |
+          set -euo pipefail
+          npm run database:provision-payment-reconciliation-reader:prod
+          node - <<'NODE'
+          const { Client } = require('pg');
+          (async () => {
+            const client = new Client({ connectionString: process.env.PAYMENT_RECONCILIATION_DATABASE_URL });
+            await client.connect();
+            const state = await client.query('SHOW transaction_read_only');
+            if (state.rows[0]?.transaction_read_only !== 'on') process.exit(1);
+            await client.query('SELECT count(*) FROM payments.payment_reconciliations');
+            try {
+              await client.query('UPDATE payments.payment_reconciliations SET status = status');
+              process.exit(1);
+            } catch (error) {
+              if (error?.code !== '25006') process.exit(1);
+            } finally {
+              await client.end();
+            }
+          })().catch(() => process.exit(1));
+          NODE
+          node dist/payment-reconciliation-worker.main.js >/tmp/blujet-payment-reconciliation.log 2>&1 &
+          worker_pid=$!
+          trap 'kill "$worker_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent http://localhost:3630/health/ready >/tmp/payment-reconciliation-ready.json; then break; fi
+            sleep 1
+          done
+          grep -q '"readOnly":true' /tmp/payment-reconciliation-ready.json
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            http://localhost:3630/internal/v1/payment-reconciliation/pending)" = '401'
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --header 'X-Internal-Token: payment_reconciliation_internal_ci_token_2026' \
+            'http://localhost:3630/internal/v1/payment-reconciliation/pending?limit=0')" = '400'
+      - name: Build the opt-in Payment/Reconciliation container
+        run: docker build -f Dockerfile.payment-reconciliation-worker -t blujet-payment-reconciliation:ci .
+
   backend-backup-restore:
     name: Backend backup restore proof
     needs: changes
@@ -827,6 +908,7 @@ jobs:
       - backend
       - offer-pricing
       - ticketing-refund
+      - payment-reconciliation
       - backend-backup-restore
       - backend-pitr-recovery
       - backend-kafka

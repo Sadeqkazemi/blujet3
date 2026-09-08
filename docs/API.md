@@ -402,6 +402,23 @@ There is deliberately no `apply`, `issue`, `void`, `exchange`, stock-load or
 Nira/DCS endpoint in this worker. The Compose profile is disabled by default and
 there is no public Gateway route or cutover flag in this slice.
 
+### Payment/Reconciliation process boundary — read-only shadow slice
+
+The opt-in `payment-reconciliation` worker is a read-only view over Core
+payment evidence. Core remains the only writer for payment attempts,
+reconciliation rows, bookings and ledger entries. The worker never receives
+card data, PSP credentials or the Core owner database URL.
+
+| Method | Path | Behavior |
+| --- | --- | --- |
+| GET | `/internal/v1/payment-reconciliation/pending?limit=50` | Returns bounded pending reconciliation rows with PNR, booking status, gateway reference, IRR amount and UTC creation time. |
+| GET | `/internal/v1/payment-reconciliation/orders/:reference/status` | Returns booking payment-attempt, reconciliation and ledger projections by booking UUID or PNR; no PII or card fields. |
+
+Both routes require `X-Internal-Token`. The profile is disabled by default and
+there is no public Gateway cutover. Resolve, capture, refund, callback and
+ledger-write operations remain in Core until the real PSP contract and UAT are
+provided.
+
 ### Commerce B3.1 — durable hold expiry
 
 No public route or response shape changes. The existing 15-minute `HELD`

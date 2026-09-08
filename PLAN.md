@@ -17,6 +17,19 @@ promo/wallet/points-ledger/GDPR/public frontend) onto this schema**,
 rather than reconciling two incompatible Prisma histories. See "Phase 13"
 below for what's landed from that port so far.
 
+### 2026-09-08 — Payment/Reconciliation read-only process boundary
+
+- [x] Keep payment, PSP callbacks, refunds, bookings and ledger writes in the
+  transactional Core; no real PSP contract was invented.
+- [x] Add a default-off internal worker for bounded reconciliation queue and
+  per-order payment/ledger status reads, with no PII or card data.
+- [x] Add an exact-SELECT, non-owner PostgreSQL reader role and fail-closed
+  readiness; worker never runs migrations or receives `DATABASE_URL`.
+- [x] Add Compose profile, CI PostgreSQL/read-only/container proof and API/DB
+  acceptance documentation.
+- [ ] Real PSP callback/reconciliation write flow remains blocked until the
+  vendor contract and sandbox are supplied. No server deployment.
+
 ### 2026-09-08 — Core runtime database isolation (local)
 
 - [x] Close the optional Reporting validation extension; Reporting process,
