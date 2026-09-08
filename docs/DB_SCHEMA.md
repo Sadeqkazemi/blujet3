@@ -272,6 +272,15 @@ schema only and do not supersede current TypeORM metadata or migrations.
 
 ### Production runtime role contract
 
+The long-running Core Backend also uses a non-owner database identity. Compose
+runs migrations in a short-lived owner job, then idempotently provisions
+`blujet_core_runtime` and starts Backend with that restricted runtime URL only.
+The transitional Core role has DML/sequence access across current domain schemas
+because the monolith remains the rollback writer during the strangler window,
+but it has no DDL, role-management, ownership, replication or RLS-bypass
+capability. Its grants contract is documented in
+[`docs/features/core-runtime-database-role.md`](features/core-runtime-database-role.md).
+
 The extracted `notify` and `experience` processes must not reuse the Core
 database-owner credentials. Production compose therefore requires
 `NOTIFY_DATABASE_URL` and `EXPERIENCE_DATABASE_URL` explicitly. Operations must

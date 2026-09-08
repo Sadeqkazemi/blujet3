@@ -72,6 +72,7 @@ jobs:
               unset current_value
             }
             ensure_server_secret PSS_POSTGRES_PASSWORD
+            ensure_server_secret CORE_DATABASE_PASSWORD
             ensure_server_secret PSS_INTERNAL_TOKEN
             ensure_server_secret NOTIFY_INTERNAL_TOKEN
             ensure_server_secret EXPERIENCE_INTERNAL_TOKEN

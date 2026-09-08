@@ -27,6 +27,7 @@
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/database/data-source.ts",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/database/data-source.ts",
     "migration:run:prod": "typeorm migration:run -d dist/database/data-source.js",
+    "database:provision-core-runtime:prod": "node dist/database/provision-core-runtime-role.js",
     "data:audit:prod": "node dist/database/production-data-reset.js",
     "data:reset:prod": "node dist/database/production-data-reset.js --execute-reset",
     "data:purge:uat": "node dist/database/uat-demo-data-purge.js",

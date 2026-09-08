@@ -23,6 +23,12 @@ const notifyComposeSection =
 const experienceComposeSection =
   compose.split('\n  experience-service:')[1]?.split('\n  ml-service:')[0] ??
   '';
+const backendComposeSection =
+  compose.split('\n  backend:')[1]?.split('\n  frontend:')[0] ?? '';
+const migrationComposeSection =
+  compose.split('\n  db-migrate:')[1]?.split('\n  db-runtime-roles:')[0] ?? '';
+const runtimeRolesComposeSection =
+  compose.split('\n  db-runtime-roles:')[1]?.split('\n  redis:')[0] ?? '';
 const deployWorkflow = readFileSync(
   join(backendRoot, '..', '.github', 'workflows', 'deploy.yml'),
   'utf8',
@@ -273,6 +279,32 @@ describe('production backend artifacts', () => {
     expect(productionEnvExample).toContain('NOTIFY_DATABASE_URL=');
     expect(productionEnvExample).toContain('EXPERIENCE_DATABASE_URL=');
     expect(productionEnvExample).toContain('non-superuser');
+  });
+
+  it('keeps database-owner credentials outside the long-running Core process', () => {
+    expect(migrationComposeSection).toContain(
+      'DATABASE_URL: postgresql://blujet:${POSTGRES_PASSWORD}@db:5432/blujet?schema=public',
+    );
+    expect(runtimeRolesComposeSection).toContain(
+      'MIGRATION_DATABASE_URL: postgresql://blujet:${POSTGRES_PASSWORD}@db:5432/blujet?schema=public',
+    );
+    expect(runtimeRolesComposeSection).toContain(
+      'condition: service_completed_successfully',
+    );
+    expect(backendComposeSection).toContain(
+      'DATABASE_URL: postgresql://blujet_core_runtime:${CORE_DATABASE_PASSWORD}@db:5432/blujet?schema=public',
+    );
+    expect(backendComposeSection).toContain('db-runtime-roles:');
+    expect(backendComposeSection).not.toContain('${POSTGRES_PASSWORD}');
+    expect(backendComposeSection).not.toContain('MIGRATION_DATABASE_URL');
+    expect(productionEnvExample).toContain('CORE_DATABASE_PASSWORD=');
+    expect(entrypoint).not.toContain('npm run migration:run:prod');
+    expect(stagingSmokeScript).toContain(
+      'compose up -d --wait db redis pss-db db-migrate',
+    );
+    expect(stagingSmokeScript).not.toContain(
+      'compose run --rm --no-deps --entrypoint sh backend',
+    );
   });
 
   it('runs the complete backend E2E suite in isolated parallel shards', () => {

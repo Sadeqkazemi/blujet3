@@ -1,5 +1,10 @@
 # API.md — blujet endpoints (human-readable summary)
 
+Database runtime isolation does not change any public or internal HTTP
+contract. A restricted Core runtime URL replaces owner credentials inside the
+long-running Backend process; see
+`docs/features/core-runtime-database-role.md`.
+
 ## Kafka durable transport foundation
 
 Typed Core itinerary v1 contracts cover OrderCreated (HELD quote snapshot),

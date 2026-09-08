@@ -17,6 +17,22 @@ promo/wallet/points-ledger/GDPR/public frontend) onto this schema**,
 rather than reconciling two incompatible Prisma histories. See "Phase 13"
 below for what's landed from that port so far.
 
+### 2026-09-08 — Core runtime database isolation (local)
+
+- [x] Close the optional Reporting validation extension; Reporting process,
+  projection/checkpoint and readiness work is already merged in PR #93.
+- [x] Document separation of migration-owner and long-running Core credentials
+  without splitting `inventory` + `orders` + `payments`.
+- [x] Add an idempotent restricted Core role provisioner and fail-closed
+  production configuration.
+- [x] Run migrations and role provisioning as short-lived ordered jobs; start
+  Backend with no owner credential.
+- [x] Pass 989 Backend unit tests, focused role/artifact tests, scoped lint,
+  typecheck, production build and a real local PostgreSQL restricted-role proof.
+- [ ] Run the container-level staging smoke in CI after push; Docker is not
+  installed on this workstation.
+- [ ] Present the diff for owner approval before push/merge; no deployment.
+
 ### 2026-09-08 — Reporting worker process (local)
 
 - [x] Define a separate NestJS process that reuses the validated Reporting
@@ -27,8 +43,7 @@ below for what's landed from that port so far.
   contract; do not activate or deploy it.
 - [x] Pass 24 focused tests, all 985 Backend unit tests, 10 PostgreSQL
   Reporting/schema-parity tests, read-only lint, typecheck and production build.
-- [ ] Present the diff for owner approval before push/merge; no server
-  deployment.
+- [x] Owner-approved PR #93 merged as `690f9e1`; no server deployment.
 
 ### 2026-09-08 — Durable Reporting Kafka checkpoint (merged)
 
