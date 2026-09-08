@@ -1,6 +1,6 @@
-# Public Offer compatibility facade — contract before implementation
+# Public Offer compatibility facade — implementation
 
-Status: **contract ready; awaiting owner approval before implementation**
+Status: **implemented; feature flag remains default-off**
 
 این slice یک مسیر افزایشی برای اتصال سایت و پرتال آژانس به Offer امضاشدهٔ Core
 اضافه می‌کند. هستهٔ تراکنشی، نویسندهٔ فعلی رزرو، جست‌وجوی مهمان و مسیرهای موجود
@@ -38,15 +38,16 @@ rollback فوری به رفتار قبل است.
 
 ## Acceptance checklist
 
-- [ ] DTO عمومی seller/channel/owner را از ورودی حذف و nested validation را
+- [x] DTO عمومی seller/channel/owner را از ورودی حذف و nested validation را
       حفظ می‌کند.
-- [ ] JWT role و id تنها منبع seller binding هستند؛ ورودی کلاینت نادیده گرفته
+- [x] JWT role و id تنها منبع seller binding هستند؛ ورودی کلاینت نادیده گرفته
       یا پذیرفته نمی‌شود.
-- [ ] فلگ default-off است، در startup فقط `true|false` می‌پذیرد و خاموشی هیچ
-      call به Quote/Core ندارد.
-- [ ] مسیر روشن USER و AGENCY به Core Offer با mapping صحیح واگذار می‌شود.
-- [ ] 401، 403، 400 و fail-closed 503 پوشش تست دارند؛ مسیر legacy regression
-      موجود سبز می‌ماند.
+- [x] فلگ default-off است، در startup فقط `true|false` می‌پذیرد و خاموشی هیچ
+      call به Quote/Core ندارد (`PublicOfferFacadeService` specs).
+- [x] مسیر روشن USER و AGENCY به Core Offer با mapping صحیح واگذار می‌شود
+      (`binds USER` و `binds AGENCY` specs).
+- [x] 401/403 توسط `JwtAuthGuard`/`RolesGuard` و 400 توسط DTO validation کنترل
+      می‌شوند؛ fail-closed 503 در تست سرویس پوشش دارد و تست‌های legacy سبز می‌مانند.
 - [ ] owner approval برای implementation، فعال‌سازی فلگ، parity و push/merge.
 - [ ] UAT canary و deploy (خارج از این slice).
 

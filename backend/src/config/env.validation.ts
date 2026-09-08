@@ -235,6 +235,11 @@ class EnvironmentVariables {
   @IsNumberString()
   CORE_OFFER_TTL_SECONDS?: string;
 
+  /** Public signed-Offer facade; strict and default-off for safe rollback. */
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  CORE_OFFER_PUBLIC_ENABLED?: string;
+
   @IsOptional()
   @IsIn(['true', 'false'])
   IDENTITY_INTEGRATION_ENABLED?: string;

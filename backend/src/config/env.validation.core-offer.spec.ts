@@ -20,11 +20,13 @@ describe('Core offer environment validation', () => {
         ...base,
         CORE_OFFER_SIGNING_SECRET: 'a'.repeat(32),
         CORE_OFFER_TTL_SECONDS: '900',
+        CORE_OFFER_PUBLIC_ENABLED: 'false',
       }),
     ).toEqual(
       expect.objectContaining({
         CORE_OFFER_SIGNING_SECRET: 'a'.repeat(32),
         CORE_OFFER_TTL_SECONDS: '900',
+        CORE_OFFER_PUBLIC_ENABLED: 'false',
       }),
     );
   });
@@ -42,5 +44,8 @@ describe('Core offer environment validation', () => {
     expect(() =>
       validateEnv({ ...base, CORE_OFFER_TTL_SECONDS: '60.5' }),
     ).toThrow('between 60 and 900');
+    expect(() =>
+      validateEnv({ ...base, CORE_OFFER_PUBLIC_ENABLED: 'yes' }),
+    ).toThrow('CORE_OFFER_PUBLIC_ENABLED');
   });
 });
