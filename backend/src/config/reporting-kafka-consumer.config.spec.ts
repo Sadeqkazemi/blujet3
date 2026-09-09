@@ -63,6 +63,18 @@ describe('reportingKafkaConsumerConfig', () => {
     });
   });
 
+  it('keeps schema-header enforcement off by default and allows explicit enablement', () => {
+    expect(reportingKafkaConsumerConfig(enabled)).toMatchObject({
+      requireSchemaId: false,
+    });
+    expect(
+      reportingKafkaConsumerConfig({
+        ...enabled,
+        CORE_EVENT_SCHEMA_HEADER_REQUIRED: 'true',
+      }),
+    ).toMatchObject({ requireSchemaId: true });
+  });
+
   it.each([
     { REPORTING_KAFKA_CLIENT_ID: '../client' },
     { REPORTING_KAFKA_GROUP_ID: '' },
@@ -71,6 +83,7 @@ describe('reportingKafkaConsumerConfig', () => {
     { REPORTING_KAFKA_MAX_BYTES: '262145' },
     { REPORTING_KAFKA_MAX_BYTES: '1.5' },
     { KAFKA_BROKERS: 'invalid' },
+    { CORE_EVENT_SCHEMA_HEADER_REQUIRED: 'yes' },
   ])('rejects unsafe setting %j', (invalid) => {
     expect(() =>
       reportingKafkaConsumerConfig({ ...enabled, ...invalid }),

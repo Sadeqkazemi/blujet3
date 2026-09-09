@@ -13,6 +13,7 @@ describe('ReportingKafkaRuntime', () => {
   const disabled = { enabled: false } as const;
   const enabled: ReportingKafkaConsumerConfig = {
     enabled: true,
+    requireSchemaId: false,
     topic: 'blujet.events.v1',
     fromBeginning: true,
     maxBytes: 4096,
@@ -102,6 +103,7 @@ describe('ReportingKafkaRuntime', () => {
       topic: 'blujet.events.v1',
       maxBytes: 4096,
       consumerGroup: 'reporting-v1',
+      requireSchemaId: false,
     });
     expect(kafkaClient.run).toHaveBeenCalledWith(runConfig);
     await worker.onApplicationBootstrap();

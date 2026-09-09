@@ -9,12 +9,14 @@ export interface KafkaEventSubscription {
   topic: string;
   expectedProducer: string;
   maxBytes?: number;
+  requireSchemaId?: boolean;
 }
 
 export interface ValidatedKafkaEventSubscription {
   readonly topic: string;
   readonly expectedProducer: string;
   readonly maxBytes: number;
+  readonly requireSchemaId: boolean;
 }
 
 export interface ParsedKafkaEventDelivery {
@@ -41,19 +43,22 @@ export function validateKafkaEventSubscription(
   subscription: KafkaEventSubscription,
 ): ValidatedKafkaEventSubscription {
   const maxBytes = subscription.maxBytes ?? 256 * 1024;
+  const requireSchemaId = subscription.requireSchemaId ?? false;
   if (
     !/^[a-zA-Z0-9._-]{1,249}$/.test(subscription.topic) ||
     ['.', '..'].includes(subscription.topic) ||
     !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/.test(subscription.expectedProducer) ||
     !Number.isSafeInteger(maxBytes) ||
     maxBytes < 1 ||
-    maxBytes > 256 * 1024
+    maxBytes > 256 * 1024 ||
+    typeof requireSchemaId !== 'boolean'
   )
     throw invalid();
   return Object.freeze({
     topic: subscription.topic,
     expectedProducer: subscription.expectedProducer,
     maxBytes,
+    requireSchemaId,
   });
 }
 
@@ -106,6 +111,12 @@ export function parseKafkaEventDelivery(
   const rawSchemaId = message.headers?.['event-schema-id'];
   const schemaId = header(message, 'event-schema-id');
   const expectedSchema = coreItineraryEventSchema(parsed);
+  if (
+    expectedSchema !== undefined &&
+    subscription.requireSchemaId &&
+    schemaId === undefined
+  )
+    throw invalid();
   if (
     rawSchemaId !== undefined &&
     (schemaId === undefined ||

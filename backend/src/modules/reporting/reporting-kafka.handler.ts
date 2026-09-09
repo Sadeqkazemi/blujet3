@@ -23,6 +23,7 @@ export interface ReportingKafkaSubscription {
   topic: string;
   maxBytes?: number;
   consumerGroup?: string;
+  requireSchemaId?: boolean;
 }
 
 @Injectable()

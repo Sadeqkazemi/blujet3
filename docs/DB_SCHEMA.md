@@ -85,6 +85,11 @@ The PR compatibility comparison reads only committed JSON artifacts from the
 current and target Git commits. It introduces no PostgreSQL table, migration,
 grant, seed, replication slot or runtime database connection
 (`docs/features/event-schema-compatibility-policy.md`).
+The proposed schema-header cutover is a consumer admission rule only. Its
+feature flag is not persisted and adds no table, column, index, migration,
+grant, seed or backfill. Missing-header rejection happens before projection or
+inbox access; rollback preserves all offsets, receipts and projections
+(`docs/features/event-schema-header-cutover.md`).
 
 Kafka receive acknowledgement uses the existing Core inbox table without schema
 changes: the receipt/local effect commits before the consumer-group offset.

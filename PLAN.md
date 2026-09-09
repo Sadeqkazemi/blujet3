@@ -1,5 +1,15 @@
 # PLAN.md — blujet roadmap & progress
 
+### 2026-09-09 — Event schema header cutover
+
+- [x] Specify a default-off, consumer-side cutover for the four catalogued Core
+  itinerary events; preserve legacy backlog admission while disabled.
+- [x] Obtain owner approval for this contract before implementation.
+- [x] Add fail-closed config, parser/Reporting coverage and an explicit UAT
+  cutover/rollback runbook without changing database or public APIs.
+- [ ] Review, push, green CI and merge separately. No Registry activation or
+  server deployment.
+
 ### 2026-09-09 — Event schema compatibility against `main`
 
 - [x] Specify a PR-only compatibility comparison against the immutable schema
@@ -7,8 +17,8 @@
 - [x] Obtain owner approval for this contract before implementation.
 - [x] Reject modification/removal of every existing schema ID while allowing a
   new version under a new ID; add focused regression tests and a CI gate.
-- [ ] Review, push, green CI and merge separately. No registry activation or
-  server deployment.
+- [x] PR #107 passed all 32 GitHub checks and merged as `2a68736`; no registry
+  activation or server deployment occurred.
 
 ### 2026-09-09 — Event Schema Registry compatibility foundation
 

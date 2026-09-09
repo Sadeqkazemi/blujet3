@@ -20,6 +20,12 @@ temporarily accepting legacy v1 backlog without the header. Unknown or
 cross-event schema identifiers fail before database access. This is an
 additive, registry-ready contract only: no external Schema Registry or HTTP
 route is enabled (`docs/features/core-event-schema-catalog.md`).
+The proposed `CORE_EVENT_SCHEMA_HEADER_REQUIRED` cutover preserves that legacy
+behaviour while disabled. When explicitly enabled for consumers, the four
+catalogued Core itinerary events require their exact schema header before any
+database callback. Events outside the catalog are unaffected. Reverting the
+flag restores legacy-header admission but never permits a malformed or
+mismatched header (`docs/features/event-schema-header-cutover.md`).
 The NIRA/DCS boundary currently has a versioned validation-only contract;
 vendor calls remain disabled pending the airline's protocol and sandbox:
 `docs/features/nira-dcs-contract.md`.
