@@ -189,6 +189,15 @@ describe('CommerceInboxKafkaHandler', () => {
     ).rejects.toThrow('Kafka inbox processing failed');
     expect(commitOffsets).not.toHaveBeenCalled();
   });
+  it('does not require schema metadata for an event outside the catalog', async () => {
+    await handler.runConfig(
+      { commitOffsets },
+      { ...subscription, requireSchemaId: true },
+      jest.fn(),
+    ).eachMessage!(payload());
+    expect(inbox.consume).toHaveBeenCalledTimes(1);
+    expect(commitOffsets).toHaveBeenCalledTimes(1);
+  });
   it('propagates an offset commit failure after DB success', async () => {
     commitOffsets.mockRejectedValue(new Error('broker unavailable'));
     await expect(
@@ -209,6 +218,16 @@ describe('CommerceInboxKafkaHandler', () => {
       handler.runConfig(
         { commitOffsets },
         { ...subscription, maxBytes: 0 },
+        jest.fn(),
+      ),
+    ).toThrow(BadRequestException);
+    expect(() =>
+      handler.runConfig(
+        { commitOffsets },
+        {
+          ...subscription,
+          requireSchemaId: 'true' as unknown as boolean,
+        },
         jest.fn(),
       ),
     ).toThrow(BadRequestException);

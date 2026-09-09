@@ -139,6 +139,29 @@ describe('ReportingKafkaHandler', () => {
     expect(commitOffsets).toHaveBeenCalledTimes(1);
   });
 
+  it('rejects a missing schema header before projection when cutover is enabled', async () => {
+    const message = payload().message;
+    await expect(
+      handler.runConfig(
+        { commitOffsets },
+        { ...subscription, requireSchemaId: true },
+      ).eachMessage!(
+        payload({
+          message: {
+            ...message,
+            headers: {
+              'event-id': Buffer.from(event.eventId),
+              'correlation-id': Buffer.from(event.correlationId),
+              'event-version': Buffer.from('1'),
+            },
+          },
+        }),
+      ),
+    ).rejects.toThrow('Reporting Kafka processing failed');
+    expect(reporting.consume).not.toHaveBeenCalled();
+    expect(commitOffsets).not.toHaveBeenCalled();
+  });
+
   it('forwards validated broker progress to the atomic projection', async () => {
     await handler.runConfig(
       { commitOffsets },
@@ -322,6 +345,59 @@ describe('ReportingKafkaHandler', () => {
       event.eventId,
       3,
     );
+    expect(commitOffsets).not.toHaveBeenCalled();
+  });
+
+  it('records a required missing schema header as a transport failure', async () => {
+    const enabledHandler = new ReportingKafkaHandler(
+      reporting as unknown as ReportingEventConsumer,
+      dlq as unknown as ReportingDlqStore,
+      {
+        enabled: true,
+        maxAttempts: 3,
+        operatorToken: 'reporting-operator-token-at-least-32-characters',
+      },
+    );
+    const message = payload().message;
+    const missingSchema = payload({
+      message: {
+        ...message,
+        headers: {
+          'event-id': Buffer.from(event.eventId),
+          'correlation-id': Buffer.from(event.correlationId),
+          'event-version': Buffer.from('1'),
+        },
+      },
+    });
+
+    await expect(
+      enabledHandler.runConfig(
+        { commitOffsets },
+        {
+          ...subscription,
+          consumerGroup: 'blujet-reporting-v1',
+          requireSchemaId: true,
+        },
+      ).eachMessage!(missingSchema),
+    ).rejects.toThrow('Reporting Kafka processing failed');
+
+    expect(dlq.recordFailure).toHaveBeenCalledWith(
+      {
+        consumerGroup: 'blujet-reporting-v1',
+        topic: subscription.topic,
+        partition: 0,
+        offset: '4',
+        nextOffset: '5',
+        highWatermark: undefined,
+        fingerprint: createHash('sha256')
+          .update(missingSchema.message.value!)
+          .digest('hex'),
+      },
+      'TRANSPORT',
+      null,
+      3,
+    );
+    expect(reporting.consume).not.toHaveBeenCalled();
     expect(commitOffsets).not.toHaveBeenCalled();
   });
 

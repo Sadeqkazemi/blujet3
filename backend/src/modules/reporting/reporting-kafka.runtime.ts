@@ -106,6 +106,7 @@ export class ReportingKafkaRuntime
         topic: this.config.topic,
         maxBytes: this.config.maxBytes,
         consumerGroup: this.config.consumer.groupId,
+        requireSchemaId: this.config.requireSchemaId,
       });
       const eachMessage = runConfig.eachMessage;
       if (eachMessage) {

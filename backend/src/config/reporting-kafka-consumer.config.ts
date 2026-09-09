@@ -8,6 +8,7 @@ export type ReportingKafkaConsumerConfig =
   | { enabled: false }
   | {
       enabled: true;
+      requireSchemaId: boolean;
       topic: string;
       fromBeginning: boolean;
       maxBytes: number;
@@ -44,6 +45,11 @@ export function reportingKafkaConsumerConfig(
   const enabled = booleanSetting(
     env,
     'REPORTING_KAFKA_CONSUMER_ENABLED',
+    false,
+  );
+  const requireSchemaId = booleanSetting(
+    env,
+    'CORE_EVENT_SCHEMA_HEADER_REQUIRED',
     false,
   );
   if (!enabled) return { enabled: false };
@@ -92,6 +98,7 @@ export function reportingKafkaConsumerConfig(
   const maxBytes = Number(maxBytesValue);
   return {
     enabled: true,
+    requireSchemaId,
     topic: shared.topic,
     fromBeginning: booleanSetting(env, 'REPORTING_KAFKA_FROM_BEGINNING', true),
     maxBytes,
