@@ -1,8 +1,24 @@
 import { Kafka } from 'kafkajs';
 import { KafkaEventPublisher } from './kafka-event-publisher';
 import { CanonicalEventType, createCanonicalEvent } from './canonical-events';
+import { CoreItineraryEventSchemaCatalog } from './core-itinerary-event-schema';
+import { createItineraryOrderCreated } from './core-itinerary-events';
 
 jest.mock('kafkajs', () => ({ Kafka: jest.fn(), logLevel: { NOTHING: 0 } }));
+
+function publishedHeaders(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== 'object') throw new Error('Invalid publish');
+  const request = value as Record<string, unknown>;
+  if (!Array.isArray(request.messages) || request.messages.length !== 1)
+    throw new Error('Invalid publish');
+  const message: unknown = request.messages[0];
+  if (!message || typeof message !== 'object')
+    throw new Error('Invalid publish');
+  const headers = (message as Record<string, unknown>).headers;
+  if (!headers || typeof headers !== 'object' || Array.isArray(headers))
+    throw new Error('Invalid publish');
+  return headers as Record<string, unknown>;
+}
 
 describe('KafkaEventPublisher', () => {
   const originalEnv = { ...process.env };
@@ -77,6 +93,40 @@ describe('KafkaEventPublisher', () => {
         ],
       }),
     );
+    await publisher.disconnect();
+  });
+  it('adds the schema identity only to a catalogued Core event', async () => {
+    const publisher = new KafkaEventPublisher();
+    const itinerary = createItineraryOrderCreated(
+      {
+        id: 'order-1',
+        version: 1,
+        status: 'HELD',
+        channel: 'SYSTEM',
+        currency: 'IRR',
+        fareIrr: 100n,
+        taxIrr: 20n,
+        extrasIrr: 0n,
+        totalIrr: 120n,
+        createdAt: new Date('2026-09-09T00:00:00.000Z'),
+        holdExpiresAt: new Date('2026-09-09T00:15:00.000Z'),
+      },
+      {
+        auditId: 'audit-1',
+        correlationId: 'request-1',
+        idempotencyKey: 'order-created-1',
+      },
+    );
+    await publisher.publish(itinerary);
+    expect(publishedHeaders(send.mock.calls[0]?.[0])['event-schema-id']).toBe(
+      CoreItineraryEventSchemaCatalog.OrderCreated.schemaId,
+    );
+
+    send.mockClear();
+    await publisher.publish(event());
+    expect(
+      publishedHeaders(send.mock.calls[0]?.[0])['event-schema-id'],
+    ).toBeUndefined();
     await publisher.disconnect();
   });
   it('allows a later attempt after failed connect and redacts the raw failure', async () => {

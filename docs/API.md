@@ -13,6 +13,13 @@ with exact payload keys, IRR decimal
 strings and required audit reference. New `enqueueItinerary`/`consumeItinerary`
 methods validate them without tightening the existing generic transport API.
 No public route or writer activation: `docs/features/itinerary-event-contracts.md`.
+These four contracts also have stable
+`blujet.core-itinerary.<EventType>.v1` schema identifiers. New publishers add
+the `event-schema-id` Kafka header; consumers validate it when present while
+temporarily accepting legacy v1 backlog without the header. Unknown or
+cross-event schema identifiers fail before database access. This is an
+additive, registry-ready contract only: no external Schema Registry or HTTP
+route is enabled (`docs/features/core-event-schema-catalog.md`).
 The NIRA/DCS boundary currently has a versioned validation-only contract;
 vendor calls remain disabled pending the airline's protocol and sandbox:
 `docs/features/nira-dcs-contract.md`.
