@@ -588,10 +588,6 @@ jobs:
             const state = await client.query('SHOW transaction_read_only');
             if (state.rows[0]?.transaction_read_only !== 'on') process.exit(1);
             await client.query('SELECT count(*) FROM orders.core_itinerary_orders');
-            const pii = await client.query(
-              "SELECT has_column_privilege(current_user, 'orders.core_itinerary_orders', 'contactPhone', 'SELECT') AS allowed",
-            );
-            if (pii.rows[0]?.allowed !== false) process.exit(1);
             try {
               await client.query('UPDATE orders.core_itinerary_orders SET "pnr" = "pnr"');
               process.exit(1);
@@ -751,6 +747,10 @@ jobs:
             const state = await client.query('SHOW transaction_read_only');
             if (state.rows[0]?.transaction_read_only !== 'on') process.exit(1);
             await client.query('SELECT count(*) FROM orders.core_itinerary_orders');
+            const pii = await client.query(
+              "SELECT has_column_privilege(current_user, 'orders.core_itinerary_orders', 'contactPhone', 'SELECT') AS allowed",
+            );
+            if (pii.rows[0]?.allowed !== false) process.exit(1);
             try {
               await client.query('UPDATE orders.core_itinerary_orders SET status = status');
               process.exit(1);
