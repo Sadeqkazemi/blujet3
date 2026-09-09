@@ -451,6 +451,16 @@ jobs:
       - run: npm ci
       - run: cp .env.test .env
       - run: npm run events:schema:verify
+      - name: Verify event schema compatibility with target commit
+        if: github.event_name == 'pull_request'
+        env:
+          EVENT_SCHEMA_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git fetch --no-tags --depth=1 origin "$EVENT_SCHEMA_BASE_SHA"
+          git show "${EVENT_SCHEMA_BASE_SHA}:docs/events/schema-registry/core-itinerary-v1.json" \
+            > "$RUNNER_TEMP/core-itinerary-v1.base.json"
+          npm run events:schema:compat -- \
+            "$RUNNER_TEMP/core-itinerary-v1.base.json"
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build

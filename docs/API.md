@@ -28,6 +28,11 @@ contracts as deterministic JSON Schema artifacts and rejects contract drift in
 CI. It adds no endpoint, runtime registry call or wire-format change; external
 registry selection/activation remains a separate decision:
 `docs/features/event-schema-registry-foundation.md`.
+The next compatibility gate compares the proposed bundle with the bundle on
+the pull request's exact target commit. An existing `$id` is immutable and may
+not be removed or changed; compatible evolution is published under a new ID.
+This is CI-only and adds no HTTP route, Kafka header or runtime registry call:
+`docs/features/event-schema-compatibility-policy.md`.
 Reporting has a validation-first event-consumer seam and an internal
 projection store for its independent read model. The additive extension
 persists the latest validated fact per

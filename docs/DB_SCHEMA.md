@@ -81,6 +81,10 @@ only. It introduces no table, migration, seed, grant or runtime database read;
 the committed JSON Schema artifacts describe the existing v1 wire contract
 without persisting registry IDs in PostgreSQL
 (`docs/features/event-schema-registry-foundation.md`).
+The PR compatibility comparison reads only committed JSON artifacts from the
+current and target Git commits. It introduces no PostgreSQL table, migration,
+grant, seed, replication slot or runtime database connection
+(`docs/features/event-schema-compatibility-policy.md`).
 
 Kafka receive acknowledgement uses the existing Core inbox table without schema
 changes: the receipt/local effect commits before the consumer-group offset.
