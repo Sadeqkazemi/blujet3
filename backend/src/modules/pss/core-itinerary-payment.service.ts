@@ -26,6 +26,7 @@ import type {
   ConfirmedCoreItineraryPaymentDto,
 } from './dto/confirm-core-itinerary-payment.dto';
 import type { QuoteCoreItineraryDto } from './dto/quote-core-itinerary.dto';
+import { CoreItineraryEventService } from './core-itinerary-event.service';
 
 class CoreItineraryFulfilmentFailure extends Error {
   constructor(readonly failureCode: string) {
@@ -40,6 +41,7 @@ export class CoreItineraryPaymentService {
     private readonly confirmationRepo: Repository<CoreItineraryPaymentConfirmation>,
     private readonly quotes: CoreItineraryQuoteService,
     private readonly ticketing: TicketingService,
+    private readonly events: CoreItineraryEventService,
   ) {}
 
   async confirm(
@@ -272,6 +274,13 @@ export class CoreItineraryPaymentService {
     confirmation.failureCode = null;
     await tx.save(confirmation);
 
+    await this.events.paymentConfirmed(
+      tx,
+      order,
+      confirmation,
+      issued.documents,
+    );
+
     return this.toResponse(
       order,
       confirmation,
@@ -460,6 +469,10 @@ export class CoreItineraryPaymentService {
       confirmation.status = 'REVIEW_REQUIRED';
       confirmation.failureCode = failureCode;
       await tx.save(confirmation);
+      const order = await tx.findOneOrFail(CoreItineraryOrder, {
+        where: { id: confirmation.orderId },
+      });
+      await this.events.fulfilmentFailed(tx, order, failureCode);
     });
   }
 

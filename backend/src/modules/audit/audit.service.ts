@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MoreThanOrEqual, Repository, SelectQueryBuilder } from 'typeorm';
+import {
+  EntityManager,
+  MoreThanOrEqual,
+  Repository,
+  SelectQueryBuilder,
+} from 'typeorm';
 import { AuditLog } from '../../database/entities/audit-log.entity';
 import type { AuditCategory, Role } from '../../database/enums';
 import { toJsonValue } from '../../database/json-types';
@@ -70,9 +75,10 @@ export class AuditService {
     return { page, limit };
   }
 
-  async record(input: RecordAuditEntryInput) {
-    return this.auditRepo.save(
-      this.auditRepo.create({
+  async record(input: RecordAuditEntryInput, manager?: EntityManager) {
+    const repository = manager?.getRepository(AuditLog) ?? this.auditRepo;
+    return repository.save(
+      repository.create({
         ...input,
         entityType: input.entityType ?? null,
         entityId: input.entityId ?? null,
