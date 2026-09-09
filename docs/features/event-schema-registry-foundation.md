@@ -51,5 +51,7 @@ topic یا سرویس production فعال نمی‌شود.
 - [x] command تولید bundle دوبار خروجی byte-identical بسازد و artifact committed
   را بدون rewrite بررسی کند.
 - [x] CI اجرای compatibility gate را برای تغییرات Backend/Event اجباری کند.
-- [ ] lint، typecheck، unit tests، build و CI سبز شوند.
-- [ ] هیچ registry خارجی، flag، credential یا deploy فعال نشود.
+- [x] lint، typecheck، unit tests، build و همهٔ ۳۲ بررسی CI در PR #106 سبز
+  شدند.
+- [x] PR #106 با merge commit `ceb17f9` ادغام شد؛ هیچ registry خارجی، flag،
+  credential یا deploy فعال نشد.

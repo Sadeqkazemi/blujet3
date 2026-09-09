@@ -1,5 +1,15 @@
 # PLAN.md — blujet roadmap & progress
 
+### 2026-09-09 — Event schema compatibility against `main`
+
+- [x] Specify a PR-only compatibility comparison against the immutable schema
+  bundle on the target `main` commit; local verification remains deterministic.
+- [x] Obtain owner approval for this contract before implementation.
+- [x] Reject modification/removal of every existing schema ID while allowing a
+  new version under a new ID; add focused regression tests and a CI gate.
+- [ ] Review, push, green CI and merge separately. No registry activation or
+  server deployment.
+
 ### 2026-09-09 — Event Schema Registry compatibility foundation
 
 - [x] Define the vendor-neutral, build-time contract and compatibility policy;
@@ -7,7 +17,8 @@
 - [x] Obtain owner approval for the contract before implementation.
 - [x] Add deterministic JSON Schema artifacts, exact validation and a CI drift
   gate for the four approved Core itinerary v1 events.
-- [ ] Review, push, green CI and merge separately. No server deployment.
+- [x] PR #106 passed all 32 GitHub checks and merged as `ceb17f9`; no Schema
+  Registry activation or server deployment occurred.
 
 ### 2026-09-09 — Reporting poison-message quarantine
 
