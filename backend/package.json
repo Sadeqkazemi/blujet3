@@ -64,7 +64,8 @@
     "events:outbox:status:prod": "node dist/database/report-commerce-outbox.js",
     "pss:reconcile:shadow": "tsx src/database/report-pss-shadow-reconciliation.ts",
     "loyalty:compare:shadow": "tsx src/database/report-loyalty-shadow.ts",
-    "agency:compare:shadow": "tsx src/database/report-agency-shadow.ts"
+    "agency:compare:shadow": "tsx src/database/report-agency-shadow.ts",
+    "events:schema:verify": "tsx scripts/verify-event-schema-bundle.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

@@ -76,6 +76,11 @@ The Core event schema catalog is transport metadata only. Its
 not persisted in a new column. Existing encrypted envelope, fingerprint,
 receipt and projection layouts are unchanged. Legacy v1 rows need no backfill
 and no database grant changes (`docs/features/core-event-schema-catalog.md`).
+The proposed Schema Registry compatibility bundle is also build-time metadata
+only. It introduces no table, migration, seed, grant or runtime database read;
+the committed JSON Schema artifacts describe the existing v1 wire contract
+without persisting registry IDs in PostgreSQL
+(`docs/features/event-schema-registry-foundation.md`).
 
 Kafka receive acknowledgement uses the existing Core inbox table without schema
 changes: the receipt/local effect commits before the consumer-group offset.

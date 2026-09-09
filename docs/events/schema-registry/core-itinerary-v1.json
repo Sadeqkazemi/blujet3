@@ -1,0 +1,443 @@
+{
+  "OrderCreated": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "blujet.core-itinerary.OrderCreated.v1",
+    "title": "OrderCreated Core itinerary event",
+    "type": "object",
+    "properties": {
+      "eventId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "eventType": {
+        "type": "string",
+        "const": "OrderCreated"
+      },
+      "eventVersion": {
+        "type": "integer",
+        "const": 1
+      },
+      "occurredAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "producer": {
+        "type": "string",
+        "const": "core-commerce"
+      },
+      "aggregateType": {
+        "type": "string",
+        "const": "CoreItineraryOrder"
+      },
+      "aggregateId": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      },
+      "correlationId": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      },
+      "idempotencyKey": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      },
+      "payload": {
+        "type": "object",
+        "properties": {
+          "auditId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+          },
+          "orderVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "currency": {
+            "type": "string",
+            "const": "IRR"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "SYSTEM",
+              "AGENCY"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "const": "HELD"
+          },
+          "fareIrr": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,18})$",
+            "maxLength": 19
+          },
+          "taxIrr": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,18})$",
+            "maxLength": 19
+          },
+          "extrasIrr": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,18})$",
+            "maxLength": 19
+          },
+          "totalIrr": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,18})$",
+            "maxLength": 19
+          },
+          "holdExpiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "auditId",
+          "orderVersion",
+          "currency",
+          "channel",
+          "status",
+          "fareIrr",
+          "taxIrr",
+          "extrasIrr",
+          "totalIrr",
+          "holdExpiresAt"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "eventId",
+      "eventType",
+      "eventVersion",
+      "occurredAt",
+      "producer",
+      "aggregateType",
+      "aggregateId",
+      "correlationId",
+      "idempotencyKey",
+      "payload"
+    ],
+    "additionalProperties": false
+  },
+  "PaymentConfirmed": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "blujet.core-itinerary.PaymentConfirmed.v1",
+    "title": "PaymentConfirmed Core itinerary event",
+    "type": "object",
+    "properties": {
+      "eventId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "eventType": {
+        "type": "string",
+        "const": "PaymentConfirmed"
+      },
+      "eventVersion": {
+        "type": "integer",
+        "const": 1
+      },
+      "occurredAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "producer": {
+        "type": "string",
+        "const": "core-commerce"
+      },
+      "aggregateType": {
+        "type": "string",
+        "const": "CoreItineraryOrder"
+      },
+      "aggregateId": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      },
+      "correlationId": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      },
+      "idempotencyKey": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      },
+      "payload": {
+        "type": "object",
+        "properties": {
+          "auditId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+          },
+          "orderVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "currency": {
+            "type": "string",
+            "const": "IRR"
+          },
+          "confirmationId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+          },
+          "status": {
+            "type": "string",
+            "const": "COMPLETED"
+          },
+          "amountIrr": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,18})$",
+            "maxLength": 19
+          }
+        },
+        "required": [
+          "auditId",
+          "orderVersion",
+          "currency",
+          "confirmationId",
+          "status",
+          "amountIrr"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "eventId",
+      "eventType",
+      "eventVersion",
+      "occurredAt",
+      "producer",
+      "aggregateType",
+      "aggregateId",
+      "correlationId",
+      "idempotencyKey",
+      "payload"
+    ],
+    "additionalProperties": false
+  },
+  "TicketIssued": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "blujet.core-itinerary.TicketIssued.v1",
+    "title": "TicketIssued Core itinerary event",
+    "type": "object",
+    "properties": {
+      "eventId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "eventType": {
+        "type": "string",
+        "const": "TicketIssued"
+      },
+      "eventVersion": {
+        "type": "integer",
+        "const": 1
+      },
+      "occurredAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "producer": {
+        "type": "string",
+        "const": "core-commerce"
+      },
+      "aggregateType": {
+        "type": "string",
+        "const": "CoreItineraryOrder"
+      },
+      "aggregateId": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      },
+      "correlationId": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      },
+      "idempotencyKey": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      },
+      "payload": {
+        "type": "object",
+        "properties": {
+          "auditId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+          },
+          "orderVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "currency": {
+            "type": "string",
+            "const": "IRR"
+          },
+          "status": {
+            "type": "string",
+            "const": "TICKETED"
+          },
+          "ticketDocumentIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+            },
+            "minItems": 1,
+            "maxItems": 1000,
+            "uniqueItems": true
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "auditId",
+          "orderVersion",
+          "currency",
+          "status",
+          "ticketDocumentIds",
+          "issuedAt"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "eventId",
+      "eventType",
+      "eventVersion",
+      "occurredAt",
+      "producer",
+      "aggregateType",
+      "aggregateId",
+      "correlationId",
+      "idempotencyKey",
+      "payload"
+    ],
+    "additionalProperties": false
+  },
+  "RefundRequested": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "blujet.core-itinerary.RefundRequested.v1",
+    "title": "RefundRequested Core itinerary event",
+    "type": "object",
+    "properties": {
+      "eventId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "eventType": {
+        "type": "string",
+        "const": "RefundRequested"
+      },
+      "eventVersion": {
+        "type": "integer",
+        "const": 1
+      },
+      "occurredAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "producer": {
+        "type": "string",
+        "const": "core-commerce"
+      },
+      "aggregateType": {
+        "type": "string",
+        "const": "CoreItineraryOrder"
+      },
+      "aggregateId": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      },
+      "correlationId": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      },
+      "idempotencyKey": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+      },
+      "payload": {
+        "type": "object",
+        "properties": {
+          "auditId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+          },
+          "orderVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "currency": {
+            "type": "string",
+            "const": "IRR"
+          },
+          "refundId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+          },
+          "refundReference": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+          },
+          "quoteReference": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+          },
+          "status": {
+            "type": "string",
+            "const": "RECEIVED"
+          },
+          "grossAmountIrr": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,18})$",
+            "maxLength": 19
+          },
+          "penaltyAmountIrr": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,18})$",
+            "maxLength": 19
+          },
+          "refundableIrr": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,18})$",
+            "maxLength": 19
+          }
+        },
+        "required": [
+          "auditId",
+          "orderVersion",
+          "currency",
+          "refundId",
+          "refundReference",
+          "quoteReference",
+          "status",
+          "grossAmountIrr",
+          "penaltyAmountIrr",
+          "refundableIrr"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "eventId",
+      "eventType",
+      "eventVersion",
+      "occurredAt",
+      "producer",
+      "aggregateType",
+      "aggregateId",
+      "correlationId",
+      "idempotencyKey",
+      "payload"
+    ],
+    "additionalProperties": false
+  }
+}
