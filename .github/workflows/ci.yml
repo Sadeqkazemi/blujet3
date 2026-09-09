@@ -21,6 +21,7 @@ jobs:
       offer: ${{ steps.scope.outputs.offer }}
       ticketing_refund: ${{ steps.scope.outputs.ticketing_refund }}
       payment_reconciliation: ${{ steps.scope.outputs.payment_reconciliation }}
+      order_booking: ${{ steps.scope.outputs.order_booking }}
       backend_migration: ${{ steps.scope.outputs.backend_migration }}
       experience: ${{ steps.scope.outputs.experience }}
       loyalty: ${{ steps.scope.outputs.loyalty }}
@@ -40,7 +41,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          areas=(backend offer ticketing_refund payment_reconciliation backend_migration experience loyalty agency identity notify pss frontend ml)
+          areas=(backend offer ticketing_refund payment_reconciliation order_booking backend_migration experience loyalty agency identity notify pss frontend ml)
           if [[ "${{ github.event_name }}" != "pull_request" ]]; then
             for area in "${areas[@]}"; do
               echo "$area=true" >> "$GITHUB_OUTPUT"
@@ -75,6 +76,7 @@ jobs:
           emit offer '^(backend/(Dockerfile\.offer-worker|package(-lock)?\.json|tsconfig[^/]*\.json|nest-cli\.json|src/(offer-worker|config/offer-worker|database/(data-source\.options|entities/|provision-offer-reader-role)|modules/(offer-pricing|pss/)))|docker-compose\.prod\.yml$|docs/features/offer-pricing-process\.md$)'
           emit ticketing_refund '^(backend/(Dockerfile\.ticketing-refund-worker|package(-lock)?\.json|tsconfig[^/]*\.json|nest-cli\.json|src/(ticketing-refund-worker|ticketing-refund-worker-health|ticketing-refund-worker\.module|config/ticketing-refund-worker|database/(data-source\.options|entities/|provision-ticketing-refund-reader-role)|modules/(ticketing-refund|pss/)))|docker-compose\.prod\.yml$|docs/features/ticketing-refund-process\.md$)'
           emit payment_reconciliation '^(backend/(Dockerfile\.payment-reconciliation-worker|package(-lock)?\.json|tsconfig[^/]*\.json|nest-cli\.json|src/(payment-reconciliation-worker|payment-reconciliation-worker-health|payment-reconciliation-worker\.module|config/payment-reconciliation-worker|database/(data-source\.options|entities/|provision-payment-reconciliation-reader-role)|modules/payment-reconciliation))|docker-compose\.prod\.yml$|docs/features/payment-reconciliation-process\.md$)'
+          emit order_booking '^(backend/(Dockerfile\.order-booking-worker|package(-lock)?\.json|tsconfig[^/]*\.json|nest-cli\.json|src/(order-booking-worker|order-booking-worker-health|order-booking-worker\.module|config/order-booking-worker|database/(data-source\.options|entities/|provision-order-booking-reader-role)|modules/order-booking))|docker-compose\.prod\.yml$|docs/features/order-booking-process\.md$)'
           emit backend_migration '^(backend/|scripts/check-expand-only-migrations\.mjs$)'
           emit experience '^(experience-service/|backend/(package(-lock)?\.json$|src/database/))'
           emit loyalty '^(loyalty-service/|backend/(package(-lock)?\.json$|tsconfig[^/]*\.json$|nest-cli\.json$|src/database/|src/common/money\.ts$|src/modules/loyalty-shadow/))'
@@ -586,6 +588,10 @@ jobs:
             const state = await client.query('SHOW transaction_read_only');
             if (state.rows[0]?.transaction_read_only !== 'on') process.exit(1);
             await client.query('SELECT count(*) FROM orders.core_itinerary_orders');
+            const pii = await client.query(
+              "SELECT has_column_privilege(current_user, 'orders.core_itinerary_orders', 'contactPhone', 'SELECT') AS allowed",
+            );
+            if (pii.rows[0]?.allowed !== false) process.exit(1);
             try {
               await client.query('UPDATE orders.core_itinerary_orders SET "pnr" = "pnr"');
               process.exit(1);
@@ -691,6 +697,90 @@ jobs:
             'http://localhost:3630/internal/v1/payment-reconciliation/pending?limit=0')" = '400'
       - name: Build the opt-in Payment/Reconciliation container
         run: docker build -f Dockerfile.payment-reconciliation-worker -t blujet-payment-reconciliation:ci .
+
+  order-booking:
+    name: Order/Booking process
+    needs: changes
+    if: needs.changes.outputs.order_booking == 'true'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: blujet
+          POSTGRES_PASSWORD: blujet
+          POSTGRES_DB: blujet_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U blujet -d blujet_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: cp .env.test .env
+      - run: npm run migration:run
+      - run: npm run build
+      - name: Prove the restricted reader and read-only HTTP boundary
+        env:
+          MIGRATION_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_test
+          ORDER_BOOKING_DATABASE_PASSWORD: order_booking_reader_ci_password_2026_09_09
+          ORDER_BOOKING_DATABASE_URL: postgresql://blujet_order_booking_reader:order_booking_reader_ci_password_2026_09_09@localhost:5432/blujet_test
+          ORDER_BOOKING_INTERNAL_TOKEN: order_booking_internal_ci_token_2026_09_09
+          NODE_ENV: test
+          PORT: '3640'
+        run: |
+          set -euo pipefail
+          npm run database:provision-order-booking-reader:prod
+          node - <<'NODE'
+          const { Client } = require('pg');
+          (async () => {
+            const client = new Client({ connectionString: process.env.ORDER_BOOKING_DATABASE_URL });
+            await client.connect();
+            const state = await client.query('SHOW transaction_read_only');
+            if (state.rows[0]?.transaction_read_only !== 'on') process.exit(1);
+            await client.query('SELECT count(*) FROM orders.core_itinerary_orders');
+            try {
+              await client.query('UPDATE orders.core_itinerary_orders SET status = status');
+              process.exit(1);
+            } catch (error) {
+              if (error?.code !== '25006') process.exit(1);
+            } finally {
+              await client.end();
+            }
+          })().catch(() => process.exit(1));
+          NODE
+          node dist/order-booking-worker.main.js >/tmp/blujet-order-booking.log 2>&1 &
+          worker_pid=$!
+          trap 'kill "$worker_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent http://localhost:3640/health/ready >/tmp/order-booking-ready.json; then break; fi
+            sleep 1
+          done
+          grep -q '"readOnly":true' /tmp/order-booking-ready.json
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            http://localhost:3640/internal/v1/order-booking/holds/due)" = '401'
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --header 'X-Internal-Token: order_booking_internal_ci_token_2026_09_09' \
+            'http://localhost:3640/internal/v1/order-booking/holds/due?limit=0')" = '400'
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request POST \
+            --header 'X-Internal-Token: order_booking_internal_ci_token_2026_09_09' \
+            --header 'Content-Type: application/json' --data '{}' \
+            http://localhost:3640/internal/v1/order-booking/orders/ABC123/cancel)" = '404'
+      - name: Build the opt-in Order/Booking container
+        run: docker build -f Dockerfile.order-booking-worker -t blujet-order-booking:ci .
 
   backend-backup-restore:
     name: Backend backup restore proof
@@ -909,6 +999,7 @@ jobs:
       - offer-pricing
       - ticketing-refund
       - payment-reconciliation
+      - order-booking
       - backend-backup-restore
       - backend-pitr-recovery
       - backend-kafka

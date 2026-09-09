@@ -89,6 +89,30 @@ docker compose -f docker-compose.prod.yml --profile ticketing-refund rm -f ticke
 فعال‌سازی cutover یا تبدیل worker به writer نیازمند ADR و تأیید جداگانهٔ مالک
 محصول است.
 
+## Order/Booking read-only shadow worker
+
+این worker پیش‌فرض خاموش است و فقط projection بدون PII از Order و Holdهای
+سررسیدشده می‌خواند. ایجاد/انقضای سفارش، آزادسازی صندلی، پرداخت و ticketing در
+Core باقی می‌مانند. فعال‌سازی profile فقط پس از تهیهٔ secretها و تأیید عملیاتی:
+
+```bash
+cd /opt/app
+docker compose -f docker-compose.prod.yml --profile order-booking up -d \
+  db-order-booking-reader-role order-booking
+docker compose -f docker-compose.prod.yml --profile order-booking ps
+```
+
+`ORDER_BOOKING_DATABASE_PASSWORD` credential نقش
+`blujet_order_booking_reader` و `ORDER_BOOKING_INTERNAL_TOKEN` حداقل ۳۲ نویسه
+است. `GET /health/ready` باید `transaction_read_only=on` را گزارش کند. rollback
+فقط با توقف profile و rotate/revoke کردن credential انجام می‌شود و به داده یا
+Core writer دست نمی‌زند:
+
+```bash
+docker compose -f docker-compose.prod.yml --profile order-booking stop order-booking
+docker compose -f docker-compose.prod.yml --profile order-booking rm -f order-booking db-order-booking-reader-role
+```
+
 ## Scaling the backend
 
 See `docs/DEPLOY_IP.md`'s "مقیاس‌پذیری بک‌اند" section —
