@@ -7,68 +7,70 @@ import { createItineraryOrderCreated } from './core-itinerary-events';
 
 describe('Core itinerary event schema catalog', () => {
   it('publishes stable v1 identities and exact payload fields', () => {
-    expect(CoreItineraryEventSchemaCatalog).toEqual({
-      OrderCreated: expect.objectContaining({
-        schemaId: 'blujet.core-itinerary.OrderCreated.v1',
-        eventType: 'OrderCreated',
-        eventVersion: 1,
-        payloadFields: [
-          'auditId',
-          'orderVersion',
-          'currency',
-          'channel',
-          'status',
-          'fareIrr',
-          'taxIrr',
-          'extrasIrr',
-          'totalIrr',
-          'holdExpiresAt',
-        ],
-      }),
-      PaymentConfirmed: expect.objectContaining({
-        schemaId: 'blujet.core-itinerary.PaymentConfirmed.v1',
-        eventType: 'PaymentConfirmed',
-        eventVersion: 1,
-        payloadFields: [
-          'auditId',
-          'orderVersion',
-          'currency',
-          'confirmationId',
-          'status',
-          'amountIrr',
-        ],
-      }),
-      TicketIssued: expect.objectContaining({
-        schemaId: 'blujet.core-itinerary.TicketIssued.v1',
-        eventType: 'TicketIssued',
-        eventVersion: 1,
-        payloadFields: [
-          'auditId',
-          'orderVersion',
-          'currency',
-          'status',
-          'ticketDocumentIds',
-          'issuedAt',
-        ],
-      }),
-      RefundRequested: expect.objectContaining({
-        schemaId: 'blujet.core-itinerary.RefundRequested.v1',
-        eventType: 'RefundRequested',
-        eventVersion: 1,
-        payloadFields: [
-          'auditId',
-          'orderVersion',
-          'currency',
-          'refundId',
-          'refundReference',
-          'quoteReference',
-          'status',
-          'grossAmountIrr',
-          'penaltyAmountIrr',
-          'refundableIrr',
-        ],
-      }),
+    expect(CoreItineraryEventSchemaCatalog.OrderCreated).toMatchObject({
+      schemaId: 'blujet.core-itinerary.OrderCreated.v1',
+      eventType: 'OrderCreated',
+      eventVersion: 1,
     });
+    expect(CoreItineraryEventSchemaCatalog.OrderCreated.payloadFields).toEqual([
+      'auditId',
+      'orderVersion',
+      'currency',
+      'channel',
+      'status',
+      'fareIrr',
+      'taxIrr',
+      'extrasIrr',
+      'totalIrr',
+      'holdExpiresAt',
+    ]);
+    expect(CoreItineraryEventSchemaCatalog.PaymentConfirmed).toMatchObject({
+      schemaId: 'blujet.core-itinerary.PaymentConfirmed.v1',
+      eventType: 'PaymentConfirmed',
+      eventVersion: 1,
+    });
+    expect(
+      CoreItineraryEventSchemaCatalog.PaymentConfirmed.payloadFields,
+    ).toEqual([
+      'auditId',
+      'orderVersion',
+      'currency',
+      'confirmationId',
+      'status',
+      'amountIrr',
+    ]);
+    expect(CoreItineraryEventSchemaCatalog.TicketIssued).toMatchObject({
+      schemaId: 'blujet.core-itinerary.TicketIssued.v1',
+      eventType: 'TicketIssued',
+      eventVersion: 1,
+    });
+    expect(CoreItineraryEventSchemaCatalog.TicketIssued.payloadFields).toEqual([
+      'auditId',
+      'orderVersion',
+      'currency',
+      'status',
+      'ticketDocumentIds',
+      'issuedAt',
+    ]);
+    expect(CoreItineraryEventSchemaCatalog.RefundRequested).toMatchObject({
+      schemaId: 'blujet.core-itinerary.RefundRequested.v1',
+      eventType: 'RefundRequested',
+      eventVersion: 1,
+    });
+    expect(
+      CoreItineraryEventSchemaCatalog.RefundRequested.payloadFields,
+    ).toEqual([
+      'auditId',
+      'orderVersion',
+      'currency',
+      'refundId',
+      'refundReference',
+      'quoteReference',
+      'status',
+      'grossAmountIrr',
+      'penaltyAmountIrr',
+      'refundableIrr',
+    ]);
     for (const contract of Object.values(CoreItineraryEventSchemaCatalog)) {
       expect(contract.producer).toBe('core-commerce');
       expect(contract.aggregateType).toBe('CoreItineraryOrder');

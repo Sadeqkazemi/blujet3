@@ -6,6 +6,20 @@ import { createItineraryOrderCreated } from './core-itinerary-events';
 
 jest.mock('kafkajs', () => ({ Kafka: jest.fn(), logLevel: { NOTHING: 0 } }));
 
+function publishedHeaders(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== 'object') throw new Error('Invalid publish');
+  const request = value as Record<string, unknown>;
+  if (!Array.isArray(request.messages) || request.messages.length !== 1)
+    throw new Error('Invalid publish');
+  const message: unknown = request.messages[0];
+  if (!message || typeof message !== 'object')
+    throw new Error('Invalid publish');
+  const headers = (message as Record<string, unknown>).headers;
+  if (!headers || typeof headers !== 'object' || Array.isArray(headers))
+    throw new Error('Invalid publish');
+  return headers as Record<string, unknown>;
+}
+
 describe('KafkaEventPublisher', () => {
   const originalEnv = { ...process.env };
   const connect = jest.fn<Promise<void>, []>();
@@ -104,32 +118,15 @@ describe('KafkaEventPublisher', () => {
       },
     );
     await publisher.publish(itinerary);
-    expect(send).toHaveBeenCalledWith(
-      expect.objectContaining({
-        messages: [
-          expect.objectContaining({
-            headers: expect.objectContaining({
-              'event-schema-id':
-                CoreItineraryEventSchemaCatalog.OrderCreated.schemaId,
-            }),
-          }),
-        ],
-      }),
+    expect(publishedHeaders(send.mock.calls[0]?.[0])['event-schema-id']).toBe(
+      CoreItineraryEventSchemaCatalog.OrderCreated.schemaId,
     );
 
     send.mockClear();
     await publisher.publish(event());
-    expect(send).toHaveBeenCalledWith(
-      expect.objectContaining({
-        messages: [
-          expect.objectContaining({
-            headers: expect.not.objectContaining({
-              'event-schema-id': expect.anything(),
-            }),
-          }),
-        ],
-      }),
-    );
+    expect(
+      publishedHeaders(send.mock.calls[0]?.[0])['event-schema-id'],
+    ).toBeUndefined();
     await publisher.disconnect();
   });
   it('allows a later attempt after failed connect and redacts the raw failure', async () => {
