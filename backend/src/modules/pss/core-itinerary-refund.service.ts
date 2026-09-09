@@ -4,6 +4,8 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  Optional,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
@@ -77,7 +79,9 @@ export class CoreItineraryRefundService {
   constructor(
     @InjectRepository(CoreItineraryRefund)
     private readonly refundRepo: Repository<CoreItineraryRefund>,
-    private readonly events: CoreItineraryEventService,
+    // The read-only Ticketing/Refund worker reuses quote logic without the
+    // Core writer dependencies; apply paths fail closed when those are absent.
+    @Optional() private readonly events?: CoreItineraryEventService,
   ) {}
 
   async quote(
@@ -222,7 +226,7 @@ export class CoreItineraryRefundService {
           ledgerEntryId: null,
         }),
       );
-      await this.events.refundRequested(tx, order, created);
+      await this.requireWriterEvents().refundRequested(tx, order, created);
       return created;
     });
   }
@@ -585,8 +589,18 @@ export class CoreItineraryRefundService {
       refund.status = 'REVIEW_REQUIRED';
       refund.failureCode = failureCode;
       await tx.save(refund);
-      await this.events.refundFailed(tx, refund, failureCode);
+      await this.requireWriterEvents().refundFailed(tx, refund, failureCode);
     });
+  }
+
+  private requireWriterEvents(): CoreItineraryEventService {
+    if (!this.events) {
+      throw new ServiceUnavailableException({
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'عملیات نوشتنی استرداد در این سرویس فعال نیست.',
+      });
+    }
+    return this.events;
   }
 
   private requestHash(
