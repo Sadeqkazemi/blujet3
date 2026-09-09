@@ -760,7 +760,8 @@ table or migration. Its role `blujet_ticketing_refund_reader` receives `USAGE`
 only on `inventory`, `orders` and `payments`, plus `SELECT` on exactly:
 
 `inventory.flight_instances`, `inventory.flights`, `inventory.routes`,
-`orders.core_itinerary_orders`, `orders.core_itinerary_segments`,
+approved non-PII columns of `orders.core_itinerary_orders`, plus
+`orders.core_itinerary_segments`,
 `orders.core_itinerary_travellers`, `orders.core_itinerary_traveller_segments`,
 `orders.core_itinerary_ticket_documents`, `orders.core_itinerary_flight_coupons`,
 `orders.core_itinerary_coupon_events`,
@@ -787,6 +788,25 @@ The role is `NOINHERIT`, has no memberships or ownership,
 any schema. Payment capture, PSP callbacks, refunds and reconciliation
 resolution remain Core writes. Removing the profile and revoking the role is
 the rollback; no financial history is changed.
+
+### Order/Booking read-only worker
+
+The opt-in `order-booking` process adds no table or migration. Its role
+`blujet_order_booking_reader` receives `USAGE` only on `orders`, plus `SELECT`
+on exactly:
+
+`orders.core_itinerary_orders`, `orders.core_itinerary_segments`,
+`orders.core_itinerary_traveller_segments` and
+`orders.core_itinerary_lifecycle_events`.
+
+The Order grant excludes `contactPhone`, owner/idempotency data and every other
+unapproved column. The role also has no access to
+`orders.core_itinerary_travellers`, so encrypted and plain passenger profile
+fields are outside this process even at the database grant boundary. It is
+`NOINHERIT`, owns no object, has
+`default_transaction_read_only=on`, no sequence privilege and no schema/database
+`CREATE`. Order/Hold/Inventory/Payment writes remain in the single Core ACID
+boundary. Removing the profile and revoking the role is the rollback.
 
 ### Current reporting and booking read models
 

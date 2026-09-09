@@ -17,6 +17,20 @@ promo/wallet/points-ledger/GDPR/public frontend) onto this schema**,
 rather than reconciling two incompatible Prisma histories. See "Phase 13"
 below for what's landed from that port so far.
 
+### 2026-09-09 — Order/Booking read-only process boundary
+
+- [x] Keep Order creation, Hold expiry, Inventory, Payment and lifecycle writes
+  inside the single transactional Core; no writer split or dual-write.
+- [x] Add an opt-in internal worker for PII-free Order status and bounded due-Hold
+  observation, while preserving every public `/api/v1/**` route.
+- [x] Exclude the traveller PII relation at the PostgreSQL grant boundary and
+  provision an exact-SELECT, non-owner, default-read-only role.
+- [x] Add independent health/auth/config tests, Compose profile, CI PostgreSQL
+  write-rejection proof and container build.
+- [x] Pass 176 Backend suites / 1039 tests, read-only lint, typecheck, build,
+  real PostgreSQL role proof and local HTTP smoke.
+- [ ] Owner review, push and merge remain separate approvals. No server deploy.
+
 ### 2026-09-08 — Payment/Reconciliation read-only process boundary
 
 - [x] Keep payment, PSP callbacks, refunds, bookings and ledger writes in the

@@ -419,6 +419,23 @@ there is no public Gateway cutover. Resolve, capture, refund, callback and
 ledger-write operations remain in Core until the real PSP contract and UAT are
 provided.
 
+### Order/Booking process boundary — read-only shadow slice
+
+The opt-in `order-booking` process exposes a PII-free operational projection of
+Core itinerary Orders. Core remains the sole writer for Order creation, Hold
+expiry, lifecycle transitions, Inventory and Payment; the process cannot run
+migrations and has no write credential.
+
+| Method | Path | Behavior |
+| --- | --- | --- |
+| GET | `/internal/v1/order-booking/holds/due?asOf=<UTC>&limit=50` | Returns a bounded observation of `HELD` Orders whose authoritative 15-minute deadline is at or before `asOf`. It does not expire an Order or release Inventory. |
+| GET | `/internal/v1/order-booking/orders/:reference` | Returns Order totals, status/version, segment snapshots, per-segment traveller counts and lifecycle events by UUID or PNR, without passenger PII. |
+
+Both routes require the dedicated `X-Internal-Token`. There is deliberately no
+create, hold, cancel, expire, pay or ticket command and no public Gateway
+cutover. Existing `/api/v1/**` routes and the transactional Core worker remain
+the rollback/default path.
+
 ### Commerce B3.1 — durable hold expiry
 
 No public route or response shape changes. The existing 15-minute `HELD`

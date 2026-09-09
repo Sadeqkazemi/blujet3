@@ -127,6 +127,20 @@ services:
       SEED_ON_START: 'false'
     command: ['node', 'dist/database/provision-payment-reconciliation-reader-role.js']
 
+  db-order-booking-reader-role:
+    profiles: ['order-booking']
+    image: blujet-backend:${DEPLOY_SHA:-local}
+    restart: 'no'
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      MIGRATION_DATABASE_URL: postgresql://blujet:${POSTGRES_PASSWORD}@db:5432/blujet?schema=public
+      ORDER_BOOKING_DATABASE_PASSWORD: ${ORDER_BOOKING_DATABASE_PASSWORD:-}
+      SEED_ON_START: 'false'
+    command: ['node', 'dist/database/provision-order-booking-reader-role.js']
+
   pss-service:
     build:
       context: ./pss-service
@@ -335,6 +349,35 @@ services:
       - '3630'
     healthcheck:
       test: ['CMD', 'node', '-e', "require('http').get('http://localhost:3630/health/ready', r => process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  order-booking:
+    profiles: ['order-booking']
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.order-booking-worker
+      args:
+        GIT_COMMIT_SHA: ${DEPLOY_SHA:-unknown}
+    restart: unless-stopped
+    depends_on:
+      db-order-booking-reader-role:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      PORT: 3640
+      ORDER_BOOKING_DATABASE_URL: postgresql://blujet_order_booking_reader:${ORDER_BOOKING_DATABASE_PASSWORD:-}@db:5432/blujet?schema=public
+      ORDER_BOOKING_INTERNAL_TOKEN: ${ORDER_BOOKING_INTERNAL_TOKEN:-}
+      API_REQUEST_TIMEOUT_MS: ${ORDER_BOOKING_REQUEST_TIMEOUT_MS:-10000}
+      API_MAX_BODY_BYTES: 262144
+      TRUST_PROXY_HOPS: '0'
+      HTTPS_ENABLED: 'false'
+    expose:
+      - '3640'
+    healthcheck:
+      test: ['CMD', 'node', '-e', "require('http').get('http://localhost:3640/health/ready', r => process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 12
