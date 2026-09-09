@@ -45,9 +45,14 @@ import { HttpOfferPricingClient } from './http-offer-pricing.client';
 import { LocalOfferPricingClient } from './local-offer-pricing.client';
 import { OFFER_PRICING_CLIENT } from './offer-pricing-client.interface';
 import { ConfigService } from '@nestjs/config';
+import { AuditModule } from '../audit/audit.module';
+import { CommerceOutboxModule } from '../commerce-outbox/commerce-outbox.module';
+import { CoreItineraryEventService } from './core-itinerary-event.service';
 
 @Module({
   imports: [
+    AuditModule,
+    CommerceOutboxModule,
     TypeOrmModule.forFeature([
       FlightInstance,
       FareRule,
@@ -88,6 +93,7 @@ import { ConfigService } from '@nestjs/config';
     CoreItineraryCancelService,
     CoreItineraryPaymentService,
     CoreItineraryRefundService,
+    CoreItineraryEventService,
     CoreItineraryRetrievalService,
     PssInternalAuthGuard,
     HttpOfferPricingClient,

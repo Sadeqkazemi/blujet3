@@ -1,5 +1,18 @@
 # PLAN.md — blujet roadmap & progress
 
+### 2026-09-09 — Core commerce events, idempotency, Saga and reconciliation
+
+- [x] Connect typed `OrderCreated`, `PaymentConfirmed`, `TicketIssued` and
+  `RefundRequested` events to real Core audit evidence and the transactional
+  encrypted Outbox; no public route or dual-write is introduced.
+- [x] Add `orders.commerce_saga_executions` with unique aggregate ownership and
+  fail-closed `COMPENSATION_REQUIRED` state for fulfilment/refund failures.
+- [x] Preserve existing idempotency keys, Postgres locks, immutable ledger and
+  manual payment/refund reconciliation. Saga does not split Order, Inventory or
+  Payment into separate writers/databases.
+- [ ] Real PSP/NIRA adapters, production replay/DLQ policy and server operations
+  remain input-gated. No server deployment.
+
 Scope of this track: the six executive management panels (پنل مدیر عامل،
 پنل رئیس هیئت مدیره، پنل مدیر ارشد، پنل مدیر بازرگانی، پنل مدیر مالی، پنل
 مدیر IT) plus the shared panel shell and reservation/lock system, per

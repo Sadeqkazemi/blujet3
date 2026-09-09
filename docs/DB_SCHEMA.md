@@ -100,6 +100,19 @@ no Notify table or existing writer changes. Seed intentionally creates no
 outbox events. Quarantined rows are retained; replay requires a later reviewed
 operator workflow. Do not revert/drop this table to roll back application code.
 
+## Core commerce Saga executions
+
+Additive Core-owned `orders.commerce_saga_executions` tracks orchestration
+around Core side-effects without moving the ACID booking/inventory/payment
+boundary. Each `(sagaType, aggregateId)` is unique. Fulfilment tracks hold →
+payment capture → accountable ticketing; refund tracks request → servicing →
+ledger reversal. A mismatch is `COMPENSATION_REQUIRED` and points operators to
+the existing reconciliation evidence. The table contains only correlation,
+idempotency, current step and sanitized failure code; no PII, money, inventory
+snapshot or cross-domain foreign key. Audit, outbox and Saga rows use the same
+Core transaction and roll back together. See
+`docs/features/core-commerce-saga-evidence.md`.
+
 ## A6.19 — Agency credit-request projection
 
 No migration or automatic grants. Optional SELECT-only access to existing

@@ -28,6 +28,7 @@ import type {
   HeldCoreItineraryDto,
   HoldCoreItineraryDto,
 } from './dto/hold-core-itinerary.dto';
+import { CoreItineraryEventService } from './core-itinerary-event.service';
 
 const HOLD_TTL_MS = 15 * 60_000;
 
@@ -43,6 +44,7 @@ export class CoreItineraryHoldService {
     private readonly orderRepo: Repository<CoreItineraryOrder>,
     private readonly quotes: CoreItineraryQuoteService,
     private readonly expiry: CoreItineraryHoldExpiryService,
+    private readonly events: CoreItineraryEventService,
   ) {}
 
   async hold(
@@ -205,6 +207,8 @@ export class CoreItineraryHoldService {
           }),
         ),
       );
+
+      await this.events.orderCreated(tx, order);
 
       return this.toResponse(order, segments);
     });

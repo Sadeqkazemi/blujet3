@@ -71,6 +71,7 @@ import { ManagerReferralReport } from './entities/manager-referral-report.entity
 import { Notification } from './entities/notification.entity';
 import { NotifyOutboxEvent } from './entities/notify-outbox-event.entity';
 import { CommerceOutboxEvent } from './entities/commerce-outbox-event.entity';
+import { CommerceSagaExecution } from './entities/commerce-saga-execution.entity';
 import { CommerceInboxReceipt } from './entities/commerce-inbox-receipt.entity';
 import { PanelAccessFlag } from './entities/panel-access-flag.entity';
 import { Passenger } from './entities/passenger.entity';
@@ -202,6 +203,7 @@ export const dataSourceOptions: DataSourceOptions = {
     Notification,
     NotifyOutboxEvent,
     CommerceOutboxEvent,
+    CommerceSagaExecution,
     CommerceInboxReceipt,
     PanelAccessFlag,
     Passenger,

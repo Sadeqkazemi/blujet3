@@ -26,6 +26,7 @@ import type {
   CoreItineraryRefundQuoteDto,
   QuoteCoreItineraryRefundDto,
 } from './dto/core-itinerary-refund.dto';
+import { CoreItineraryEventService } from './core-itinerary-event.service';
 
 type RefundSegmentCalculation =
   CoreItineraryRefundQuoteDto['segments'][number] & {
@@ -76,6 +77,7 @@ export class CoreItineraryRefundService {
   constructor(
     @InjectRepository(CoreItineraryRefund)
     private readonly refundRepo: Repository<CoreItineraryRefund>,
+    private readonly events: CoreItineraryEventService,
   ) {}
 
   async quote(
@@ -151,7 +153,7 @@ export class CoreItineraryRefundService {
       }
       const order = await tx.findOne(CoreItineraryOrder, {
         where: { id: orderId, ownerId: dto.ownerId },
-        select: { id: true },
+        select: { id: true, version: true, status: true, ownerId: true },
       });
       if (!order) {
         throw new NotFoundException({
@@ -202,7 +204,7 @@ export class CoreItineraryRefundService {
             'قیمت یا قواعد جریمه تغییر کرده است؛ quote جدید دریافت کنید.',
         });
       }
-      return tx.save(
+      const created = await tx.save(
         tx.create(CoreItineraryRefund, {
           orderId,
           ownerId: dto.ownerId,
@@ -220,6 +222,8 @@ export class CoreItineraryRefundService {
           ledgerEntryId: null,
         }),
       );
+      await this.events.refundRequested(tx, order, created);
+      return created;
     });
   }
 
@@ -581,6 +585,7 @@ export class CoreItineraryRefundService {
       refund.status = 'REVIEW_REQUIRED';
       refund.failureCode = failureCode;
       await tx.save(refund);
+      await this.events.refundFailed(tx, refund, failureCode);
     });
   }
 
