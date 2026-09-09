@@ -22,6 +22,7 @@ business writes across services.
 | Order and booking | Core commerce | later | Core transaction boundary |
 | Inventory and seat lock | Core commerce | last | Core PostgreSQL locks |
 | Reporting | read-model service | after events | derived projections only |
+| Ops/Admin | Core backend | after reporting | ops schema; Core writers until cutover |
 
 Operations, crew and maintenance are not BluJet-owned bounded contexts. Their
 systems remain authoritative and are accessed only through versioned adapters.

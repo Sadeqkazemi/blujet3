@@ -113,6 +113,28 @@ docker compose -f docker-compose.prod.yml --profile order-booking stop order-boo
 docker compose -f docker-compose.prod.yml --profile order-booking rm -f order-booking db-order-booking-reader-role
 ```
 
+## Ops/Admin read-only cartable worker
+
+این worker پیش‌فرض خاموش است و فقط متادیتای بدون متن/پیوست کارتابل را می‌خواند.
+ایجاد، پاسخ، ارجاع، انتقال و تعیین تکلیف همچنان در Core Backend انجام می‌شود:
+
+```bash
+cd /opt/app
+docker compose -f docker-compose.prod.yml --profile ops-admin up -d \
+  db-ops-admin-reader-role ops-admin
+docker compose -f docker-compose.prod.yml --profile ops-admin ps
+```
+
+`OPS_ADMIN_DATABASE_PASSWORD` credential نقش `blujet_ops_admin_reader` و
+`OPS_ADMIN_INTERNAL_TOKEN` حداقل ۳۲ نویسه است. `GET /health/ready` باید
+`transaction_read_only=on` را گزارش کند. rollback فقط با توقف profile و
+rotate/revoke کردن credential انجام می‌شود:
+
+```bash
+docker compose -f docker-compose.prod.yml --profile ops-admin stop ops-admin
+docker compose -f docker-compose.prod.yml --profile ops-admin rm -f ops-admin db-ops-admin-reader-role
+```
+
 ## Scaling the backend
 
 See `docs/DEPLOY_IP.md`'s "مقیاس‌پذیری بک‌اند" section —

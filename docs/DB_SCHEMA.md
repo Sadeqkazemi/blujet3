@@ -3593,6 +3593,18 @@ non-ownership and no sequence/DDL/write privileges are verified before the
 worker starts. Capacity writes, seat locking, Hold expiry and sale decisions
 remain in the Core ACID boundary.
 
+## Ops/Admin read-only cartable boundary (2026-09-09)
+
+No schema or migration is introduced. The opt-in Ops/Admin process reads only
+`id`, `assigneeId`, `category`, `sourceType`, `sourceId`, `status`,
+`resolvedAt`, `readAt` and `createdAt` from `ops.cartable_tasks`. Its database
+role is `blujet_ops_admin_reader`; it cannot read task content, attachments,
+sender/resolution fields, conversations, `identity.users`, audit details or any
+Core commerce relation. The role is `NOINHERIT`, has
+`default_transaction_read_only=on`, and provisioning verifies exact column
+SELECT plus the absence of ownership, memberships, write, sequence and DDL
+privileges. Existing cartable writers remain in Core Backend.
+
 # Senior Manager permission catalog (2026-08)
 
 Migration `1787644800000-SeniorManagerPermissionCatalog` preserves dashboard and cartable access on existing non-null `users.panelPermissions` arrays. No new table is introduced; `panelPermissions` remains the server-enforced JSONB capability list.

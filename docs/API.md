@@ -454,6 +454,22 @@ create, hold, cancel, expire, pay or ticket command and no public Gateway
 cutover. Existing `/api/v1/**` routes and the transactional Core worker remain
 the rollback/default path.
 
+### Ops/Admin process boundary — read-only cartable slice
+
+The opt-in `ops-admin` process observes only column-scoped cartable metadata.
+Core Backend remains the sole writer for creating, replying, transferring and
+resolving cartable tasks. The process cannot read task titles, descriptions,
+attachments, sender data, resolution notes, conversations or User rows.
+
+| Method | Path | Contract |
+| --- | --- | --- |
+| GET | `/internal/v1/ops-admin/cartable/summary` | Returns counts grouped by category/status, unread counts and the oldest UTC timestamp per group. |
+| GET | `/internal/v1/ops-admin/cartable/tasks?status=OPEN&category=ADMIN&limit=50` | Returns a bounded queue of IDs, pseudonymous assignee/source references, status and UTC timestamps. `status` defaults to `OPEN`; category is optional. |
+
+Both routes require the dedicated `X-Internal-Token`. There is no create,
+reply, transfer, approve, reject or Core commerce command and no public Gateway
+cutover.
+
 ### Commerce B3.1 — durable hold expiry
 
 No public route or response shape changes. The existing 15-minute `HELD`
