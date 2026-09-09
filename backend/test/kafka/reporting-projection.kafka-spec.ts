@@ -151,7 +151,11 @@ describe('Reporting projection with real Kafka acknowledgement', () => {
       db.getRepository(ReportingItineraryEventReceipt),
       db.getRepository(ReportingKafkaConsumerCheckpoint),
     );
-    adapter = new ReportingKafkaHandler(new ReportingEventConsumer(store));
+    adapter = new ReportingKafkaHandler(
+      new ReportingEventConsumer(store),
+      {} as never,
+      { enabled: false },
+    );
     broker = await LocalKafka.create();
     await broker.start();
     kafka = new Kafka({

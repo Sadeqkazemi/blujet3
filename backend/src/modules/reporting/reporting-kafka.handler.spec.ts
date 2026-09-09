@@ -1,9 +1,10 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import type { EachMessagePayload } from 'kafkajs';
 import { CoreItineraryEventSchemaCatalog } from '../../common/events/core-itinerary-event-schema';
 import { createItineraryOrderCreated } from '../../common/events/core-itinerary-events';
 import { ReportingEventConsumer } from './reporting-event-consumer';
 import { ReportingKafkaHandler } from './reporting-kafka.handler';
+import type { ReportingDlqStore } from './reporting-dlq.store';
 
 describe('ReportingKafkaHandler', () => {
   const event = createItineraryOrderCreated(
@@ -36,8 +37,16 @@ describe('ReportingKafkaHandler', () => {
       .mockResolvedValue('applied'),
   };
   const commitOffsets = jest.fn().mockResolvedValue(undefined);
+  const dlq = {
+    actionFor: jest.fn().mockResolvedValue('process'),
+    recordFailure: jest.fn().mockResolvedValue('retry'),
+    markResolved: jest.fn().mockResolvedValue(undefined),
+    markSkipped: jest.fn().mockResolvedValue(undefined),
+  };
   const handler = new ReportingKafkaHandler(
     reporting as unknown as ReportingEventConsumer,
+    dlq as unknown as ReportingDlqStore,
+    { enabled: false },
   );
 
   function payload(
@@ -71,6 +80,10 @@ describe('ReportingKafkaHandler', () => {
     jest.resetAllMocks();
     reporting.consume.mockResolvedValue('applied');
     commitOffsets.mockResolvedValue(undefined);
+    dlq.actionFor.mockResolvedValue('process');
+    dlq.recordFailure.mockResolvedValue('retry');
+    dlq.markResolved.mockResolvedValue(undefined);
+    dlq.markSkipped.mockResolvedValue(undefined);
   });
 
   it('commits offset only after the Reporting transaction returns', async () => {
@@ -272,5 +285,98 @@ describe('ReportingKafkaHandler', () => {
         offset: '9007199254740994',
       },
     ]);
+  });
+
+  it('quarantines repeated projection failures without acknowledging them', async () => {
+    const enabledHandler = new ReportingKafkaHandler(
+      reporting as unknown as ReportingEventConsumer,
+      dlq as unknown as ReportingDlqStore,
+      {
+        enabled: true,
+        maxAttempts: 3,
+        operatorToken: 'reporting-operator-token-at-least-32-characters',
+      },
+    );
+    reporting.consume.mockRejectedValue(new Error('secret SQL value'));
+
+    await expect(
+      enabledHandler.runConfig(
+        { commitOffsets },
+        { ...subscription, consumerGroup: 'blujet-reporting-v1' },
+      ).eachMessage!(payload()),
+    ).rejects.toThrow('Reporting Kafka processing failed');
+
+    expect(dlq.recordFailure).toHaveBeenCalledWith(
+      {
+        consumerGroup: 'blujet-reporting-v1',
+        topic: subscription.topic,
+        partition: 0,
+        offset: '4',
+        nextOffset: '5',
+        highWatermark: undefined,
+        fingerprint: createHash('sha256')
+          .update(payload().message.value!)
+          .digest('hex'),
+      },
+      'PROJECTION',
+      event.eventId,
+      3,
+    );
+    expect(commitOffsets).not.toHaveBeenCalled();
+  });
+
+  it('acks an operator-approved skip only after its checkpoint transaction', async () => {
+    const order: string[] = [];
+    dlq.actionFor.mockResolvedValue('skip');
+    dlq.markSkipped.mockImplementation(() => {
+      order.push('checkpoint');
+      return Promise.resolve();
+    });
+    const enabledHandler = new ReportingKafkaHandler(
+      reporting as unknown as ReportingEventConsumer,
+      dlq as unknown as ReportingDlqStore,
+      {
+        enabled: true,
+        maxAttempts: 3,
+        operatorToken: 'reporting-operator-token-at-least-32-characters',
+      },
+    );
+    const client = {
+      commitOffsets: jest.fn(() => {
+        order.push('ack');
+        return Promise.resolve();
+      }),
+    };
+
+    await enabledHandler.runConfig(client, {
+      ...subscription,
+      consumerGroup: 'blujet-reporting-v1',
+    }).eachMessage!(payload());
+
+    expect(order).toEqual(['checkpoint', 'ack']);
+    expect(reporting.consume).not.toHaveBeenCalled();
+  });
+
+  it('does not classify broker acknowledgement failure as poison data', async () => {
+    const enabledHandler = new ReportingKafkaHandler(
+      reporting as unknown as ReportingEventConsumer,
+      dlq as unknown as ReportingDlqStore,
+      {
+        enabled: true,
+        maxAttempts: 3,
+        operatorToken: 'reporting-operator-token-at-least-32-characters',
+      },
+    );
+    commitOffsets.mockRejectedValue(new Error('broker unavailable'));
+
+    await expect(
+      enabledHandler.runConfig(
+        { commitOffsets },
+        { ...subscription, consumerGroup: 'blujet-reporting-v1' },
+      ).eachMessage!(payload()),
+    ).rejects.toThrow('Reporting Kafka processing failed');
+
+    expect(dlq.markResolved).toHaveBeenCalledTimes(1);
+    expect(dlq.recordFailure).not.toHaveBeenCalled();
   });
 });

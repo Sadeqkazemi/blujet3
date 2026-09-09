@@ -1,12 +1,16 @@
 import { ServiceUnavailableException } from '@nestjs/common';
 import type { DataSource } from 'typeorm';
 import type { ReportingKafkaRuntime } from './modules/reporting/reporting-kafka.runtime';
+import type { ReportingDlqStore } from './modules/reporting/reporting-dlq.store';
 import { ReportingWorkerHealthController } from './reporting-worker-health.controller';
 
 describe('ReportingWorkerHealthController', () => {
   const runtime = {
     isReady: jest.fn().mockReturnValue(true),
     getStatus: jest.fn().mockReturnValue({ state: 'running' }),
+  };
+  const dlq = {
+    countQuarantined: jest.fn().mockResolvedValue(0),
   };
 
   beforeEach(() => jest.clearAllMocks());
@@ -17,6 +21,8 @@ describe('ReportingWorkerHealthController', () => {
     const controller = new ReportingWorkerHealthController(
       dataSource,
       runtime as unknown as ReportingKafkaRuntime,
+      dlq as unknown as ReportingDlqStore,
+      { enabled: false },
     );
 
     expect(controller.health()).toMatchObject({
@@ -33,6 +39,8 @@ describe('ReportingWorkerHealthController', () => {
     const controller = new ReportingWorkerHealthController(
       dataSource,
       runtime as unknown as ReportingKafkaRuntime,
+      dlq as unknown as ReportingDlqStore,
+      { enabled: false },
     );
 
     await expect(controller.ready()).resolves.toEqual({
@@ -41,6 +49,7 @@ describe('ReportingWorkerHealthController', () => {
       info: {
         database: { status: 'up' },
         consumer: { status: 'up', state: 'running' },
+        quarantine: { status: 'disabled' },
       },
     });
   });
@@ -52,6 +61,8 @@ describe('ReportingWorkerHealthController', () => {
     const controller = new ReportingWorkerHealthController(
       dataSource,
       runtime as unknown as ReportingKafkaRuntime,
+      dlq as unknown as ReportingDlqStore,
+      { enabled: false },
     );
 
     await expect(controller.ready()).rejects.toBeInstanceOf(
@@ -69,6 +80,8 @@ describe('ReportingWorkerHealthController', () => {
     const controller = new ReportingWorkerHealthController(
       dataSource,
       runtime as unknown as ReportingKafkaRuntime,
+      dlq as unknown as ReportingDlqStore,
+      { enabled: false },
     );
 
     await expect(controller.ready()).rejects.toMatchObject({
@@ -80,6 +93,27 @@ describe('ReportingWorkerHealthController', () => {
           consumer: { status: 'down', state: 'failed' },
         },
       },
+    });
+  });
+
+  it('reports the bounded quarantine count only when the feature is enabled', async () => {
+    dlq.countQuarantined.mockResolvedValueOnce(2);
+    const dataSource = {
+      query: jest.fn().mockResolvedValue([{ '?column?': 1 }]),
+    } as unknown as DataSource;
+    const controller = new ReportingWorkerHealthController(
+      dataSource,
+      runtime as unknown as ReportingKafkaRuntime,
+      dlq as unknown as ReportingDlqStore,
+      {
+        enabled: true,
+        maxAttempts: 3,
+        operatorToken: 'reporting-operator-token-at-least-32-characters',
+      },
+    );
+
+    await expect(controller.ready()).resolves.toMatchObject({
+      info: { quarantine: { status: 'up', count: 2 } },
     });
   });
 });

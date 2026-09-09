@@ -517,3 +517,35 @@ set `NOTIFY_INTEGRATION_ENABLED=false` on backend and recreate only the backend
 container; existing `notifications` and `sms_logs` tables remain compatible.
 Never print `payloadEncrypted`, provider credentials, phone numbers, OTPs, or
 temporary passwords while diagnosing a pending event.
+
+# Reporting poison-message quarantine
+
+The Reporting quarantine is opt-in. Keep `REPORTING_DLQ_ENABLED=false` until
+the migration is applied, the Kafka retention window is confirmed, and a
+dedicated random `REPORTING_DLQ_OPERATOR_TOKEN` (minimum 32 characters) is
+installed. Enabling it without those prerequisites is not an activation plan.
+
+Read only sanitized metadata from the private Reporting worker network:
+
+```bash
+curl --fail-with-body \
+  -H "X-Internal-Token: $REPORTING_DLQ_OPERATOR_TOKEN" \
+  'http://reporting-worker:3500/internal/v1/reporting/dlq?status=QUARANTINED&limit=50'
+```
+
+Approve retry after the projection defect is fixed, or approve skip only after
+the business owner confirms that advancing beyond that source record is safe:
+
+```bash
+curl --fail-with-body -X POST \
+  -H "X-Internal-Token: $REPORTING_DLQ_OPERATOR_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"operatorId":"on-call-id","reason":"projection fixed and verified"}' \
+  'http://reporting-worker:3500/internal/v1/reporting/dlq/RECORD_UUID/retry'
+```
+
+For skip, replace the final path with `/skip` and record the incident/change
+reference in `reason`. Do not paste payloads, offsets, passenger data or raw
+errors into the reason. Retry/skip takes effect when Kafka redelivers the
+retained offset; the registry deliberately stores no message payload and
+cannot reconstruct data after broker retention expires.

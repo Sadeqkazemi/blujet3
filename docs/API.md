@@ -43,10 +43,28 @@ its own schema in the same transaction as the projection. The internal
 observed lag and checkpoint timestamp; it does not expose event data, topic
 names or consumer offsets.
 The same consumer can now run in the dedicated `blujet-reporting` worker
-process. That process adds only internal `/health` and `/ready` probes; it does
-not expose reporting data or replace any public `/api/v1/reporting/**` route.
+process. That process exposes internal `/health` and `/ready` probes plus the
+default-off, token-protected quarantine control endpoints described below. It
+does not expose reporting business data or replace any public
+`/api/v1/reporting/**` route.
 Its Compose profile remains opt-in and production activation is separately
 approved (`docs/features/reporting-worker-process.md`).
+
+### Reporting poison-message quarantine
+
+When `REPORTING_DLQ_ENABLED=true`, Reporting records only sanitized failure
+metadata and never stores the Kafka payload, key, headers or raw error. A record
+is quarantined after the configured bounded attempts and the source offset is
+not acknowledged until an operator explicitly approves retry or skip.
+
+| Method | Path | Contract |
+| --- | --- | --- |
+| GET | `/internal/v1/reporting/dlq?status=QUARANTINED&limit=50` | Bounded metadata-only queue; no topic, offset or payload. |
+| POST | `/internal/v1/reporting/dlq/:id/retry` | Approves retry of the retained source offset. Body: `{ operatorId, reason }`. |
+| POST | `/internal/v1/reporting/dlq/:id/skip` | Explicitly approves checkpoint/ACK without projection on the next delivery. Body: `{ operatorId, reason }`. |
+
+All three routes use the independent `REPORTING_DLQ_OPERATOR_TOKEN`. Automatic
+skip, automatic replay and historical payload republishing are forbidden.
 
 Kafka receive adapter: `CommerceInboxKafkaHandler.runConfig` validates the
 existing publisher wire metadata and returns manual-ack, sequential KafkaJS

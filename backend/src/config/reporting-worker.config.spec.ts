@@ -1,6 +1,7 @@
 import { ReportingItineraryEventProjection } from '../database/entities/reporting-itinerary-event-projection.entity';
 import { ReportingItineraryEventReceipt } from '../database/entities/reporting-itinerary-event-receipt.entity';
 import { ReportingKafkaConsumerCheckpoint } from '../database/entities/reporting-kafka-consumer-checkpoint.entity';
+import { ReportingKafkaProcessingFailure } from '../database/entities/reporting-kafka-processing-failure.entity';
 import {
   reportingWorkerDataSourceOptions,
   validateReportingWorkerEnv,
@@ -41,6 +42,7 @@ describe('reporting worker configuration', () => {
       ReportingItineraryEventProjection,
       ReportingItineraryEventReceipt,
       ReportingKafkaConsumerCheckpoint,
+      ReportingKafkaProcessingFailure,
     ]);
     expect(options).not.toHaveProperty('migrationsRun');
   });
