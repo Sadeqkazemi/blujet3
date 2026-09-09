@@ -22,6 +22,7 @@ jobs:
       ticketing_refund: ${{ steps.scope.outputs.ticketing_refund }}
       payment_reconciliation: ${{ steps.scope.outputs.payment_reconciliation }}
       order_booking: ${{ steps.scope.outputs.order_booking }}
+      inventory: ${{ steps.scope.outputs.inventory }}
       backend_migration: ${{ steps.scope.outputs.backend_migration }}
       experience: ${{ steps.scope.outputs.experience }}
       loyalty: ${{ steps.scope.outputs.loyalty }}
@@ -41,7 +42,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          areas=(backend offer ticketing_refund payment_reconciliation order_booking backend_migration experience loyalty agency identity notify pss frontend ml)
+          areas=(backend offer ticketing_refund payment_reconciliation order_booking inventory backend_migration experience loyalty agency identity notify pss frontend ml)
           if [[ "${{ github.event_name }}" != "pull_request" ]]; then
             for area in "${areas[@]}"; do
               echo "$area=true" >> "$GITHUB_OUTPUT"
@@ -77,6 +78,7 @@ jobs:
           emit ticketing_refund '^(backend/(Dockerfile\.ticketing-refund-worker|package(-lock)?\.json|tsconfig[^/]*\.json|nest-cli\.json|src/(ticketing-refund-worker|ticketing-refund-worker-health|ticketing-refund-worker\.module|config/ticketing-refund-worker|database/(data-source\.options|entities/|provision-ticketing-refund-reader-role)|modules/(ticketing-refund|pss/)))|docker-compose\.prod\.yml$|docs/features/ticketing-refund-process\.md$)'
           emit payment_reconciliation '^(backend/(Dockerfile\.payment-reconciliation-worker|package(-lock)?\.json|tsconfig[^/]*\.json|nest-cli\.json|src/(payment-reconciliation-worker|payment-reconciliation-worker-health|payment-reconciliation-worker\.module|config/payment-reconciliation-worker|database/(data-source\.options|entities/|provision-payment-reconciliation-reader-role)|modules/payment-reconciliation))|docker-compose\.prod\.yml$|docs/features/payment-reconciliation-process\.md$)'
           emit order_booking '^(backend/(Dockerfile\.order-booking-worker|package(-lock)?\.json|tsconfig[^/]*\.json|nest-cli\.json|src/(order-booking-worker|order-booking-worker-health|order-booking-worker\.module|config/order-booking-worker|database/(data-source\.options|entities/|provision-order-booking-reader-role)|modules/order-booking))|docker-compose\.prod\.yml$|docs/features/order-booking-process\.md$)'
+          emit inventory '^(backend/(Dockerfile\.inventory-worker|package(-lock)?\.json|tsconfig[^/]*\.json|nest-cli\.json|src/(inventory-worker|inventory-worker-health|inventory-worker\.module|config/inventory-worker|database/(data-source\.options|entities/|provision-inventory-reader-role)|modules/inventory))|docker-compose\.prod\.yml$|docs/features/inventory-process\.md$)'
           emit backend_migration '^(backend/|scripts/check-expand-only-migrations\.mjs$)'
           emit experience '^(experience-service/|backend/(package(-lock)?\.json$|src/database/))'
           emit loyalty '^(loyalty-service/|backend/(package(-lock)?\.json$|tsconfig[^/]*\.json$|nest-cli\.json$|src/database/|src/common/money\.ts$|src/modules/loyalty-shadow/))'
@@ -782,6 +784,89 @@ jobs:
       - name: Build the opt-in Order/Booking container
         run: docker build -f Dockerfile.order-booking-worker -t blujet-order-booking:ci .
 
+  inventory:
+    name: Inventory process
+    needs: changes
+    if: needs.changes.outputs.inventory == 'true'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: blujet
+          POSTGRES_PASSWORD: blujet
+          POSTGRES_DB: blujet_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U blujet -d blujet_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: cp .env.test .env
+      - run: npm run migration:run
+      - run: npm run build
+      - name: Prove the restricted reader and read-only HTTP boundary
+        env:
+          MIGRATION_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_test
+          INVENTORY_DATABASE_PASSWORD: inventory_reader_ci_password_2026_09_09
+          INVENTORY_DATABASE_URL: postgresql://blujet_inventory_reader:inventory_reader_ci_password_2026_09_09@localhost:5432/blujet_test
+          INVENTORY_INTERNAL_TOKEN: inventory_internal_ci_token_2026_09_09
+          NODE_ENV: test
+          PORT: '3650'
+        run: |
+          set -euo pipefail
+          npm run database:provision-inventory-reader:prod
+          node - <<'NODE'
+          const { Client } = require('pg');
+          (async () => {
+            const client = new Client({ connectionString: process.env.INVENTORY_DATABASE_URL });
+            await client.connect();
+            const state = await client.query('SHOW transaction_read_only');
+            if (state.rows[0]?.transaction_read_only !== 'on') process.exit(1);
+            await client.query('SELECT "id", "capacity" FROM inventory.flight_instances LIMIT 1');
+            const pii = await client.query(
+              "SELECT has_column_privilege(current_user, 'inventory.flight_instances', 'basePriceIrr', 'SELECT') AS allowed",
+            );
+            if (pii.rows[0]?.allowed !== false) process.exit(1);
+            try {
+              await client.query('UPDATE inventory.flight_instances SET version = version');
+              process.exit(1);
+            } catch (error) {
+              if (error?.code !== '25006') process.exit(1);
+            } finally {
+              await client.end();
+            }
+          })().catch(() => process.exit(1));
+          NODE
+          node dist/inventory-worker.main.js >/tmp/blujet-inventory.log 2>&1 &
+          worker_pid=$!
+          trap 'kill "$worker_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent http://localhost:3650/health/ready >/tmp/inventory-ready.json; then break; fi
+            sleep 1
+          done
+          grep -q '"readOnly":true' /tmp/inventory-ready.json
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            http://localhost:3650/internal/v1/inventory/flights/11111111-1111-4111-8111-111111111111/availability)" = '401'
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --header 'X-Internal-Token: inventory_internal_ci_token_2026_09_09' \
+            http://localhost:3650/internal/v1/inventory/flights/not-a-uuid/availability)" = '400'
+      - name: Build the opt-in Inventory container
+        run: docker build -f Dockerfile.inventory-worker -t blujet-inventory:ci .
+
   backend-backup-restore:
     name: Backend backup restore proof
     needs: changes
@@ -1000,6 +1085,7 @@ jobs:
       - ticketing-refund
       - payment-reconciliation
       - order-booking
+      - inventory
       - backend-backup-restore
       - backend-pitr-recovery
       - backend-kafka
