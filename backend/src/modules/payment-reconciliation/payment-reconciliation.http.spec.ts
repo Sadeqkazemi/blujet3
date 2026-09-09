@@ -23,6 +23,7 @@ const token = 'payment-reconciliation-http-token-2026';
       provide: PaymentReconciliationReadService,
       useValue: {
         listPending: jest.fn().mockResolvedValue([]),
+        listCompensationRequired: jest.fn().mockResolvedValue([]),
         status: jest.fn().mockResolvedValue({ booking: { pnr: 'PNR1' } }),
       },
     },
@@ -57,11 +58,24 @@ describe('PaymentReconciliationController HTTP boundary', () => {
       .set('X-Internal-Token', token)
       .query({ limit: 0 })
       .expect(400);
+    await request(app.getHttpServer())
+      .get('/internal/v1/payment-reconciliation/sagas/compensation-required')
+      .expect(401);
+    await request(app.getHttpServer())
+      .get('/internal/v1/payment-reconciliation/sagas/compensation-required')
+      .set('X-Internal-Token', token)
+      .query({ limit: 101 })
+      .expect(400);
   });
 
   it('serves read-only pending and status routes', async () => {
     await request(app.getHttpServer())
       .get('/internal/v1/payment-reconciliation/pending')
+      .set('X-Internal-Token', token)
+      .expect(200)
+      .expect({ success: true, data: [] });
+    await request(app.getHttpServer())
+      .get('/internal/v1/payment-reconciliation/sagas/compensation-required')
       .set('X-Internal-Token', token)
       .expect(200)
       .expect({ success: true, data: [] });

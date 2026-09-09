@@ -66,6 +66,9 @@ describe('Payment/Reconciliation reader role provisioner', () => {
       'GRANT SELECT ON TABLE "payments"."payment_reconciliations"',
     );
     expect(sql).toContain('GRANT SELECT ON TABLE "payments"."ledger_entries"');
+    expect(sql).toContain(
+      'GRANT SELECT ON TABLE "orders"."commerce_saga_executions"',
+    );
     expect(sql).not.toContain('GRANT USAGE ON SCHEMA "identity"');
     expect(sql).toContain('FROM pg_sequence s');
     expect(statements.at(-1)).toBe('COMMIT');

@@ -35,6 +35,18 @@ export class PaymentReconciliationController {
     };
   }
 
+  @Get('sagas/compensation-required')
+  @ApiOperation({ summary: 'صف خواندنی Sagaهای نیازمند جبران' })
+  @ApiOkResponse({ description: 'Sagaهای Core نیازمند اقدام جبرانی' })
+  @ApiBadRequestResponse({ description: 'حد صف معتبر نیست.' })
+  @ApiUnauthorizedResponse({ description: 'توکن سرویس داخلی نامعتبر است.' })
+  async compensationRequired(@Query() query: PaymentReconciliationListDto) {
+    return {
+      success: true,
+      data: await this.payments.listCompensationRequired(query.limit),
+    };
+  }
+
   @Get('orders/:reference/status')
   @ApiOperation({ summary: 'وضعیت پرداخت و لجر یک سفارش' })
   @ApiOkResponse({

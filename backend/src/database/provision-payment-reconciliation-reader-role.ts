@@ -9,6 +9,7 @@ export const PAYMENT_RECONCILIATION_READER_RELATIONS = [
   ['payments', 'payment_attempts'],
   ['payments', 'ledger_entries'],
   ['orders', 'bookings'],
+  ['orders', 'commerce_saga_executions'],
 ] as const;
 
 const DOMAIN_SCHEMAS = [

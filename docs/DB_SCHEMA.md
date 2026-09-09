@@ -794,13 +794,15 @@ The opt-in `payment-reconciliation` process adds no table or migration. Its role
 `orders`, plus `SELECT` on exactly:
 
 `payments.payment_reconciliations`, `payments.payment_attempts`,
-`payments.ledger_entries` and `orders.bookings`.
+`payments.ledger_entries`, `orders.bookings` and
+`orders.commerce_saga_executions`.
 
 The role is `NOINHERIT`, has no memberships or ownership,
 `default_transaction_read_only=on`, no sequence privilege and no `CREATE` on
-any schema. Payment capture, PSP callbacks, refunds and reconciliation
-resolution remain Core writes. Removing the profile and revoking the role is
-the rollback; no financial history is changed.
+any schema. Payment capture, PSP callbacks, refunds, reconciliation resolution
+and Saga compensation remain Core writes. The worker may list only the non-PII
+compensation queue and does not expose Saga idempotency keys. Removing the
+profile and revoking the role is the rollback; no financial history is changed.
 
 ### Order/Booking read-only worker
 
