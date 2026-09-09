@@ -3560,6 +3560,18 @@ company blocks (`seat_locks.classification=FREE`). The public 15-minute hold
 deadline continues to be stored in `bookings.holdExpiresAt`; immutable financial
 sales continue to be stored in `ledger_entries`.
 
+## Inventory read-only process boundary (2026-09-09)
+
+No schema or migration is introduced. The opt-in Inventory process reads a
+bounded availability projection from the existing `inventory.flight_instances`,
+`inventory.seat_locks`, `orders.core_itinerary_orders` and
+`orders.core_itinerary_segments` tables. Its role is
+`blujet_inventory_reader`; grants are column-scoped and exclude passengers,
+users, prices, payment and PII fields. `default_transaction_read_only=on`,
+non-ownership and no sequence/DDL/write privileges are verified before the
+worker starts. Capacity writes, seat locking, Hold expiry and sale decisions
+remain in the Core ACID boundary.
+
 # Senior Manager permission catalog (2026-08)
 
 Migration `1787644800000-SeniorManagerPermissionCatalog` preserves dashboard and cartable access on existing non-null `users.panelPermissions` arrays. No new table is introduced; `panelPermissions` remains the server-enforced JSONB capability list.

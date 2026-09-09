@@ -17,6 +17,18 @@ promo/wallet/points-ledger/GDPR/public frontend) onto this schema**,
 rather than reconciling two incompatible Prisma histories. See "Phase 13"
 below for what's landed from that port so far.
 
+### 2026-09-09 — Inventory read-only process boundary
+
+- [x] Keep capacity, seat locks, Order/Hold writes and sale decisions inside
+  the single transactional Core; no Inventory writer split.
+- [x] Add a default-off internal availability projection with no PII, pricing,
+  payment or passenger data and no public API changes.
+- [x] Provision a column-scoped, non-owner `blujet_inventory_reader` role with
+  default read-only transactions and no DDL/sequence/write access.
+- [x] Add health/auth/config tests, Compose profile, CI PostgreSQL privilege
+  proof and container build.
+- [ ] Owner review, push and merge remain separate approvals. No server deploy.
+
 ### 2026-09-09 — Order/Booking read-only process boundary
 
 - [x] Keep Order creation, Hold expiry, Inventory, Payment and lifecycle writes

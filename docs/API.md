@@ -431,6 +431,16 @@ migrations and has no write credential.
 | GET | `/internal/v1/order-booking/holds/due?asOf=<UTC>&limit=50` | Returns a bounded observation of `HELD` Orders whose authoritative 15-minute deadline is at or before `asOf`. It does not expire an Order or release Inventory. |
 | GET | `/internal/v1/order-booking/orders/:reference` | Returns Order totals, status/version, segment snapshots, per-segment traveller counts and lifecycle events by UUID or PNR, without passenger PII. |
 
+### Inventory read-only process
+
+The opt-in `inventory` process is an observational projection only. It does
+not lock/release seats, expire Holds, or write any Core table. It uses a
+column-scoped read-only role and remains internal to the Docker network.
+
+| Method | Path | Contract |
+| --- | --- | --- |
+| GET | `/internal/v1/inventory/flights/:flightInstanceId/availability` | Returns bounded capacity, Core snapshot sold/held counts, active seat-lock count, non-negative computed availability and UTC observation time. No PII, price, payment or passenger fields. |
+
 Both routes require the dedicated `X-Internal-Token`. There is deliberately no
 create, hold, cancel, expire, pay or ticket command and no public Gateway
 cutover. Existing `/api/v1/**` routes and the transactional Core worker remain
