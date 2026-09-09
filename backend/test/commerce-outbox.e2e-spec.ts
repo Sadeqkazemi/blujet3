@@ -61,9 +61,13 @@ describe('Commerce outbox (PostgreSQL)', () => {
       // Match the UTC Node test process regardless of the local PG default.
       extra: { options: '-c timezone=UTC' },
     }).initialize();
+    // Each Jest shard has a dedicated test database, but other suites may
+    // leave seeded or synthetic events behind before this suite starts.
+    // Clear that test-only queue so dispatcher assertions are deterministic.
+    await db.getRepository(CommerceOutboxEvent).clear();
   });
   beforeEach(async () => {
-    // Never deliver or erase pre-existing pending work in a shared test DB.
+    // The suite owns this test database after the one-time setup cleanup.
     expect(await db.getRepository(CommerceOutboxEvent).count()).toBe(0);
     publish.mockReset().mockResolvedValue(true);
     enabled.mockReset().mockReturnValue(true);
