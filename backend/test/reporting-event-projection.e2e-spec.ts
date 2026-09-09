@@ -12,8 +12,15 @@ import { dataSourceOptions } from '../src/database/data-source.options';
 import { ReportingItineraryEventProjection } from '../src/database/entities/reporting-itinerary-event-projection.entity';
 import { ReportingItineraryEventReceipt } from '../src/database/entities/reporting-itinerary-event-receipt.entity';
 import { ReportingKafkaConsumerCheckpoint } from '../src/database/entities/reporting-kafka-consumer-checkpoint.entity';
+import {
+  ReportingKafkaFailureStage,
+  ReportingKafkaFailureStatus,
+  ReportingKafkaProcessingFailure,
+} from '../src/database/entities/reporting-kafka-processing-failure.entity';
 import { ReportingItineraryProjections1791734400000 } from '../src/database/migrations/1791734400000-ReportingItineraryProjections';
 import { ReportingKafkaConsumerCheckpoints1792156800000 } from '../src/database/migrations/1792156800000-ReportingKafkaConsumerCheckpoints';
+import { ReportingKafkaFailureQuarantine1792329600000 } from '../src/database/migrations/1792329600000-ReportingKafkaFailureQuarantine';
+import { ReportingDlqStore } from '../src/modules/reporting/reporting-dlq.store';
 import { ReportingEventConsumer } from '../src/modules/reporting/reporting-event-consumer';
 import { REPORTING_READ_MODEL_SINK } from '../src/modules/reporting/reporting-event-consumer';
 import { ReportingItineraryProjectionStore } from '../src/modules/reporting/reporting-itinerary-projection.store';
@@ -22,6 +29,7 @@ describe('Reporting itinerary projection (PostgreSQL)', () => {
   let module: TestingModule;
   let db: DataSource;
   let consumer: ReportingEventConsumer;
+  let dlq: ReportingDlqStore;
   const orderIds = new Set<string>();
   const consumerGroups = new Set<string>();
   const context = () => ({
@@ -72,11 +80,13 @@ describe('Reporting itinerary projection (PostgreSQL)', () => {
           ReportingItineraryEventProjection,
           ReportingItineraryEventReceipt,
           ReportingKafkaConsumerCheckpoint,
+          ReportingKafkaProcessingFailure,
         ]),
       ],
       providers: [
         ReportingItineraryProjectionStore,
         ReportingEventConsumer,
+        ReportingDlqStore,
         {
           provide: REPORTING_READ_MODEL_SINK,
           useExisting: ReportingItineraryProjectionStore,
@@ -86,6 +96,7 @@ describe('Reporting itinerary projection (PostgreSQL)', () => {
     await module.init();
     db = module.get(DataSource);
     consumer = module.get(ReportingEventConsumer);
+    dlq = module.get(ReportingDlqStore);
   });
 
   afterEach(async () => {
@@ -96,6 +107,10 @@ describe('Reporting itinerary projection (PostgreSQL)', () => {
     if (orderIds.size)
       await db.getRepository(ReportingItineraryEventReceipt).delete({
         orderId: In([...orderIds]),
+      });
+    if (consumerGroups.size)
+      await db.getRepository(ReportingKafkaProcessingFailure).delete({
+        consumerGroup: In([...consumerGroups]),
       });
     if (consumerGroups.size)
       await db.getRepository(ReportingKafkaConsumerCheckpoint).delete({
@@ -345,6 +360,136 @@ describe('Reporting itinerary projection (PostgreSQL)', () => {
       expect(
         await runner.hasTable('reporting.kafka_consumer_checkpoints'),
       ).toBe(true);
+    } finally {
+      await runner.rollbackTransaction();
+      await runner.release();
+    }
+  });
+
+  it('quarantines poison deliveries and requires an explicit operator decision', async () => {
+    const consumerGroup = `reporting-test-${randomUUID()}`;
+    consumerGroups.add(consumerGroup);
+    const delivery = {
+      consumerGroup,
+      topic: 'blujet.events.v1',
+      partition: 0,
+      offset: '41',
+      nextOffset: '42',
+      highWatermark: '50',
+      fingerprint: 'a'.repeat(64),
+    };
+
+    await expect(
+      dlq.recordFailure(
+        delivery,
+        ReportingKafkaFailureStage.PROJECTION,
+        randomUUID(),
+        3,
+      ),
+    ).resolves.toBe('retry');
+    await expect(
+      dlq.recordFailure(
+        delivery,
+        ReportingKafkaFailureStage.PROJECTION,
+        null,
+        3,
+      ),
+    ).resolves.toBe('retry');
+    await expect(
+      dlq.recordFailure(
+        delivery,
+        ReportingKafkaFailureStage.PROJECTION,
+        null,
+        3,
+      ),
+    ).resolves.toBe('quarantined');
+    await expect(dlq.actionFor(delivery)).resolves.toBe('block');
+
+    const row = await db
+      .getRepository(ReportingKafkaProcessingFailure)
+      .findOneByOrFail({ consumerGroup, offset: '41' });
+    expect(row).toMatchObject({
+      attempts: 3,
+      totalAttempts: 3,
+      status: ReportingKafkaFailureStatus.QUARANTINED,
+    });
+
+    await dlq.approve(row.id, 'retry', 'operator-1', 'projection fixed');
+    await expect(dlq.actionFor(delivery)).resolves.toBe('process');
+    await expect(
+      dlq.recordFailure(
+        delivery,
+        ReportingKafkaFailureStage.PROJECTION,
+        null,
+        3,
+      ),
+    ).resolves.toBe('retry');
+    await expect(
+      db.getRepository(ReportingKafkaProcessingFailure).findOneByOrFail({
+        id: row.id,
+      }),
+    ).resolves.toMatchObject({
+      attempts: 1,
+      totalAttempts: 4,
+      status: ReportingKafkaFailureStatus.RETRYING,
+    });
+  });
+
+  it('persists a skip checkpoint before allowing the broker acknowledgement', async () => {
+    const consumerGroup = `reporting-test-${randomUUID()}`;
+    consumerGroups.add(consumerGroup);
+    const delivery = {
+      consumerGroup,
+      topic: 'blujet.events.v1',
+      partition: 1,
+      offset: '7',
+      nextOffset: '8',
+      highWatermark: '11',
+      fingerprint: 'b'.repeat(64),
+    };
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      await dlq.recordFailure(
+        delivery,
+        ReportingKafkaFailureStage.TRANSPORT,
+        null,
+        2,
+      );
+    }
+    const row = await db
+      .getRepository(ReportingKafkaProcessingFailure)
+      .findOneByOrFail({ consumerGroup, offset: '7' });
+    await dlq.approve(row.id, 'skip', 'operator-2', 'invalid legacy record');
+    await expect(dlq.actionFor(delivery)).resolves.toBe('skip');
+    await dlq.markSkipped(delivery);
+
+    await expect(
+      db.getRepository(ReportingKafkaConsumerCheckpoint).findOneByOrFail({
+        consumerGroup,
+        topic: delivery.topic,
+        partition: delivery.partition,
+      }),
+    ).resolves.toMatchObject({ nextOffset: '8', highWatermark: '11' });
+    await expect(
+      db.getRepository(ReportingKafkaProcessingFailure).findOneByOrFail({
+        id: row.id,
+      }),
+    ).resolves.toMatchObject({ status: ReportingKafkaFailureStatus.SKIPPED });
+  });
+
+  it('reverts and reapplies the additive failure quarantine table', async () => {
+    const runner = db.createQueryRunner();
+    await runner.connect();
+    await runner.startTransaction();
+    try {
+      const migration = new ReportingKafkaFailureQuarantine1792329600000();
+      await migration.down(runner);
+      expect(await runner.hasTable('reporting.kafka_processing_failures')).toBe(
+        false,
+      );
+      await migration.up(runner);
+      expect(await runner.hasTable('reporting.kafka_processing_failures')).toBe(
+        true,
+      );
     } finally {
       await runner.rollbackTransaction();
       await runner.release();

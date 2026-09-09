@@ -1,5 +1,15 @@
 # PLAN.md — blujet roadmap & progress
 
+### 2026-09-09 — Reporting poison-message quarantine
+
+- [x] Freeze bounded retry, quarantine, operator retry/skip and fail-closed ACK
+  rules before implementation; no automatic skip or payload persistence.
+- [x] Add Reporting-owned durable failure metadata and expand-only migration.
+- [x] Connect handler decisions, internal operator API, readiness counters and
+  PostgreSQL/HTTP/Kafka regression coverage.
+- [ ] Owner review, push, green CI and merge. No server deployment or flag
+  activation.
+
 ### 2026-09-09 — Core event schema catalog
 
 - [x] Define stable schema identifiers and exact payload-field metadata for the

@@ -41,13 +41,29 @@ Disabling the consumer preserves projection, receipt and checkpoint rows for
 safe resume (`docs/features/reporting-kafka-runtime.md`).
 
 The separate Reporting worker opens a non-migrating TypeORM connection that
-registers only these three Reporting-owned entities. Its
+registers only the four Reporting-owned projection, receipt, checkpoint and
+failure-metadata entities. Its
 `REPORTING_DATABASE_URL` must identify a dedicated non-superuser role with the
 minimum required access to the `reporting` schema. The worker never receives
 the Core owner URL, runs migrations, or loads Core entities; schema evolution
 remains an explicit operator migration (`docs/features/reporting-worker-process.md`).
 
 ## Kafka commerce delivery outbox
+
+## Reporting Kafka failure quarantine (2026-09-09)
+
+Migration `1792329600000-ReportingKafkaFailureQuarantine` adds
+`reporting.kafka_processing_failures`. The table identifies a delivery with a
+generated UUID plus a unique `(consumerGroup, topic, partition, offset)` and
+stores only SHA-256 fingerprint, optional parsed event UUID, safe failure stage,
+bounded attempt count, lifecycle status and operator approval audit metadata.
+Kafka payload, key, headers and raw error text are never persisted.
+
+Status transitions are `RETRYING -> QUARANTINED -> RETRY_APPROVED` or
+`SKIP_APPROVED`, followed by `RESOLVED` or `SKIPPED`. Reporting updates the row
+under a PostgreSQL lock. A skip also advances the existing Reporting checkpoint
+before Kafka acknowledgement. The migration is expand-only and introduces no
+foreign key to Core schemas.
 
 Typed itinerary event builders read allowlisted fields of
 `orders.core_itinerary_orders` and `payments.core_itinerary_payment_confirmations`;

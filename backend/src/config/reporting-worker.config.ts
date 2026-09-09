@@ -2,6 +2,8 @@ import type { DataSourceOptions } from 'typeorm';
 import { ReportingItineraryEventProjection } from '../database/entities/reporting-itinerary-event-projection.entity';
 import { ReportingItineraryEventReceipt } from '../database/entities/reporting-itinerary-event-receipt.entity';
 import { ReportingKafkaConsumerCheckpoint } from '../database/entities/reporting-kafka-consumer-checkpoint.entity';
+import { ReportingKafkaProcessingFailure } from '../database/entities/reporting-kafka-processing-failure.entity';
+import { reportingDlqConfig } from './reporting-dlq.config';
 import { reportingKafkaConsumerConfig } from './reporting-kafka-consumer.config';
 
 const PORT_PATTERN = /^\d{1,5}$/;
@@ -31,6 +33,7 @@ export function validateReportingWorkerEnv(
   if (!kafka.enabled) {
     throw new Error('REPORTING_KAFKA_CONSUMER_ENABLED must be true');
   }
+  reportingDlqConfig(env);
   return env;
 }
 
@@ -50,6 +53,7 @@ export function reportingWorkerDataSourceOptions(
       ReportingItineraryEventProjection,
       ReportingItineraryEventReceipt,
       ReportingKafkaConsumerCheckpoint,
+      ReportingKafkaProcessingFailure,
     ],
   };
 }

@@ -7,6 +7,8 @@ import {
   validateReportingWorkerEnv,
 } from './config/reporting-worker.config';
 import { ReportingProjectionModule } from './modules/reporting/reporting-projection.module';
+import { ReportingDlqAuthGuard } from './modules/reporting/reporting-dlq-auth.guard';
+import { ReportingDlqController } from './modules/reporting/reporting-dlq.controller';
 import { ReportingWorkerHealthController } from './reporting-worker-health.controller';
 
 @Module({
@@ -24,12 +26,18 @@ import { ReportingWorkerHealthController } from './reporting-worker-health.contr
               ? 'info'
               : 'debug',
         customProps: () => ({ service: 'blujet-reporting' }),
-        redact: ['req.headers.authorization', 'req.headers.cookie', 'req.body'],
+        redact: [
+          'req.headers.authorization',
+          'req.headers.cookie',
+          'req.headers.x-internal-token',
+          'req.body',
+        ],
       },
     }),
     TypeOrmModule.forRoot(reportingWorkerDataSourceOptions()),
     ReportingProjectionModule,
   ],
-  controllers: [ReportingWorkerHealthController],
+  controllers: [ReportingWorkerHealthController, ReportingDlqController],
+  providers: [ReportingDlqAuthGuard],
 })
 export class ReportingWorkerModule {}
