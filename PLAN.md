@@ -6,7 +6,7 @@
   PII-free queue for fulfilment/refund Sagas in `COMPENSATION_REQUIRED`.
 - [x] Keep replay, compensation and every Order/Inventory/Payment mutation in
   Core; expose no idempotency key, PSP credential or public route.
-- [ ] Prove the fifth exact-SELECT grant, HTTP auth/validation and container
+- [x] Prove the fifth exact-SELECT grant, HTTP auth/validation and container
   smoke in CI before merge. No server deployment.
 
 ### 2026-09-09 — Core commerce events, idempotency, Saga and reconciliation
