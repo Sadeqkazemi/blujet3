@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Kafka, logLevel, type Producer } from 'kafkajs';
 import { kafkaEventsConfig } from '../../config/kafka-events.config';
 import { isCanonicalEvent, type CanonicalEvent } from './canonical-events';
+import { coreItineraryEventSchema } from './core-itinerary-event-schema';
 
 @Injectable()
 export class KafkaEventPublisher {
@@ -48,6 +49,7 @@ export class KafkaEventPublisher {
 
   private async send(event: CanonicalEvent, value: string): Promise<boolean> {
     if (!this.producer || !this.config.enabled) return false;
+    const schema = coreItineraryEventSchema(event);
     this.connection ??= this.producer.connect().catch(() => {
       this.connection = undefined;
       throw new Error('Kafka connection failed');
@@ -66,6 +68,7 @@ export class KafkaEventPublisher {
               'event-id': event.eventId,
               'correlation-id': event.correlationId,
               'event-version': '1',
+              ...(schema ? { 'event-schema-id': schema.schemaId } : undefined),
             },
           },
         ],

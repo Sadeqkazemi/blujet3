@@ -3,6 +3,7 @@ import { TextDecoder } from 'node:util';
 import type { EachMessagePayload, KafkaMessage } from 'kafkajs';
 import { ErrorCode } from '../errors';
 import { isCanonicalEvent, type CanonicalEvent } from './canonical-events';
+import { coreItineraryEventSchema } from './core-itinerary-event-schema';
 
 export interface KafkaEventSubscription {
   topic: string;
@@ -100,6 +101,16 @@ export function parseKafkaEventDelivery(
   if (
     !isCanonicalEvent(parsed) ||
     parsed.producer !== subscription.expectedProducer
+  )
+    throw invalid();
+  const rawSchemaId = message.headers?.['event-schema-id'];
+  const schemaId = header(message, 'event-schema-id');
+  const expectedSchema = coreItineraryEventSchema(parsed);
+  if (
+    rawSchemaId !== undefined &&
+    (schemaId === undefined ||
+      expectedSchema === undefined ||
+      schemaId !== expectedSchema.schemaId)
   )
     throw invalid();
   const expectedKey = `${parsed.producer}:${parsed.aggregateType}:${parsed.aggregateId}`;

@@ -154,6 +154,24 @@ describe('CommerceInboxKafkaHandler', () => {
         },
       },
     },
+    {
+      message: {
+        ...payload().message,
+        headers: {
+          ...payload().message.headers,
+          'event-schema-id': Buffer.from('unknown.schema.v1'),
+        },
+      },
+    },
+    {
+      message: {
+        ...payload().message,
+        headers: {
+          ...payload().message.headers,
+          'event-schema-id': [Buffer.from('unknown.schema.v1')],
+        },
+      },
+    },
     { message: { ...payload().message, value: Buffer.from('{') } },
   ])('rejects malformed transport before DB access (%#)', async (change) => {
     await expect(

@@ -8,6 +8,7 @@ import {
   isCanonicalEvent,
   type CanonicalEvent,
 } from './canonical-events';
+import { CoreItineraryEventSchemaCatalog } from './core-itinerary-event-schema';
 
 interface ItineraryEventBase {
   auditId: string;
@@ -150,8 +151,8 @@ function utc(value: unknown): value is string {
     new Date(value).toISOString() === value
   );
 }
-function exact(payload: object, keys: string[]): boolean {
-  return Object.keys(payload).sort().join(',') === keys.sort().join(',');
+function exact(payload: object, keys: readonly string[]): boolean {
+  return Object.keys(payload).sort().join(',') === [...keys].sort().join(',');
 }
 function date(value: Date): string {
   if (!(value instanceof Date) || !Number.isFinite(value.getTime())) invalid();
@@ -184,18 +185,10 @@ export function parseCoreItineraryEvent(input: unknown): CoreItineraryEvent {
     invalid();
   if (input.eventType === 'OrderCreated') {
     if (
-      !exact(payload, [
-        'auditId',
-        'orderVersion',
-        'currency',
-        'channel',
-        'status',
-        'fareIrr',
-        'taxIrr',
-        'extrasIrr',
-        'totalIrr',
-        'holdExpiresAt',
-      ]) ||
+      !exact(
+        payload,
+        CoreItineraryEventSchemaCatalog.OrderCreated.payloadFields,
+      ) ||
       (payload.channel !== 'SYSTEM' && payload.channel !== 'AGENCY') ||
       payload.status !== 'HELD' ||
       !amount(payload.fareIrr) ||
@@ -213,14 +206,10 @@ export function parseCoreItineraryEvent(input: unknown): CoreItineraryEvent {
       invalid();
   } else if (input.eventType === 'PaymentConfirmed') {
     if (
-      !exact(payload, [
-        'auditId',
-        'orderVersion',
-        'currency',
-        'confirmationId',
-        'status',
-        'amountIrr',
-      ]) ||
+      !exact(
+        payload,
+        CoreItineraryEventSchemaCatalog.PaymentConfirmed.payloadFields,
+      ) ||
       !identifier(payload.confirmationId) ||
       payload.status !== 'COMPLETED' ||
       !amount(payload.amountIrr) ||
@@ -229,14 +218,10 @@ export function parseCoreItineraryEvent(input: unknown): CoreItineraryEvent {
       invalid();
   } else if (input.eventType === 'TicketIssued') {
     if (
-      !exact(payload, [
-        'auditId',
-        'orderVersion',
-        'currency',
-        'status',
-        'ticketDocumentIds',
-        'issuedAt',
-      ]) ||
+      !exact(
+        payload,
+        CoreItineraryEventSchemaCatalog.TicketIssued.payloadFields,
+      ) ||
       payload.status !== 'TICKETED' ||
       !Array.isArray(payload.ticketDocumentIds) ||
       payload.ticketDocumentIds.length < 1 ||
@@ -249,18 +234,10 @@ export function parseCoreItineraryEvent(input: unknown): CoreItineraryEvent {
       invalid();
   } else if (input.eventType === 'RefundRequested') {
     if (
-      !exact(payload, [
-        'auditId',
-        'orderVersion',
-        'currency',
-        'refundId',
-        'refundReference',
-        'quoteReference',
-        'status',
-        'grossAmountIrr',
-        'penaltyAmountIrr',
-        'refundableIrr',
-      ]) ||
+      !exact(
+        payload,
+        CoreItineraryEventSchemaCatalog.RefundRequested.payloadFields,
+      ) ||
       !identifier(payload.refundId) ||
       !identifier(payload.refundReference) ||
       !identifier(payload.quoteReference) ||

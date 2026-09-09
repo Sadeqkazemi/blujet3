@@ -1,6 +1,8 @@
 import { Kafka } from 'kafkajs';
 import { KafkaEventPublisher } from './kafka-event-publisher';
 import { CanonicalEventType, createCanonicalEvent } from './canonical-events';
+import { CoreItineraryEventSchemaCatalog } from './core-itinerary-event-schema';
+import { createItineraryOrderCreated } from './core-itinerary-events';
 
 jest.mock('kafkajs', () => ({ Kafka: jest.fn(), logLevel: { NOTHING: 0 } }));
 
@@ -73,6 +75,57 @@ describe('KafkaEventPublisher', () => {
           expect.objectContaining({
             key: 'test:Order:order-1',
             value: JSON.stringify(first),
+          }),
+        ],
+      }),
+    );
+    await publisher.disconnect();
+  });
+  it('adds the schema identity only to a catalogued Core event', async () => {
+    const publisher = new KafkaEventPublisher();
+    const itinerary = createItineraryOrderCreated(
+      {
+        id: 'order-1',
+        version: 1,
+        status: 'HELD',
+        channel: 'SYSTEM',
+        currency: 'IRR',
+        fareIrr: 100n,
+        taxIrr: 20n,
+        extrasIrr: 0n,
+        totalIrr: 120n,
+        createdAt: new Date('2026-09-09T00:00:00.000Z'),
+        holdExpiresAt: new Date('2026-09-09T00:15:00.000Z'),
+      },
+      {
+        auditId: 'audit-1',
+        correlationId: 'request-1',
+        idempotencyKey: 'order-created-1',
+      },
+    );
+    await publisher.publish(itinerary);
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: [
+          expect.objectContaining({
+            headers: expect.objectContaining({
+              'event-schema-id':
+                CoreItineraryEventSchemaCatalog.OrderCreated.schemaId,
+            }),
+          }),
+        ],
+      }),
+    );
+
+    send.mockClear();
+    await publisher.publish(event());
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: [
+          expect.objectContaining({
+            headers: expect.not.objectContaining({
+              'event-schema-id': expect.anything(),
+            }),
           }),
         ],
       }),

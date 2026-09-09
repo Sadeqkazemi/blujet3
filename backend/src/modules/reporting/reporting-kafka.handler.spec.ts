@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { EachMessagePayload } from 'kafkajs';
+import { CoreItineraryEventSchemaCatalog } from '../../common/events/core-itinerary-event-schema';
 import { createItineraryOrderCreated } from '../../common/events/core-itinerary-events';
 import { ReportingEventConsumer } from './reporting-event-consumer';
 import { ReportingKafkaHandler } from './reporting-kafka.handler';
@@ -57,6 +58,9 @@ describe('ReportingKafkaHandler', () => {
           'event-id': Buffer.from(event.eventId),
           'correlation-id': Buffer.from(event.correlationId),
           'event-version': Buffer.from('1'),
+          'event-schema-id': Buffer.from(
+            CoreItineraryEventSchemaCatalog.OrderCreated.schemaId,
+          ),
         },
       },
       ...overrides,
@@ -103,6 +107,24 @@ describe('ReportingKafkaHandler', () => {
       ]);
     },
   );
+
+  it('accepts a legacy v1 backlog message without schema metadata', async () => {
+    const message = payload().message;
+    await handler.runConfig({ commitOffsets }, subscription).eachMessage!(
+      payload({
+        message: {
+          ...message,
+          headers: {
+            'event-id': Buffer.from(event.eventId),
+            'correlation-id': Buffer.from(event.correlationId),
+            'event-version': Buffer.from('1'),
+          },
+        },
+      }),
+    );
+    expect(reporting.consume).toHaveBeenCalledWith(event, undefined);
+    expect(commitOffsets).toHaveBeenCalledTimes(1);
+  });
 
   it('forwards validated broker progress to the atomic projection', async () => {
     await handler.runConfig(
@@ -153,6 +175,26 @@ describe('ReportingKafkaHandler', () => {
       message: {
         ...payload().message,
         headers: { ...payload().message.headers, 'event-id': Buffer.from('x') },
+      },
+    },
+    {
+      message: {
+        ...payload().message,
+        headers: {
+          ...payload().message.headers,
+          'event-schema-id': Buffer.from(
+            CoreItineraryEventSchemaCatalog.RefundRequested.schemaId,
+          ),
+        },
+      },
+    },
+    {
+      message: {
+        ...payload().message,
+        headers: {
+          ...payload().message.headers,
+          'event-schema-id': Buffer.from('unknown.schema.v1'),
+        },
       },
     },
   ])('rejects malformed transport before Reporting (%#)', async (change) => {

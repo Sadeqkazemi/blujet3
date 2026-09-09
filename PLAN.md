@@ -1,5 +1,16 @@
 # PLAN.md — blujet roadmap & progress
 
+### 2026-09-09 — Core event schema catalog
+
+- [x] Define stable schema identifiers and exact payload-field metadata for the
+  four connected Core itinerary events; keep `FlightDisrupted` input-gated.
+- [x] Publish additive `event-schema-id` Kafka metadata and reject mismatched
+  identifiers before database access while accepting the legacy v1 backlog.
+- [ ] Prove catalog/parser drift protection and transport compatibility in CI;
+  all 1,067 Backend unit tests, focused transport tests, lint, typecheck and
+  build pass locally. No Schema Registry activation, database change or server
+  deployment.
+
 ### 2026-09-09 — Core Saga compensation observation
 
 - [x] Extend the read-only Payment/Reconciliation boundary with a bounded,
