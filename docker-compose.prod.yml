@@ -155,6 +155,20 @@ services:
       SEED_ON_START: 'false'
     command: ['node', 'dist/database/provision-inventory-reader-role.js']
 
+  db-ops-admin-reader-role:
+    profiles: ['ops-admin']
+    image: blujet-backend:${DEPLOY_SHA:-local}
+    restart: 'no'
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      MIGRATION_DATABASE_URL: postgresql://blujet:${POSTGRES_PASSWORD}@db:5432/blujet?schema=public
+      OPS_ADMIN_DATABASE_PASSWORD: ${OPS_ADMIN_DATABASE_PASSWORD:-}
+      SEED_ON_START: 'false'
+    command: ['node', 'dist/database/provision-ops-admin-reader-role.js']
+
   pss-service:
     build:
       context: ./pss-service
@@ -421,6 +435,35 @@ services:
       - '3650'
     healthcheck:
       test: ['CMD', 'node', '-e', "require('http').get('http://localhost:3650/health/ready', r => process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  ops-admin:
+    profiles: ['ops-admin']
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.ops-admin-worker
+      args:
+        GIT_COMMIT_SHA: ${DEPLOY_SHA:-unknown}
+    restart: unless-stopped
+    depends_on:
+      db-ops-admin-reader-role:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      PORT: 3660
+      OPS_ADMIN_DATABASE_URL: postgresql://blujet_ops_admin_reader:${OPS_ADMIN_DATABASE_PASSWORD:-}@db:5432/blujet?schema=public
+      OPS_ADMIN_INTERNAL_TOKEN: ${OPS_ADMIN_INTERNAL_TOKEN:-}
+      API_REQUEST_TIMEOUT_MS: ${OPS_ADMIN_REQUEST_TIMEOUT_MS:-10000}
+      API_MAX_BODY_BYTES: 262144
+      TRUST_PROXY_HOPS: '0'
+      HTTPS_ENABLED: 'false'
+    expose:
+      - '3660'
+    healthcheck:
+      test: ['CMD', 'node', '-e', "require('http').get('http://localhost:3660/health/ready', r => process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 12

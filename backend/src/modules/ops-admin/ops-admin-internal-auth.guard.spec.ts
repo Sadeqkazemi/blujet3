@@ -1,0 +1,33 @@
+import type { ExecutionContext } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { OpsAdminInternalAuthGuard } from './ops-admin-internal-auth.guard';
+
+function context(token?: string): ExecutionContext {
+  return {
+    switchToHttp: () => ({
+      getRequest: () => ({
+        headers: token ? { 'x-internal-token': token } : {},
+      }),
+    }),
+  } as unknown as ExecutionContext;
+}
+
+describe('OpsAdminInternalAuthGuard', () => {
+  const expected = 'ops-admin-internal-token-2026-09-09';
+  const guard = new OpsAdminInternalAuthGuard(
+    new ConfigService({ OPS_ADMIN_INTERNAL_TOKEN: expected }),
+  );
+
+  it('accepts only the configured token', () => {
+    expect(guard.canActivate(context(expected))).toBe(true);
+  });
+
+  it('rejects missing and incorrect tokens', () => {
+    expect(() => guard.canActivate(context())).toThrow(
+      'احراز هویت سرویس داخلی نامعتبر است.',
+    );
+    expect(() => guard.canActivate(context('wrong'))).toThrow(
+      'احراز هویت سرویس داخلی نامعتبر است.',
+    );
+  });
+});
