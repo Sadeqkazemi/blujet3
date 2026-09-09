@@ -6,10 +6,11 @@
   four connected Core itinerary events; keep `FlightDisrupted` input-gated.
 - [x] Publish additive `event-schema-id` Kafka metadata and reject mismatched
   identifiers before database access while accepting the legacy v1 backlog.
-- [ ] Prove catalog/parser drift protection and transport compatibility in CI;
-  all 1,067 Backend unit tests, focused transport tests, lint, typecheck and
-  build pass locally. No Schema Registry activation, database change or server
-  deployment.
+- [x] Prove catalog/parser drift protection and transport compatibility in CI;
+  all selected checks passed on PR #103 head `e5bec82`, including eight Backend
+  E2E shards, real Kafka, migration/backup/PITR, Backend and CodeQL. Locally all
+  1,067 Backend unit tests, focused transport tests, lint, typecheck and build
+  pass. No Schema Registry activation, database change or server deployment.
 
 ### 2026-09-09 — Core Saga compensation observation
 
