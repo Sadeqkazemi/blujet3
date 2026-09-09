@@ -1,5 +1,14 @@
 # PLAN.md — blujet roadmap & progress
 
+### 2026-09-09 — Event Schema Registry compatibility foundation
+
+- [x] Define the vendor-neutral, build-time contract and compatibility policy;
+  keep runtime registry calls, credentials and activation out of this slice.
+- [x] Obtain owner approval for the contract before implementation.
+- [x] Add deterministic JSON Schema artifacts, exact validation and a CI drift
+  gate for the four approved Core itinerary v1 events.
+- [ ] Review, push, green CI and merge separately. No server deployment.
+
 ### 2026-09-09 — Reporting poison-message quarantine
 
 - [x] Freeze bounded retry, quarantine, operator retry/skip and fail-closed ACK

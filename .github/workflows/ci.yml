@@ -450,6 +450,7 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - run: cp .env.test .env
+      - run: npm run events:schema:verify
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build

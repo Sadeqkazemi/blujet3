@@ -23,6 +23,11 @@ route is enabled (`docs/features/core-event-schema-catalog.md`).
 The NIRA/DCS boundary currently has a versioned validation-only contract;
 vendor calls remain disabled pending the airline's protocol and sandbox:
 `docs/features/nira-dcs-contract.md`.
+The proposed Schema Registry foundation exports the same four existing v1
+contracts as deterministic JSON Schema artifacts and rejects contract drift in
+CI. It adds no endpoint, runtime registry call or wire-format change; external
+registry selection/activation remains a separate decision:
+`docs/features/event-schema-registry-foundation.md`.
 Reporting has a validation-first event-consumer seam and an internal
 projection store for its independent read model. The additive extension
 persists the latest validated fact per
