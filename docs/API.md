@@ -412,12 +412,13 @@ card data, PSP credentials or the Core owner database URL.
 | Method | Path | Behavior |
 | --- | --- | --- |
 | GET | `/internal/v1/payment-reconciliation/pending?limit=50` | Returns bounded pending reconciliation rows with PNR, booking status, gateway reference, IRR amount and UTC creation time. |
+| GET | `/internal/v1/payment-reconciliation/sagas/compensation-required?limit=50` | Returns bounded Core fulfilment/refund Sagas in `COMPENSATION_REQUIRED`, oldest first, with aggregate/correlation identifiers, current step, safe failure code and UTC timestamps. It exposes no PII, payment credential or idempotency key. |
 | GET | `/internal/v1/payment-reconciliation/orders/:reference/status` | Returns booking payment-attempt, reconciliation and ledger projections by booking UUID or PNR; no PII or card fields. |
 
 Both routes require `X-Internal-Token`. The profile is disabled by default and
-there is no public Gateway cutover. Resolve, capture, refund, callback and
-ledger-write operations remain in Core until the real PSP contract and UAT are
-provided.
+there is no public Gateway cutover. Resolve, capture, refund, callback,
+ledger-write and Saga-compensation operations remain in Core until the real
+PSP/NIRA contracts and UAT are provided.
 
 ### Order/Booking process boundary — read-only shadow slice
 

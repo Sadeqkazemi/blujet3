@@ -48,6 +48,17 @@ type LedgerRow = {
   occurredAt: Date;
 };
 
+type CompensationSagaRow = {
+  id: string;
+  sagaType: string;
+  aggregateId: string;
+  correlationId: string;
+  currentStep: string;
+  failureCode: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 @Injectable()
 export class PaymentReconciliationReadService {
   constructor(private readonly dataSource: DataSource) {}
@@ -72,6 +83,29 @@ export class PaymentReconciliationReadService {
       amountIrr: row.amountIrr,
       currency: 'IRR' as const,
       createdAt: new Date(row.createdAt).toISOString(),
+    }));
+  }
+
+  async listCompensationRequired(limit: number) {
+    const rows = await this.dataSource.query<CompensationSagaRow[]>(
+      `SELECT id, "sagaType", "aggregateId", "correlationId", "currentStep",
+          "failureCode", "createdAt", "updatedAt"
+       FROM orders.commerce_saga_executions
+       WHERE status = 'COMPENSATION_REQUIRED'
+       ORDER BY "updatedAt" ASC, id ASC
+       LIMIT $1`,
+      [limit],
+    );
+    return rows.map((row) => ({
+      id: row.id,
+      sagaType: row.sagaType,
+      aggregateId: row.aggregateId,
+      correlationId: row.correlationId,
+      status: 'COMPENSATION_REQUIRED' as const,
+      currentStep: row.currentStep,
+      failureCode: row.failureCode,
+      createdAt: new Date(row.createdAt).toISOString(),
+      updatedAt: new Date(row.updatedAt).toISOString(),
     }));
   }
 

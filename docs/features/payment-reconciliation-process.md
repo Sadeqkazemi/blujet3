@@ -10,6 +10,9 @@
 - `GET /health/live` و `GET /health/ready` فقط برای شبکهٔ داخلی هستند.
 - `GET /internal/v1/payment-reconciliation/pending?limit=50` صف pending را
   بدون PII و بدون اطلاعات کارت برمی‌گرداند.
+- `GET /internal/v1/payment-reconciliation/sagas/compensation-required?limit=50`
+  Sagaهای fulfilment/refund نیازمند جبران را بدون PII، مبلغ، credential یا
+  idempotency key و با ترتیب قدیمی‌ترین failure برمی‌گرداند.
 - `GET /internal/v1/payment-reconciliation/orders/:reference/status` وضعیت
   رزرو، تلاش‌های پرداخت، reconciliation و ردیف‌های لجر همان سفارش را
   خواندنی برمی‌گرداند؛ `reference` می‌تواند UUID یا PNR باشد.
@@ -19,7 +22,7 @@
 ## مرز داده و rollback
 
 - نقش `blujet_payment_reconciliation_reader`، `NOINHERIT` و
-  `default_transaction_read_only=on` است و فقط چهار جدول موردنیاز را
+  `default_transaction_read_only=on` است و فقط پنج جدول موردنیاز را
   `SELECT` می‌کند.
 - worker با `PAYMENT_RECONCILIATION_DATABASE_URL` اجرا می‌شود؛ هرگز
   `DATABASE_URL` یا migration دریافت نمی‌کند.
@@ -31,6 +34,7 @@
 
 - [x] worker مستقل، health/readiness و احراز هویت داخلی اضافه شد.
 - [x] صف pending و وضعیت سفارش با IRR به‌صورت رشته و UTC ارائه می‌شود.
+- [x] صف Sagaهای نیازمند جبران، bounded و بدون PII ارائه می‌شود.
 - [x] نقش least-privilege با بررسی ownership، write، sequence و DDL اضافه شد.
 - [x] تست‌های 401/400/404، read-only و build/container در CI اضافه شد.
 - [x] پرداخت واقعی، PSP، callback، refund و هر write عمداً خارج از scope است.

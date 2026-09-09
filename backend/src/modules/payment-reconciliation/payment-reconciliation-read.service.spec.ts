@@ -28,6 +28,46 @@ describe('PaymentReconciliationReadService', () => {
     ]);
   });
 
+  it('maps only bounded compensation evidence without idempotency data', async () => {
+    const query = jest.fn().mockResolvedValue([
+      {
+        id: 'saga-1',
+        sagaType: 'CORE_ITINERARY_REFUND',
+        aggregateId: 'order-1',
+        correlationId: 'core-itinerary:order-1',
+        currentStep: 'MANUAL_RECONCILIATION_REQUIRED',
+        failureCode: 'PSP_REFUND_UNKNOWN',
+        createdAt: '2026-09-09T10:00:00.000Z',
+        updatedAt: '2026-09-09T10:01:00.000Z',
+        idempotencyKey: 'must-not-leak',
+      },
+    ]);
+    const service = new PaymentReconciliationReadService({
+      query,
+    } as unknown as DataSource);
+
+    const result = await service.listCompensationRequired(25);
+
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('LIMIT $1'),
+      [25],
+    );
+    expect(result).toEqual([
+      {
+        id: 'saga-1',
+        sagaType: 'CORE_ITINERARY_REFUND',
+        aggregateId: 'order-1',
+        correlationId: 'core-itinerary:order-1',
+        status: 'COMPENSATION_REQUIRED',
+        currentStep: 'MANUAL_RECONCILIATION_REQUIRED',
+        failureCode: 'PSP_REFUND_UNKNOWN',
+        createdAt: '2026-09-09T10:00:00.000Z',
+        updatedAt: '2026-09-09T10:01:00.000Z',
+      },
+    ]);
+    expect(result[0]).not.toHaveProperty('idempotencyKey');
+  });
+
   it('returns payment evidence by PNR and rejects unknown orders', async () => {
     const dataSource = {
       query: jest
