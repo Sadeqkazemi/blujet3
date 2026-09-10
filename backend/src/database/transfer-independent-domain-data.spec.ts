@@ -29,8 +29,16 @@ describe('independent domain transfer contract', () => {
       keyColumn: 'id',
       referenceColumn: 'createdById',
     });
+    expect(transferDomainContract('loyalty').tables).toEqual([
+      'club_members',
+      'club_points_entries',
+      'club_card_requests',
+      'club_tier_rules',
+      'price_locks',
+      'customer_referrals',
+    ]);
     expect(() => transferDomainContract('payments')).toThrow(
-      'must be notify, experience or identity',
+      'must be notify, experience, identity or loyalty',
     );
   });
 

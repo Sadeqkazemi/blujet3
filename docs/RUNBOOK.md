@@ -490,14 +490,14 @@ migrations. It creates a custom-format `pg_dump`, restores it into a temporary
 database in the isolated CI PostgreSQL container, verifies both reliability
 tables and migration history, then removes the temporary database and dump.
 
-# Notify/Experience/Identity dedicated database cutover
+# Notify/Experience/Identity cutover and Loyalty baseline
 
 This runbook is manual and must first be rehearsed in UAT. Never enable both
 the Core writer and a dedicated-domain writer. Keep the current production
 service URLs unchanged until the final reconciliation reports `MATCH` and the
 owner approves the URL switch.
 
-Generate six independent URL-safe secrets and store them only in the server
+Generate eight independent URL-safe secrets and store them only in the server
 secret file:
 
 ```bash
@@ -507,14 +507,16 @@ openssl rand -hex 24 # EXPERIENCE_POSTGRES_PASSWORD
 openssl rand -hex 24 # EXPERIENCE_DATABASE_PASSWORD
 openssl rand -hex 24 # IDENTITY_POSTGRES_PASSWORD
 openssl rand -hex 24 # IDENTITY_DATABASE_PASSWORD
+openssl rand -hex 24 # LOYALTY_POSTGRES_PASSWORD
+openssl rand -hex 24 # LOYALTY_DATABASE_PASSWORD
 ```
 
-Create and migrate the three opt-in PostgreSQL instances, then provision their
+Create and migrate the four opt-in PostgreSQL instances, then provision their
 non-owner runtime roles. This does not switch either application URL:
 
 ```bash
 docker compose -f docker-compose.prod.yml -f docker-compose.domain-db.yml \
-  --profile independent-domain-db up -d notify-db experience-db identity-db
+  --profile independent-domain-db up -d notify-db experience-db identity-db loyalty-db
 docker compose -f docker-compose.prod.yml -f docker-compose.domain-db.yml \
   --profile independent-domain-db run --rm notify-db-migrate
 docker compose -f docker-compose.prod.yml -f docker-compose.domain-db.yml \
@@ -527,6 +529,10 @@ docker compose -f docker-compose.prod.yml -f docker-compose.domain-db.yml \
   --profile independent-domain-db run --rm identity-db-migrate
 docker compose -f docker-compose.prod.yml -f docker-compose.domain-db.yml \
   --profile independent-domain-db run --rm identity-db-runtime-role
+docker compose -f docker-compose.prod.yml -f docker-compose.domain-db.yml \
+  --profile independent-domain-db run --rm loyalty-db-migrate
+docker compose -f docker-compose.prod.yml -f docker-compose.domain-db.yml \
+  --profile independent-domain-db run --rm loyalty-db-runtime-role
 ```
 
 Before each transfer: freeze that domain's Core writer, drain its outbox, run
@@ -555,19 +561,29 @@ command prints only table names, counts, hashes and status. It refuses a
 populated target, so a retry requires restoring a fresh empty target rather
 than merging two writer histories.
 
+For Loyalty, repeat with `DOMAIN_TRANSFER_KIND=loyalty` and
+`loyalty-db-transfer`. This creates only a point-in-time baseline. Do not switch
+`LOYALTY_DATABASE_URL` after this copy: first deliver ordered idempotent event
+catch-up, reconcile every member balance plus full table counts/hashes, freeze
+the Core Loyalty writer for the final delta, and receive explicit cutover
+approval. The dedicated Loyalty runtime role is SELECT-only and Core remains
+the sole writer; dual-write is forbidden.
+
 After exact `MATCH`, run service UAT and set only these runtime URLs:
 
 ```dotenv
 NOTIFY_DATABASE_URL=postgresql://blujet_notify_runtime:PASSWORD@notify-db:5432/blujet_notify
 EXPERIENCE_DATABASE_URL=postgresql://blujet_experience_runtime:PASSWORD@experience-db:5432/blujet_experience
 IDENTITY_DATABASE_URL=postgresql://blujet_identity_runtime:PASSWORD@identity-db:5432/blujet_identity
+# Set only after Loyalty catch-up/reconciliation and separate approval:
+LOYALTY_DATABASE_URL=postgresql://blujet_loyalty_runtime:PASSWORD@loyalty-db:5432/blujet_loyalty
 ```
 
 Recreate one service at a time, observe health and business smoke tests, then
 revoke its old Core database credential. Rollback stops the new service,
 restores the old URL/Core writer, and preserves both database copies for
 investigation; it never enables dual-write. Back up active dedicated databases
-with `DOMAIN_DATABASE_KIND=notify|experience|identity
+with `DOMAIN_DATABASE_KIND=notify|experience|identity|loyalty
 scripts/backup-independent-domain-db.sh` and restore-test them monthly.
 
 For Identity, do not perform the URL switch merely because this transfer tool

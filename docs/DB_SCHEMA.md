@@ -1,5 +1,29 @@
 # DB_SCHEMA.md — blujet data model
 
+## Loyalty physical database baseline contract (microservices phase 6)
+
+The dedicated Loyalty database contains exactly `club_members`,
+`club_points_entries`, `club_card_requests`, `club_tier_rules`, `price_locks`
+and `customer_referrals`. The offline baseline transfer copies those tables in
+foreign-key-safe order from a read-only, repeatable-read Core snapshot into an
+empty migrated target. A reviewed backup reference is mandatory in apply mode.
+Each table must match by row count and two order-independent 64-bit full-row
+hashes. Reports contain only table names, counts, hashes and status—never member
+PII, card data, point movements, prices, URLs or credentials.
+
+`blujet_loyalty_runtime` is a non-owner SELECT-only role in the dedicated
+`loyalty` schema. It has no DML, sequence, DDL, temporary-table, membership, replication, RLS
+bypass, public-schema or cross-domain privilege. The migration/transfer owner
+credential is limited to short-lived operator jobs and is not passed to the
+long-running read process.
+
+Baseline parity alone is not a live cutover. Core remains the sole Loyalty
+writer, and the existing read flags stay disabled until an ordered,
+idempotent event catch-up plus points-balance and full-row reconciliation are
+proven in UAT. A final writer freeze is required before switching the read URL.
+No dual-write, writer move, URL switch, flag activation or deployment is part
+of this contract.
+
 ## Identity physical cutover contract (microservices phase 6)
 
 Identity retains its existing standalone TypeORM schema and migration. Its

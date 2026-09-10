@@ -2,12 +2,16 @@ import 'dotenv/config';
 import { Client } from 'pg';
 import type { RuntimeRoleSqlClient } from './provision-core-runtime-role';
 
-export type IndependentDomain = 'notify' | 'experience' | 'identity';
+export type IndependentDomain =
+  'notify' | 'experience' | 'identity' | 'loyalty';
+
+type DomainRuntimeAccess = 'read' | 'write';
 
 interface DomainRuntimeContract {
   domain: IndependentDomain;
   role: string;
   passwordVariable: string;
+  access: DomainRuntimeAccess;
 }
 
 const CONTRACTS: Record<IndependentDomain, DomainRuntimeContract> = {
@@ -15,16 +19,25 @@ const CONTRACTS: Record<IndependentDomain, DomainRuntimeContract> = {
     domain: 'notify',
     role: 'blujet_notify_runtime',
     passwordVariable: 'NOTIFY_DATABASE_PASSWORD',
+    access: 'write',
   },
   experience: {
     domain: 'experience',
     role: 'blujet_experience_runtime',
     passwordVariable: 'EXPERIENCE_DATABASE_PASSWORD',
+    access: 'write',
   },
   identity: {
     domain: 'identity',
     role: 'blujet_identity_runtime',
     passwordVariable: 'IDENTITY_DATABASE_PASSWORD',
+    access: 'write',
+  },
+  loyalty: {
+    domain: 'loyalty',
+    role: 'blujet_loyalty_runtime',
+    passwordVariable: 'LOYALTY_DATABASE_PASSWORD',
+    access: 'read',
   },
 };
 
@@ -35,9 +48,14 @@ function identifier(value: string): string {
 export function independentDomainContract(
   value: string | undefined,
 ): DomainRuntimeContract {
-  if (value !== 'notify' && value !== 'experience' && value !== 'identity') {
+  if (
+    value !== 'notify' &&
+    value !== 'experience' &&
+    value !== 'identity' &&
+    value !== 'loyalty'
+  ) {
     throw new Error(
-      'DOMAIN_DATABASE_KIND must be notify, experience or identity',
+      'DOMAIN_DATABASE_KIND must be notify, experience, identity or loyalty',
     );
   }
   return CONTRACTS[value];
@@ -60,6 +78,7 @@ export async function provisionIndependentDomainRuntimeRole(
   status: 'PASS';
   domain: IndependentDomain;
   role: string;
+  access: DomainRuntimeAccess;
   relationCount: number;
 }> {
   validateIndependentDomainPassword(contract.passwordVariable, password);
@@ -110,27 +129,67 @@ export async function provisionIndependentDomainRuntimeRole(
       `REVOKE ALL ON DATABASE ${databaseIdentifier} FROM ${role}`,
     );
     await client.query(
+      `REVOKE TEMPORARY ON DATABASE ${databaseIdentifier} FROM PUBLIC`,
+    );
+    await client.query(
       `GRANT CONNECT ON DATABASE ${databaseIdentifier} TO ${role}`,
     );
     await client.query('REVOKE ALL ON SCHEMA public FROM PUBLIC');
     await client.query(`REVOKE ALL ON SCHEMA public FROM ${role}`);
     await client.query(`GRANT USAGE ON SCHEMA ${schema} TO ${role}`);
     await client.query(
-      `GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA ${schema} TO ${role}`,
+      `REVOKE ALL ON ALL TABLES IN SCHEMA ${schema} FROM ${role}`,
     );
     await client.query(
-      `GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA ${schema} TO ${role}`,
+      `REVOKE ALL ON ALL SEQUENCES IN SCHEMA ${schema} FROM ${role}`,
     );
     await client.query(
-      `ALTER DEFAULT PRIVILEGES IN SCHEMA ${schema} GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO ${role}`,
+      `ALTER DEFAULT PRIVILEGES IN SCHEMA ${schema} REVOKE ALL ON TABLES FROM ${role}`,
     );
     await client.query(
-      `ALTER DEFAULT PRIVILEGES IN SCHEMA ${schema} GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO ${role}`,
+      `ALTER DEFAULT PRIVILEGES IN SCHEMA ${schema} REVOKE ALL ON SEQUENCES FROM ${role}`,
     );
+    if (contract.access === 'write') {
+      await client.query(
+        `GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA ${schema} TO ${role}`,
+      );
+      await client.query(
+        `GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA ${schema} TO ${role}`,
+      );
+      await client.query(
+        `ALTER DEFAULT PRIVILEGES IN SCHEMA ${schema} GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO ${role}`,
+      );
+      await client.query(
+        `ALTER DEFAULT PRIVILEGES IN SCHEMA ${schema} GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO ${role}`,
+      );
+    } else {
+      await client.query(
+        `GRANT SELECT ON ALL TABLES IN SCHEMA ${schema} TO ${role}`,
+      );
+      await client.query(
+        `ALTER DEFAULT PRIVILEGES IN SCHEMA ${schema} GRANT SELECT ON TABLES TO ${role}`,
+      );
+    }
     await client.query(
       `ALTER ROLE ${role} IN DATABASE ${databaseIdentifier} SET search_path = ${schema}, pg_catalog`,
     );
 
+    const requiredTablePrivileges =
+      contract.access === 'write' ? 'SELECT,INSERT,UPDATE,DELETE' : 'SELECT';
+    const missingSequencePrivilege =
+      contract.access === 'write'
+        ? `NOT has_sequence_privilege(
+          '${contract.role}', oid, 'USAGE,SELECT,UPDATE'
+        )`
+        : 'FALSE';
+    const excessiveOwnPrivilege =
+      contract.access === 'read'
+        ? `(relkind IN ('r', 'p') AND has_table_privilege(
+          '${contract.role}', oid, 'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'
+        )) OR (relkind = 'S' AND has_sequence_privilege(
+          '${contract.role}', oid, 'USAGE,SELECT,UPDATE'
+        ))`
+        : 'FALSE';
     const verification = await client.query(`WITH role_state AS (
       SELECT oid, rolsuper, rolinherit, rolcreaterole, rolcreatedb,
         rolreplication, rolbypassrls
@@ -161,10 +220,10 @@ export async function provisionIndependentDomainRuntimeRole(
       NOT EXISTS (SELECT 1 FROM owned) AS "noOwnership",
       NOT EXISTS (SELECT 1 FROM domain_relations WHERE
         (relkind IN ('r', 'p') AND NOT has_table_privilege(
-          '${contract.role}', oid, 'SELECT,INSERT,UPDATE,DELETE'
-        )) OR (relkind = 'S' AND NOT has_sequence_privilege(
-          '${contract.role}', oid, 'USAGE,SELECT,UPDATE'
-        ))) AS "ownDml",
+          '${contract.role}', oid, '${requiredTablePrivileges}'
+        )) OR (relkind = 'S' AND ${missingSequencePrivilege})) AS "ownAccess",
+      NOT EXISTS (SELECT 1 FROM domain_relations WHERE
+        ${excessiveOwnPrivilege}) AS "leastPrivilege",
       NOT EXISTS (SELECT 1 FROM foreign_relations WHERE
         (relkind IN ('r', 'p') AND (
           has_any_column_privilege('${contract.role}', oid, 'SELECT,INSERT,UPDATE') OR
@@ -173,6 +232,9 @@ export async function provisionIndependentDomainRuntimeRole(
           '${contract.role}', oid, 'USAGE,SELECT,UPDATE'
         ))) AS "noCrossDomainAccess",
       NOT has_database_privilege('${contract.role}', current_database(), 'CREATE')
+        AND NOT has_database_privilege(
+          '${contract.role}', current_database(), 'TEMP'
+        )
         AND NOT EXISTS (SELECT 1 FROM pg_namespace n
           WHERE has_schema_privilege('${contract.role}', n.oid, 'CREATE')) AS "noDdl"`);
     const checks = verification.rows[0];
@@ -182,7 +244,8 @@ export async function provisionIndependentDomainRuntimeRole(
         'restrictedRole',
         'noMemberships',
         'noOwnership',
-        'ownDml',
+        'ownAccess',
+        'leastPrivilege',
         'noCrossDomainAccess',
         'noDdl',
       ].some((key) => checks[key] !== true)
@@ -208,6 +271,7 @@ export async function provisionIndependentDomainRuntimeRole(
       status: 'PASS',
       domain: contract.domain,
       role: contract.role,
+      access: contract.access,
       relationCount,
     };
   } catch (error) {

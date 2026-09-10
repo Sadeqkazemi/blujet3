@@ -1,5 +1,26 @@
 # PLAN.md — blujet roadmap & progress
 
+## Microservices architecture v1.1 — phase 6 Loyalty database baseline tooling (2026-09-10)
+
+- [x] Freeze the six-table baseline, read-only runtime credential,
+  reconciliation and no-dual-write/no-cutover contract before implementation.
+- [x] Extend the exact-table transfer tool to Loyalty in foreign-key-safe order
+  without emitting encrypted member data or IRR values.
+- [x] Provision and verify `blujet_loyalty_runtime` as SELECT-only, non-owner,
+  with no DML, DDL, memberships or cross-domain access.
+- [x] Prove transfer, full-row checksum parity, populated-target rejection,
+  migration rollback/restore and privilege isolation against PostgreSQL in CI.
+- [x] Document that baseline transfer is not a live cutover: ordered event
+  catch-up, balance reconciliation and writer freeze remain mandatory.
+- [ ] Present the completed diff and obtain explicit approval before
+  commit/push/merge. Do not deploy or enable Loyalty flags.
+
+Local evidence: all 1,170 Backend tests and all 31 Loyalty tests pass; Backend
+and Loyalty lint/typecheck/build pass. A real PostgreSQL proof transferred all six
+tables with two full-row hashes, rejected replay/DML/DDL/temp/cross-domain
+access, and passed migration run/revert/restore. No URL or flag was changed and
+no deployment occurred.
+
 ## Microservices architecture v1.1 — phase 6 Identity cutover tooling (2026-09-10)
 
 - [x] Freeze the Identity owner/runtime credential, exact-table transfer,

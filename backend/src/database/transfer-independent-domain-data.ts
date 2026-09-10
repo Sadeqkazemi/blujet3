@@ -83,6 +83,17 @@ const TRANSFER_CONTRACTS: Record<IndependentDomain, TransferDomainContract> = {
       referenceColumn: 'createdById',
     },
   },
+  loyalty: {
+    domain: 'loyalty',
+    tables: [
+      'club_members',
+      'club_points_entries',
+      'club_card_requests',
+      'club_tier_rules',
+      'price_locks',
+      'customer_referrals',
+    ],
+  },
 };
 
 function identifier(value: string): string {
@@ -92,9 +103,14 @@ function identifier(value: string): string {
 export function transferDomainContract(
   value: string | undefined,
 ): TransferDomainContract {
-  if (value !== 'notify' && value !== 'experience' && value !== 'identity') {
+  if (
+    value !== 'notify' &&
+    value !== 'experience' &&
+    value !== 'identity' &&
+    value !== 'loyalty'
+  ) {
     throw new Error(
-      'DOMAIN_TRANSFER_KIND must be notify, experience or identity',
+      'DOMAIN_TRANSFER_KIND must be notify, experience, identity or loyalty',
     );
   }
   return TRANSFER_CONTRACTS[value];

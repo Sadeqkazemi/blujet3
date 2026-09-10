@@ -16,8 +16,12 @@ describe('independent domain runtime role provisioner', () => {
     expect(independentDomainContract('identity').role).toBe(
       'blujet_identity_runtime',
     );
+    expect(independentDomainContract('loyalty')).toMatchObject({
+      role: 'blujet_loyalty_runtime',
+      access: 'read',
+    });
     expect(() => independentDomainContract('payments')).toThrow(
-      'must be notify, experience or identity',
+      'must be notify, experience, identity or loyalty',
     );
     expect(() =>
       validateIndependentDomainPassword('TEST_PASSWORD', 'short'),
@@ -27,8 +31,8 @@ describe('independent domain runtime role provisioner', () => {
     ).not.toThrow();
   });
 
-  it.each(['notify', 'experience', 'identity'] as const)(
-    'creates a restricted %s writer with no cross-domain or DDL access',
+  it.each(['notify', 'experience', 'identity', 'loyalty'] as const)(
+    'creates a restricted %s runtime with no cross-domain or DDL access',
     async (domain) => {
       const statements: string[] = [];
       const client: RuntimeRoleSqlClient = {
@@ -51,7 +55,8 @@ describe('independent domain runtime role provisioner', () => {
                   restrictedRole: true,
                   noMemberships: true,
                   noOwnership: true,
-                  ownDml: true,
+                  ownAccess: true,
+                  leastPrivilege: true,
                   noCrossDomainAccess: true,
                   noDdl: true,
                 },
@@ -60,7 +65,11 @@ describe('independent domain runtime role provisioner', () => {
           }
           if (statement.includes('count(*)::int AS count')) {
             return Promise.resolve({
-              rows: [{ count: domain === 'identity' ? 6 : 2 }],
+              rows: [
+                {
+                  count: domain === 'identity' || domain === 'loyalty' ? 6 : 2,
+                },
+              ],
             });
           }
           return Promise.resolve({ rows: [] });
@@ -78,7 +87,8 @@ describe('independent domain runtime role provisioner', () => {
         status: 'PASS',
         domain,
         role: `blujet_${domain}_runtime`,
-        relationCount: domain === 'identity' ? 6 : 2,
+        access: domain === 'loyalty' ? 'read' : 'write',
+        relationCount: domain === 'identity' || domain === 'loyalty' ? 6 : 2,
       });
       const sql = statements.join('\n');
       expect(sql).toContain(
@@ -86,7 +96,14 @@ describe('independent domain runtime role provisioner', () => {
       );
       expect(sql).toContain(`GRANT USAGE ON SCHEMA "${domain}"`);
       expect(sql).toContain('REVOKE ALL ON SCHEMA public FROM PUBLIC');
+      expect(sql).toContain('REVOKE TEMPORARY ON DATABASE');
       expect(sql).toContain('ALTER DEFAULT PRIVILEGES');
+      if (domain === 'loyalty') {
+        expect(sql).toContain('GRANT SELECT ON ALL TABLES IN SCHEMA "loyalty"');
+        expect(sql).not.toContain(
+          'GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA "loyalty"',
+        );
+      }
       expect(sql).not.toContain(`${domain}_runtime_password_2026_09_10`);
       expect(statements.at(-1)).toBe('COMMIT');
     },
@@ -112,7 +129,8 @@ describe('independent domain runtime role provisioner', () => {
                 restrictedRole: true,
                 noMemberships: true,
                 noOwnership: true,
-                ownDml: true,
+                ownAccess: true,
+                leastPrivilege: true,
                 noCrossDomainAccess: false,
                 noDdl: true,
               },

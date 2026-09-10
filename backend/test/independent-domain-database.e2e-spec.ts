@@ -10,7 +10,7 @@ import {
 } from '../src/database/transfer-independent-domain-data';
 
 interface DatabaseFixture {
-  domain: 'notify' | 'experience' | 'identity';
+  domain: 'notify' | 'experience' | 'identity' | 'loyalty';
   sourceUrlVariable: string;
   targetUrlVariable: string;
   password: string;
@@ -35,6 +35,12 @@ const fixtures: DatabaseFixture[] = [
     targetUrlVariable: 'IDENTITY_TRANSFER_TARGET_DATABASE_URL',
     password: 'identity_runtime_ci_password_2026_09_10',
   },
+  {
+    domain: 'loyalty',
+    sourceUrlVariable: 'LOYALTY_TRANSFER_SOURCE_DATABASE_URL',
+    targetUrlVariable: 'LOYALTY_TRANSFER_TARGET_DATABASE_URL',
+    password: 'loyalty_runtime_ci_password_2026_09_10',
+  },
 ];
 
 function runtimeUrl(ownerUrl: string, role: string, password: string): string {
@@ -46,7 +52,7 @@ function runtimeUrl(ownerUrl: string, role: string, password: string): string {
 
 async function truncateDomain(
   client: Client,
-  domain: 'notify' | 'experience' | 'identity',
+  domain: 'notify' | 'experience' | 'identity' | 'loyalty',
 ) {
   const contract = transferDomainContract(domain);
   const relations = contract.tables
@@ -57,7 +63,7 @@ async function truncateDomain(
 
 async function seedSource(
   client: Client,
-  domain: 'notify' | 'experience' | 'identity',
+  domain: 'notify' | 'experience' | 'identity' | 'loyalty',
 ) {
   if (domain === 'notify') {
     await client.query(`INSERT INTO "notify"."notifications"
@@ -71,6 +77,17 @@ async function seedSource(
       ("id", "name", "phone", "subject", "body")
       VALUES ('ci-experience-1', 'encrypted-name', 'encrypted-phone',
         'approved-subject', 'approved-body')`);
+    return;
+  }
+  if (domain === 'loyalty') {
+    await client.query(`INSERT INTO "loyalty"."club_members"
+      ("id", "userId", "fullName", "email", "nationalIdEnc", "nationalIdHash", "points")
+      VALUES ('ci-loyalty-member-1', 'stable-user-reference', 'encrypted-name',
+        'encrypted-email', 'encrypted-national-id', 'stable-national-id-hash', 30)`);
+    await client.query(`INSERT INTO "loyalty"."club_points_entries"
+      ("id", "clubMemberId", "type", "signedPoints", "bookingId")
+      VALUES ('ci-loyalty-points-1', 'ci-loyalty-member-1', 'EARN', 30,
+        'stable-booking-reference')`);
     return;
   }
   await client.query(`INSERT INTO "identity"."users"
@@ -112,6 +129,19 @@ async function proveOwnDml(
   await client.query(
     `DELETE FROM "identity"."users" WHERE "id" = 'runtime-probe'`,
   );
+}
+
+async function proveOwnRead(
+  client: Client,
+  domain: 'notify' | 'experience' | 'identity' | 'loyalty',
+): Promise<void> {
+  const firstTable = transferDomainContract(domain).tables[0];
+  await client.query(`SELECT 1 FROM "${domain}"."${firstTable}" LIMIT 1`);
+}
+
+async function attemptLoyaltyDml(client: Client): Promise<void> {
+  await client.query(`UPDATE "loyalty"."club_members"
+    SET "points" = "points" WHERE false`);
 }
 
 describe.each(fixtures)('$domain independent database boundary', (fixture) => {
@@ -158,12 +188,22 @@ describe.each(fixtures)('$domain independent database boundary', (fixture) => {
         await runtime.connect();
         try {
           await expect(
-            proveOwnDml(runtime, fixture.domain),
+            proveOwnRead(runtime, fixture.domain),
           ).resolves.toBeUndefined();
+          if (fixture.domain === 'loyalty') {
+            await expect(attemptLoyaltyDml(runtime)).rejects.toThrow();
+          } else {
+            await expect(
+              proveOwnDml(runtime, fixture.domain),
+            ).resolves.toBeUndefined();
+          }
           await expect(
             runtime.query(
               `CREATE TABLE "${fixture.domain}"."forbidden_ddl" (id text)`,
             ),
+          ).rejects.toThrow();
+          await expect(
+            runtime.query('CREATE TEMP TABLE forbidden_temp (id text)'),
           ).rejects.toThrow();
           await expect(
             runtime.query('SELECT * FROM core_probe.protected_rows'),

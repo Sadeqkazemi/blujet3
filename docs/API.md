@@ -1,12 +1,18 @@
 # API.md — blujet endpoints (human-readable summary)
 
-## Notify/Experience database cutover tooling (microservices phase 6)
+## Independent database cutover tooling (microservices phase 6)
 
 No public or internal HTTP contract changes in this slice. Dedicated database
 role provisioning, one-time transfer, reconciliation and rollback are offline
 operator commands. Existing `/api/v1/notifications/**` and public Experience
 facades remain unchanged, and no database owner credential is exposed to an
 HTTP process.
+
+The Loyalty extension prepares only a read-only physical baseline. Existing
+public Club/Loyalty routes, internal Loyalty endpoints and default-off flags are
+unchanged. Core remains the only Loyalty writer; ordered event catch-up,
+balance reconciliation and a separately approved read cutover are still
+required.
 
 ## Ops/Admin ordered projection consumer and reconciliation
 
