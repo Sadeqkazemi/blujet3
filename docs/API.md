@@ -1,5 +1,14 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Notify physical database bootstrap
+
+The Notify HTTP contract is unchanged. `notify-service` now ships a standalone
+TypeORM DataSource and migration for its owned `notify.notifications` and
+`notify.sms_logs` tables. The migration is opt-in infrastructure only: it
+performs no data copy, no dual-write, and no production URL cutover. Existing
+`/api/v1/notifications/**` compatibility facades and internal service-authenticated
+routes remain the rollback path until a separately approved UAT transfer.
+
 Database runtime isolation does not change any public or internal HTTP
 contract. A restricted Core runtime URL replaces owner credentials inside the
 long-running Backend process; see
