@@ -4,6 +4,7 @@ import { App } from 'supertest/types';
 import * as crypto from 'node:crypto';
 import { DataSource, In, Not } from 'typeorm';
 import { CartableTask } from '../src/database/entities/cartable-task.entity';
+import { CartableProjectionAudit } from '../src/database/entities/cartable-projection-audit.entity';
 import { User } from '../src/database/entities/user.entity';
 import { AuditLog } from '../src/database/entities/audit-log.entity';
 import { ChairReportPermission } from '../src/database/entities/chair-report-permission.entity';
@@ -11,6 +12,7 @@ import { ManagerReferral } from '../src/database/entities/manager-referral.entit
 import { ManagerReferralReport } from '../src/database/entities/manager-referral-report.entity';
 import { AgencyMembershipRequest } from '../src/database/entities/agency-membership-request.entity';
 import { Notification } from '../src/database/entities/notification.entity';
+import { CommerceOutboxEvent } from '../src/database/entities/commerce-outbox-event.entity';
 import { loginAs } from './helpers/login.helper';
 import { createTestApp } from './helpers/app.helper';
 import { EXEC_ROLES } from '../src/common/exec-roles';
@@ -25,6 +27,9 @@ describe('Cartable + referrals + messages (e2e)', () => {
   });
 
   afterEach(async () => {
+    await dataSource
+      .getRepository(CommerceOutboxEvent)
+      .delete({ producer: 'core-ops' });
     await app.close();
   });
 
@@ -129,7 +134,13 @@ describe('Cartable + referrals + messages (e2e)', () => {
     expect(first.body.data.id).toBe(task.id);
     expect(first.body.data.readAt).not.toBeNull();
     expect(first.body.data).toHaveProperty('history');
+    expect(first.body.data).not.toHaveProperty('version');
     expect(Array.isArray(first.body.data.history)).toBe(true);
+    expect(
+      await dataSource.getRepository(CartableProjectionAudit).findBy({
+        taskId: task.id,
+      }),
+    ).toEqual([expect.objectContaining({ taskVersion: 2, mutation: 'READ' })]);
 
     // Repeat view doesn't move readAt forward — mark-read is idempotent.
     const readAtFirst = first.body.data.readAt;
@@ -165,6 +176,17 @@ describe('Cartable + referrals + messages (e2e)', () => {
     expect(history.some((h) => h.detail.includes('تأیید برای تاریخچه'))).toBe(
       true,
     );
+    expect(
+      (
+        await dataSource.getRepository(CartableProjectionAudit).find({
+          where: { taskId: task.id },
+          order: { taskVersion: 'ASC' },
+        })
+      ).map((row) => [row.taskVersion, row.mutation]),
+    ).toEqual([
+      [2, 'RESOLVED'],
+      [3, 'READ'],
+    ]);
   });
 
   it('GET /cartable/unread-count only counts never-viewed tasks; viewing one via detail drops the count', async () => {
@@ -265,12 +287,24 @@ describe('Cartable + referrals + messages (e2e)', () => {
     expect(res.status).toBe(200);
     expect(res.body.data.assigneeId).toBe(financeId);
     expect(res.body.data.status).toBe('OPEN');
+    expect(res.body.data).not.toHaveProperty('version');
 
     const original = await dataSource
       .getRepository(CartableTask)
       .findOneByOrFail({ id: task.id });
     expect(original.status).toBe('TRANSFERRED');
     expect(original.transferredToId).toBe(financeId);
+    expect(
+      await dataSource.getRepository(CartableProjectionAudit).findBy([
+        { taskId: task.id, taskVersion: 2 },
+        { taskId: res.body.data.id, taskVersion: 1 },
+      ]),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ mutation: 'TRANSFERRED' }),
+        expect.objectContaining({ mutation: 'CREATED' }),
+      ]),
+    );
 
     // The target actually sees it.
     const finance = await loginAs(app, 'finance');
@@ -342,6 +376,18 @@ describe('Cartable + referrals + messages (e2e)', () => {
     });
     expect(siblingTasks.length).toBeGreaterThan(0);
     expect(siblingTasks.every((task) => task.status === 'APPROVED')).toBe(true);
+    for (const task of siblingTasks) {
+      expect(
+        await dataSource.getRepository(CartableProjectionAudit).findBy({
+          taskId: task.id,
+        }),
+      ).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ taskVersion: 1, mutation: 'CREATED' }),
+          expect.objectContaining({ taskVersion: 2, mutation: 'RESOLVED' }),
+        ]),
+      );
+    }
 
     const status = await request(app.getHttpServer())
       .get('/cartable/chair-permission')
@@ -869,6 +915,16 @@ describe('Cartable + referrals + messages (e2e)', () => {
     expect(originalAfterReply.conversationId).toBe(
       reply.body.data.conversationId,
     );
+    expect(
+      await dataSource.getRepository(CartableProjectionAudit).findBy({
+        taskId: incoming.id,
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ mutation: 'CREATED' }),
+        expect.objectContaining({ mutation: 'RESOLVED' }),
+      ]),
+    );
 
     const itDetail = await request(app.getHttpServer())
       .get(`/cartable/${reply.body.data.id}`)
@@ -890,6 +946,12 @@ describe('Cartable + referrals + messages (e2e)', () => {
       .set('Authorization', `Bearer ${it.accessToken}`)
       .send();
     expect(closed.status).toBe(200);
+    expect(
+      await dataSource.getRepository(CartableProjectionAudit).findOneBy({
+        taskId: reply.body.data.id,
+        mutation: 'CONVERSATION_CLOSED',
+      }),
+    ).not.toBeNull();
 
     const historyAfterClose = await request(app.getHttpServer())
       .get(`/cartable/${reply.body.data.id}`)
@@ -933,6 +995,12 @@ describe('Cartable + referrals + messages (e2e)', () => {
       .get('/cartable?status=APPROVED')
       .set('Authorization', `Bearer ${finance.accessToken}`);
     expect(list.status).toBe(200);
+    expect(
+      await dataSource.getRepository(CartableProjectionAudit).findOneBy({
+        taskId: message.body.data.id,
+        mutation: 'AUTO_ARCHIVED',
+      }),
+    ).not.toBeNull();
     expect(list.body.data.tasks).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

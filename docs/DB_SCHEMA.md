@@ -1,5 +1,23 @@
 # DB_SCHEMA.md — blujet data model
 
+## Ops/Admin projection source revision and outbox (microservices phase 6)
+
+The Core-owned `ops.cartable_tasks` table gains `version integer NOT NULL
+DEFAULT 1` with a positive-value check. TypeORM optimistic versioning advances
+the value for every mutation that changes the approved projection snapshot.
+
+New append-only `ops.cartable_projection_audits` stores only `id`, `taskId`,
+`taskVersion`, `mutation` and `createdAt`, with unique `(taskId, taskVersion)`.
+It contains no task content, PII or cross-domain foreign key. The corresponding
+encrypted `CartableTaskProjected` envelope is inserted into the existing Core
+`orders.commerce_outbox_events` table in the same transaction. Its idempotency
+key is `cartable-projected:<taskId>:v<taskVersion>`.
+
+The dedicated Ops/Admin database is unchanged in this slice. Inbox receipts,
+ordered projection upsert, baseline replay, reconciliation and reader cutover
+remain separate expand-only work. No data copy, dual-write or deployment is
+performed.
+
 ## Ops/Admin projection event contract (microservices phase 6)
 
 This contract-only slice makes no schema change. Future

@@ -29,6 +29,7 @@ import { CabinFare } from './entities/cabin-fare.entity';
 import { CharterCommitment } from './entities/charter-commitment.entity';
 import { CareersSettings } from './entities/careers-settings.entity';
 import { CartableTask } from './entities/cartable-task.entity';
+import { CartableProjectionAudit } from './entities/cartable-projection-audit.entity';
 import { ChairReportPermission } from './entities/chair-report-permission.entity';
 import { ClubCardRequest } from './entities/club-card-request.entity';
 import { ClubMember } from './entities/club-member.entity';
@@ -162,6 +163,7 @@ export const dataSourceOptions: DataSourceOptions = {
     CharterCommitment,
     CareersSettings,
     CartableTask,
+    CartableProjectionAudit,
     ChairReportPermission,
     ClubCardRequest,
     ClubMember,

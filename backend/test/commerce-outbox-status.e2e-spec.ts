@@ -92,6 +92,7 @@ describe('commerce outbox status (PostgreSQL + CLI)', () => {
       ...dataSourceOptions,
       logging: false,
     }).initialize();
+    await repo().clear();
   });
   beforeEach(async () => {
     expect(await repo().count()).toBe(0);

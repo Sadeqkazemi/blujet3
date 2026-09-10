@@ -1,5 +1,20 @@
 # PLAN.md — blujet roadmap & progress
 
+### 2026-09-10 — Ops/Admin source revision and transactional outbox
+
+- [x] Freeze the Core-only source-version, content-free projection audit and
+  encrypted outbox boundary before implementation.
+- [x] Add an expand-only task version/audit migration and exact TypeORM
+  metadata.
+- [x] Enqueue `CartableTaskProjected` v1 atomically for every task mutation,
+  including multi-row lifecycle changes.
+- [x] Prove idempotency, rollback and no-content leakage with unit and real
+  PostgreSQL tests.
+- [x] Run lint, typecheck, build and regression tests; 1,150 unit and 55 focused
+  PostgreSQL E2E tests pass locally.
+- [ ] Obtain owner approval, push, pass CI and merge. No consumer activation or
+  deployment.
+
 ### 2026-09-09 — Event schema header cutover
 
 - [x] Specify a default-off, consumer-side cutover for the four catalogued Core

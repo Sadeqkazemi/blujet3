@@ -13,6 +13,7 @@ import {
 } from '../../common/events/canonical-events';
 import { CommerceOutboxEvent } from '../../database/entities/commerce-outbox-event.entity';
 import { parseCoreItineraryEvent } from '../../common/events/core-itinerary-events';
+import { parseCartableTaskProjectedEvent } from '../../common/events/ops-admin-events';
 
 @Injectable()
 export class CommerceOutboxService {
@@ -21,6 +22,13 @@ export class CommerceOutboxService {
     input: unknown,
   ): Promise<{ eventId: string }> {
     return this.enqueue(manager, parseCoreItineraryEvent(input));
+  }
+
+  enqueueCartable(
+    manager: EntityManager,
+    input: unknown,
+  ): Promise<{ eventId: string }> {
+    return this.enqueue(manager, parseCartableTaskProjectedEvent(input));
   }
 
   async enqueue(
