@@ -5057,6 +5057,21 @@ contracts and retires the production mock adapters.
 - [ ] Add approved Loyalty command/events and ordered projection, reconcile in
   UAT, freeze Core writes and switch the writer/URL in a separate release.
 
+## Microservices architecture v1.1 — phase 6 agency projection database bootstrap (2026-09-10)
+
+- [x] Limit physical read separation to the three projections consumed by the
+  current Agency process: profile, invoices and credit requests.
+- [x] Add standalone TypeORM metadata and migration commands using only
+  `AGENCY_DATABASE_URL`.
+- [x] Preserve local child-to-profile integrity while representing Identity
+  operator and Core booking IDs as stable scalar references.
+- [x] Prove migration, metadata parity and rollback in a fresh database that is
+  separate from shared-schema compatibility tests.
+- [x] Preserve every HTTP contract/flag and Core as sole writer; no Event
+  consumer, copy, dual-write, URL cutover or deployment.
+- [ ] Add approved projection events and reconciliation, then cut over reads;
+  move each remaining Agency writer only through a separate command/Saga gate.
+
 ## Microservices architecture v1.1 — phase 6 loyalty foundation (A6.1)
 
 - [x] Draft the contract-first Loyalty read boundary, projection safety rules,

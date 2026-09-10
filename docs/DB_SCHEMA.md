@@ -1,5 +1,19 @@
 # DB_SCHEMA.md — blujet data model
 
+## Agency projection database bootstrap (microservices phase 6)
+
+`agency-service` currently owns a physical read-model bootstrap for three
+projections in schema `agency`: profiles, invoices and credit requests. The
+standalone TypeORM migration creates these tables and three local enum types on
+a fresh PostgreSQL database using only `AGENCY_DATABASE_URL`.
+
+Invoices and credit requests reference only their local profile. Identity
+operator IDs and Core booking IDs are stable scalar references without
+cross-domain joins or foreign keys. The remaining Agency command/allotment
+tables and every writer stay in Core until their command, Event, idempotency,
+Saga and reconciliation gates are separately proven. No copy, dual-write,
+cutover or deployment is included.
+
 ## Loyalty physical database bootstrap (microservices phase 6)
 
 `loyalty-service` owns six tables in schema `loyalty`: members, point entries,

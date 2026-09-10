@@ -1,5 +1,14 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Agency projection database bootstrap
+
+Agency HTTP contracts and default-off flags are unchanged. The service now
+owns standalone TypeORM metadata and a fresh-database migration for the three
+projections it currently reads: profile, invoices and credit requests. Core
+remains the sole writer; no event consumer, data copy, dual-write, URL switch
+or deployment is included
+(`docs/features/microservices-phase-6-agency-projection-db.md`).
+
 ## Loyalty physical database bootstrap
 
 Loyalty HTTP contracts and feature flags are unchanged. The service now owns

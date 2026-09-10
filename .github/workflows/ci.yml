@@ -314,6 +314,55 @@ jobs:
           npm run migration:run
           npm run build
           npm test -- --runInBand agency-shadow agency-invoice.client agency-profile.client
+      - name: Install Agency service
+        working-directory: agency-service
+        run: npm ci
+      - name: Prove standalone Agency projection database
+        working-directory: agency-service
+        env:
+          AGENCY_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_agency_projection_test
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const { Client } = require('pg');
+          (async () => {
+            const client = new Client({ connectionString: 'postgresql://blujet:blujet@localhost:5432/postgres' });
+            await client.connect();
+            await client.query('CREATE DATABASE blujet_agency_projection_test');
+            await client.end();
+          })().catch(() => process.exit(1));
+          NODE
+          npm run migration:run
+          schema_log=$(npm run schema:log 2>&1)
+          echo "$schema_log"
+          echo "$schema_log" | grep -q 'Your schema is up to date'
+          node - <<'NODE'
+          const { Client } = require('pg');
+          (async () => {
+            const client = new Client({ connectionString: process.env.AGENCY_DATABASE_URL });
+            await client.connect();
+            const tables = await client.query(
+              `SELECT table_name FROM information_schema.tables
+               WHERE table_schema = 'agency' ORDER BY table_name`,
+            );
+            const expected = ['agency_credit_requests', 'agency_invoices', 'agency_profiles'];
+            if (JSON.stringify(tables.rows.map((row) => row.table_name)) !== JSON.stringify(expected)) process.exit(1);
+            const enums = await client.query(
+              `SELECT count(DISTINCT t.oid)::int AS count
+               FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace
+               JOIN pg_enum e ON e.enumtypid = t.oid WHERE n.nspname = 'agency'`,
+            );
+            if (enums.rows[0]?.count !== 3) process.exit(1);
+            const foreignKeys = await client.query(
+              `SELECT count(*)::int AS count,
+                      bool_and(confrelid::regclass::text = 'agency.agency_profiles') AS internal
+               FROM pg_constraint WHERE contype = 'f'
+                 AND connamespace = 'agency'::regnamespace`,
+            );
+            if (foreignKeys.rows[0]?.count !== 2 || foreignKeys.rows[0]?.internal !== true) process.exit(1);
+            await client.end();
+          })().catch(() => process.exit(1));
+          NODE
       - name: Validate isolated Agency reader
         working-directory: agency-service
         env:
@@ -321,7 +370,6 @@ jobs:
           AGENCY_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_agency_test
           AGENCY_INTERNAL_TOKEN: test-agency-internal-token-at-least-32-characters
         run: |
-          npm ci
           npm run lint:check
           npm run typecheck
           npm run build
@@ -329,6 +377,26 @@ jobs:
           git diff --exit-code -- docs/openapi.json
           npm test
           npm run test:e2e
+      - name: Prove compiled Agency projection rollback and restore
+        working-directory: agency-service
+        env:
+          AGENCY_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_agency_projection_test
+        run: |
+          set -euo pipefail
+          npm run migration:revert:prod
+          node - <<'NODE'
+          const { Client } = require('pg');
+          (async () => {
+            const client = new Client({ connectionString: process.env.AGENCY_DATABASE_URL });
+            await client.connect();
+            const schema = await client.query(
+              "SELECT count(*)::int AS count FROM information_schema.schemata WHERE schema_name = 'agency'",
+            );
+            if (schema.rows[0]?.count !== 0) process.exit(1);
+            await client.end();
+          })().catch(() => process.exit(1));
+          NODE
+          npm run migration:run:prod
 
   identity-service:
     name: Identity service
