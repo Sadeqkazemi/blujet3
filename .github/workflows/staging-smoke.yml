@@ -20,7 +20,7 @@ jobs:
       STAGING_NOTIFY_DB_PASSWORD: notify-ci-runtime-password
       STAGING_EXPERIENCE_DB_PASSWORD: experience-ci-runtime-password
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Create ephemeral staging environment
         shell: bash
         run: |
