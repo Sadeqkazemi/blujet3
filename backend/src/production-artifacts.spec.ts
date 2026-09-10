@@ -14,6 +14,10 @@ const compose = readFileSync(
   join(backendRoot, '..', 'docker-compose.prod.yml'),
   'utf8',
 );
+const independentDomainCompose = readFileSync(
+  join(backendRoot, '..', 'docker-compose.domain-db.yml'),
+  'utf8',
+);
 const productionEnvExample = readFileSync(
   join(backendRoot, '..', '.env.production.example'),
   'utf8',
@@ -279,6 +283,27 @@ describe('production backend artifacts', () => {
     expect(productionEnvExample).toContain('NOTIFY_DATABASE_URL=');
     expect(productionEnvExample).toContain('EXPERIENCE_DATABASE_URL=');
     expect(productionEnvExample).toContain('non-superuser');
+  });
+
+  it('keeps independent domain owners short-lived and runtimes restricted', () => {
+    expect(independentDomainCompose).toContain('notify-db:');
+    expect(independentDomainCompose).toContain('experience-db:');
+    expect(independentDomainCompose).toContain(
+      'profiles: ["independent-domain-db"]',
+    );
+    expect(independentDomainCompose).toContain(
+      '["node", "dist/database/provision-independent-domain-runtime-role.js"]',
+    );
+    expect(independentDomainCompose).toContain(
+      'command: ["node", "dist/database/transfer-independent-domain-data.js"]',
+    );
+    expect(independentDomainCompose).not.toContain('ports:');
+    expect(productionEnvExample).toContain('NOTIFY_POSTGRES_PASSWORD=');
+    expect(productionEnvExample).toContain('NOTIFY_DATABASE_PASSWORD=');
+    expect(productionEnvExample).toContain('EXPERIENCE_POSTGRES_PASSWORD=');
+    expect(productionEnvExample).toContain('EXPERIENCE_DATABASE_PASSWORD=');
+    expect(ciWorkflow).toContain('Independent domain database cutover');
+    expect(ciWorkflow).toContain('test:e2e:independent-domain-db');
   });
 
   it('keeps database-owner credentials outside the long-running Core process', () => {

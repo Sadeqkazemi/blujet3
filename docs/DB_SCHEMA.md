@@ -1,5 +1,29 @@
 # DB_SCHEMA.md — blujet data model
 
+## Notify/Experience physical cutover contract (microservices phase 6)
+
+Notify and Experience retain their existing standalone TypeORM schemas and
+migrations. Their dedicated PostgreSQL runtime roles are fixed as
+`blujet_notify_runtime` and `blujet_experience_runtime`: non-owner LOGIN roles
+with DML only in `notify` or `experience`, sequence use only in that schema,
+and no DDL, role membership, replication, RLS bypass, public-schema creation or
+cross-domain privilege. Migration/transfer owner credentials are short-lived
+and are never passed to a long-running service.
+
+The approved one-time transfer is allowlisted to the two existing table sets.
+It requires different source/target databases, a reviewed backup reference, a
+read-only source transaction and an empty target. It copies in bounded batches
+inside one target transaction, then compares every table using row count plus
+two order-independent 64-bit hashes over complete rows. A mismatch or populated
+target rolls back/fails closed. No row content, URL, credential or PII appears
+in its report.
+
+This contract adds no public/internal HTTP endpoint and performs no automatic
+production copy, URL switch, credential rotation, Core revoke or deployment.
+Those actions remain a manual, owner-approved UAT cutover after backup restore
+proof and exact reconciliation. Order, Inventory and Payment remain one Core
+PostgreSQL primary and one ACID transaction boundary.
+
 ## Ops/Admin ordered projection consumer (microservices phase 6)
 
 The dedicated `ops.cartable_tasks` projection gains `taskVersion`, `auditId`

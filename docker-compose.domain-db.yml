@@ -1,0 +1,150 @@
+services:
+  notify-db:
+    image: postgres:16-alpine
+    profiles: ["independent-domain-db"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: blujet_notify_owner
+      POSTGRES_PASSWORD: ${NOTIFY_POSTGRES_PASSWORD:?Supply the Notify database owner password}
+      POSTGRES_DB: blujet_notify
+    volumes:
+      - notify_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U blujet_notify_owner -d blujet_notify"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    expose:
+      - "5432"
+
+  experience-db:
+    image: postgres:16-alpine
+    profiles: ["independent-domain-db"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: blujet_experience_owner
+      POSTGRES_PASSWORD: ${EXPERIENCE_POSTGRES_PASSWORD:?Supply the Experience database owner password}
+      POSTGRES_DB: blujet_experience
+    volumes:
+      - experience_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U blujet_experience_owner -d blujet_experience",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    expose:
+      - "5432"
+
+  notify-db-migrate:
+    profiles: ["independent-domain-db"]
+    build:
+      context: ./notify-service
+      args:
+        GIT_COMMIT_SHA: ${DEPLOY_SHA:-unknown}
+    restart: "no"
+    depends_on:
+      notify-db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      NOTIFY_DATABASE_URL: postgresql://blujet_notify_owner:${NOTIFY_POSTGRES_PASSWORD}@notify-db:5432/blujet_notify
+    command: ["npm", "run", "migration:run:prod"]
+
+  experience-db-migrate:
+    profiles: ["independent-domain-db"]
+    build:
+      context: ./experience-service
+      args:
+        GIT_COMMIT_SHA: ${DEPLOY_SHA:-unknown}
+    restart: "no"
+    depends_on:
+      experience-db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      EXPERIENCE_DATABASE_URL: postgresql://blujet_experience_owner:${EXPERIENCE_POSTGRES_PASSWORD}@experience-db:5432/blujet_experience
+    command: ["npm", "run", "migration:run:prod"]
+
+  notify-db-runtime-role:
+    profiles: ["independent-domain-db"]
+    image: blujet-backend:${DEPLOY_SHA:-local}
+    build:
+      context: ./backend
+      args:
+        GIT_COMMIT_SHA: ${DEPLOY_SHA:-unknown}
+    restart: "no"
+    depends_on:
+      notify-db-migrate:
+        condition: service_completed_successfully
+    environment:
+      DOMAIN_DATABASE_KIND: notify
+      DOMAIN_DATABASE_OWNER_URL: postgresql://blujet_notify_owner:${NOTIFY_POSTGRES_PASSWORD}@notify-db:5432/blujet_notify
+      NOTIFY_DATABASE_PASSWORD: ${NOTIFY_DATABASE_PASSWORD:?Supply the Notify runtime password}
+    command:
+      ["node", "dist/database/provision-independent-domain-runtime-role.js"]
+
+  experience-db-runtime-role:
+    profiles: ["independent-domain-db"]
+    image: blujet-backend:${DEPLOY_SHA:-local}
+    build:
+      context: ./backend
+      args:
+        GIT_COMMIT_SHA: ${DEPLOY_SHA:-unknown}
+    restart: "no"
+    depends_on:
+      experience-db-migrate:
+        condition: service_completed_successfully
+    environment:
+      DOMAIN_DATABASE_KIND: experience
+      DOMAIN_DATABASE_OWNER_URL: postgresql://blujet_experience_owner:${EXPERIENCE_POSTGRES_PASSWORD}@experience-db:5432/blujet_experience
+      EXPERIENCE_DATABASE_PASSWORD: ${EXPERIENCE_DATABASE_PASSWORD:?Supply the Experience runtime password}
+    command:
+      ["node", "dist/database/provision-independent-domain-runtime-role.js"]
+
+  notify-db-transfer:
+    profiles: ["independent-domain-transfer"]
+    image: blujet-backend:${DEPLOY_SHA:-local}
+    build:
+      context: ./backend
+      args:
+        GIT_COMMIT_SHA: ${DEPLOY_SHA:-unknown}
+    restart: "no"
+    depends_on:
+      notify-db-migrate:
+        condition: service_completed_successfully
+    environment:
+      DOMAIN_TRANSFER_KIND: notify
+      DOMAIN_TRANSFER_SOURCE_DATABASE_URL: ${DOMAIN_TRANSFER_SOURCE_DATABASE_URL:?Supply the read-only Core source URL}
+      DOMAIN_TRANSFER_TARGET_DATABASE_URL: postgresql://blujet_notify_owner:${NOTIFY_POSTGRES_PASSWORD}@notify-db:5432/blujet_notify
+      DOMAIN_TRANSFER_APPLY: ${DOMAIN_TRANSFER_APPLY:-false}
+      DOMAIN_TRANSFER_BACKUP_REFERENCE: ${DOMAIN_TRANSFER_BACKUP_REFERENCE:-}
+      DOMAIN_TRANSFER_BATCH_SIZE: ${DOMAIN_TRANSFER_BATCH_SIZE:-100}
+    command: ["node", "dist/database/transfer-independent-domain-data.js"]
+
+  experience-db-transfer:
+    profiles: ["independent-domain-transfer"]
+    image: blujet-backend:${DEPLOY_SHA:-local}
+    build:
+      context: ./backend
+      args:
+        GIT_COMMIT_SHA: ${DEPLOY_SHA:-unknown}
+    restart: "no"
+    depends_on:
+      experience-db-migrate:
+        condition: service_completed_successfully
+    environment:
+      DOMAIN_TRANSFER_KIND: experience
+      DOMAIN_TRANSFER_SOURCE_DATABASE_URL: ${DOMAIN_TRANSFER_SOURCE_DATABASE_URL:?Supply the read-only Core source URL}
+      DOMAIN_TRANSFER_TARGET_DATABASE_URL: postgresql://blujet_experience_owner:${EXPERIENCE_POSTGRES_PASSWORD}@experience-db:5432/blujet_experience
+      DOMAIN_TRANSFER_APPLY: ${DOMAIN_TRANSFER_APPLY:-false}
+      DOMAIN_TRANSFER_BACKUP_REFERENCE: ${DOMAIN_TRANSFER_BACKUP_REFERENCE:-}
+      DOMAIN_TRANSFER_BATCH_SIZE: ${DOMAIN_TRANSFER_BATCH_SIZE:-100}
+    command: ["node", "dist/database/transfer-independent-domain-data.js"]
+
+volumes:
+  notify_db_data:
+  experience_db_data:

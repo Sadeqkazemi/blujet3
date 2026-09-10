@@ -1,5 +1,13 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Notify/Experience database cutover tooling (microservices phase 6)
+
+No public or internal HTTP contract changes in this slice. Dedicated database
+role provisioning, one-time transfer, reconciliation and rollback are offline
+operator commands. Existing `/api/v1/notifications/**` and public Experience
+facades remain unchanged, and no database owner credential is exposed to an
+HTTP process.
+
 ## Ops/Admin ordered projection consumer and reconciliation
 
 No public or internal HTTP route changes. The dedicated Ops/Admin database can
