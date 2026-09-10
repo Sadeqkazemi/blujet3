@@ -12,6 +12,7 @@ import { ManagerReferral } from '../src/database/entities/manager-referral.entit
 import { ManagerReferralReport } from '../src/database/entities/manager-referral-report.entity';
 import { AgencyMembershipRequest } from '../src/database/entities/agency-membership-request.entity';
 import { Notification } from '../src/database/entities/notification.entity';
+import { CommerceOutboxEvent } from '../src/database/entities/commerce-outbox-event.entity';
 import { loginAs } from './helpers/login.helper';
 import { createTestApp } from './helpers/app.helper';
 import { EXEC_ROLES } from '../src/common/exec-roles';
@@ -26,6 +27,9 @@ describe('Cartable + referrals + messages (e2e)', () => {
   });
 
   afterEach(async () => {
+    await dataSource
+      .getRepository(CommerceOutboxEvent)
+      .delete({ producer: 'core-ops' });
     await app.close();
   });
 

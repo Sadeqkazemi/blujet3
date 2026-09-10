@@ -25,7 +25,8 @@ describe('CartableProjectionOutbox1793174400000', () => {
     expect(sql).toContain('CREATE TABLE "ops"."cartable_projection_audits"');
     expect(sql).toContain('UNIQUE INDEX');
     expect(sql).toContain('"taskId", "taskVersion"');
-    expect(sql).toContain('cartable_projection_audits_append_only_guard');
+    expect(sql).toContain('reject_cartable_projection_audit_mutation');
+    expect(sql).toContain('cartable_projection_audits_immutable_guard');
     expect(sql).not.toMatch(
       /title|description|attachments|senderId|conversationId|resolutionNote/,
     );
@@ -39,7 +40,8 @@ describe('CartableProjectionOutbox1793174400000', () => {
     );
 
     expect(statements).toEqual([
-      'DROP TRIGGER IF EXISTS "cartable_projection_audits_append_only_guard" ON "ops"."cartable_projection_audits"',
+      'DROP TRIGGER IF EXISTS "cartable_projection_audits_immutable_guard" ON "ops"."cartable_projection_audits"',
+      'DROP FUNCTION IF EXISTS "ops"."reject_cartable_projection_audit_mutation"()',
       'DROP TABLE "ops"."cartable_projection_audits"',
       'ALTER TABLE "ops"."cartable_tasks" DROP CONSTRAINT "cartable_tasks_version_check"',
       'ALTER TABLE "ops"."cartable_tasks" DROP COLUMN "version"',

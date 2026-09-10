@@ -44,6 +44,9 @@ describe('Cartable projection source outbox (PostgreSQL)', () => {
 
   afterAll(async () => {
     if (!db?.isInitialized) return;
+    await db
+      .getRepository(CommerceOutboxEvent)
+      .delete({ producer: 'core-ops' });
     if (createdTaskIds.length > 0) {
       await db.getRepository(CartableTask).delete(createdTaskIds);
     }
