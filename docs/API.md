@@ -1,5 +1,14 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Ops/Admin projection database bootstrap
+
+Ops/Admin health and internal cartable HTTP contracts are unchanged. The
+read-only process gains standalone TypeORM metadata and a fresh-database
+migration for its minimal routing projection. Core remains the sole command
+writer; no event consumer, data copy, dual-write, public route, URL switch or
+deployment is included
+(`docs/features/microservices-phase-6-ops-admin-projection-db.md`).
+
 ## Identity physical database bootstrap
 
 Identity HTTP/JWT/session contracts and feature flags are unchanged. The
