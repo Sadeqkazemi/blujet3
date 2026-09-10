@@ -1,5 +1,21 @@
 # DB_SCHEMA.md — blujet data model
 
+## Identity physical database bootstrap (microservices phase 6)
+
+`identity-service` owns six tables in schema `identity`: users, refresh-token
+records, two-factor challenges, password-reset events, the singleton security
+policy and customer identity verification. Its standalone TypeORM migration
+creates those tables and six local enum types on a fresh PostgreSQL database
+using only `IDENTITY_DATABASE_URL`.
+
+All seven foreign keys point to `identity.users`. The Experience
+`idCardFileId` is a stable scalar reference without a cross-database foreign
+key or runtime join. Encrypted PII and token hashes retain their current
+storage contract. This bootstrap does not copy rows, change Redis session
+ownership, introduce a dual-write, switch a URL or deploy anything. Credential
+writer cutover remains gated by backup, transfer/checksum reconciliation,
+writer freeze and UAT rollback evidence.
+
 ## Agency projection database bootstrap (microservices phase 6)
 
 `agency-service` currently owns a physical read-model bootstrap for three
