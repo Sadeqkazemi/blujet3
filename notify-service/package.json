@@ -9,6 +9,8 @@
     "start:prod": "node dist/main.js",
     "typecheck": "tsc --noEmit",
     "lint:check": "eslint \"{src,test}/**/*.ts\"",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/database/data-source.ts",
+    "migration:run:prod": "typeorm migration:run -d dist/database/data-source.js",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
     "test:e2e": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config ./test/jest-e2e.json --runInBand"
   },

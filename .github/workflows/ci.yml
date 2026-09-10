@@ -310,15 +310,15 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: |
-            backend/package-lock.json
-            notify-service/package-lock.json
-      - name: Apply shared-cluster schema migrations
-        working-directory: backend
-        run: |
-          npm ci
-          cp .env.test .env
-          DATABASE_URL=postgresql://blujet:blujet@localhost:5432/blujet_notify_test npm run migration:run
+          cache-dependency-path: notify-service/package-lock.json
+      - name: Install notify service
+        working-directory: notify-service
+        run: npm ci
+      - name: Apply standalone Notify migrations
+        working-directory: notify-service
+        env:
+          NOTIFY_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_notify_test
+        run: npm run migration:run
       - name: Validate notify service
         working-directory: notify-service
         env:
@@ -328,7 +328,6 @@ jobs:
           NOTIFY_INTERNAL_TOKEN: test-notify-internal-token-at-least-32-characters
           PII_ENCRYPTION_KEY: 3a6dfd91b775e9cd09be8a576889adfe518a31ad1064af3d63c21ce9aadbdf10
         run: |
-          npm ci
           npm run lint:check
           npm run typecheck
           npm run build

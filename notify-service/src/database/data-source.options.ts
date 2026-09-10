@@ -8,5 +8,5 @@ export const dataSourceOptions: DataSourceOptions = {
   synchronize: false,
   logging: false,
   entities: [Notification, SmsLog],
-  migrations: [],
+  migrations: [__dirname + '/migrations/*{.ts,.js}'],
 };

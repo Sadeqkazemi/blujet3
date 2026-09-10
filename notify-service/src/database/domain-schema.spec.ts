@@ -14,4 +14,10 @@ describe('Notify database ownership', () => {
       tables.map(({ name, schema }) => `${schema}.${name}`).sort(),
     ).toEqual(expected.map((table) => `notify.${table}`).sort());
   });
+
+  it('loads only Notify-owned standalone migrations', () => {
+    expect(dataSourceOptions.migrations).toEqual([
+      expect.stringMatching(/database[\\/]migrations[\\/]\*\{\.ts,\.js\}$/),
+    ]);
+  });
 });

@@ -5004,6 +5004,19 @@ contracts and retires the production mock adapters.
 - [ ] Present the complete diff and obtain explicit owner approval before
   commit/push/merge. Deployment remains a separate approved action.
 
+## Microservices architecture v1.1 — phase 6 notify physical database bootstrap (2026-09-10)
+
+- [x] Record Notify table ownership and the no-dual-write activation boundary.
+- [x] Add a standalone Notify TypeORM DataSource and production migration
+  scripts for a dedicated PostgreSQL database.
+- [x] Create the `notify` schema, current enum values, tables and replay-safe
+  indexes without cross-domain foreign keys or data copy.
+- [x] Add metadata/migration configuration coverage and keep Compose/runtime
+  cutover unchanged.
+- [ ] Provision the dedicated database/role, transfer and reconcile existing
+  rows, run UAT smoke, obtain owner approval, then switch the URL in a separate
+  deployment change. Server deployment remains deferred.
+
 ## Microservices architecture v1.1 — phase 6 loyalty foundation (A6.1)
 
 - [x] Draft the contract-first Loyalty read boundary, projection safety rules,

@@ -1,5 +1,19 @@
 # DB_SCHEMA.md — blujet data model
 
+## Notify physical database bootstrap (microservices phase 6)
+
+`notify-service` owns `notify.notifications` and `notify.sms_logs`. Its
+standalone TypeORM migration creates a fresh PostgreSQL database with schema
+`notify`, the three enum types, current columns, and the existing ownership
+indexes. There are no foreign keys or runtime joins to Core/Experience data.
+
+The migration is bootstrap-only: it does not copy or delete legacy rows and it
+does not enable a production cutover. A dedicated non-superuser role and
+`NOTIFY_DATABASE_URL` must be provisioned separately; data transfer, row-count /
+checksum parity, backup, UAT smoke, and the final URL switch are explicit
+release gates. Until those gates pass, the existing compatibility path remains
+the rollback path and no dual-write is introduced.
+
 ## Reporting itinerary event projections
 
 Additive Reporting-owned schema/table
