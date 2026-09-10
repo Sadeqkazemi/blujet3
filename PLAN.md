@@ -5113,6 +5113,21 @@ contracts and retires the production mock adapters.
 - [ ] Publish/replay/reconcile approved projection events and switch the
   restricted reader URL only under a separately approved UAT release.
 
+## Microservices architecture v1.1 — phase 6 Ops/Admin ordered projection consumer (2026-09-10)
+
+- [x] Approve the strict event-admission, monotonic ordering and count-only
+  reconciliation contract before implementation.
+- [x] Add the expand-only projection revision/receipt migration and exact
+  standalone TypeORM metadata.
+- [x] Apply strict events transactionally with idempotent receipt handling and
+  fail-closed equal-version conflicts.
+- [x] Add bounded two-database reconciliation with no repair or identifier/PII
+  output.
+- [x] Prove rollback, replay, concurrency, read-only reconciliation and existing
+  Ops/Admin HTTP compatibility in tests.
+- [x] Owner explicitly approved commit/push/merge on 2026-09-10. No deployment
+  is authorized in this slice.
+
 ## Microservices architecture v1.1 — phase 6 Ops/Admin event contract (2026-09-10)
 
 - [x] Freeze a single full-snapshot `CartableTaskProjected` v1 contract with

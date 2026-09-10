@@ -1,5 +1,28 @@
 # DB_SCHEMA.md — blujet data model
 
+## Ops/Admin ordered projection consumer (microservices phase 6)
+
+The dedicated `ops.cartable_tasks` projection gains `taskVersion`, `auditId`
+and a semantic `fingerprint`. `taskVersion` is positive and is the monotonic
+ordering key; an equal version may only repeat identical projection content.
+The three additive fields remain nullable only for rows that predate baseline
+replay; every admitted v1 event writes all three values.
+The projection still contains no title, description, attachment, sender,
+conversation, resolution-note or passenger/financial data.
+
+New `ops.cartable_projection_event_receipts` stores the event UUID,
+full-envelope fingerprint, task stable reference, positive task version and
+UTC receipt time. It has no foreign keys. Receipt insertion and projection
+upsert occur in one transaction under deterministic PostgreSQL advisory locks.
+An exact event replay is idempotent, a lower task version is recorded as stale,
+and conflicting reuse fails closed without advancing the projection.
+
+The read-only reconciliation command scans at most 10,000 source/projection
+rows in stable ID order and reports only totals for missing, unexpected, stale
+and divergent rows. It performs no repair, copy, dual-write, URL switch or
+deployment. Baseline replay and Kafka/reader activation remain separate UAT
+operations.
+
 ## Ops/Admin projection source revision and outbox (microservices phase 6)
 
 The Core-owned `ops.cartable_tasks` table gains `version integer NOT NULL

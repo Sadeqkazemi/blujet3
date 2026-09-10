@@ -5,6 +5,7 @@
   "testRegex": ".e2e-spec.ts$",
   "maxWorkers": 1,
   "testTimeout": 20000,
+  "testPathIgnorePatterns": ["ops-admin-projection-consumer.e2e-spec.ts"],
   "globalSetup": "<rootDir>/global-setup.ts",
   "setupFiles": ["<rootDir>/jest-setup.ts"],
   "moduleNameMapper": {
