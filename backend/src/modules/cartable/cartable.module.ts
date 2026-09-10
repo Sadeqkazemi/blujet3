@@ -12,6 +12,9 @@ import { CartableService } from './cartable.service';
 import { PanelsModule } from '../panels/panels.module';
 import { AuditModule } from '../audit/audit.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { CommerceOutboxModule } from '../commerce-outbox/commerce-outbox.module';
+import { CartableProjectionAudit } from '../../database/entities/cartable-projection-audit.entity';
+import { CartableProjectionEventService } from './cartable-projection-event.service';
 
 @Module({
   imports: [
@@ -23,13 +26,15 @@ import { NotificationsModule } from '../notifications/notifications.module';
       User,
       AuditLog,
       StoredFile,
+      CartableProjectionAudit,
     ]),
     PanelsModule,
     AuditModule,
     NotificationsModule,
+    CommerceOutboxModule,
   ],
   controllers: [CartableController],
-  providers: [CartableService],
+  providers: [CartableService, CartableProjectionEventService],
   exports: [CartableService],
 })
 export class CartableModule {}

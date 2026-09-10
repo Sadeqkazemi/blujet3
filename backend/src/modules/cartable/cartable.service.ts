@@ -7,7 +7,15 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, In, IsNull, Not, Raw, Repository } from 'typeorm';
+import {
+  EntityManager,
+  FindOptionsWhere,
+  In,
+  IsNull,
+  Not,
+  Raw,
+  Repository,
+} from 'typeorm';
 import { CartableTask } from '../../database/entities/cartable-task.entity';
 import { ChairReportPermission } from '../../database/entities/chair-report-permission.entity';
 import { ManagerReferral } from '../../database/entities/manager-referral.entity';
@@ -26,6 +34,7 @@ import type {
   CartableStatus,
   Role,
 } from '../../database/enums';
+import { CartableProjectionEventService } from './cartable-projection-event.service';
 
 @Injectable()
 export class CartableService {
@@ -48,7 +57,16 @@ export class CartableService {
     private readonly storedFileRepo: Repository<StoredFile>,
     private readonly audit: AuditService,
     private readonly notifications: NotificationsService,
+    private readonly projectionEvents: CartableProjectionEventService,
   ) {}
+
+  private responseTask(
+    task: CartableTask,
+  ): Omit<CartableTask, 'version' | 'generateId'> {
+    const { version, ...response } = task;
+    void version;
+    return response;
+  }
 
   private async getOwnOpenTaskOrThrow(
     actor: AuthenticatedUser,
@@ -109,18 +127,28 @@ export class CartableService {
       .filter(Boolean);
     if (conversationIds.length === 0) return;
 
-    await this.taskRepo.update(
-      {
-        conversationId: In(conversationIds),
-        sourceType: In(['MANAGER_MESSAGE', 'EMPLOYEE_MESSAGE']),
-        status: 'OPEN',
-      },
-      {
-        status: 'APPROVED',
-        resolutionNote: 'بسته‌شدن خودکار پس از ۴ روز عدم فعالیت',
-        resolvedAt: now,
-      },
-    );
+    await this.taskRepo.manager.transaction(async (tx) => {
+      const tasks = await tx
+        .createQueryBuilder(CartableTask, 'task')
+        .addSelect('task.version')
+        .setLock('pessimistic_write')
+        .where('task.conversationId IN (:...conversationIds)', {
+          conversationIds,
+        })
+        .andWhere('task.sourceType IN (:...sourceTypes)', {
+          sourceTypes: ['MANAGER_MESSAGE', 'EMPLOYEE_MESSAGE'],
+        })
+        .andWhere('task.status = :status', { status: 'OPEN' })
+        .orderBy('task.id', 'ASC')
+        .getMany();
+      for (const task of tasks) {
+        task.status = 'APPROVED';
+        task.resolutionNote = 'بسته‌شدن خودکار پس از ۴ روز عدم فعالیت';
+        task.resolvedAt = now;
+        const saved = await tx.save(task);
+        await this.projectionEvents.record(tx, saved, 'AUTO_ARCHIVED');
+      }
+    });
   }
 
   private isActiveStaff(user: User | null | undefined): user is User {
@@ -212,7 +240,7 @@ export class CartableService {
       statusCounts[row.status] = parseInt(row.count, 10);
 
     return {
-      tasks,
+      tasks: tasks.map((task) => this.responseTask(task)),
       counts,
       statusCounts,
       totalOpen: counts.ADMIN + counts.AGENCY + counts.MANAGER,
@@ -244,8 +272,27 @@ export class CartableService {
 
     if (task.assigneeId === actor.id && !task.readAt) {
       const now = new Date();
-      await this.taskRepo.update({ id, readAt: IsNull() }, { readAt: now });
-      task.readAt = now;
+      const marked = await this.taskRepo.manager.transaction(async (tx) => {
+        const locked = await tx
+          .createQueryBuilder(CartableTask, 'task')
+          .addSelect('task.version')
+          .setLock('pessimistic_write')
+          .where('task.id = :id', { id })
+          .andWhere('task.assigneeId = :assigneeId', {
+            assigneeId: actor.id,
+          })
+          .andWhere('task.readAt IS NULL')
+          .getOne();
+        if (!locked) return null;
+        locked.readAt = now;
+        const saved = await tx.save(locked);
+        await this.projectionEvents.record(tx, saved, 'READ');
+        return saved;
+      });
+      if (marked) {
+        task.readAt = marked.readAt;
+        task.version = marked.version;
+      }
     }
 
     // The task's own lifecycle events (created implicitly, then whatever
@@ -325,7 +372,7 @@ export class CartableService {
 
     const attachments = attachmentMetadata(task.attachments);
 
-    return { ...task, attachments, history };
+    return { ...this.responseTask(task), attachments, history };
   }
 
   /** Badge count for "کارتابل من" — never-viewed tasks regardless of
@@ -399,32 +446,46 @@ export class CartableService {
         permission.decidedById = actor.id;
         permission.decidedAt = now;
         await tx.save(permission);
-        await tx.update(
-          CartableTask,
-          {
+        const tasks = await tx
+          .createQueryBuilder(CartableTask, 'task')
+          .addSelect('task.version')
+          .setLock('pessimistic_write')
+          .where('task.sourceType = :sourceType', {
             sourceType: 'CHAIR_PERMISSION',
-            sourceId: task.sourceId,
-            status: 'OPEN',
-          },
-          {
-            status: decision,
-            resolutionNote: note,
-            resolvedAt: now,
-          },
-        );
+          })
+          .andWhere('task.sourceId = :sourceId', { sourceId: task.sourceId })
+          .andWhere('task.status = :status', { status: 'OPEN' })
+          .orderBy('task.id', 'ASC')
+          .getMany();
+        for (const relatedTask of tasks) {
+          relatedTask.status = decision;
+          relatedTask.resolutionNote = note;
+          relatedTask.resolvedAt = now;
+          const saved = await tx.save(relatedTask);
+          await this.projectionEvents.record(tx, saved, 'RESOLVED');
+        }
       });
     } else {
-      // Conditional update guards against two concurrent resolutions.
-      const updated = await this.taskRepo.update(
-        { id, status: 'OPEN' },
-        { status: decision, resolutionNote: note, resolvedAt: new Date() },
-      );
-      if (!updated.affected) {
-        throw new ConflictException({
-          code: ErrorCode.CONFLICT,
-          message: 'این مورد قبلاً بررسی شده است.',
-        });
-      }
+      await this.taskRepo.manager.transaction(async (tx) => {
+        const locked = await tx
+          .createQueryBuilder(CartableTask, 'task')
+          .addSelect('task.version')
+          .setLock('pessimistic_write')
+          .where('task.id = :id', { id })
+          .andWhere('task.status = :status', { status: 'OPEN' })
+          .getOne();
+        if (!locked) {
+          throw new ConflictException({
+            code: ErrorCode.CONFLICT,
+            message: 'این مورد قبلاً بررسی شده است.',
+          });
+        }
+        locked.status = decision;
+        locked.resolutionNote = note;
+        locked.resolvedAt = new Date();
+        const saved = await tx.save(locked);
+        await this.projectionEvents.record(tx, saved, 'RESOLVED');
+      });
 
       await this.applySourceEffects(actor, task, decision, note);
     }
@@ -440,7 +501,9 @@ export class CartableService {
       entityId: id,
     });
 
-    return findOneOrThrow(this.taskRepo, { where: { id } });
+    return this.responseTask(
+      await findOneOrThrow(this.taskRepo, { where: { id } }),
+    );
   }
 
   approve(actor: AuthenticatedUser, id: string, note: string) {
@@ -473,24 +536,27 @@ export class CartableService {
     }
 
     const newTask = await this.taskRepo.manager.transaction(async (tx) => {
-      const updated = await tx.update(
-        CartableTask,
-        { id, status: 'OPEN' },
-        {
-          status: 'TRANSFERRED',
-          resolutionNote: note,
-          transferredToId: toId,
-          resolvedAt: new Date(),
-        },
-      );
-      if (!updated.affected) {
+      const locked = await tx
+        .createQueryBuilder(CartableTask, 'task')
+        .addSelect('task.version')
+        .setLock('pessimistic_write')
+        .where('task.id = :id', { id })
+        .andWhere('task.status = :status', { status: 'OPEN' })
+        .getOne();
+      if (!locked) {
         throw new ConflictException({
           code: ErrorCode.CONFLICT,
           message: 'این مورد قبلاً بررسی شده است.',
         });
       }
+      locked.status = 'TRANSFERRED';
+      locked.resolutionNote = note;
+      locked.transferredToId = toId;
+      locked.resolvedAt = new Date();
+      const transferred = await tx.save(locked);
+      await this.projectionEvents.record(tx, transferred, 'TRANSFERRED');
       // The mocks toast and drop the item; the real system routes it (⚑).
-      return tx.save(
+      const created = await tx.save(
         tx.create(CartableTask, {
           assigneeId: toId,
           category: task.category,
@@ -504,6 +570,8 @@ export class CartableService {
           attachments: task.attachments,
         }),
       );
+      await this.projectionEvents.record(tx, created, 'CREATED');
+      return created;
     });
 
     await this.audit.record({
@@ -528,7 +596,7 @@ export class CartableService {
       dedupeKey: `CartableTask:${id}:REFERRED:${toId}`,
     });
 
-    return newTask;
+    return this.responseTask(newTask);
   }
 
   // ── Chairman permission gate (Finance/Commercial only) ─────────────────
@@ -564,7 +632,7 @@ export class CartableService {
         const created = await tx.save(
           tx.create(ChairReportPermission, { requesterId: actor.id }),
         );
-        await tx.save(
+        const tasks = await tx.save(
           chairs.map((chair) =>
             tx.create(CartableTask, {
               assigneeId: chair.id,
@@ -577,6 +645,9 @@ export class CartableService {
             }),
           ),
         );
+        for (const task of tasks) {
+          await this.projectionEvents.record(tx, task, 'CREATED');
+        }
         return created;
       },
     );
@@ -612,37 +683,62 @@ export class CartableService {
     sourceId: string,
     decision: 'APPROVED' | 'REJECTED',
     note: string,
-    manager?: import('typeorm').EntityManager,
+    manager?: EntityManager,
   ) {
-    const repo = manager ? manager.getRepository(CartableTask) : this.taskRepo;
-    await repo.update(
-      { sourceType, sourceId, status: 'OPEN' },
-      {
-        status: decision,
-        resolutionNote: note,
-        resolvedAt: new Date(),
-      },
-    );
+    const resolveTasks = async (tx: EntityManager) => {
+      const tasks = await tx
+        .createQueryBuilder(CartableTask, 'task')
+        .addSelect('task.version')
+        .setLock('pessimistic_write')
+        .where('task.sourceType = :sourceType', { sourceType })
+        .andWhere('task.sourceId = :sourceId', { sourceId })
+        .andWhere('task.status = :status', { status: 'OPEN' })
+        .orderBy('task.id', 'ASC')
+        .getMany();
+      const resolvedAt = new Date();
+      for (const task of tasks) {
+        task.status = decision;
+        task.resolutionNote = note;
+        task.resolvedAt = resolvedAt;
+        const saved = await tx.save(task);
+        await this.projectionEvents.record(tx, saved, 'RESOLVED');
+      }
+    };
+    if (manager) {
+      await resolveTasks(manager);
+      return;
+    }
+    await this.taskRepo.manager.transaction(resolveTasks);
   }
 
-  async createTask(input: {
-    assigneeId: string;
-    category: CartableCategory;
-    title: string;
-    description: string;
-    senderId?: string;
-    senderLabelFa?: string;
-    sourceType?:
-      | 'MANAGER_MESSAGE'
-      | 'MANAGER_REFERRAL'
-      | 'AGENCY_REQUEST'
-      | 'CHAIR_PERMISSION'
-      | 'EMPLOYEE_MESSAGE';
-    sourceId?: string;
-    conversationId?: string;
-    attachments?: string[];
-  }) {
-    return this.taskRepo.save(this.taskRepo.create(input));
+  async createTask(
+    input: {
+      assigneeId: string;
+      category: CartableCategory;
+      title: string;
+      description: string;
+      senderId?: string;
+      senderLabelFa?: string;
+      sourceType?:
+        | 'MANAGER_MESSAGE'
+        | 'MANAGER_REFERRAL'
+        | 'AGENCY_REQUEST'
+        | 'CHAIR_PERMISSION'
+        | 'EMPLOYEE_MESSAGE';
+      sourceId?: string;
+      conversationId?: string;
+      attachments?: string[];
+    },
+    manager?: EntityManager,
+  ) {
+    const create = async (tx: EntityManager) => {
+      const task = await tx.save(tx.create(CartableTask, input));
+      await this.projectionEvents.record(tx, task, 'CREATED');
+      return task;
+    };
+    return manager
+      ? create(manager)
+      : this.taskRepo.manager.transaction(create);
   }
 
   /** Fans a task out to every active user holding one of the given roles. */
@@ -805,7 +901,7 @@ export class CartableService {
       dedupeKey: `CartableTask:${task.id}:INTERNAL_MESSAGE:${target.id}`,
     });
 
-    return task;
+    return this.responseTask(task);
   }
 
   async replyToInternalMessage(
@@ -832,24 +928,28 @@ export class CartableService {
 
     const conversationId = task.conversationId ?? randomUUID();
     const reply = await this.taskRepo.manager.transaction(async (tx) => {
-      const updated = await tx.update(
-        CartableTask,
-        { id: task.id, assigneeId: actor.id, status: 'OPEN' },
-        {
-          status: 'APPROVED',
-          resolutionNote: 'پاسخ ارسال شد',
-          resolvedAt: new Date(),
-          conversationId,
-        },
-      );
-      if (!updated.affected) {
+      const locked = await tx
+        .createQueryBuilder(CartableTask, 'task')
+        .addSelect('task.version')
+        .setLock('pessimistic_write')
+        .where('task.id = :id', { id: task.id })
+        .andWhere('task.assigneeId = :assigneeId', { assigneeId: actor.id })
+        .andWhere('task.status = :status', { status: 'OPEN' })
+        .getOne();
+      if (!locked) {
         throw new ConflictException({
           code: ErrorCode.CONFLICT,
           message: 'این پیام قبلاً پاسخ داده شده یا بسته شده است.',
         });
       }
+      locked.status = 'APPROVED';
+      locked.resolutionNote = 'پاسخ ارسال شد';
+      locked.resolvedAt = new Date();
+      locked.conversationId = conversationId;
+      const closed = await tx.save(locked);
+      await this.projectionEvents.record(tx, closed, 'RESOLVED');
 
-      return tx.save(
+      const created = await tx.save(
         tx.create(CartableTask, {
           assigneeId: target.id,
           category: task.category,
@@ -863,6 +963,8 @@ export class CartableService {
           attachments: dto.attachmentIds ?? [],
         }),
       );
+      await this.projectionEvents.record(tx, created, 'CREATED');
+      return created;
     });
 
     await this.audit.record({
@@ -890,7 +992,7 @@ export class CartableService {
       dedupeKey: `CartableTask:${reply.id}:INTERNAL_REPLY:${target.id}`,
     });
 
-    return reply;
+    return this.responseTask(reply);
   }
 
   async closeInternalConversation(actor: AuthenticatedUser, id: string) {
@@ -908,18 +1010,28 @@ export class CartableService {
     }
 
     const now = new Date();
-    await this.taskRepo.update(
-      {
-        conversationId: task.conversationId,
-        sourceType: In(['MANAGER_MESSAGE', 'EMPLOYEE_MESSAGE']),
-        status: 'OPEN',
-      },
-      {
-        status: 'APPROVED',
-        resolutionNote: 'گفتگو توسط کاربر بسته شد',
-        resolvedAt: now,
-      },
-    );
+    await this.taskRepo.manager.transaction(async (tx) => {
+      const tasks = await tx
+        .createQueryBuilder(CartableTask, 'task')
+        .addSelect('task.version')
+        .setLock('pessimistic_write')
+        .where('task.conversationId = :conversationId', {
+          conversationId: task.conversationId,
+        })
+        .andWhere('task.sourceType IN (:...sourceTypes)', {
+          sourceTypes: ['MANAGER_MESSAGE', 'EMPLOYEE_MESSAGE'],
+        })
+        .andWhere('task.status = :status', { status: 'OPEN' })
+        .orderBy('task.id', 'ASC')
+        .getMany();
+      for (const openTask of tasks) {
+        openTask.status = 'APPROVED';
+        openTask.resolutionNote = 'گفتگو توسط کاربر بسته شد';
+        openTask.resolvedAt = now;
+        const saved = await tx.save(openTask);
+        await this.projectionEvents.record(tx, saved, 'CONVERSATION_CLOSED');
+      }
+    });
 
     await this.audit.record({
       actorId: actor.id,

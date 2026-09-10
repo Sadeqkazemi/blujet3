@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
   BeforeInsert,
+  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -8,6 +9,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryColumn,
+  VersionColumn,
 } from 'typeorm';
 import { CartableCategory, CartableSourceType, CartableStatus } from '../enums';
 import { User } from './user.entity';
@@ -19,6 +21,7 @@ import { User } from './user.entity';
   'conversationId',
   'createdAt',
 ])
+@Check('cartable_tasks_version_check', '"version" > 0')
 @Entity('cartable_tasks', { schema: 'ops' })
 export class CartableTask {
   @PrimaryColumn({
@@ -111,6 +114,9 @@ export class CartableTask {
 
   @Column({ type: 'timestamp', precision: 3, nullable: true })
   readAt!: Date | null;
+
+  @VersionColumn({ type: 'int', default: 1 })
+  version!: number;
 
   @CreateDateColumn({ precision: 3, default: () => 'CURRENT_TIMESTAMP' })
   createdAt!: Date;

@@ -1,5 +1,14 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Ops/Admin projection source revision and outbox
+
+No public or internal HTTP route changes. Every Core cartable mutation now
+records a monotonic source version and an encrypted
+`CartableTaskProjected` v1 event in the same PostgreSQL transaction. Kafka
+publication retains the existing default-off event-bus switch. This slice does
+not add a consumer, copy data, change the Ops/Admin reader URL or deploy
+(`docs/features/microservices-phase-6-ops-admin-projection-outbox.md`).
+
 ## Ops/Admin projection event contract
 
 No public or internal HTTP route changes in this slice. The event bus gains the
