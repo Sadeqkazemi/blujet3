@@ -1,5 +1,14 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Experience physical database bootstrap
+
+The Experience HTTP contract is unchanged. The service owns a standalone
+TypeORM migration for its 15 `experience` tables and no longer needs Core
+schema migrations in CI. Identity, Order and Inventory identifiers remain
+stable references/snapshots without cross-database joins or foreign keys.
+There is no data copy, dual-write, production URL switch or deployment in this
+bootstrap (`docs/features/microservices-phase-6-experience-physical-db.md`).
+
 ## Notify physical database bootstrap
 
 The Notify HTTP contract is unchanged. `notify-service` now ships a standalone

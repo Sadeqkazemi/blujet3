@@ -5017,6 +5017,18 @@ contracts and retires the production mock adapters.
   rows, run UAT smoke, obtain owner approval, then switch the URL in a separate
   deployment change. Server deployment remains deferred.
 
+## Microservices architecture v1.1 — phase 6 experience physical database bootstrap (2026-09-10)
+
+- [x] Record ownership of all 15 Experience tables and stable-reference rules.
+- [x] Add standalone Experience TypeORM migration tooling for a dedicated
+  PostgreSQL database.
+- [x] Remove Core user/booking fixture dependencies from Experience E2E and
+  migrate/test from a fresh database in CI.
+- [x] Preserve HTTP contracts, storage behavior and feature-flag rollback with
+  no dual-write or production cutover.
+- [ ] Provision/transfer/reconcile in UAT and switch `EXPERIENCE_DATABASE_URL`
+  only under a separately approved deployment.
+
 ## Microservices architecture v1.1 — phase 6 loyalty foundation (A6.1)
 
 - [x] Draft the contract-first Loyalty read boundary, projection safety rules,

@@ -32,19 +32,13 @@ describe('Experience files contract (e2e)', () => {
     );
     await app.init();
     dataSource = app.get(DataSource);
-    await dataSource.query(
-      'INSERT INTO "users" ("id", "role", "fullName", "updatedAt") VALUES ($1, $2, $3, NOW()), ($4, $5, $6, NOW())',
-      [actorId, 'USER', actor.fullName, otherId, 'USER', 'کاربر دیگر تست'],
-    );
   });
 
   afterAll(async () => {
-    await dataSource.query('DELETE FROM "stored_files" WHERE "ownerId" = $1', [
-      actorId,
-    ]);
-    await dataSource.query('DELETE FROM "users" WHERE "id" = ANY($1)', [
-      [actorId, otherId],
-    ]);
+    await dataSource.query(
+      'DELETE FROM "experience"."stored_files" WHERE "ownerId" = $1',
+      [actorId],
+    );
     await app.close();
   });
 

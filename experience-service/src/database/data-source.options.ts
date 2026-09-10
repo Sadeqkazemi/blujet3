@@ -36,6 +36,7 @@ export function dataSourceOptions(): DataSourceOptions {
       SurveyInvite,
       SurveyResponse,
     ],
+    migrations: [__dirname + '/migrations/*{.ts,.js}'],
     synchronize: false,
   };
 }

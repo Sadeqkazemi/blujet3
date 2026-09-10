@@ -1,5 +1,19 @@
 # DB_SCHEMA.md — blujet data model
 
+## Experience physical database bootstrap (microservices phase 6)
+
+`experience-service` owns its 15 tables in schema `experience`, including
+`stored_files` metadata. Its standalone migration creates all current columns,
+enum types and indexes on a fresh PostgreSQL database. The only database-level
+relation is the internal Experience relation from `site_media_assets` to
+`stored_files`.
+
+Identity/Core identifiers are stored as stable scalar references or approved
+snapshots. There are no foreign keys or runtime joins to `identity`, `orders`,
+`inventory`, `payments`, `agency` or `loyalty`. The bootstrap performs no data
+copy or cutover; backup, transfer/checksum, UAT and the production URL change
+remain separate release gates.
+
 ## Notify physical database bootstrap (microservices phase 6)
 
 `notify-service` owns `notify.notifications` and `notify.sms_logs`. Its

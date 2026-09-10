@@ -30,4 +30,10 @@ describe('Experience database ownership', () => {
       tables.map(({ name, schema }) => `${schema}.${name}`).sort(),
     ).toEqual(expected.map((table) => `experience.${table}`).sort());
   });
+
+  it('loads only Experience-owned standalone migrations', () => {
+    expect(dataSourceOptions().migrations).toEqual([
+      expect.stringMatching(/database[\\/]migrations[\\/]\*\{\.ts,\.js\}$/),
+    ]);
+  });
 });

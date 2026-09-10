@@ -47,35 +47,26 @@ describe('Experience survey contract (e2e)', () => {
     [originalSettings] = await dataSource.query<
       Array<NonNullable<typeof originalSettings>>
     >(
-      'SELECT "id", "enabled", "title", "updatedById", "updatedByName" FROM "survey_settings" ORDER BY "createdAt" ASC LIMIT 1',
+      'SELECT "id", "enabled", "title", "updatedById", "updatedByName" FROM "experience"."survey_settings" ORDER BY "createdAt" ASC LIMIT 1',
     );
-    await dataSource.query(
-      'INSERT INTO "users" ("id", "role", "fullName", "updatedAt") VALUES ($1, $2, $3, NOW())',
-      [actorId, 'IT_MANAGER', itActor.fullName],
-    );
-    const booking = await dataSource.query<
-      Array<{ id: string; flightInstanceId: string }>
-    >(
-      'SELECT b."id", b."flightInstanceId" FROM "bookings" b LEFT JOIN "survey_invites" i ON i."bookingId" = b."id" WHERE i."id" IS NULL LIMIT 1',
-    );
-    if (!booking[0]) throw new Error('survey e2e requires one booking fixture');
-    bookingId = booking[0].id;
-    flightInstanceId = booking[0].flightInstanceId;
+    bookingId = randomUUID();
+    flightInstanceId = randomUUID();
   });
 
   afterAll(async () => {
     if (inviteId) {
       await dataSource.query(
-        'DELETE FROM "survey_responses" WHERE "inviteId" = $1',
+        'DELETE FROM "experience"."survey_responses" WHERE "inviteId" = $1',
         [inviteId],
       );
-      await dataSource.query('DELETE FROM "survey_invites" WHERE "id" = $1', [
-        inviteId,
-      ]);
+      await dataSource.query(
+        'DELETE FROM "experience"."survey_invites" WHERE "id" = $1',
+        [inviteId],
+      );
     }
     if (originalSettings) {
       await dataSource.query(
-        'UPDATE "survey_settings" SET "enabled" = $1, "title" = $2, "updatedById" = $3, "updatedByName" = $4, "updatedAt" = NOW() WHERE "id" = $5',
+        'UPDATE "experience"."survey_settings" SET "enabled" = $1, "title" = $2, "updatedById" = $3, "updatedByName" = $4, "updatedAt" = NOW() WHERE "id" = $5',
         [
           originalSettings.enabled,
           originalSettings.title,
@@ -86,11 +77,10 @@ describe('Experience survey contract (e2e)', () => {
       );
     } else {
       await dataSource.query(
-        'DELETE FROM "survey_settings" WHERE "updatedById" = $1',
+        'DELETE FROM "experience"."survey_settings" WHERE "updatedById" = $1',
         [actorId],
       );
     }
-    await dataSource.query('DELETE FROM "users" WHERE "id" = $1', [actorId]);
     await app.close();
   });
 
