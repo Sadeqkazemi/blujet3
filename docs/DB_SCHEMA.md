@@ -1,5 +1,19 @@
 # DB_SCHEMA.md — blujet data model
 
+## Ops/Admin projection database bootstrap (microservices phase 6)
+
+The physical read model contains exactly one `ops.cartable_tasks` projection
+with nine routing/observation columns and the three existing cartable enum
+types. Content-bearing fields from the Core command table are intentionally not
+copied. `assigneeId` and `sourceId` remain stable scalar references without
+cross-database foreign keys or runtime joins.
+
+Standalone migrations use `OPS_ADMIN_PROJECTION_DATABASE_URL`; the running
+process keeps its restricted `OPS_ADMIN_DATABASE_URL` reader credential. This
+bootstrap performs no event publication, baseline copy, dual-write, runtime URL
+switch or deployment. Ordered projection events, reconciliation and UAT remain
+mandatory before a separately approved cutover.
+
 ## Identity physical database bootstrap (microservices phase 6)
 
 `identity-service` owns six tables in schema `identity`: users, refresh-token

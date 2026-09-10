@@ -5085,6 +5085,19 @@ contracts and retires the production mock adapters.
 - [ ] Provision/transfer/reconcile in UAT and freeze the Core credential writer
   only under a separately approved release.
 
+## Microservices architecture v1.1 — phase 6 Ops/Admin projection database bootstrap (2026-09-10)
+
+- [x] Freeze the one-table, content-free projection and Core single-writer
+  boundary before implementation.
+- [x] Add standalone TypeORM metadata and migration commands using only
+  `OPS_ADMIN_PROJECTION_DATABASE_URL`.
+- [x] Prove one-table/three-enum creation, zero foreign keys, schema parity and
+  compiled rollback/restore in a database isolated from Core tests.
+- [x] Preserve every existing HTTP/auth/read-only contract and default-off
+  profile; no event consumer, data copy, URL cutover or deployment.
+- [ ] Publish/replay/reconcile approved projection events and switch the
+  restricted reader URL only under a separately approved UAT release.
+
 ## Microservices architecture v1.1 — phase 6 loyalty foundation (A6.1)
 
 - [x] Draft the contract-first Loyalty read boundary, projection safety rules,
