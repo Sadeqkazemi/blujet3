@@ -1,8 +1,5 @@
 import type { DataSourceOptions } from 'typeorm';
-import { ReportingItineraryEventProjection } from '../database/entities/reporting-itinerary-event-projection.entity';
-import { ReportingItineraryEventReceipt } from '../database/entities/reporting-itinerary-event-receipt.entity';
-import { ReportingKafkaConsumerCheckpoint } from '../database/entities/reporting-kafka-consumer-checkpoint.entity';
-import { ReportingKafkaProcessingFailure } from '../database/entities/reporting-kafka-processing-failure.entity';
+import { reportingDataSourceOptions } from '../database/reporting-data-source.options';
 import { reportingDlqConfig } from './reporting-dlq.config';
 import { reportingKafkaConsumerConfig } from './reporting-kafka-consumer.config';
 
@@ -44,16 +41,5 @@ export function reportingWorkerDataSourceOptions(
   if (typeof url !== 'string' || url.trim() === '') {
     throw new Error('REPORTING_DATABASE_URL is required');
   }
-  return {
-    type: 'postgres',
-    url,
-    synchronize: false,
-    logging: false,
-    entities: [
-      ReportingItineraryEventProjection,
-      ReportingItineraryEventReceipt,
-      ReportingKafkaConsumerCheckpoint,
-      ReportingKafkaProcessingFailure,
-    ],
-  };
+  return reportingDataSourceOptions(url);
 }

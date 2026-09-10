@@ -8,9 +8,10 @@ boundary.
 
 The worker connects with `REPORTING_DATABASE_URL`, which must belong to a
 dedicated non-superuser role restricted to the `reporting` schema. It never runs
-migrations. Schema changes remain an operator-owned Core migration step. Kafka
-consumption is fail-closed and requires the existing explicit enable flag; in
-production it also requires TLS and dedicated SCRAM credentials.
+migrations. Operators now apply the standalone Reporting migration through a
+separate release step; the worker never needs the Core migration connection.
+Kafka consumption is fail-closed and requires the existing explicit enable
+flag; in production it also requires TLS and dedicated SCRAM credentials.
 
 The existing backend remains API-compatible. Its embedded consumer stays
 disabled unless explicitly configured, so introducing the worker image alone
@@ -19,8 +20,9 @@ provisioning and deployment require separate approval.
 
 ## Acceptance checklist
 
-- [x] A dedicated `reporting-worker` NestJS entry point loads only the three
-  Reporting projection/checkpoint entities and the existing Kafka runtime
+- [x] A dedicated `reporting-worker` NestJS entry point loads only the four
+  Reporting projection/receipt/checkpoint/failure entities and the existing
+  Kafka runtime
   (`reporting-worker.config.spec.ts`, production build entrypoint assertion).
 - [x] Worker configuration rejects a disabled consumer, missing database URL,
   invalid port, or insecure production Kafka configuration before startup

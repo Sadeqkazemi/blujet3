@@ -1,5 +1,17 @@
 # DB_SCHEMA.md — blujet data model
 
+## Reporting physical database bootstrap (microservices phase 6)
+
+`blujet-reporting` owns exactly four tables in schema `reporting`: itinerary
+event projections and receipts, Kafka consumer checkpoints, and sanitized
+processing-failure quarantine. Its standalone TypeORM migration can create
+them on a fresh PostgreSQL database using only `REPORTING_DATABASE_URL`.
+
+The tables have no foreign keys or runtime joins to another domain. Core order
+and event identifiers remain stable scalar references. The bootstrap performs
+no data copy, dual-write, URL switch or deployment; backup, transfer/checksum
+parity, Kafka replay/DLQ UAT and approved cutover remain separate gates.
+
 ## Experience physical database bootstrap (microservices phase 6)
 
 `experience-service` owns its 15 tables in schema `experience`, including
@@ -73,8 +85,9 @@ registers only the four Reporting-owned projection, receipt, checkpoint and
 failure-metadata entities. Its
 `REPORTING_DATABASE_URL` must identify a dedicated non-superuser role with the
 minimum required access to the `reporting` schema. The worker never receives
-the Core owner URL, runs migrations, or loads Core entities; schema evolution
-remains an explicit operator migration (`docs/features/reporting-worker-process.md`).
+the Core owner URL, runs migrations, or loads Core entities. Operators apply
+the standalone migration through a separate release step
+(`docs/features/microservices-phase-6-reporting-physical-db.md`).
 
 ## Kafka commerce delivery outbox
 

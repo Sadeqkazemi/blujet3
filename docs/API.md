@@ -1,5 +1,13 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Reporting physical database bootstrap
+
+Reporting HTTP and Kafka contracts are unchanged. The worker now shares exact
+four-entity metadata with a standalone TypeORM migration that can bootstrap a
+fresh PostgreSQL database without Core migrations. It introduces no public
+route, data copy, dual-write, consumer activation, URL cutover or deployment
+(`docs/features/microservices-phase-6-reporting-physical-db.md`).
+
 ## Experience physical database bootstrap
 
 The Experience HTTP contract is unchanged. The service owns a standalone

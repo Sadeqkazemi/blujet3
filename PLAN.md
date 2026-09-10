@@ -5029,6 +5029,20 @@ contracts and retires the production mock adapters.
 - [ ] Provision/transfer/reconcile in UAT and switch `EXPERIENCE_DATABASE_URL`
   only under a separately approved deployment.
 
+## Microservices architecture v1.1 — phase 6 reporting physical database bootstrap (2026-09-10)
+
+- [x] Record exact ownership of the four Reporting projection/receipt,
+  checkpoint and sanitized-failure tables.
+- [x] Add a standalone Reporting TypeORM DataSource and development/compiled
+  migration commands using only `REPORTING_DATABASE_URL`.
+- [x] Bootstrap and rollback a fresh PostgreSQL database without Core
+  migrations, cross-domain foreign keys or runtime joins.
+- [x] Add metadata/migration tests and a dedicated fresh-database CI gate.
+- [x] Preserve current HTTP/Kafka contracts, default-off consumer, and existing
+  compatibility database with no data copy, dual-write, cutover or deployment.
+- [ ] Provision/transfer/reconcile in UAT and switch `REPORTING_DATABASE_URL`
+  only under a separately approved deployment.
+
 ## Microservices architecture v1.1 — phase 6 loyalty foundation (A6.1)
 
 - [x] Draft the contract-first Loyalty read boundary, projection safety rules,

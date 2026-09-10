@@ -44,6 +44,11 @@ describe('reporting worker configuration', () => {
       ReportingKafkaConsumerCheckpoint,
       ReportingKafkaProcessingFailure,
     ]);
+    expect(options.migrations).toHaveLength(1);
+    expect(options).toHaveProperty(
+      'migrationsTableName',
+      'reporting_migrations',
+    );
     expect(options).not.toHaveProperty('migrationsRun');
   });
 });
