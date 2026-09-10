@@ -15,8 +15,22 @@ describe('independent domain transfer contract', () => {
     expect(experience.indexOf('stored_files')).toBeLessThan(
       experience.indexOf('site_media_assets'),
     );
-    expect(() => transferDomainContract('identity')).toThrow(
-      'must be notify or experience',
+    const identity = transferDomainContract('identity');
+    expect(identity.tables).toEqual([
+      'users',
+      'refresh_tokens',
+      'two_factor_challenges',
+      'password_reset_events',
+      'security_policy',
+      'customer_identity_verifications',
+    ]);
+    expect(identity.deferredSelfReference).toEqual({
+      table: 'users',
+      keyColumn: 'id',
+      referenceColumn: 'createdById',
+    });
+    expect(() => transferDomainContract('payments')).toThrow(
+      'must be notify, experience or identity',
     );
   });
 

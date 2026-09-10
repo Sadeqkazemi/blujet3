@@ -288,6 +288,7 @@ describe('production backend artifacts', () => {
   it('keeps independent domain owners short-lived and runtimes restricted', () => {
     expect(independentDomainCompose).toContain('notify-db:');
     expect(independentDomainCompose).toContain('experience-db:');
+    expect(independentDomainCompose).toContain('identity-db:');
     expect(independentDomainCompose).toContain(
       'profiles: ["independent-domain-db"]',
     );
@@ -302,6 +303,9 @@ describe('production backend artifacts', () => {
     expect(productionEnvExample).toContain('NOTIFY_DATABASE_PASSWORD=');
     expect(productionEnvExample).toContain('EXPERIENCE_POSTGRES_PASSWORD=');
     expect(productionEnvExample).toContain('EXPERIENCE_DATABASE_PASSWORD=');
+    expect(productionEnvExample).toContain('IDENTITY_POSTGRES_PASSWORD=');
+    expect(productionEnvExample).toContain('IDENTITY_DATABASE_PASSWORD=');
+    expect(productionEnvExample).toContain('IDENTITY_DATABASE_URL=');
     expect(ciWorkflow).toContain('Independent domain database cutover');
     expect(ciWorkflow).toContain('test:e2e:independent-domain-db');
   });

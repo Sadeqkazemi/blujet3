@@ -491,6 +491,8 @@ services:
       IDENTITY_JWT_AUDIENCE: ${IDENTITY_JWT_AUDIENCE:-blujet-gateway}
       IDENTITY_JWT_PRIVATE_KEY: ${IDENTITY_JWT_PRIVATE_KEY}
       IDENTITY_REDIS_URL: ${IDENTITY_REDIS_URL:-redis://redis:6379}
+      # Optional until the separately approved Identity writer cutover.
+      IDENTITY_DATABASE_URL: ${IDENTITY_DATABASE_URL:-}
     expose:
       - '3400'
     healthcheck:

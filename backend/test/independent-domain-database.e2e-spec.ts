@@ -10,7 +10,7 @@ import {
 } from '../src/database/transfer-independent-domain-data';
 
 interface DatabaseFixture {
-  domain: 'notify' | 'experience';
+  domain: 'notify' | 'experience' | 'identity';
   sourceUrlVariable: string;
   targetUrlVariable: string;
   password: string;
@@ -29,6 +29,12 @@ const fixtures: DatabaseFixture[] = [
     targetUrlVariable: 'EXPERIENCE_TRANSFER_TARGET_DATABASE_URL',
     password: 'experience_runtime_ci_password_2026_09_10',
   },
+  {
+    domain: 'identity',
+    sourceUrlVariable: 'IDENTITY_TRANSFER_SOURCE_DATABASE_URL',
+    targetUrlVariable: 'IDENTITY_TRANSFER_TARGET_DATABASE_URL',
+    password: 'identity_runtime_ci_password_2026_09_10',
+  },
 ];
 
 function runtimeUrl(ownerUrl: string, role: string, password: string): string {
@@ -38,7 +44,10 @@ function runtimeUrl(ownerUrl: string, role: string, password: string): string {
   return parsed.toString();
 }
 
-async function truncateDomain(client: Client, domain: 'notify' | 'experience') {
+async function truncateDomain(
+  client: Client,
+  domain: 'notify' | 'experience' | 'identity',
+) {
   const contract = transferDomainContract(domain);
   const relations = contract.tables
     .map((table) => `"${domain}"."${table}"`)
@@ -46,7 +55,10 @@ async function truncateDomain(client: Client, domain: 'notify' | 'experience') {
   await client.query(`TRUNCATE TABLE ${relations} CASCADE`);
 }
 
-async function seedSource(client: Client, domain: 'notify' | 'experience') {
+async function seedSource(
+  client: Client,
+  domain: 'notify' | 'experience' | 'identity',
+) {
   if (domain === 'notify') {
     await client.query(`INSERT INTO "notify"."notifications"
       ("id", "recipientId", "category", "action", "title", "body", "dedupeKey")
@@ -54,13 +66,28 @@ async function seedSource(client: Client, domain: 'notify' | 'experience') {
         'encrypted-or-approved-title', NULL, 'ci-notify-dedupe-1')`);
     return;
   }
-  await client.query(`INSERT INTO "experience"."contact_messages"
-    ("id", "name", "phone", "subject", "body")
-    VALUES ('ci-experience-1', 'encrypted-name', 'encrypted-phone',
-      'approved-subject', 'approved-body')`);
+  if (domain === 'experience') {
+    await client.query(`INSERT INTO "experience"."contact_messages"
+      ("id", "name", "phone", "subject", "body")
+      VALUES ('ci-experience-1', 'encrypted-name', 'encrypted-phone',
+        'approved-subject', 'approved-body')`);
+    return;
+  }
+  await client.query(`INSERT INTO "identity"."users"
+    ("id", "role", "fullName", "updatedAt", "createdById") VALUES
+    ('z-ci-identity-owner', 'IT_MANAGER', 'encrypted-owner', now(), NULL),
+    ('a-ci-identity-user', 'USER', 'encrypted-user', now(),
+      'z-ci-identity-owner')`);
+  await client.query(`INSERT INTO "identity"."refresh_tokens"
+    ("id", "userId", "tokenHash", "expiresAt")
+    VALUES ('ci-refresh-1', 'a-ci-identity-user',
+      'non-secret-test-hash', now() + interval '1 hour')`);
 }
 
-async function proveOwnDml(client: Client, domain: 'notify' | 'experience') {
+async function proveOwnDml(
+  client: Client,
+  domain: 'notify' | 'experience' | 'identity',
+) {
   if (domain === 'notify') {
     await client.query(`INSERT INTO "notify"."notifications"
       ("id", "recipientId", "category", "action", "title")
@@ -70,11 +97,20 @@ async function proveOwnDml(client: Client, domain: 'notify' | 'experience') {
     );
     return;
   }
-  await client.query(`INSERT INTO "experience"."contact_messages"
-    ("id", "name", "phone", "subject", "body")
-    VALUES ('runtime-probe', 'encrypted', 'encrypted', 'probe', 'probe')`);
+  if (domain === 'experience') {
+    await client.query(`INSERT INTO "experience"."contact_messages"
+      ("id", "name", "phone", "subject", "body")
+      VALUES ('runtime-probe', 'encrypted', 'encrypted', 'probe', 'probe')`);
+    await client.query(
+      `DELETE FROM "experience"."contact_messages" WHERE "id" = 'runtime-probe'`,
+    );
+    return;
+  }
+  await client.query(`INSERT INTO "identity"."users"
+    ("id", "role", "fullName", "updatedAt")
+    VALUES ('runtime-probe', 'USER', 'encrypted', now())`);
   await client.query(
-    `DELETE FROM "experience"."contact_messages" WHERE "id" = 'runtime-probe'`,
+    `DELETE FROM "identity"."users" WHERE "id" = 'runtime-probe'`,
   );
 }
 

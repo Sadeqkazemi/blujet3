@@ -5,6 +5,11 @@ import type { IndependentDomain } from './provision-independent-domain-runtime-r
 interface TransferDomainContract {
   domain: IndependentDomain;
   tables: readonly string[];
+  deferredSelfReference?: {
+    table: string;
+    keyColumn: string;
+    referenceColumn: string;
+  };
 }
 
 export interface TableFingerprint {
@@ -62,6 +67,22 @@ const TRANSFER_CONTRACTS: Record<IndependentDomain, TransferDomainContract> = {
       'survey_settings',
     ],
   },
+  identity: {
+    domain: 'identity',
+    tables: [
+      'users',
+      'refresh_tokens',
+      'two_factor_challenges',
+      'password_reset_events',
+      'security_policy',
+      'customer_identity_verifications',
+    ],
+    deferredSelfReference: {
+      table: 'users',
+      keyColumn: 'id',
+      referenceColumn: 'createdById',
+    },
+  },
 };
 
 function identifier(value: string): string {
@@ -71,8 +92,10 @@ function identifier(value: string): string {
 export function transferDomainContract(
   value: string | undefined,
 ): TransferDomainContract {
-  if (value !== 'notify' && value !== 'experience') {
-    throw new Error('DOMAIN_TRANSFER_KIND must be notify or experience');
+  if (value !== 'notify' && value !== 'experience' && value !== 'identity') {
+    throw new Error(
+      'DOMAIN_TRANSFER_KIND must be notify, experience or identity',
+    );
   }
   return TRANSFER_CONTRACTS[value];
 }
@@ -241,7 +264,14 @@ async function copyTable(
   }
   const primaryKey = await primaryKeyColumns(source, contract, table);
   const relation = `${identifier(contract.domain)}.${identifier(table)}`;
-  const selectedColumns = columns.map(identifier).join(', ');
+  const deferredReference =
+    contract.deferredSelfReference?.table === table
+      ? contract.deferredSelfReference
+      : undefined;
+  const insertedColumns = deferredReference
+    ? columns.filter((column) => column !== deferredReference.referenceColumn)
+    : columns;
+  const selectedColumns = insertedColumns.map(identifier).join(', ');
   const order = primaryKey.map(identifier).join(', ');
 
   for (let offset = 0; ; offset += batchSize) {
@@ -254,7 +284,7 @@ async function copyTable(
 
     const values: unknown[] = [];
     const tuples = result.rows.map((row) => {
-      const placeholders = columns.map((column) => {
+      const placeholders = insertedColumns.map((column) => {
         values.push(row[column]);
         return `$${values.length}`;
       });
@@ -262,6 +292,47 @@ async function copyTable(
     });
     await target.query(
       `INSERT INTO ${relation} (${selectedColumns}) VALUES ${tuples.join(', ')}`,
+      values,
+    );
+  }
+}
+
+async function restoreDeferredSelfReference(
+  source: SqlClient,
+  target: SqlClient,
+  contract: TransferDomainContract,
+  batchSize: number,
+): Promise<void> {
+  const deferred = contract.deferredSelfReference;
+  if (!deferred) return;
+  if (!contract.tables.includes(deferred.table)) {
+    throw new Error(
+      'Deferred relation is outside the approved transfer contract',
+    );
+  }
+  const relation = `${identifier(contract.domain)}.${identifier(deferred.table)}`;
+  const key = identifier(deferred.keyColumn);
+  const reference = identifier(deferred.referenceColumn);
+
+  for (let offset = 0; ; offset += batchSize) {
+    const result = await source.query(
+      `SELECT ${key}, ${reference} FROM ${relation}
+       WHERE ${reference} IS NOT NULL
+       ORDER BY ${key} LIMIT $1 OFFSET $2`,
+      [batchSize, offset],
+    );
+    if (result.rows.length === 0) return;
+
+    const values: unknown[] = [];
+    const tuples = result.rows.map((row) => {
+      values.push(row[deferred.keyColumn], row[deferred.referenceColumn]);
+      return `($${values.length - 1}::text, $${values.length}::text)`;
+    });
+    await target.query(
+      `UPDATE ${relation} AS target
+       SET ${reference} = deferred.${reference}
+       FROM (VALUES ${tuples.join(', ')}) AS deferred(${key}, ${reference})
+       WHERE target.${key} = deferred.${key}`,
       values,
     );
   }
@@ -356,6 +427,12 @@ export async function transferIndependentDomainData(options: {
         options.batchSize,
       );
     }
+    await restoreDeferredSelfReference(
+      options.source,
+      options.target,
+      options.contract,
+      options.batchSize,
+    );
     const targetAfter = await fingerprintDomain(
       options.target,
       options.contract,
