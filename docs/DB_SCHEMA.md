@@ -1,5 +1,59 @@
 # DB_SCHEMA.md — blujet data model
 
+## Agency projection database bootstrap (microservices phase 6)
+
+`agency-service` currently owns a physical read-model bootstrap for three
+projections in schema `agency`: profiles, invoices and credit requests. The
+standalone TypeORM migration creates these tables and three local enum types on
+a fresh PostgreSQL database using only `AGENCY_DATABASE_URL`.
+
+Invoices and credit requests reference only their local profile. Identity
+operator IDs and Core booking IDs are stable scalar references without
+cross-domain joins or foreign keys. The remaining Agency command/allotment
+tables and every writer stay in Core until their command, Event, idempotency,
+Saga and reconciliation gates are separately proven. No copy, dual-write,
+cutover or deployment is included.
+
+## Loyalty physical database bootstrap (microservices phase 6)
+
+`loyalty-service` owns six tables in schema `loyalty`: members, point entries,
+card requests, tier rules, price locks and customer referrals. Its standalone
+TypeORM migration creates those tables and eight local enum types on a fresh
+PostgreSQL database using only `LOYALTY_DATABASE_URL`.
+
+Only point entries and card requests retain an internal foreign key to their
+member. User, operator, booking and flight-instance IDs are stable scalar
+references; there are no cross-domain database joins or foreign keys. The
+bootstrap does not move the existing Core writer, copy data, introduce a
+dual-write, switch a URL or deploy anything. Event catch-up, balance/checksum
+reconciliation, writer freeze and UAT remain explicit cutover gates.
+
+## Reporting physical database bootstrap (microservices phase 6)
+
+`blujet-reporting` owns exactly four tables in schema `reporting`: itinerary
+event projections and receipts, Kafka consumer checkpoints, and sanitized
+processing-failure quarantine. Its standalone TypeORM migration can create
+them on a fresh PostgreSQL database using only `REPORTING_DATABASE_URL`.
+
+The tables have no foreign keys or runtime joins to another domain. Core order
+and event identifiers remain stable scalar references. The bootstrap performs
+no data copy, dual-write, URL switch or deployment; backup, transfer/checksum
+parity, Kafka replay/DLQ UAT and approved cutover remain separate gates.
+
+## Experience physical database bootstrap (microservices phase 6)
+
+`experience-service` owns its 15 tables in schema `experience`, including
+`stored_files` metadata. Its standalone migration creates all current columns,
+enum types and indexes on a fresh PostgreSQL database. The only database-level
+relation is the internal Experience relation from `site_media_assets` to
+`stored_files`.
+
+Identity/Core identifiers are stored as stable scalar references or approved
+snapshots. There are no foreign keys or runtime joins to `identity`, `orders`,
+`inventory`, `payments`, `agency` or `loyalty`. The bootstrap performs no data
+copy or cutover; backup, transfer/checksum, UAT and the production URL change
+remain separate release gates.
+
 ## Notify physical database bootstrap (microservices phase 6)
 
 `notify-service` owns `notify.notifications` and `notify.sms_logs`. Its
@@ -59,8 +113,9 @@ registers only the four Reporting-owned projection, receipt, checkpoint and
 failure-metadata entities. Its
 `REPORTING_DATABASE_URL` must identify a dedicated non-superuser role with the
 minimum required access to the `reporting` schema. The worker never receives
-the Core owner URL, runs migrations, or loads Core entities; schema evolution
-remains an explicit operator migration (`docs/features/reporting-worker-process.md`).
+the Core owner URL, runs migrations, or loads Core entities. Operators apply
+the standalone migration through a separate release step
+(`docs/features/microservices-phase-6-reporting-physical-db.md`).
 
 ## Kafka commerce delivery outbox
 

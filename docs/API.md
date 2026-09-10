@@ -1,5 +1,40 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Agency projection database bootstrap
+
+Agency HTTP contracts and default-off flags are unchanged. The service now
+owns standalone TypeORM metadata and a fresh-database migration for the three
+projections it currently reads: profile, invoices and credit requests. Core
+remains the sole writer; no event consumer, data copy, dual-write, URL switch
+or deployment is included
+(`docs/features/microservices-phase-6-agency-projection-db.md`).
+
+## Loyalty physical database bootstrap
+
+Loyalty HTTP contracts and feature flags are unchanged. The service now owns
+standalone TypeORM metadata and a migration for all six `loyalty` tables. Core
+remains the sole writer until separately approved command/events,
+reconciliation and single-writer cutover are complete; this slice performs no
+data copy, dual-write, URL switch or deployment
+(`docs/features/microservices-phase-6-loyalty-physical-db.md`).
+
+## Reporting physical database bootstrap
+
+Reporting HTTP and Kafka contracts are unchanged. The worker now shares exact
+four-entity metadata with a standalone TypeORM migration that can bootstrap a
+fresh PostgreSQL database without Core migrations. It introduces no public
+route, data copy, dual-write, consumer activation, URL cutover or deployment
+(`docs/features/microservices-phase-6-reporting-physical-db.md`).
+
+## Experience physical database bootstrap
+
+The Experience HTTP contract is unchanged. The service owns a standalone
+TypeORM migration for its 15 `experience` tables and no longer needs Core
+schema migrations in CI. Identity, Order and Inventory identifiers remain
+stable references/snapshots without cross-database joins or foreign keys.
+There is no data copy, dual-write, production URL switch or deployment in this
+bootstrap (`docs/features/microservices-phase-6-experience-physical-db.md`).
+
 ## Notify physical database bootstrap
 
 The Notify HTTP contract is unchanged. `notify-service` now ships a standalone

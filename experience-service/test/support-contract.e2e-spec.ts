@@ -41,35 +41,15 @@ describe('Experience support contract (e2e)', () => {
     );
     await app.init();
     dataSource = app.get(DataSource);
-    await dataSource.query(
-      'INSERT INTO "users" ("id", "role", "fullName", "updatedAt") VALUES ($1, $2, $3, NOW()), ($4, $5, $6, NOW()), ($7, $8, $9, NOW()), ($10, $11, $12, NOW())',
-      [
-        userId,
-        'USER',
-        user.fullName,
-        otherId,
-        'USER',
-        'کاربر دیگر',
-        adminId,
-        'SITE_ADMIN',
-        admin.fullName,
-        targetId,
-        'EMPLOYEE',
-        'کارشناس مقصد',
-      ],
-    );
   });
 
   afterAll(async () => {
     if (ticketIds.length > 0) {
       await dataSource.query(
-        'DELETE FROM "support_tickets" WHERE "id" = ANY($1)',
+        'DELETE FROM "experience"."support_tickets" WHERE "id" = ANY($1)',
         [ticketIds],
       );
     }
-    await dataSource.query('DELETE FROM "users" WHERE "id" = ANY($1)', [
-      [userId, otherId, adminId, targetId],
-    ]);
     await app.close();
   });
 

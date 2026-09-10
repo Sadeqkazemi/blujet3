@@ -30,6 +30,7 @@ jobs:
       agency: ${{ steps.scope.outputs.agency }}
       identity: ${{ steps.scope.outputs.identity }}
       notify: ${{ steps.scope.outputs.notify }}
+      reporting: ${{ steps.scope.outputs.reporting }}
       pss: ${{ steps.scope.outputs.pss }}
       frontend: ${{ steps.scope.outputs.frontend }}
       ml: ${{ steps.scope.outputs.ml }}
@@ -43,7 +44,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          areas=(backend offer ticketing_refund payment_reconciliation order_booking inventory ops_admin backend_migration experience loyalty agency identity notify pss frontend ml)
+          areas=(backend offer ticketing_refund payment_reconciliation order_booking inventory ops_admin backend_migration experience loyalty agency identity notify reporting pss frontend ml)
           if [[ "${{ github.event_name }}" != "pull_request" ]]; then
             for area in "${areas[@]}"; do
               echo "$area=true" >> "$GITHUB_OUTPUT"
@@ -87,6 +88,7 @@ jobs:
           emit identity '^identity-service/'
           emit agency '^(agency-service/|backend/(package(-lock)?\.json$|tsconfig[^/]*\.json$|nest-cli\.json$|src/database/|src/config/|src/modules/agency-shadow/|src/modules/agency-portal/))'
           emit notify '^(notify-service/|backend/(package(-lock)?\.json$|src/database/))'
+          emit reporting '^(backend/(Dockerfile\.reporting-worker|package(-lock)?\.json$|tsconfig[^/]*\.json$|nest-cli\.json$|src/(reporting-worker|config/reporting-worker|database/(reporting-data-source|reporting-migrations/|entities/reporting-|migrations/179(1734400000|2156800000|2329600000)-Reporting)|modules/reporting/))|docker-compose\.prod\.yml$|docs/features/(reporting-|microservices-phase-6-reporting-physical-db\.md$))'
           emit pss '^pss-service/'
           emit frontend '^frontend/'
           emit ml '^ml-service/'
@@ -117,16 +119,15 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: |
-            backend/package-lock.json
-            experience-service/package-lock.json
-      - name: Apply shared-cluster schema migrations
-        working-directory: backend
-        run: |
-          npm ci
-          cp .env.test .env
-          DATABASE_URL=postgresql://blujet:blujet@localhost:5432/blujet_experience_test npm run migration:run
-          DATABASE_URL=postgresql://blujet:blujet@localhost:5432/blujet_experience_test npm run seed
+          cache-dependency-path: experience-service/package-lock.json
+      - name: Install experience service
+        working-directory: experience-service
+        run: npm ci
+      - name: Apply standalone Experience migrations
+        working-directory: experience-service
+        env:
+          EXPERIENCE_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_experience_test
+        run: npm run migration:run
       - name: Validate experience service
         working-directory: experience-service
         env:
@@ -136,7 +137,6 @@ jobs:
           EXPERIENCE_INTERNAL_TOKEN: test-experience-internal-token-at-least-32-characters
           PII_ENCRYPTION_KEY: 3a6dfd91b775e9cd09be8a576889adfe518a31ad1064af3d63c21ce9aadbdf10
         run: |
-          npm ci
           npm run lint:check
           npm run typecheck
           npm run build
@@ -186,6 +186,62 @@ jobs:
         run: |
           npm run build
           npm test -- --runInBand --runTestsByPath src/modules/loyalty-shadow/loyalty-shadow.spec.ts
+      - name: Install Loyalty service
+        working-directory: loyalty-service
+        run: npm ci
+      - name: Prove standalone Loyalty database bootstrap
+        working-directory: loyalty-service
+        env:
+          LOYALTY_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_loyalty_bootstrap_test
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const { Client } = require('pg');
+          (async () => {
+            const client = new Client({ connectionString: 'postgresql://blujet:blujet@localhost:5432/postgres' });
+            await client.connect();
+            await client.query('CREATE DATABASE blujet_loyalty_bootstrap_test');
+            await client.end();
+          })().catch(() => process.exit(1));
+          NODE
+          npm run migration:run
+          schema_log=$(npm run schema:log 2>&1)
+          echo "$schema_log"
+          echo "$schema_log" | grep -q 'Your schema is up to date'
+          node - <<'NODE'
+          const { Client } = require('pg');
+          (async () => {
+            const client = new Client({ connectionString: process.env.LOYALTY_DATABASE_URL });
+            await client.connect();
+            const tables = await client.query(
+              `SELECT table_name FROM information_schema.tables
+               WHERE table_schema = 'loyalty' ORDER BY table_name`,
+            );
+            const expected = [
+              'club_card_requests',
+              'club_members',
+              'club_points_entries',
+              'club_tier_rules',
+              'customer_referrals',
+              'price_locks',
+            ];
+            if (JSON.stringify(tables.rows.map((row) => row.table_name)) !== JSON.stringify(expected)) process.exit(1);
+            const enums = await client.query(
+              `SELECT count(DISTINCT t.oid)::int AS count
+               FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace
+               JOIN pg_enum e ON e.enumtypid = t.oid WHERE n.nspname = 'loyalty'`,
+            );
+            if (enums.rows[0]?.count !== 8) process.exit(1);
+            const foreignKeys = await client.query(
+              `SELECT count(*)::int AS count,
+                      bool_and(confrelid::regclass::text = 'loyalty.club_members') AS internal
+               FROM pg_constraint WHERE contype = 'f'
+                 AND connamespace = 'loyalty'::regnamespace`,
+            );
+            if (foreignKeys.rows[0]?.count !== 2 || foreignKeys.rows[0]?.internal !== true) process.exit(1);
+            await client.end();
+          })().catch(() => process.exit(1));
+          NODE
       - name: Validate read-only Loyalty boundary
         working-directory: loyalty-service
         env:
@@ -193,12 +249,31 @@ jobs:
           LOYALTY_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_loyalty_test
           LOYALTY_INTERNAL_TOKEN: test-loyalty-internal-token-at-least-32-characters
         run: |
-          npm ci
           npm run lint:check
           npm run typecheck
           npm run build
           npm test
           npm run test:e2e
+      - name: Prove compiled Loyalty rollback and restore
+        working-directory: loyalty-service
+        env:
+          LOYALTY_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_loyalty_bootstrap_test
+        run: |
+          set -euo pipefail
+          npm run migration:revert:prod
+          node - <<'NODE'
+          const { Client } = require('pg');
+          (async () => {
+            const client = new Client({ connectionString: process.env.LOYALTY_DATABASE_URL });
+            await client.connect();
+            const schema = await client.query(
+              "SELECT count(*)::int AS count FROM information_schema.schemata WHERE schema_name = 'loyalty'",
+            );
+            if (schema.rows[0]?.count !== 0) process.exit(1);
+            await client.end();
+          })().catch(() => process.exit(1));
+          NODE
+          npm run migration:run:prod
 
   agency-service:
     name: Agency service
@@ -239,6 +314,55 @@ jobs:
           npm run migration:run
           npm run build
           npm test -- --runInBand agency-shadow agency-invoice.client agency-profile.client
+      - name: Install Agency service
+        working-directory: agency-service
+        run: npm ci
+      - name: Prove standalone Agency projection database
+        working-directory: agency-service
+        env:
+          AGENCY_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_agency_projection_test
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const { Client } = require('pg');
+          (async () => {
+            const client = new Client({ connectionString: 'postgresql://blujet:blujet@localhost:5432/postgres' });
+            await client.connect();
+            await client.query('CREATE DATABASE blujet_agency_projection_test');
+            await client.end();
+          })().catch(() => process.exit(1));
+          NODE
+          npm run migration:run
+          schema_log=$(npm run schema:log 2>&1)
+          echo "$schema_log"
+          echo "$schema_log" | grep -q 'Your schema is up to date'
+          node - <<'NODE'
+          const { Client } = require('pg');
+          (async () => {
+            const client = new Client({ connectionString: process.env.AGENCY_DATABASE_URL });
+            await client.connect();
+            const tables = await client.query(
+              `SELECT table_name FROM information_schema.tables
+               WHERE table_schema = 'agency' ORDER BY table_name`,
+            );
+            const expected = ['agency_credit_requests', 'agency_invoices', 'agency_profiles'];
+            if (JSON.stringify(tables.rows.map((row) => row.table_name)) !== JSON.stringify(expected)) process.exit(1);
+            const enums = await client.query(
+              `SELECT count(DISTINCT t.oid)::int AS count
+               FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace
+               JOIN pg_enum e ON e.enumtypid = t.oid WHERE n.nspname = 'agency'`,
+            );
+            if (enums.rows[0]?.count !== 3) process.exit(1);
+            const foreignKeys = await client.query(
+              `SELECT count(*)::int AS count,
+                      bool_and(confrelid::regclass::text = 'agency.agency_profiles') AS internal
+               FROM pg_constraint WHERE contype = 'f'
+                 AND connamespace = 'agency'::regnamespace`,
+            );
+            if (foreignKeys.rows[0]?.count !== 2 || foreignKeys.rows[0]?.internal !== true) process.exit(1);
+            await client.end();
+          })().catch(() => process.exit(1));
+          NODE
       - name: Validate isolated Agency reader
         working-directory: agency-service
         env:
@@ -246,7 +370,6 @@ jobs:
           AGENCY_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_agency_test
           AGENCY_INTERNAL_TOKEN: test-agency-internal-token-at-least-32-characters
         run: |
-          npm ci
           npm run lint:check
           npm run typecheck
           npm run build
@@ -254,6 +377,26 @@ jobs:
           git diff --exit-code -- docs/openapi.json
           npm test
           npm run test:e2e
+      - name: Prove compiled Agency projection rollback and restore
+        working-directory: agency-service
+        env:
+          AGENCY_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_agency_projection_test
+        run: |
+          set -euo pipefail
+          npm run migration:revert:prod
+          node - <<'NODE'
+          const { Client } = require('pg');
+          (async () => {
+            const client = new Client({ connectionString: process.env.AGENCY_DATABASE_URL });
+            await client.connect();
+            const schema = await client.query(
+              "SELECT count(*)::int AS count FROM information_schema.schemata WHERE schema_name = 'agency'",
+            );
+            if (schema.rows[0]?.count !== 0) process.exit(1);
+            await client.end();
+          })().catch(() => process.exit(1));
+          NODE
+          npm run migration:run:prod
 
   identity-service:
     name: Identity service
@@ -464,6 +607,105 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
       - run: npm test
+
+  reporting:
+    name: Reporting physical database
+    needs: changes
+    if: needs.changes.outputs.reporting == 'true'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: blujet
+          POSTGRES_PASSWORD: blujet
+          POSTGRES_DB: blujet_reporting_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U blujet -d blujet_reporting_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - name: Apply standalone Reporting migration
+        env:
+          REPORTING_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_reporting_test
+        run: npm run migration:run:reporting
+      - name: Prove isolated schema and metadata parity
+        env:
+          REPORTING_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_reporting_test
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const { Client } = require('pg');
+          (async () => {
+            const client = new Client({ connectionString: process.env.REPORTING_DATABASE_URL });
+            await client.connect();
+            const schemas = await client.query(
+              `SELECT schema_name FROM information_schema.schemata
+               WHERE schema_name NOT IN ('information_schema', 'public')
+                 AND schema_name NOT LIKE 'pg_%'
+               ORDER BY schema_name`,
+            );
+            if (JSON.stringify(schemas.rows) !== JSON.stringify([{ schema_name: 'reporting' }])) process.exit(1);
+            const tables = await client.query(
+              `SELECT table_name FROM information_schema.tables
+               WHERE table_schema = 'reporting' ORDER BY table_name`,
+            );
+            const expected = [
+              'core_itinerary_event_projections',
+              'core_itinerary_event_receipts',
+              'kafka_consumer_checkpoints',
+              'kafka_processing_failures',
+            ];
+            if (JSON.stringify(tables.rows.map((row) => row.table_name)) !== JSON.stringify(expected)) process.exit(1);
+            const foreignKeys = await client.query(
+              `SELECT count(*)::int AS count
+               FROM information_schema.table_constraints
+               WHERE table_schema = 'reporting' AND constraint_type = 'FOREIGN KEY'`,
+            );
+            if (foreignKeys.rows[0]?.count !== 0) process.exit(1);
+            await client.end();
+          })().catch(() => process.exit(1));
+          NODE
+          schema_log=$(npm run schema:log:reporting 2>&1)
+          echo "$schema_log"
+          echo "$schema_log" | grep -q 'Your schema is up to date'
+      - run: npm run typecheck
+      - run: npm run build
+      - name: Prove compiled rollback and restore
+        env:
+          REPORTING_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_reporting_test
+        run: |
+          set -euo pipefail
+          npm run migration:revert:reporting:prod
+          node - <<'NODE'
+          const { Client } = require('pg');
+          (async () => {
+            const client = new Client({ connectionString: process.env.REPORTING_DATABASE_URL });
+            await client.connect();
+            const schema = await client.query(
+              "SELECT count(*)::int AS count FROM information_schema.schemata WHERE schema_name = 'reporting'",
+            );
+            if (schema.rows[0]?.count !== 0) process.exit(1);
+            await client.end();
+          })().catch(() => process.exit(1));
+          NODE
+          npm run migration:run:reporting:prod
+      - name: Build the opt-in Reporting container
+        run: docker build -f Dockerfile.reporting-worker -t blujet-reporting:ci .
 
   offer-pricing:
     name: Offer/Pricing process
@@ -1181,6 +1423,7 @@ jobs:
       - backend-migration-compatibility
       - pss-service
       - backend
+      - reporting
       - offer-pricing
       - ticketing-refund
       - payment-reconciliation

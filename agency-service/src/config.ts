@@ -9,6 +9,7 @@ import {
   validateSync,
 } from 'class-validator';
 import type { DataSourceOptions } from 'typeorm';
+import { agencyProjectionEntities } from './database/agency-entities';
 
 class Environment {
   @IsIn(['true', 'false'])
@@ -57,7 +58,7 @@ export function databaseOptions(url: string): DataSourceOptions {
   return {
     type: 'postgres',
     url,
-    entities: [],
+    entities: agencyProjectionEntities,
     synchronize: false,
     migrationsRun: false,
     logging: false,

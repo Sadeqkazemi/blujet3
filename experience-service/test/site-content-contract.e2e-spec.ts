@@ -35,10 +35,6 @@ describe('Experience site-content contract (e2e)', () => {
     );
     await app.init();
     dataSource = app.get(DataSource);
-    await dataSource.query(
-      'INSERT INTO "users" ("id", "role", "fullName", "updatedAt") VALUES ($1, $2, $3, NOW())',
-      [actorId, 'SITE_ADMIN', actor.fullName],
-    );
   });
 
   afterAll(async () => {
@@ -50,7 +46,6 @@ describe('Experience site-content contract (e2e)', () => {
     if (routeIds.length > 0) {
       await dataSource.getRepository(SiteRouteHighlight).delete(routeIds);
     }
-    await dataSource.query('DELETE FROM "users" WHERE "id" = $1', [actorId]);
     await app.close();
   });
 

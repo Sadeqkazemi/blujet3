@@ -36,17 +36,6 @@ describe('Experience careers contract (e2e)', () => {
     );
     await app.init();
     dataSource = app.get(DataSource);
-    await dataSource.query(
-      'INSERT INTO "users" ("id", "role", "fullName", "updatedAt") VALUES ($1, $2, $3, NOW()), ($4, $5, $6, NOW())',
-      [
-        actorId,
-        'SITE_ADMIN',
-        actor.fullName,
-        targetId,
-        'COMMERCIAL_MANAGER',
-        'مدیر مقصد تست',
-      ],
-    );
   });
 
   afterAll(async () => {
@@ -56,9 +45,6 @@ describe('Experience careers contract (e2e)', () => {
     if (postingIds.length > 0) {
       await dataSource.getRepository(JobPosting).delete(postingIds);
     }
-    await dataSource.query('DELETE FROM "users" WHERE "id" = ANY($1)', [
-      [actorId, targetId],
-    ]);
     await app.close();
   });
 

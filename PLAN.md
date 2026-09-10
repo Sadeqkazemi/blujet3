@@ -5017,6 +5017,61 @@ contracts and retires the production mock adapters.
   rows, run UAT smoke, obtain owner approval, then switch the URL in a separate
   deployment change. Server deployment remains deferred.
 
+## Microservices architecture v1.1 — phase 6 experience physical database bootstrap (2026-09-10)
+
+- [x] Record ownership of all 15 Experience tables and stable-reference rules.
+- [x] Add standalone Experience TypeORM migration tooling for a dedicated
+  PostgreSQL database.
+- [x] Remove Core user/booking fixture dependencies from Experience E2E and
+  migrate/test from a fresh database in CI.
+- [x] Preserve HTTP contracts, storage behavior and feature-flag rollback with
+  no dual-write or production cutover.
+- [ ] Provision/transfer/reconcile in UAT and switch `EXPERIENCE_DATABASE_URL`
+  only under a separately approved deployment.
+
+## Microservices architecture v1.1 — phase 6 reporting physical database bootstrap (2026-09-10)
+
+- [x] Record exact ownership of the four Reporting projection/receipt,
+  checkpoint and sanitized-failure tables.
+- [x] Add a standalone Reporting TypeORM DataSource and development/compiled
+  migration commands using only `REPORTING_DATABASE_URL`.
+- [x] Bootstrap and rollback a fresh PostgreSQL database without Core
+  migrations, cross-domain foreign keys or runtime joins.
+- [x] Add metadata/migration tests and a dedicated fresh-database CI gate.
+- [x] Preserve current HTTP/Kafka contracts, default-off consumer, and existing
+  compatibility database with no data copy, dual-write, cutover or deployment.
+- [ ] Provision/transfer/reconcile in UAT and switch `REPORTING_DATABASE_URL`
+  only under a separately approved deployment.
+
+## Microservices architecture v1.1 — phase 6 loyalty physical database bootstrap (2026-09-10)
+
+- [x] Record ownership of all six Loyalty tables and eight local enum types.
+- [x] Add standalone TypeORM metadata and migration commands using only
+  `LOYALTY_DATABASE_URL`.
+- [x] Replace Identity/Order/Inventory database FKs in the dedicated database
+  with stable scalar references while preserving two internal member FKs.
+- [x] Prove fresh migration, schema parity and rollback in a database isolated
+  from shared-schema compatibility tests.
+- [x] Preserve every HTTP contract, feature flag and the Core single writer;
+  no copy, dual-write, URL cutover or deployment.
+- [ ] Add approved Loyalty command/events and ordered projection, reconcile in
+  UAT, freeze Core writes and switch the writer/URL in a separate release.
+
+## Microservices architecture v1.1 — phase 6 agency projection database bootstrap (2026-09-10)
+
+- [x] Limit physical read separation to the three projections consumed by the
+  current Agency process: profile, invoices and credit requests.
+- [x] Add standalone TypeORM metadata and migration commands using only
+  `AGENCY_DATABASE_URL`.
+- [x] Preserve local child-to-profile integrity while representing Identity
+  operator and Core booking IDs as stable scalar references.
+- [x] Prove migration, metadata parity and rollback in a fresh database that is
+  separate from shared-schema compatibility tests.
+- [x] Preserve every HTTP contract/flag and Core as sole writer; no Event
+  consumer, copy, dual-write, URL cutover or deployment.
+- [ ] Add approved projection events and reconciliation, then cut over reads;
+  move each remaining Agency writer only through a separate command/Saga gate.
+
 ## Microservices architecture v1.1 — phase 6 loyalty foundation (A6.1)
 
 - [x] Draft the contract-first Loyalty read boundary, projection safety rules,

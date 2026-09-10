@@ -33,17 +33,12 @@ describe('Experience blog contract (e2e)', () => {
     );
     await app.init();
     dataSource = app.get(DataSource);
-    await dataSource.query(
-      'INSERT INTO "users" ("id", "role", "fullName", "updatedAt") VALUES ($1, $2, $3, NOW())',
-      [actorId, 'SITE_ADMIN', actor.fullName],
-    );
   });
 
   afterAll(async () => {
     if (postIds.length > 0) {
       await dataSource.getRepository(BlogPost).delete(postIds);
     }
-    await dataSource.query('DELETE FROM "users" WHERE "id" = $1', [actorId]);
     await app.close();
   });
 

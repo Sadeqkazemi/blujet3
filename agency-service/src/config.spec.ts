@@ -1,4 +1,5 @@
 import { databaseOptions, validateEnv } from './config';
+import { agencyProjectionEntities } from './database/agency-entities';
 
 describe('Agency environment', () => {
   const valid = {
@@ -41,7 +42,7 @@ describe('Agency environment', () => {
       synchronize: false,
       migrationsRun: false,
       logging: false,
-      entities: [],
+      entities: agencyProjectionEntities,
       extra: {
         max: 4,
         statement_timeout: 2000,
