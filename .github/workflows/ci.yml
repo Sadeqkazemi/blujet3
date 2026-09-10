@@ -186,6 +186,62 @@ jobs:
         run: |
           npm run build
           npm test -- --runInBand --runTestsByPath src/modules/loyalty-shadow/loyalty-shadow.spec.ts
+      - name: Install Loyalty service
+        working-directory: loyalty-service
+        run: npm ci
+      - name: Prove standalone Loyalty database bootstrap
+        working-directory: loyalty-service
+        env:
+          LOYALTY_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_loyalty_bootstrap_test
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const { Client } = require('pg');
+          (async () => {
+            const client = new Client({ connectionString: 'postgresql://blujet:blujet@localhost:5432/postgres' });
+            await client.connect();
+            await client.query('CREATE DATABASE blujet_loyalty_bootstrap_test');
+            await client.end();
+          })().catch(() => process.exit(1));
+          NODE
+          npm run migration:run
+          schema_log=$(npm run schema:log 2>&1)
+          echo "$schema_log"
+          echo "$schema_log" | grep -q 'Your schema is up to date'
+          node - <<'NODE'
+          const { Client } = require('pg');
+          (async () => {
+            const client = new Client({ connectionString: process.env.LOYALTY_DATABASE_URL });
+            await client.connect();
+            const tables = await client.query(
+              `SELECT table_name FROM information_schema.tables
+               WHERE table_schema = 'loyalty' ORDER BY table_name`,
+            );
+            const expected = [
+              'club_card_requests',
+              'club_members',
+              'club_points_entries',
+              'club_tier_rules',
+              'customer_referrals',
+              'price_locks',
+            ];
+            if (JSON.stringify(tables.rows.map((row) => row.table_name)) !== JSON.stringify(expected)) process.exit(1);
+            const enums = await client.query(
+              `SELECT count(DISTINCT t.oid)::int AS count
+               FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace
+               JOIN pg_enum e ON e.enumtypid = t.oid WHERE n.nspname = 'loyalty'`,
+            );
+            if (enums.rows[0]?.count !== 8) process.exit(1);
+            const foreignKeys = await client.query(
+              `SELECT count(*)::int AS count,
+                      bool_and(confrelid::regclass::text = 'loyalty.club_members') AS internal
+               FROM pg_constraint WHERE contype = 'f'
+                 AND connamespace = 'loyalty'::regnamespace`,
+            );
+            if (foreignKeys.rows[0]?.count !== 2 || foreignKeys.rows[0]?.internal !== true) process.exit(1);
+            await client.end();
+          })().catch(() => process.exit(1));
+          NODE
       - name: Validate read-only Loyalty boundary
         working-directory: loyalty-service
         env:
@@ -193,12 +249,31 @@ jobs:
           LOYALTY_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_loyalty_test
           LOYALTY_INTERNAL_TOKEN: test-loyalty-internal-token-at-least-32-characters
         run: |
-          npm ci
           npm run lint:check
           npm run typecheck
           npm run build
           npm test
           npm run test:e2e
+      - name: Prove compiled Loyalty rollback and restore
+        working-directory: loyalty-service
+        env:
+          LOYALTY_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_loyalty_bootstrap_test
+        run: |
+          set -euo pipefail
+          npm run migration:revert:prod
+          node - <<'NODE'
+          const { Client } = require('pg');
+          (async () => {
+            const client = new Client({ connectionString: process.env.LOYALTY_DATABASE_URL });
+            await client.connect();
+            const schema = await client.query(
+              "SELECT count(*)::int AS count FROM information_schema.schemata WHERE schema_name = 'loyalty'",
+            );
+            if (schema.rows[0]?.count !== 0) process.exit(1);
+            await client.end();
+          })().catch(() => process.exit(1));
+          NODE
+          npm run migration:run:prod
 
   agency-service:
     name: Agency service

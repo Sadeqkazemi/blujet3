@@ -9,6 +9,7 @@ import {
   validateSync,
 } from 'class-validator';
 import type { DataSourceOptions } from 'typeorm';
+import { loyaltyEntities } from './database/loyalty-entities';
 
 class Environment {
   @IsIn(['development', 'test', 'production'])
@@ -61,7 +62,7 @@ export function databaseOptions(url: string): DataSourceOptions {
   return {
     type: 'postgres',
     url,
-    entities: [],
+    entities: loyaltyEntities,
     synchronize: false,
     migrationsRun: false,
     logging: false,

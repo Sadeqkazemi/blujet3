@@ -1,4 +1,5 @@
 import { databaseOptions, validateEnv } from './config';
+import { loyaltyEntities } from './database/loyalty-entities';
 
 describe('Loyalty environment', () => {
   const valid = {
@@ -26,7 +27,7 @@ describe('Loyalty environment', () => {
       synchronize: false,
       migrationsRun: false,
       logging: false,
-      entities: [],
+      entities: loyaltyEntities,
       extra: {
         max: 4,
         statement_timeout: 2000,

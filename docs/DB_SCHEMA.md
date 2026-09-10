@@ -1,5 +1,19 @@
 # DB_SCHEMA.md — blujet data model
 
+## Loyalty physical database bootstrap (microservices phase 6)
+
+`loyalty-service` owns six tables in schema `loyalty`: members, point entries,
+card requests, tier rules, price locks and customer referrals. Its standalone
+TypeORM migration creates those tables and eight local enum types on a fresh
+PostgreSQL database using only `LOYALTY_DATABASE_URL`.
+
+Only point entries and card requests retain an internal foreign key to their
+member. User, operator, booking and flight-instance IDs are stable scalar
+references; there are no cross-domain database joins or foreign keys. The
+bootstrap does not move the existing Core writer, copy data, introduce a
+dual-write, switch a URL or deploy anything. Event catch-up, balance/checksum
+reconciliation, writer freeze and UAT remain explicit cutover gates.
+
 ## Reporting physical database bootstrap (microservices phase 6)
 
 `blujet-reporting` owns exactly four tables in schema `reporting`: itinerary

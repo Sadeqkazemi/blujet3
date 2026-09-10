@@ -1,5 +1,14 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Loyalty physical database bootstrap
+
+Loyalty HTTP contracts and feature flags are unchanged. The service now owns
+standalone TypeORM metadata and a migration for all six `loyalty` tables. Core
+remains the sole writer until separately approved command/events,
+reconciliation and single-writer cutover are complete; this slice performs no
+data copy, dual-write, URL switch or deployment
+(`docs/features/microservices-phase-6-loyalty-physical-db.md`).
+
 ## Reporting physical database bootstrap
 
 Reporting HTTP and Kafka contracts are unchanged. The worker now shares exact

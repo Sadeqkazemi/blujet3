@@ -5043,6 +5043,20 @@ contracts and retires the production mock adapters.
 - [ ] Provision/transfer/reconcile in UAT and switch `REPORTING_DATABASE_URL`
   only under a separately approved deployment.
 
+## Microservices architecture v1.1 — phase 6 loyalty physical database bootstrap (2026-09-10)
+
+- [x] Record ownership of all six Loyalty tables and eight local enum types.
+- [x] Add standalone TypeORM metadata and migration commands using only
+  `LOYALTY_DATABASE_URL`.
+- [x] Replace Identity/Order/Inventory database FKs in the dedicated database
+  with stable scalar references while preserving two internal member FKs.
+- [x] Prove fresh migration, schema parity and rollback in a database isolated
+  from shared-schema compatibility tests.
+- [x] Preserve every HTTP contract, feature flag and the Core single writer;
+  no copy, dual-write, URL cutover or deployment.
+- [ ] Add approved Loyalty command/events and ordered projection, reconcile in
+  UAT, freeze Core writes and switch the writer/URL in a separate release.
+
 ## Microservices architecture v1.1 — phase 6 loyalty foundation (A6.1)
 
 - [x] Draft the contract-first Loyalty read boundary, projection safety rules,
