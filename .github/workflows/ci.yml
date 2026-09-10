@@ -81,7 +81,7 @@ jobs:
           emit payment_reconciliation '^(backend/(Dockerfile\.payment-reconciliation-worker|package(-lock)?\.json|tsconfig[^/]*\.json|nest-cli\.json|src/(payment-reconciliation-worker|payment-reconciliation-worker-health|payment-reconciliation-worker\.module|config/payment-reconciliation-worker|database/(data-source\.options|entities/|provision-payment-reconciliation-reader-role)|modules/payment-reconciliation))|docker-compose\.prod\.yml$|docs/features/payment-reconciliation-process\.md$)'
           emit order_booking '^(backend/(Dockerfile\.order-booking-worker|package(-lock)?\.json|tsconfig[^/]*\.json|nest-cli\.json|src/(order-booking-worker|order-booking-worker-health|order-booking-worker\.module|config/order-booking-worker|database/(data-source\.options|entities/|provision-order-booking-reader-role)|modules/order-booking))|docker-compose\.prod\.yml$|docs/features/order-booking-process\.md$)'
           emit inventory '^(backend/(Dockerfile\.inventory-worker|package(-lock)?\.json|tsconfig[^/]*\.json|nest-cli\.json|src/(inventory-worker|inventory-worker-health|inventory-worker\.module|config/inventory-worker|database/(data-source\.options|entities/|provision-inventory-reader-role)|modules/inventory))|docker-compose\.prod\.yml$|docs/features/inventory-process\.md$)'
-          emit ops_admin '^(backend/(Dockerfile\.ops-admin-worker|package(-lock)?\.json|tsconfig[^/]*\.json|nest-cli\.json|src/(ops-admin-worker|ops-admin-worker-health|ops-admin-worker\.module|config/ops-admin-worker|database/(data-source\.options|entities/|create-ops-admin-|ops-admin-|provision-ops-admin-reader-role)|modules/ops-admin))|docker-compose\.prod\.yml$|docs/features/(ops-admin-process|microservices-phase-6-ops-admin-projection-db)\.md$)'
+          emit ops_admin '^(backend/(Dockerfile\.ops-admin-worker|package(-lock)?\.json|tsconfig[^/]*\.json|nest-cli\.json|test/(jest-ops-admin-projection\.json|ops-admin-projection-consumer\.e2e-spec\.ts)|src/(ops-admin-worker|ops-admin-worker-health|ops-admin-worker\.module|config/ops-admin-worker|database/(data-source\.options|entities/|create-ops-admin-|ops-admin-|provision-ops-admin-reader-role|report-ops-admin-)|modules/ops-admin))|docker-compose\.prod\.yml$|docs/features/(ops-admin-process|microservices-phase-6-ops-admin-projection-(db|consumer))\.md$)'
           emit backend_migration '^(backend/|scripts/check-expand-only-migrations\.mjs$)'
           emit experience '^(experience-service/|backend/(package(-lock)?\.json$|src/database/))'
           emit loyalty '^(loyalty-service/|backend/(package(-lock)?\.json$|tsconfig[^/]*\.json$|nest-cli\.json$|src/database/|src/common/money\.ts$|src/modules/loyalty-shadow/))'
@@ -1255,13 +1255,16 @@ jobs:
               `SELECT table_name FROM information_schema.tables
                WHERE table_schema = 'ops' ORDER BY table_name`,
             );
-            if (JSON.stringify(tables.rows) !== JSON.stringify([{ table_name: 'cartable_tasks' }])) process.exit(1);
+            if (JSON.stringify(tables.rows) !== JSON.stringify([
+              { table_name: 'cartable_projection_event_receipts' },
+              { table_name: 'cartable_tasks' },
+            ])) process.exit(1);
             const columns = await client.query(
               `SELECT column_name FROM information_schema.columns
                WHERE table_schema = 'ops' AND table_name = 'cartable_tasks'
                ORDER BY ordinal_position`,
             );
-            const expected = ['id', 'assigneeId', 'category', 'sourceType', 'sourceId', 'status', 'resolvedAt', 'readAt', 'createdAt'];
+            const expected = ['id', 'assigneeId', 'category', 'sourceType', 'sourceId', 'status', 'resolvedAt', 'readAt', 'createdAt', 'taskVersion', 'auditId', 'fingerprint'];
             if (JSON.stringify(columns.rows.map((row) => row.column_name)) !== JSON.stringify(expected)) process.exit(1);
             const enums = await client.query(
               `SELECT count(DISTINCT t.oid)::int AS count
@@ -1277,6 +1280,7 @@ jobs:
             await client.end();
           })().catch(() => process.exit(1));
           NODE
+          npm run test:e2e:ops-admin-projection
       - run: cp .env.test .env
       - run: npm run migration:run
       - run: npm run build
@@ -1285,6 +1289,25 @@ jobs:
           OPS_ADMIN_PROJECTION_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_ops_admin_projection_test
         run: |
           set -euo pipefail
+          npm run migration:revert:ops-admin:prod
+          node - <<'NODE'
+          const { Client } = require('pg');
+          (async () => {
+            const client = new Client({ connectionString: process.env.OPS_ADMIN_PROJECTION_DATABASE_URL });
+            await client.connect();
+            const tables = await client.query(
+              "SELECT table_name FROM information_schema.tables WHERE table_schema = 'ops' ORDER BY table_name",
+            );
+            if (JSON.stringify(tables.rows) !== JSON.stringify([{ table_name: 'cartable_tasks' }])) process.exit(1);
+            const orderingColumns = await client.query(
+              `SELECT count(*)::int AS count FROM information_schema.columns
+               WHERE table_schema = 'ops' AND table_name = 'cartable_tasks'
+                 AND column_name IN ('taskVersion', 'auditId', 'fingerprint')`,
+            );
+            if (orderingColumns.rows[0]?.count !== 0) process.exit(1);
+            await client.end();
+          })().catch(() => process.exit(1));
+          NODE
           npm run migration:revert:ops-admin:prod
           node - <<'NODE'
           const { Client } = require('pg');

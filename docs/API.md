@@ -1,5 +1,17 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Ops/Admin ordered projection consumer and reconciliation
+
+No public or internal HTTP route changes. The dedicated Ops/Admin database can
+now accept the approved `CartableTaskProjected` v1 event through a strict,
+idempotent projection boundary. Newer task versions replace routing metadata;
+exact replays and older versions are harmless, while a reused event ID or task
+version with different content fails closed. A bounded, read-only CLI compares
+Core source rows with the dedicated projection and reports aggregate mismatch
+counts without emitting task or assignee identifiers. Kafka activation,
+baseline replay, reader URL cutover and deployment remain separate UAT gates
+(`docs/features/microservices-phase-6-ops-admin-projection-consumer.md`).
+
 ## Ops/Admin projection source revision and outbox
 
 No public or internal HTTP route changes. Every Core cartable mutation now

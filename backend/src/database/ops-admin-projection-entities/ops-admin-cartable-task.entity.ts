@@ -1,4 +1,5 @@
 import {
+  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -14,6 +15,10 @@ import { CartableCategory, CartableSourceType, CartableStatus } from '../enums';
   'createdAt',
   'id',
 ])
+@Check(
+  'ops_admin_cartable_task_version_check',
+  '"taskVersion" IS NULL OR "taskVersion" > 0',
+)
 @Entity('cartable_tasks', { schema: 'ops' })
 export class OpsAdminCartableTaskProjection {
   @PrimaryColumn({
@@ -56,6 +61,15 @@ export class OpsAdminCartableTaskProjection {
 
   @Column({ type: 'timestamp', precision: 3, nullable: true })
   readAt!: Date | null;
+
+  @Column({ type: 'int', nullable: true })
+  taskVersion!: number | null;
+
+  @Column({ type: 'text', nullable: true })
+  auditId!: string | null;
+
+  @Column({ type: 'char', length: 64, nullable: true })
+  fingerprint!: string | null;
 
   @CreateDateColumn({
     type: 'timestamp',
