@@ -559,7 +559,8 @@ jobs:
     if: >-
       needs.changes.outputs.backend == 'true' ||
       needs.changes.outputs.notify == 'true' ||
-      needs.changes.outputs.experience == 'true'
+      needs.changes.outputs.experience == 'true' ||
+      needs.changes.outputs.identity == 'true'
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 25
     services:
@@ -586,11 +587,13 @@ jobs:
             backend/package-lock.json
             notify-service/package-lock.json
             experience-service/package-lock.json
+            identity-service/package-lock.json
       - name: Install database toolchains
         run: |
           npm ci --prefix backend
           npm ci --prefix notify-service
           npm ci --prefix experience-service
+          npm ci --prefix identity-service
       - name: Create isolated source and target databases
         working-directory: backend
         env:
@@ -603,6 +606,8 @@ jobs:
             'notify_target_test',
             'experience_source_test',
             'experience_target_test',
+            'identity_source_test',
+            'identity_target_test',
           ];
           (async () => {
             const client = new Client({ connectionString: process.env.DATABASE_URL });
@@ -619,6 +624,8 @@ jobs:
           NOTIFY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/notify_target_test npm --prefix notify-service run migration:run
           EXPERIENCE_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/experience_source_test npm --prefix experience-service run migration:run
           EXPERIENCE_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/experience_target_test npm --prefix experience-service run migration:run
+          IDENTITY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/identity_source_test npm --prefix identity-service run migration:run
+          IDENTITY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/identity_target_test npm --prefix identity-service run migration:run
       - name: Prove transfer, reconciliation and privilege isolation
         working-directory: backend
         env:
@@ -626,13 +633,17 @@ jobs:
           NOTIFY_TRANSFER_TARGET_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/notify_target_test
           EXPERIENCE_TRANSFER_SOURCE_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/experience_source_test
           EXPERIENCE_TRANSFER_TARGET_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/experience_target_test
+          IDENTITY_TRANSFER_SOURCE_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/identity_source_test
+          IDENTITY_TRANSFER_TARGET_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/identity_target_test
         run: npm run test:e2e:independent-domain-db
       - name: Prove target rollback and clean restore
         run: |
           NOTIFY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/notify_target_test npm --prefix notify-service run migration:revert
           EXPERIENCE_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/experience_target_test npm --prefix experience-service run migration:revert
+          IDENTITY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/identity_target_test npm --prefix identity-service run migration:revert
           NOTIFY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/notify_target_test npm --prefix notify-service run migration:run
           EXPERIENCE_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/experience_target_test npm --prefix experience-service run migration:run
+          IDENTITY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/identity_target_test npm --prefix identity-service run migration:run
 
   backend-migration-compatibility:
     name: Backend migration compatibility

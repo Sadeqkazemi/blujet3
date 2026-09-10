@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { Client } from 'pg';
 import type { RuntimeRoleSqlClient } from './provision-core-runtime-role';
 
-export type IndependentDomain = 'notify' | 'experience';
+export type IndependentDomain = 'notify' | 'experience' | 'identity';
 
 interface DomainRuntimeContract {
   domain: IndependentDomain;
@@ -21,6 +21,11 @@ const CONTRACTS: Record<IndependentDomain, DomainRuntimeContract> = {
     role: 'blujet_experience_runtime',
     passwordVariable: 'EXPERIENCE_DATABASE_PASSWORD',
   },
+  identity: {
+    domain: 'identity',
+    role: 'blujet_identity_runtime',
+    passwordVariable: 'IDENTITY_DATABASE_PASSWORD',
+  },
 };
 
 function identifier(value: string): string {
@@ -30,8 +35,10 @@ function identifier(value: string): string {
 export function independentDomainContract(
   value: string | undefined,
 ): DomainRuntimeContract {
-  if (value !== 'notify' && value !== 'experience') {
-    throw new Error('DOMAIN_DATABASE_KIND must be notify or experience');
+  if (value !== 'notify' && value !== 'experience' && value !== 'identity') {
+    throw new Error(
+      'DOMAIN_DATABASE_KIND must be notify, experience or identity',
+    );
   }
   return CONTRACTS[value];
 }

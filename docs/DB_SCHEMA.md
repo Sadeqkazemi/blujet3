@@ -1,5 +1,31 @@
 # DB_SCHEMA.md — blujet data model
 
+## Identity physical cutover contract (microservices phase 6)
+
+Identity retains its existing standalone TypeORM schema and migration. Its
+dedicated PostgreSQL runtime role is `blujet_identity_runtime`: a non-owner
+LOGIN role with DML only in `identity`, sequence use only in that schema, and
+no DDL, role membership, replication, RLS bypass, public-schema creation or
+cross-domain privilege. Migration and transfer owner credentials are
+short-lived and are never passed to the long-running service.
+
+The one-time transfer is allowlisted to `users`, `refresh_tokens`,
+`two_factor_challenges`, `password_reset_events`, `security_policy` and
+`customer_identity_verifications`, in foreign-key-safe order. It requires
+different source and target databases, a reviewed backup reference, a
+read-only repeatable-read source transaction and an empty target. Every table
+must match by row count and two order-independent 64-bit full-row hashes before
+cutover. The report contains no row content, URL, credential, token hash,
+encrypted PII or other personal data.
+
+This tooling does not move Redis-backed sessions, introduce dual-write, switch
+`IDENTITY_DATABASE_URL`, change `/api/v1/auth/**`, activate a writer or deploy.
+UAT must freeze Identity writes in Core, drain relevant work, take and
+restore-test a backup, transfer and reconcile, switch exactly one writer, run
+RS256/JWKS/session smoke tests, and revoke the old Core credential. Rollback
+stops the new writer and restores the previous single-writer path; it never
+runs both writers concurrently.
+
 ## Notify/Experience physical cutover contract (microservices phase 6)
 
 Notify and Experience retain their existing standalone TypeORM schemas and

@@ -5252,6 +5252,12 @@ not change. All internal calls require `X-Internal-Token`.
 `IDENTITY_JWT_VERIFICATION_MODE=dual` is the documented rollback bridge: the
 Backend issues legacy HS256 tokens while accepting still-live RS256 tokens.
 
+The physical database cutover tooling adds no HTTP endpoint and does not alter
+the public `/api/v1/auth/**` facade or the internal routes above. It prepares a
+separate owner/runtime credential, exact-table transfer and reconciliation for
+a later owner-approved UAT cutover; it does not activate a second Identity
+writer or deploy a service.
+
 ### Accountable document API
 
 | Method | Path | Behaviour |

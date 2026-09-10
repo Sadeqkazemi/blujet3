@@ -1,5 +1,26 @@
 # PLAN.md — blujet roadmap & progress
 
+## Microservices architecture v1.1 — phase 6 Identity cutover tooling (2026-09-10)
+
+- [x] Freeze the Identity owner/runtime credential, exact-table transfer,
+  reconciliation and no-dual-write contract before implementation.
+- [x] Extend the independent database tooling to the six Identity-owned tables
+  in foreign-key-safe order without exposing token hashes or encrypted PII.
+- [x] Provision and verify a restricted `blujet_identity_runtime` role with no
+  DDL, ownership, membership or cross-domain access.
+- [x] Prove transfer, checksum parity, replay rejection, migration rollback and
+  privilege isolation against PostgreSQL in CI.
+- [x] Document manual UAT writer freeze, URL cutover and rollback; do not switch
+  credentials, activate a writer, deploy or change public `/api/v1/auth/**`.
+- [x] Present the completed diff and obtain explicit owner approval before
+  commit/push/merge.
+
+Local evidence: 1,169 Backend unit tests, 20 Identity unit tests, 29 focused
+contract/artifact tests and the real Identity PostgreSQL boundary E2E pass.
+Backend/Identity lint, typecheck and build pass; standalone Identity migration
+run/revert/restore also passes. No credential was switched and no deployment
+occurred.
+
 ## Microservices architecture v1.1 — phase 6 Notify/Experience cutover tooling (2026-09-10)
 
 - [x] Freeze the separate owner/runtime identity, allowlisted transfer,

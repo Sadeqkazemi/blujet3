@@ -6,15 +6,18 @@ import {
 import type { RuntimeRoleSqlClient } from './provision-core-runtime-role';
 
 describe('independent domain runtime role provisioner', () => {
-  it('accepts only the two approved domains and strong URL-safe passwords', () => {
+  it('accepts only approved domains and strong URL-safe passwords', () => {
     expect(independentDomainContract('notify').role).toBe(
       'blujet_notify_runtime',
     );
     expect(independentDomainContract('experience').role).toBe(
       'blujet_experience_runtime',
     );
-    expect(() => independentDomainContract('identity')).toThrow(
-      'must be notify or experience',
+    expect(independentDomainContract('identity').role).toBe(
+      'blujet_identity_runtime',
+    );
+    expect(() => independentDomainContract('payments')).toThrow(
+      'must be notify, experience or identity',
     );
     expect(() =>
       validateIndependentDomainPassword('TEST_PASSWORD', 'short'),
@@ -24,7 +27,7 @@ describe('independent domain runtime role provisioner', () => {
     ).not.toThrow();
   });
 
-  it.each(['notify', 'experience'] as const)(
+  it.each(['notify', 'experience', 'identity'] as const)(
     'creates a restricted %s writer with no cross-domain or DDL access',
     async (domain) => {
       const statements: string[] = [];
@@ -56,7 +59,9 @@ describe('independent domain runtime role provisioner', () => {
             });
           }
           if (statement.includes('count(*)::int AS count')) {
-            return Promise.resolve({ rows: [{ count: 2 }] });
+            return Promise.resolve({
+              rows: [{ count: domain === 'identity' ? 6 : 2 }],
+            });
           }
           return Promise.resolve({ rows: [] });
         }),
@@ -73,7 +78,7 @@ describe('independent domain runtime role provisioner', () => {
         status: 'PASS',
         domain,
         role: `blujet_${domain}_runtime`,
-        relationCount: 2,
+        relationCount: domain === 'identity' ? 6 : 2,
       });
       const sql = statements.join('\n');
       expect(sql).toContain(
