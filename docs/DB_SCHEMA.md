@@ -1,5 +1,14 @@
 # DB_SCHEMA.md — blujet data model
 
+## Ops/Admin projection event contract (microservices phase 6)
+
+This contract-only slice makes no schema change. Future
+`CartableTaskProjected` messages carry a positive, monotonic `taskVersion` plus
+the existing projection fields so the dedicated database can distinguish
+newer, duplicate, stale and conflicting deliveries without a cross-domain join.
+The source-version column, outbox, inbox receipt and projection upsert remain a
+separate expand-only migration phase.
+
 ## Ops/Admin projection database bootstrap (microservices phase 6)
 
 The physical read model contains exactly one `ops.cartable_tasks` projection

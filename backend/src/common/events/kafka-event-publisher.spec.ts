@@ -3,6 +3,8 @@ import { KafkaEventPublisher } from './kafka-event-publisher';
 import { CanonicalEventType, createCanonicalEvent } from './canonical-events';
 import { CoreItineraryEventSchemaCatalog } from './core-itinerary-event-schema';
 import { createItineraryOrderCreated } from './core-itinerary-events';
+import { OpsAdminEventSchemaCatalog } from './ops-admin-event-schema';
+import { createCartableTaskProjectedEvent } from './ops-admin-events';
 
 jest.mock('kafkajs', () => ({ Kafka: jest.fn(), logLevel: { NOTHING: 0 } }));
 
@@ -95,7 +97,7 @@ describe('KafkaEventPublisher', () => {
     );
     await publisher.disconnect();
   });
-  it('adds the schema identity only to a catalogued Core event', async () => {
+  it('adds schema identity only to catalogued events', async () => {
     const publisher = new KafkaEventPublisher();
     const itinerary = createItineraryOrderCreated(
       {
@@ -120,6 +122,31 @@ describe('KafkaEventPublisher', () => {
     await publisher.publish(itinerary);
     expect(publishedHeaders(send.mock.calls[0]?.[0])['event-schema-id']).toBe(
       CoreItineraryEventSchemaCatalog.OrderCreated.schemaId,
+    );
+
+    send.mockClear();
+    const cartable = createCartableTaskProjectedEvent(
+      {
+        id: 'task-1',
+        version: 1,
+        assigneeId: 'staff-1',
+        category: 'MANAGER',
+        sourceType: null,
+        sourceId: null,
+        status: 'OPEN',
+        resolvedAt: null,
+        readAt: null,
+        createdAt: new Date('2026-09-10T08:00:00.000Z'),
+      },
+      {
+        auditId: 'audit-1',
+        correlationId: 'request-1',
+        idempotencyKey: 'task-1-v1',
+      },
+    );
+    await publisher.publish(cartable);
+    expect(publishedHeaders(send.mock.calls[0]?.[0])['event-schema-id']).toBe(
+      OpsAdminEventSchemaCatalog.CartableTaskProjected.schemaId,
     );
 
     send.mockClear();

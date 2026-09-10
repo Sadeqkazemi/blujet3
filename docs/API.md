@@ -1,5 +1,13 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Ops/Admin projection event contract
+
+No public or internal HTTP route changes in this slice. The event bus gains the
+versioned, content-free `CartableTaskProjected` v1 contract for the future
+Ops/Admin read model. Core remains the sole cartable writer and no producer,
+consumer, data copy, URL cutover or deployment is activated
+(`docs/features/microservices-phase-6-ops-admin-projection-event-contract.md`).
+
 ## Ops/Admin projection database bootstrap
 
 Ops/Admin health and internal cartable HTTP contracts are unchanged. The

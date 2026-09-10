@@ -83,6 +83,7 @@ export function coreItineraryEventSchema(
     case 'RefundRequested':
       return CoreItineraryEventSchemaCatalog.RefundRequested;
     case 'FlightDisrupted':
+    case 'CartableTaskProjected':
       return undefined;
   }
 }
