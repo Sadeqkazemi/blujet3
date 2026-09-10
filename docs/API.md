@@ -1,5 +1,15 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Identity physical database bootstrap
+
+Identity HTTP/JWT/session contracts and feature flags are unchanged. The
+service owns standalone TypeORM metadata and a fresh-database migration for
+the six `identity` tables. Backend remains the only credential writer and the
+Identity Redis session store remains authoritative on the enabled token path;
+this slice performs no data copy, dual-write, public route change, URL switch
+or deployment
+(`docs/features/microservices-phase-6-identity-physical-db.md`).
+
 ## Agency projection database bootstrap
 
 Agency HTTP contracts and default-off flags are unchanged. The service now

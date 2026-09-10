@@ -5072,6 +5072,19 @@ contracts and retires the production mock adapters.
 - [ ] Add approved projection events and reconciliation, then cut over reads;
   move each remaining Agency writer only through a separate command/Saga gate.
 
+## Microservices architecture v1.1 — phase 6 identity physical database bootstrap (2026-09-10)
+
+- [x] Freeze the six-table Identity ownership, internal-FK and no-dual-write
+  boundary before implementation.
+- [x] Add standalone TypeORM metadata and migration commands using only
+  `IDENTITY_DATABASE_URL`.
+- [x] Prove fresh migration, schema parity and compiled rollback/restore in a
+  database isolated from Core compatibility tests.
+- [x] Preserve JWT/JWKS, Redis session ownership, public auth facades and all
+  feature flags; no data copy, writer cutover, URL switch or deployment.
+- [ ] Provision/transfer/reconcile in UAT and freeze the Core credential writer
+  only under a separately approved release.
+
 ## Microservices architecture v1.1 — phase 6 loyalty foundation (A6.1)
 
 - [x] Draft the contract-first Loyalty read boundary, projection safety rules,
