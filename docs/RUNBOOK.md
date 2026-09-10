@@ -490,6 +490,76 @@ migrations. It creates a custom-format `pg_dump`, restores it into a temporary
 database in the isolated CI PostgreSQL container, verifies both reliability
 tables and migration history, then removes the temporary database and dump.
 
+# Notify/Experience dedicated database cutover
+
+This runbook is manual and must first be rehearsed in UAT. Never enable both
+the Core writer and a dedicated-domain writer. Keep the current production
+service URLs unchanged until the final reconciliation reports `MATCH` and the
+owner approves the URL switch.
+
+Generate four independent URL-safe secrets and store them only in the server
+secret file:
+
+```bash
+openssl rand -hex 24 # NOTIFY_POSTGRES_PASSWORD
+openssl rand -hex 24 # NOTIFY_DATABASE_PASSWORD
+openssl rand -hex 24 # EXPERIENCE_POSTGRES_PASSWORD
+openssl rand -hex 24 # EXPERIENCE_DATABASE_PASSWORD
+```
+
+Create and migrate the two opt-in PostgreSQL instances, then provision their
+non-owner runtime roles. This does not switch either application URL:
+
+```bash
+docker compose -f docker-compose.prod.yml -f docker-compose.domain-db.yml \
+  --profile independent-domain-db up -d notify-db experience-db
+docker compose -f docker-compose.prod.yml -f docker-compose.domain-db.yml \
+  --profile independent-domain-db run --rm notify-db-migrate
+docker compose -f docker-compose.prod.yml -f docker-compose.domain-db.yml \
+  --profile independent-domain-db run --rm experience-db-migrate
+docker compose -f docker-compose.prod.yml -f docker-compose.domain-db.yml \
+  --profile independent-domain-db run --rm notify-db-runtime-role
+docker compose -f docker-compose.prod.yml -f docker-compose.domain-db.yml \
+  --profile independent-domain-db run --rm experience-db-runtime-role
+```
+
+Before each transfer: freeze that domain's Core writer, drain its outbox, run
+`scripts/backup-db.sh`, restore-verify the backup, and retain its reviewed path
+as `DOMAIN_TRANSFER_BACKUP_REFERENCE`. Use a read-only Core source credential.
+First run reconciliation mode (`DOMAIN_TRANSFER_APPLY=false`); an empty target
+correctly reports `MISMATCH`. Apply is accepted only with the backup reference:
+
+```bash
+DOMAIN_TRANSFER_KIND=notify
+DOMAIN_TRANSFER_APPLY=true
+DOMAIN_TRANSFER_BACKUP_REFERENCE=/opt/app/backups/blujet-YYYYMMDD-HHMMSS.sql.gz
+DOMAIN_TRANSFER_SOURCE_DATABASE_URL=postgresql://READ_ONLY_CORE_SOURCE
+export DOMAIN_TRANSFER_KIND DOMAIN_TRANSFER_APPLY
+export DOMAIN_TRANSFER_BACKUP_REFERENCE DOMAIN_TRANSFER_SOURCE_DATABASE_URL
+docker compose -f docker-compose.prod.yml -f docker-compose.domain-db.yml \
+  --profile independent-domain-transfer run --rm notify-db-transfer
+```
+
+Repeat with `DOMAIN_TRANSFER_KIND=experience` and
+`experience-db-transfer`. Never paste a real URL into tickets or logs. The
+command prints only table names, counts, hashes and status. It refuses a
+populated target, so a retry requires restoring a fresh empty target rather
+than merging two writer histories.
+
+After exact `MATCH`, run service UAT and set only these runtime URLs:
+
+```dotenv
+NOTIFY_DATABASE_URL=postgresql://blujet_notify_runtime:PASSWORD@notify-db:5432/blujet_notify
+EXPERIENCE_DATABASE_URL=postgresql://blujet_experience_runtime:PASSWORD@experience-db:5432/blujet_experience
+```
+
+Recreate one service at a time, observe health and business smoke tests, then
+revoke its old Core database credential. Rollback stops the new service,
+restores the old URL/Core writer, and preserves both database copies for
+investigation; it never enables dual-write. Back up active dedicated databases
+with `DOMAIN_DATABASE_KIND=notify|experience
+scripts/backup-independent-domain-db.sh` and restore-test them monthly.
+
 # Notify service (phase 1 strangler)
 
 `notify-service` is internal-only and shares the current PostgreSQL cluster

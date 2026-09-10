@@ -1,5 +1,20 @@
 # PLAN.md — blujet roadmap & progress
 
+## Microservices architecture v1.1 — phase 6 Notify/Experience cutover tooling (2026-09-10)
+
+- [x] Freeze the separate owner/runtime identity, allowlisted transfer,
+  reconciliation and no-dual-write contract before implementation.
+- [x] Add and verify restricted `blujet_notify_runtime` and
+  `blujet_experience_runtime` roles.
+- [x] Add a backup-gated, empty-target transfer with bounded batches and exact
+  row-count/two-hash reconciliation.
+- [x] Prove own-domain DML and rejection of cross-domain access/DDL against a
+  real local PostgreSQL instance and wire the same proof into CI.
+- [x] Document production owner/runtime variables and manual cutover/rollback;
+  do not activate, deploy or change a live credential.
+- [x] Present the completed diff and obtain explicit owner approval before
+  commit/push/merge.
+
 ### 2026-09-10 — Ops/Admin source revision and transactional outbox
 
 - [x] Freeze the Core-only source-version, content-free projection audit and

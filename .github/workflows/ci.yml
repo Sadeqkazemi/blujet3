@@ -75,7 +75,7 @@ jobs:
             fi
           }
 
-          emit backend '^(backend/|scripts/kafka-ci\.test\.mjs$|scripts/(verify-backup-restore\.sh|verify-pitr-recovery\.sh|archive-wal\.sh|database-entrypoint\.sh|backup-base-pitr\.sh)$)'
+          emit backend '^(backend/|scripts/kafka-ci\.test\.mjs$|scripts/(verify-backup-restore\.sh|verify-pitr-recovery\.sh|archive-wal\.sh|database-entrypoint\.sh|backup-base-pitr\.sh|backup-independent-domain-db\.sh)$)'
           emit offer '^(backend/(Dockerfile\.offer-worker|package(-lock)?\.json|tsconfig[^/]*\.json|nest-cli\.json|src/(offer-worker|config/offer-worker|database/(data-source\.options|entities/|provision-offer-reader-role)|modules/(offer-pricing|pss/)))|docker-compose\.prod\.yml$|docs/features/offer-pricing-process\.md$)'
           emit ticketing_refund '^(backend/(Dockerfile\.ticketing-refund-worker|package(-lock)?\.json|tsconfig[^/]*\.json|nest-cli\.json|src/(ticketing-refund-worker|ticketing-refund-worker-health|ticketing-refund-worker\.module|config/ticketing-refund-worker|database/(data-source\.options|entities/|provision-ticketing-refund-reader-role)|modules/(ticketing-refund|pss/)))|docker-compose\.prod\.yml$|docs/features/ticketing-refund-process\.md$)'
           emit payment_reconciliation '^(backend/(Dockerfile\.payment-reconciliation-worker|package(-lock)?\.json|tsconfig[^/]*\.json|nest-cli\.json|src/(payment-reconciliation-worker|payment-reconciliation-worker-health|payment-reconciliation-worker\.module|config/payment-reconciliation-worker|database/(data-source\.options|entities/|provision-payment-reconciliation-reader-role)|modules/payment-reconciliation))|docker-compose\.prod\.yml$|docs/features/payment-reconciliation-process\.md$)'
@@ -552,6 +552,87 @@ jobs:
           npm run build
           npm test
           npm run test:e2e
+
+  independent-domain-databases:
+    name: Independent domain database cutover
+    needs: changes
+    if: >-
+      needs.changes.outputs.backend == 'true' ||
+      needs.changes.outputs.notify == 'true' ||
+      needs.changes.outputs.experience == 'true'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: blujet
+          POSTGRES_PASSWORD: blujet
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U blujet -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            notify-service/package-lock.json
+            experience-service/package-lock.json
+      - name: Install database toolchains
+        run: |
+          npm ci --prefix backend
+          npm ci --prefix notify-service
+          npm ci --prefix experience-service
+      - name: Create isolated source and target databases
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://blujet:blujet@localhost:5432/postgres
+        run: |
+          node - <<'NODE'
+          const { Client } = require('pg');
+          const databases = [
+            'notify_source_test',
+            'notify_target_test',
+            'experience_source_test',
+            'experience_target_test',
+          ];
+          (async () => {
+            const client = new Client({ connectionString: process.env.DATABASE_URL });
+            await client.connect();
+            for (const database of databases) {
+              await client.query(`CREATE DATABASE ${database}`);
+            }
+            await client.end();
+          })().catch(() => process.exit(1));
+          NODE
+      - name: Apply standalone schemas to both sides
+        run: |
+          NOTIFY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/notify_source_test npm --prefix notify-service run migration:run
+          NOTIFY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/notify_target_test npm --prefix notify-service run migration:run
+          EXPERIENCE_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/experience_source_test npm --prefix experience-service run migration:run
+          EXPERIENCE_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/experience_target_test npm --prefix experience-service run migration:run
+      - name: Prove transfer, reconciliation and privilege isolation
+        working-directory: backend
+        env:
+          NOTIFY_TRANSFER_SOURCE_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/notify_source_test
+          NOTIFY_TRANSFER_TARGET_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/notify_target_test
+          EXPERIENCE_TRANSFER_SOURCE_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/experience_source_test
+          EXPERIENCE_TRANSFER_TARGET_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/experience_target_test
+        run: npm run test:e2e:independent-domain-db
+      - name: Prove target rollback and clean restore
+        run: |
+          NOTIFY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/notify_target_test npm --prefix notify-service run migration:revert
+          EXPERIENCE_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/experience_target_test npm --prefix experience-service run migration:revert
+          NOTIFY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/notify_target_test npm --prefix notify-service run migration:run
+          EXPERIENCE_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/experience_target_test npm --prefix experience-service run migration:run
 
   backend-migration-compatibility:
     name: Backend migration compatibility
