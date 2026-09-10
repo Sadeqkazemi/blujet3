@@ -5098,6 +5098,19 @@ contracts and retires the production mock adapters.
 - [ ] Publish/replay/reconcile approved projection events and switch the
   restricted reader URL only under a separately approved UAT release.
 
+## Microservices architecture v1.1 — phase 6 Ops/Admin event contract (2026-09-10)
+
+- [x] Freeze a single full-snapshot `CartableTaskProjected` v1 contract with
+  no content or passenger/financial PII.
+- [x] Add strict parsing/building, a stable schema identifier and shared Kafka
+  schema-header resolution without activating publication.
+- [x] Prove exact fields, monotonic version semantics, invalid combinations and
+  existing Core itinerary compatibility with focused tests.
+- [x] Preserve all HTTP/database/runtime behavior; no migration, consumer,
+  producer, cutover or deployment.
+- [ ] Add source revision/outbox and idempotent projection/reconciliation only
+  in the next separately reviewed slice.
+
 ## Microservices architecture v1.1 — phase 6 loyalty foundation (A6.1)
 
 - [x] Draft the contract-first Loyalty read boundary, projection safety rules,

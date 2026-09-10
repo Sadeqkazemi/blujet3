@@ -6,6 +6,7 @@ export const CanonicalEventType = {
   TICKET_ISSUED: 'TicketIssued',
   REFUND_REQUESTED: 'RefundRequested',
   FLIGHT_DISRUPTED: 'FlightDisrupted',
+  CARTABLE_TASK_PROJECTED: 'CartableTaskProjected',
 } as const;
 
 export type CanonicalEventType =
