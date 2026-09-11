@@ -84,6 +84,12 @@ export function coreItineraryEventSchema(
       return CoreItineraryEventSchemaCatalog.RefundRequested;
     case 'FlightDisrupted':
     case 'CartableTaskProjected':
+    case 'LoyaltyMemberProjected':
+    case 'LoyaltyPointsEntryProjected':
+    case 'LoyaltyCardRequestProjected':
+    case 'LoyaltyTierRuleProjected':
+    case 'LoyaltyPriceLockProjected':
+    case 'LoyaltyReferralProjected':
       return undefined;
   }
 }
