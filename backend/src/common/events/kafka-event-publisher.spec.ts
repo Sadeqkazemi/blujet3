@@ -3,6 +3,8 @@ import { KafkaEventPublisher } from './kafka-event-publisher';
 import { CanonicalEventType, createCanonicalEvent } from './canonical-events';
 import { CoreItineraryEventSchemaCatalog } from './core-itinerary-event-schema';
 import { createItineraryOrderCreated } from './core-itinerary-events';
+import { LoyaltyEventSchemaCatalog } from './loyalty-event-schema';
+import { createLoyaltyTierRuleProjected } from './loyalty-events';
 import { OpsAdminEventSchemaCatalog } from './ops-admin-event-schema';
 import { createCartableTaskProjectedEvent } from './ops-admin-events';
 
@@ -147,6 +149,30 @@ describe('KafkaEventPublisher', () => {
     await publisher.publish(cartable);
     expect(publishedHeaders(send.mock.calls[0]?.[0])['event-schema-id']).toBe(
       OpsAdminEventSchemaCatalog.CartableTaskProjected.schemaId,
+    );
+
+    send.mockClear();
+    const loyalty = createLoyaltyTierRuleProjected(
+      {
+        id: 'tier-rule-1',
+        goldMinPoints: 5000,
+        platinumMinPoints: 15000,
+        cardRequestMinPoints: 5000,
+        updatedById: 'staff-1',
+        updatedAt: new Date('2026-09-11T08:30:00.000Z'),
+        createdAt: new Date('2026-09-11T08:00:00.000Z'),
+      },
+      {
+        auditId: 'audit-1',
+        correlationId: 'request-1',
+        idempotencyKey: 'tier-rule-1-v1',
+        occurredAt: new Date('2026-09-11T08:30:00.000Z'),
+        recordVersion: 1,
+      },
+    );
+    await publisher.publish(loyalty);
+    expect(publishedHeaders(send.mock.calls[0]?.[0])['event-schema-id']).toBe(
+      LoyaltyEventSchemaCatalog.LoyaltyTierRuleProjected.schemaId,
     );
 
     send.mockClear();

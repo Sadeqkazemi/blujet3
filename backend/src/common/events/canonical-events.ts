@@ -7,6 +7,12 @@ export const CanonicalEventType = {
   REFUND_REQUESTED: 'RefundRequested',
   FLIGHT_DISRUPTED: 'FlightDisrupted',
   CARTABLE_TASK_PROJECTED: 'CartableTaskProjected',
+  LOYALTY_MEMBER_PROJECTED: 'LoyaltyMemberProjected',
+  LOYALTY_POINTS_ENTRY_PROJECTED: 'LoyaltyPointsEntryProjected',
+  LOYALTY_CARD_REQUEST_PROJECTED: 'LoyaltyCardRequestProjected',
+  LOYALTY_TIER_RULE_PROJECTED: 'LoyaltyTierRuleProjected',
+  LOYALTY_PRICE_LOCK_PROJECTED: 'LoyaltyPriceLockProjected',
+  LOYALTY_REFERRAL_PROJECTED: 'LoyaltyReferralProjected',
 } as const;
 
 export type CanonicalEventType =

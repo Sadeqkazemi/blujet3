@@ -1,5 +1,23 @@
 # PLAN.md — blujet roadmap & progress
 
+## Microservices architecture v1.1 — phase 6 Loyalty projection events (2026-09-11)
+
+- [x] Freeze six full-snapshot contracts, per-record ordering and PII-safe
+  operational boundaries before implementation.
+- [x] Add the six canonical event types and stable schema identifiers.
+- [x] Add strict builders/parsers for exact fields, enums, IRR strings and UTC
+  timestamps.
+- [x] Prove schema-header publication and backward compatibility with existing
+  Core itinerary and Ops/Admin events.
+- [x] Run focused tests, lint, typecheck and build.
+- [x] Present the completed diff and obtain explicit approval before
+  commit/push/merge. Do not deploy or enable Loyalty flags.
+
+Local evidence: all 1,204 Backend unit tests pass; Backend lint, typecheck and
+build pass. The focused event/schema/Kafka suite passes 70 tests. This slice has
+no migration, runtime consumer, URL/credential change, flag activation or
+deployment.
+
 ## Microservices architecture v1.1 — phase 6 Loyalty database baseline tooling (2026-09-10)
 
 - [x] Freeze the six-table baseline, read-only runtime credential,

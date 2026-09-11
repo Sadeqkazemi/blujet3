@@ -1,5 +1,19 @@
 # DB_SCHEMA.md — blujet data model
 
+## Loyalty projection event contract (microservices phase 6)
+
+This contract-only slice does not change PostgreSQL. Six full-snapshot event
+types cover the six Loyalty-owned tables and carry a positive per-record
+`recordVersion`. Money is a decimal IRR string, timestamps are canonical UTC,
+and payload fields are exact allowlists. Member ciphertext and deterministic
+lookup hashes are restricted to the internal encrypted-outbox/event path and
+must never appear in logs or reconciliation output.
+
+Future source-version columns, projection audit, outbox, inbox receipt and
+ordered upsert are expand-only migration work. Core remains the sole writer;
+no baseline replay, URL change, cutover, flag activation or deployment occurs
+in this slice.
+
 ## Loyalty physical database baseline contract (microservices phase 6)
 
 The dedicated Loyalty database contains exactly `club_members`,

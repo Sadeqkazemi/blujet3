@@ -1,5 +1,14 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Loyalty projection event contract
+
+No public or internal HTTP route changes in this slice. The event catalog gains
+six strict v1 full-snapshot contracts for the Loyalty-owned member, points
+entry, card request, tier rule, price lock and referral aggregates. Core stays
+the sole writer; no producer, consumer, data copy, cutover, flag activation or
+deployment is included
+(`docs/features/microservices-phase-6-loyalty-projection-event-contract.md`).
+
 ## Independent database cutover tooling (microservices phase 6)
 
 No public or internal HTTP contract changes in this slice. Dedicated database
