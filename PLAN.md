@@ -1,5 +1,24 @@
 # PLAN.md — blujet roadmap & progress
 
+## Microservices architecture v1.1 — phase 6 Loyalty outbox foundation (2026-09-11)
+
+- [x] Freeze the expand-only version, content-free audit, encrypted outbox and
+  no-activation boundary before implementation.
+- [x] Add matching positive source versions to Core and standalone Loyalty.
+- [x] Add immutable projection audit metadata and exact TypeORM entities.
+- [x] Add a transaction-bound, idempotent publisher service for all six
+  approved Loyalty snapshots.
+- [x] Prove migration rollback, replay/conflict behavior, lint, typecheck and
+  build.
+- [ ] Present the completed diff and obtain explicit approval before
+  commit/push/merge. Do not deploy or enable Loyalty flags.
+
+Local evidence: all 1,212 Backend and 33 Loyalty-service unit tests pass;
+Backend/Loyalty lint, typecheck and build pass. The PostgreSQL acceptance suite
+proves atomic row/audit/encrypted-outbox writes, rollback, monotonic versions
+and migration down/up. No mutation path, consumer, cutover, flag or deployment
+is activated by this foundation.
+
 ## Microservices architecture v1.1 — phase 6 Loyalty projection events (2026-09-11)
 
 - [x] Freeze six full-snapshot contracts, per-record ordering and PII-safe

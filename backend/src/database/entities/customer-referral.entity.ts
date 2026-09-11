@@ -8,6 +8,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryColumn,
+  VersionColumn,
 } from 'typeorm';
 import { CustomerReferralStatus } from '../enums';
 import { Booking } from './booking.entity';
@@ -30,6 +31,9 @@ export class CustomerReferral {
     primaryKeyConstraintName: 'customer_referrals_pkey',
   })
   id!: string;
+
+  @VersionColumn({ type: 'int', default: 1 })
+  version!: number;
 
   @BeforeInsert()
   generateId() {

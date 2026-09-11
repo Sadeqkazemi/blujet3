@@ -23,6 +23,9 @@ export class PriceLock {
   @PrimaryColumn({ type: 'text', primaryKeyConstraintName: 'price_locks_pkey' })
   id!: string;
 
+  @Column({ type: 'int', default: 1 })
+  version!: number;
+
   @Column({ type: 'text' })
   userId!: string;
 

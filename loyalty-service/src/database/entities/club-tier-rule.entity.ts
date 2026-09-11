@@ -8,6 +8,9 @@ export class ClubTierRule {
   })
   id!: string;
 
+  @Column({ type: 'int', default: 1 })
+  version!: number;
+
   @Column({ type: 'int', default: 5000 })
   goldMinPoints!: number;
 

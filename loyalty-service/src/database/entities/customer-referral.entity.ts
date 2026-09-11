@@ -26,6 +26,9 @@ export class CustomerReferral {
   })
   id!: string;
 
+  @Column({ type: 'int', default: 1 })
+  version!: number;
+
   @Column({ type: 'text' })
   referrerUserId!: string;
 

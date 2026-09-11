@@ -8,6 +8,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryColumn,
+  VersionColumn,
 } from 'typeorm';
 import { ClubCardAssignee, ClubCardRequestStatus, ClubTier } from '../enums';
 import type { JsonValue } from '../json-types';
@@ -22,6 +23,9 @@ export class ClubCardRequest {
     primaryKeyConstraintName: 'club_card_requests_pkey',
   })
   id!: string;
+
+  @VersionColumn({ type: 'int', default: 1 })
+  version!: number;
 
   @BeforeInsert()
   generateId() {

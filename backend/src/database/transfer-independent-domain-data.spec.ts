@@ -1,5 +1,6 @@
 import {
   transferDomainContract,
+  validateDomainTableContract,
   validateTransferDatabaseUrls,
   validateTransferOptions,
 } from './transfer-independent-domain-data';
@@ -29,7 +30,8 @@ describe('independent domain transfer contract', () => {
       keyColumn: 'id',
       referenceColumn: 'createdById',
     });
-    expect(transferDomainContract('loyalty').tables).toEqual([
+    const loyalty = transferDomainContract('loyalty');
+    expect(loyalty.tables).toEqual([
       'club_members',
       'club_points_entries',
       'club_card_requests',
@@ -37,6 +39,7 @@ describe('independent domain transfer contract', () => {
       'price_locks',
       'customer_referrals',
     ]);
+    expect(loyalty.sourceControlTables).toEqual(['loyalty_projection_audits']);
     expect(() => transferDomainContract('payments')).toThrow(
       'must be notify, experience, identity or loyalty',
     );
@@ -61,6 +64,36 @@ describe('independent domain transfer contract', () => {
         'postgresql://target@db:5432/notify',
       ),
     ).toThrow('must use PostgreSQL');
+  });
+
+  it('allows only the known Core audit table on a Loyalty source', () => {
+    const contract = transferDomainContract('loyalty');
+    const transferTables = [...contract.tables];
+
+    expect(() =>
+      validateDomainTableContract(contract, 'source', transferTables),
+    ).not.toThrow();
+    expect(() =>
+      validateDomainTableContract(contract, 'source', [
+        ...transferTables,
+        'loyalty_projection_audits',
+      ]),
+    ).not.toThrow();
+    expect(() =>
+      validateDomainTableContract(contract, 'source', [
+        ...transferTables,
+        'unexpected_table',
+      ]),
+    ).toThrow('table contract mismatch');
+    expect(() =>
+      validateDomainTableContract(contract, 'target', [
+        ...transferTables,
+        'loyalty_projection_audits',
+      ]),
+    ).toThrow('table contract mismatch');
+    expect(() =>
+      validateDomainTableContract(contract, 'target', transferTables.slice(1)),
+    ).toThrow('table contract mismatch');
   });
 
   it('requires a reviewed backup reference only for bounded apply mode', () => {

@@ -65,6 +65,7 @@ import { InternalService } from './entities/internal-service.entity';
 import { JobApplication } from './entities/job-application.entity';
 import { JobPosting } from './entities/job-posting.entity';
 import { LedgerEntry } from './entities/ledger-entry.entity';
+import { LoyaltyProjectionAudit } from './entities/loyalty-projection-audit.entity';
 import { ManagerMessage } from './entities/manager-message.entity';
 import { ManagerReferral } from './entities/manager-referral.entity';
 import { ManagerReferralRecipient } from './entities/manager-referral-recipient.entity';
@@ -199,6 +200,7 @@ export const dataSourceOptions: DataSourceOptions = {
     JobApplication,
     JobPosting,
     LedgerEntry,
+    LoyaltyProjectionAudit,
     ManagerMessage,
     ManagerReferral,
     ManagerReferralRecipient,
