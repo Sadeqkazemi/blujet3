@@ -1,4 +1,5 @@
 import {
+  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -11,6 +12,7 @@ import { ClubCardStatus, ClubTier } from '../loyalty.enums';
 @Index('club_members_nationalIdHash_idx', ['nationalIdHash'])
 @Index('club_members_userId_key', ['userId'], { unique: true })
 @Index('club_members_deactivatedAt_idx', ['deactivatedAt'])
+@Check('club_members_version_check', '"version" > 0')
 @Entity('club_members', { schema: 'loyalty' })
 export class ClubMember {
   @PrimaryColumn({

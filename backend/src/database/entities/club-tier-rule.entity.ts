@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
   BeforeInsert,
+  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -11,6 +12,7 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 
+@Check('club_tier_rules_version_check', '"version" > 0')
 @Entity('club_tier_rules', { schema: 'loyalty' })
 export class ClubTierRule {
   @PrimaryColumn({

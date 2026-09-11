@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
   BeforeInsert,
+  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -14,6 +15,7 @@ import { Booking } from './booking.entity';
 import { ClubMember } from './club-member.entity';
 
 @Index('club_points_entries_clubMemberId_idx', ['clubMemberId'])
+@Check('club_points_entries_version_check', '"version" > 0')
 @Entity('club_points_entries', { schema: 'loyalty' })
 export class ClubPointsEntry {
   @PrimaryColumn({

@@ -1,4 +1,5 @@
 import {
+  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -20,6 +21,7 @@ import {
 import { ClubMember } from './club-member.entity';
 
 @Index('club_card_requests_status_idx', ['status'])
+@Check('club_card_requests_version_check', '"version" > 0')
 @Entity('club_card_requests', { schema: 'loyalty' })
 export class ClubCardRequest {
   @PrimaryColumn({

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
   BeforeInsert,
+  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -23,6 +24,7 @@ import { User } from './user.entity';
   'status',
 ])
 @Index('price_locks_userId_status_idx', ['userId', 'status'])
+@Check('price_locks_version_check', '"version" > 0')
 @Entity('price_locks', { schema: 'loyalty' })
 export class PriceLock {
   @PrimaryColumn({ type: 'text', primaryKeyConstraintName: 'price_locks_pkey' })

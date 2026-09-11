@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
   BeforeInsert,
+  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -17,6 +18,7 @@ import { User } from './user.entity';
 @Index('club_members_nationalIdHash_idx', ['nationalIdHash'])
 @Index('club_members_userId_key', ['userId'], { unique: true })
 @Index('club_members_deactivatedAt_idx', ['deactivatedAt'])
+@Check('club_members_version_check', '"version" > 0')
 @Entity('club_members', { schema: 'loyalty' })
 export class ClubMember {
   @PrimaryColumn({

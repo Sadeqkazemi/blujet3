@@ -1,5 +1,12 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm';
+import {
+  Check,
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryColumn,
+} from 'typeorm';
 
+@Check('club_tier_rules_version_check', '"version" > 0')
 @Entity('club_tier_rules', { schema: 'loyalty' })
 export class ClubTierRule {
   @PrimaryColumn({
