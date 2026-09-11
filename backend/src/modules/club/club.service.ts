@@ -106,6 +106,7 @@ function toMemberView(m: ClubMember) {
     deactivatedAt,
     deactivatedById,
     deactivatedBy,
+    version,
     ...rest
   } = m;
   void nationalIdEnc;
@@ -113,6 +114,7 @@ function toMemberView(m: ClubMember) {
   void deactivatedAt;
   void deactivatedById;
   void deactivatedBy;
+  void version;
   return rest;
 }
 
@@ -542,7 +544,11 @@ export class ClubService {
       })
       .orderBy('r.createdAt', 'DESC')
       .getMany();
-    return requests;
+    return requests.map((request) => {
+      const { version, ...view } = request;
+      void version;
+      return view;
+    });
   }
 
   /** SITE_ADMIN track: all card requests (refer only allowed on SUBMITTED). */

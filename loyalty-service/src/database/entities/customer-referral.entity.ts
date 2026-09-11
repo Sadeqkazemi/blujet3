@@ -1,4 +1,5 @@
 import {
+  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -18,6 +19,7 @@ import { CustomerReferralStatus as ReferralStatus } from '../loyalty.enums';
   'referrerUserId',
   'createdAt',
 ])
+@Check('customer_referrals_version_check', '"version" > 0')
 @Entity('customer_referrals', { schema: 'loyalty' })
 export class CustomerReferral {
   @PrimaryColumn({

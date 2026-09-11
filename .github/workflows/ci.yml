@@ -261,6 +261,7 @@ jobs:
         run: |
           set -euo pipefail
           npm run migration:revert:prod
+          npm run migration:revert:prod
           node - <<'NODE'
           const { Client } = require('pg');
           (async () => {

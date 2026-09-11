@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
   BeforeInsert,
+  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -24,6 +25,7 @@ import { User } from './user.entity';
   'referrerUserId',
   'createdAt',
 ])
+@Check('customer_referrals_version_check', '"version" > 0')
 @Entity('customer_referrals', { schema: 'loyalty' })
 export class CustomerReferral {
   @PrimaryColumn({
