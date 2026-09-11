@@ -7,6 +7,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryColumn,
+  VersionColumn,
 } from 'typeorm';
 import { User } from './user.entity';
 
@@ -17,6 +18,9 @@ export class ClubTierRule {
     primaryKeyConstraintName: 'club_tier_rules_pkey',
   })
   id!: string;
+
+  @VersionColumn({ type: 'int', default: 1 })
+  version!: number;
 
   @BeforeInsert()
   generateId() {

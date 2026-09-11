@@ -8,6 +8,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryColumn,
+  VersionColumn,
 } from 'typeorm';
 import { CabinClass, PriceLockStatus } from '../enums';
 import { bigintTransformer } from '../transformers/bigint.transformer';
@@ -26,6 +27,9 @@ import { User } from './user.entity';
 export class PriceLock {
   @PrimaryColumn({ type: 'text', primaryKeyConstraintName: 'price_locks_pkey' })
   id!: string;
+
+  @VersionColumn({ type: 'int', default: 1 })
+  version!: number;
 
   @BeforeInsert()
   generateId() {

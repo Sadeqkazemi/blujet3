@@ -22,6 +22,9 @@ export class ClubPointsEntry {
   })
   id!: string;
 
+  @Column({ type: 'int', default: 1 })
+  version!: number;
+
   @BeforeInsert()
   generateId() {
     this.id ??= randomUUID();

@@ -1,5 +1,24 @@
 # DB_SCHEMA.md — blujet data model
 
+## Loyalty projection outbox foundation (microservices phase 6)
+
+All six Loyalty-owned tables gain `version integer NOT NULL DEFAULT 1` with a
+positive check in both Core and the standalone Loyalty database. Mutable Core
+entities use optimistic versioning; `club_points_entries` remains append-only
+and stays at version 1.
+
+Core also gains `loyalty.loyalty_projection_audits`: `id`, `aggregateType`,
+`aggregateId`, positive `recordVersion`, `mutation` and `createdAt`, unique on
+`(aggregateType, aggregateId, recordVersion)`. A database trigger rejects
+updates and deletes. The table stores no snapshot, member data, points, money or
+PII. The approved event envelope remains encrypted in
+`orders.commerce_outbox_events`; audit and outbox rows commit in the caller's
+business transaction.
+
+No existing writer is switched and the dedicated Loyalty database receives no
+runtime writes in this slice. Consumer receipts, projection upserts, replay,
+cutover, flags and deployment remain deferred.
+
 ## Loyalty projection event contract (microservices phase 6)
 
 This contract-only slice does not change PostgreSQL. Six full-snapshot event

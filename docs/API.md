@@ -1,5 +1,14 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Loyalty projection outbox foundation
+
+No public or internal HTTP route changes in this slice. Loyalty rows gain
+monotonic source versions, and a transaction-bound Core service can write the
+six approved full snapshots to the existing encrypted commerce outbox.
+Business mutation paths, Kafka consumption, data replay, cutover, feature flags
+and deployment remain separate phases
+(`docs/features/microservices-phase-6-loyalty-projection-outbox-foundation.md`).
+
 ## Loyalty projection event contract
 
 No public or internal HTTP route changes in this slice. The event catalog gains

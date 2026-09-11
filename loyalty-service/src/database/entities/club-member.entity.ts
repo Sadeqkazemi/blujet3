@@ -19,6 +19,9 @@ export class ClubMember {
   })
   id!: string;
 
+  @Column({ type: 'int', default: 1 })
+  version!: number;
+
   @Column({ type: 'text', nullable: true })
   userId!: string | null;
 

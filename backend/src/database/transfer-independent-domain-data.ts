@@ -2,9 +2,10 @@ import 'dotenv/config';
 import { Client } from 'pg';
 import type { IndependentDomain } from './provision-independent-domain-runtime-role';
 
-interface TransferDomainContract {
+export interface TransferDomainContract {
   domain: IndependentDomain;
   tables: readonly string[];
+  sourceControlTables?: readonly string[];
   deferredSelfReference?: {
     table: string;
     keyColumn: string;
@@ -93,6 +94,7 @@ const TRANSFER_CONTRACTS: Record<IndependentDomain, TransferDomainContract> = {
       'price_locks',
       'customer_referrals',
     ],
+    sourceControlTables: ['loyalty_projection_audits'],
   },
 };
 
@@ -164,6 +166,7 @@ export function validateTransferOptions(options: {
 async function assertExactTables(
   client: SqlClient,
   contract: TransferDomainContract,
+  side: 'source' | 'target',
 ): Promise<void> {
   const result = await client.query(
     `SELECT table_name FROM information_schema.tables
@@ -172,10 +175,25 @@ async function assertExactTables(
     [contract.domain],
   );
   const actual = result.rows.map((row) => row.table_name);
-  const expected = [...contract.tables].sort();
+  validateDomainTableContract(contract, side, actual);
+}
+
+export function validateDomainTableContract(
+  contract: TransferDomainContract,
+  side: 'source' | 'target',
+  actual: readonly unknown[],
+): void {
+  if (actual.some((value) => typeof value !== 'string')) {
+    throw new Error(`${contract.domain} database table contract mismatch`);
+  }
+  const actualNames = actual as string[];
+  const allowed = new Set([
+    ...contract.tables,
+    ...(side === 'source' ? (contract.sourceControlTables ?? []) : []),
+  ]);
   if (
-    actual.some((value) => typeof value !== 'string') ||
-    JSON.stringify(actual) !== JSON.stringify(expected)
+    contract.tables.some((table) => !actualNames.includes(table)) ||
+    actualNames.some((table) => !allowed.has(table))
   ) {
     throw new Error(`${contract.domain} database table contract mismatch`);
   }
@@ -408,8 +426,8 @@ export async function transferIndependentDomainData(options: {
     options.apply ? 'BEGIN' : 'BEGIN TRANSACTION READ ONLY',
   );
   try {
-    await assertExactTables(options.source, options.contract);
-    await assertExactTables(options.target, options.contract);
+    await assertExactTables(options.source, options.contract, 'source');
+    await assertExactTables(options.target, options.contract, 'target');
     const sourceBefore = await fingerprintDomain(
       options.source,
       options.contract,

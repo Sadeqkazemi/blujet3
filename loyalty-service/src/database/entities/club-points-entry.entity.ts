@@ -19,6 +19,9 @@ export class ClubPointsEntry {
   })
   id!: string;
 
+  @Column({ type: 'int', default: 1 })
+  version!: number;
+
   @Column({ type: 'text' })
   clubMemberId!: string;
 

@@ -28,6 +28,9 @@ export class ClubCardRequest {
   })
   id!: string;
 
+  @Column({ type: 'int', default: 1 })
+  version!: number;
+
   @Column({ type: 'text' })
   memberId!: string;
 

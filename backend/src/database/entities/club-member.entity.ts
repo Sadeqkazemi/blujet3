@@ -8,6 +8,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryColumn,
+  VersionColumn,
 } from 'typeorm';
 import { ClubCardStatus, ClubTier } from '../enums';
 import { User } from './user.entity';
@@ -23,6 +24,9 @@ export class ClubMember {
     primaryKeyConstraintName: 'club_members_pkey',
   })
   id!: string;
+
+  @VersionColumn({ type: 'int', default: 1 })
+  version!: number;
 
   @BeforeInsert()
   generateId() {
