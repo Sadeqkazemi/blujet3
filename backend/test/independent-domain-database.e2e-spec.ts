@@ -61,6 +61,24 @@ async function truncateDomain(
   await client.query(`TRUNCATE TABLE ${relations} CASCADE`);
 }
 
+async function prepareSourceSchema(
+  client: Client,
+  domain: 'notify' | 'experience' | 'identity' | 'loyalty',
+): Promise<void> {
+  if (domain !== 'loyalty') return;
+  await client.query('DROP TABLE "loyalty"."loyalty_projection_slots"');
+  await client.query(
+    'DROP TABLE "loyalty"."loyalty_projection_event_receipts"',
+  );
+  // Core added this field after table creation, unlike a fresh Loyalty DB.
+  await client.query(
+    'ALTER TABLE "loyalty"."price_locks" DROP COLUMN "feeCharged"',
+  );
+  await client.query(
+    'ALTER TABLE "loyalty"."price_locks" ADD COLUMN "feeCharged" boolean NOT NULL DEFAULT false',
+  );
+}
+
 async function seedSource(
   client: Client,
   domain: 'notify' | 'experience' | 'identity' | 'loyalty',
@@ -159,6 +177,7 @@ describe.each(fixtures)('$domain independent database boundary', (fixture) => {
       const target = new Client({ connectionString: targetUrl });
       await Promise.all([source.connect(), target.connect()]);
       try {
+        await prepareSourceSchema(source, fixture.domain);
         await truncateDomain(source, fixture.domain);
         await truncateDomain(target, fixture.domain);
         await target.query('DROP SCHEMA IF EXISTS core_probe CASCADE');
@@ -174,8 +193,10 @@ describe.each(fixtures)('$domain independent database boundary', (fixture) => {
           roleContract,
           fixture.password,
         );
+        const transferContract = transferDomainContract(fixture.domain);
         expect(provisioned.relationCount).toBe(
-          transferDomainContract(fixture.domain).tables.length,
+          transferContract.tables.length +
+            (transferContract.targetControlTables?.length ?? 0),
         );
 
         const runtime = new Client({

@@ -6,6 +6,7 @@ export interface TransferDomainContract {
   domain: IndependentDomain;
   tables: readonly string[];
   sourceControlTables?: readonly string[];
+  targetControlTables?: readonly string[];
   deferredSelfReference?: {
     table: string;
     keyColumn: string;
@@ -95,6 +96,10 @@ const TRANSFER_CONTRACTS: Record<IndependentDomain, TransferDomainContract> = {
       'customer_referrals',
     ],
     sourceControlTables: ['loyalty_projection_audits'],
+    targetControlTables: [
+      'loyalty_projection_event_receipts',
+      'loyalty_projection_slots',
+    ],
   },
 };
 
@@ -190,6 +195,7 @@ export function validateDomainTableContract(
   const allowed = new Set([
     ...contract.tables,
     ...(side === 'source' ? (contract.sourceControlTables ?? []) : []),
+    ...(side === 'target' ? (contract.targetControlTables ?? []) : []),
   ]);
   if (
     contract.tables.some((table) => !actualNames.includes(table)) ||
@@ -210,8 +216,8 @@ async function fingerprintTable(
   const relation = `${identifier(contract.domain)}.${identifier(table)}`;
   const result = await client.query(`SELECT
       count(*)::text AS count,
-      COALESCE(bit_xor(hashtextextended(row_to_json(row_value)::text, 0)), 0)::text AS "hashA",
-      COALESCE(bit_xor(hashtextextended(row_to_json(row_value)::text, 1)), 0)::text AS "hashB"
+      COALESCE(bit_xor(hashtextextended(to_jsonb(row_value)::text, 0)), 0)::text AS "hashA",
+      COALESCE(bit_xor(hashtextextended(to_jsonb(row_value)::text, 1)), 0)::text AS "hashB"
     FROM ${relation} AS row_value`);
   const row = result.rows[0];
   if (
@@ -293,7 +299,11 @@ async function copyTable(
 ): Promise<void> {
   const columns = await tableColumns(source, contract, table);
   const targetColumns = await tableColumns(target, contract, table);
-  if (JSON.stringify(columns) !== JSON.stringify(targetColumns)) {
+  const targetColumnSet = new Set(targetColumns);
+  if (
+    columns.length !== targetColumns.length ||
+    columns.some((column) => !targetColumnSet.has(column))
+  ) {
     throw new Error(`${contract.domain}.${table} column contract mismatch`);
   }
   const primaryKey = await primaryKeyColumns(source, contract, table);

@@ -1,5 +1,25 @@
 # DB_SCHEMA.md — blujet data model
 
+## Loyalty projection inbox and aggregate slots
+
+The standalone Loyalty database adds two control tables. Neither is a business
+source of truth:
+
+- `loyalty.loyalty_projection_event_receipts`: immutable delivery receipt keyed
+  by `eventId`, with envelope/semantic fingerprints, aggregate type/id, positive
+  record version, audit ID and receive time.
+- `loyalty.loyalty_projection_slots`: one row per aggregate type/id containing
+  the latest positive record version, semantic fingerprint, audit ID and update
+  time.
+
+The receipt, slot and corresponding business snapshot are written in one
+transaction under event/aggregate advisory locks. Stale deliveries can add a
+receipt but never replace a business row. Exact duplicates are harmless;
+event-ID reuse and same-version divergence fail closed. A separate read-only
+reconciliation compares the six business tables with row counts and two
+order-independent hashes and emits no row content. The Core business writer,
+read-only Loyalty HTTP credential, flags and URLs remain unchanged.
+
 Customer signup writes `loyalty.customer_referrals` and its encrypted projection
 outbox event in the same transaction as the new `identity.users` row. First
 ticket reward processing locks the referral and active referrer member before

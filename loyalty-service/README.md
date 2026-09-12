@@ -233,3 +233,25 @@ window; before/after sampling cannot rule out all concurrent ABA changes.
 There is **no public read switch yet**, so rollback in this slice merely
 disables the offline command. A real HTTP read cutover is a later approved
 slice after parity evidence. No production deployment has been performed.
+
+## Version-aware projection and reconciliation
+
+The standalone database includes a strict projection boundary for the six
+approved Loyalty snapshot events. It is intentionally not connected to the
+runtime application or Kafka yet. Event receipts are immutable; aggregate
+slots enforce monotonic versions; dependent points/card snapshots roll back
+when their member has not arrived and can be retried later.
+
+After a separately approved baseline and delta replay, compare Core with the
+dedicated database using read-only credentials:
+
+```sh
+LOYALTY_RECONCILIATION_SOURCE_DATABASE_URL=<core-reader-url> \
+LOYALTY_RECONCILIATION_TARGET_DATABASE_URL=<loyalty-reader-url> \
+npm run reconcile:projection:prod -- 10000
+```
+
+The command rejects identical source/target databases. It prints only table
+names, counts, two hashes and status. Exit codes are 0 for MATCH, 2 for
+MISMATCH/INCONCLUSIVE and 1 for unavailable or invalid configuration. It does
+not enable a consumer, change credentials or switch reads.

@@ -1,5 +1,16 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Loyalty version-aware projection consumer
+
+No public or internal HTTP route changes. The independent Loyalty database can
+apply the six approved full-snapshot events through a strict transactional
+projection boundary. Event IDs and aggregate versions are tracked separately:
+exact deliveries are harmless, stale versions are ignored, and reused IDs or
+same-version divergent snapshots fail closed. Member-dependent events remain
+retryable when their member snapshot has not arrived. Kafka activation, read
+cutover, writer movement and deployment are separate gates
+(`docs/features/microservices-phase-6-loyalty-versioned-consumer.md`).
+
 ## Loyalty Club publisher activation
 
 New-customer referral creation publishes a versioned encrypted `CREATED`
