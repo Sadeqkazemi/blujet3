@@ -51,6 +51,7 @@ async function run() {
     undefined as never,
     undefined as never,
     undefined as never,
+    undefined as never, // Read-only probe: no projection writes.
     {
       get: async (requestId?: string) => {
         calls += 1;

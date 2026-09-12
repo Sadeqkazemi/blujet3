@@ -62,6 +62,7 @@ async function run() {
         return result;
       },
     } as never,
+    undefined as never, // Read-only probe: no projection writes.
   );
   const query = {
     q: process.env.PROBE_QUERY,
