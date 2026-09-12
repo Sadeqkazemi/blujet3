@@ -19,6 +19,7 @@ import type { CabinClass } from '../../database/enums';
 import { assertSellableForSale } from '../flights/definition-sellability';
 import { WalletService } from './wallet.service';
 import { LoyaltyPriceLockClient } from './loyalty-price-lock.client';
+import { LoyaltyProjectionEventService } from '../loyalty-projection-outbox/loyalty-projection-event.service';
 
 const LOCK_TTL_MS = 72 * 60 * 60 * 1000;
 /** Flat, NestJS-computed fee — CLAUDE.md: "fee/risk suggested by the ML
@@ -38,6 +39,7 @@ export class PriceLockService {
     private readonly clubMemberRepo: Repository<ClubMember>,
     private readonly wallet: WalletService,
     private readonly loyaltyPriceLocks: LoyaltyPriceLockClient,
+    private readonly projection: LoyaltyProjectionEventService,
   ) {}
 
   async create(
@@ -96,7 +98,7 @@ export class PriceLockService {
 
     return this.priceLockRepo.manager.transaction(async (tx) => {
       await this.wallet.charge(tx, user.id, feeIrr, null);
-      return tx.save(
+      const lock = await tx.save(
         tx.create(PriceLock, {
           userId: user.id,
           flightInstanceId: dto.flightInstanceId,
@@ -107,6 +109,8 @@ export class PriceLockService {
           expiresAt: new Date(Date.now() + LOCK_TTL_MS),
         }),
       );
+      await this.projection.recordPriceLock(tx, lock, 'CREATED');
+      return lock;
     });
   }
 
@@ -185,25 +189,30 @@ export class PriceLockService {
   }
 
   async cancel(user: AuthenticatedUser, id: string) {
-    const lock = await this.priceLockRepo.findOneBy({ id });
-    if (!lock || lock.userId !== user.id) {
-      throw new NotFoundException({
-        code: ErrorCode.NOT_FOUND,
-        message: 'قفل قیمت یافت نشد.',
-      });
-    }
-    if (lock.status !== 'ACTIVE') {
-      throw new BadRequestException({
-        code: ErrorCode.VALIDATION_FAILED,
-        message: 'این قفل قیمت دیگر فعال نیست.',
-      });
-    }
     return this.priceLockRepo.manager.transaction(async (tx) => {
+      const lock = await tx.getRepository(PriceLock).findOne({
+        where: { id, userId: user.id },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!lock || lock.userId !== user.id) {
+        throw new NotFoundException({
+          code: ErrorCode.NOT_FOUND,
+          message: 'قفل قیمت یافت نشد.',
+        });
+      }
+      if (lock.status !== 'ACTIVE') {
+        throw new BadRequestException({
+          code: ErrorCode.VALIDATION_FAILED,
+          message: 'این قفل قیمت دیگر فعال نیست.',
+        });
+      }
       if (lock.feeCharged && lock.feeIrr > 0n) {
         await this.wallet.credit(tx, user.id, lock.feeIrr, null);
       }
       lock.status = 'CANCELLED';
-      return tx.save(lock);
+      const saved = await tx.save(lock);
+      await this.projection.recordPriceLock(tx, saved, 'CANCELLED');
+      return saved;
     });
   }
 

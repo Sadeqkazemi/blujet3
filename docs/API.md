@@ -2,6 +2,9 @@
 
 ## Loyalty Club publisher activation
 
+Price-lock creation/cancellation also publishes snapshots atomically with wallet
+fees. Cancellation validates under a row lock. Routes and fee policy are unchanged.
+
 Purchase earnings and points redemption additionally enqueue points-entry and
 member-cache snapshots in the caller's Core transaction. The member row is
 locked before balance calculation. Existing points read endpoints are unchanged.

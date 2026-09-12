@@ -37,6 +37,7 @@ function service(
       {} as never,
       {} as never,
       remoteClient as never,
+      {} as never,
     ),
     remoteClient,
     priceRepo,
