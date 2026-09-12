@@ -1,5 +1,11 @@
 # DB_SCHEMA.md — blujet data model
 
+Customer signup writes `loyalty.customer_referrals` and its encrypted projection
+outbox event in the same transaction as the new `identity.users` row. First
+ticket reward processing locks the referral and active referrer member before
+appending one `loyalty.club_points_entries` row, refreshing the member cache and
+publishing all snapshots. No schema change is required.
+
 Price-lock creation/cancellation writes its encrypted projection outbox event
 in the wallet-fee transaction. Cancellation uses a row lock before validation.
 No new table or migration is required for this publisher activation.

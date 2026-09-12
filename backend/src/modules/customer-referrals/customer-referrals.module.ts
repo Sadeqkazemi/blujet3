@@ -7,6 +7,7 @@ import { ClubPointsEntry } from '../../database/entities/club-points-entry.entit
 import { ClubTierRule } from '../../database/entities/club-tier-rule.entity';
 import { CustomerReferralsService } from './customer-referrals.service';
 import { MyReferralController } from './my-referral.controller';
+import { LoyaltyProjectionOutboxModule } from '../loyalty-projection-outbox/loyalty-projection-outbox.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { MyReferralController } from './my-referral.controller';
       ClubPointsEntry,
       ClubTierRule,
     ]),
+    LoyaltyProjectionOutboxModule,
   ],
   controllers: [MyReferralController],
   providers: [CustomerReferralsService],
