@@ -2,6 +2,12 @@
 
 ## Loyalty Club publisher activation
 
+New-customer referral creation publishes a versioned encrypted `CREATED`
+snapshot in the customer-creation transaction. The first ticketed purchase
+locks the referral and referrer member, awards the existing 500-point reward
+once, and publishes referral, points-entry and member snapshots atomically.
+The public referral routes and reward policy are unchanged.
+
 Price-lock creation/cancellation also publishes snapshots atomically with wallet
 fees. Cancellation validates under a row lock. Routes and fee policy are unchanged.
 

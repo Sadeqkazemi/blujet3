@@ -1174,20 +1174,26 @@ export class AuthService {
     referralCode?: string,
   ): Promise<{ challengeId: string }> {
     const normalizedPhone = normalizeIranPhone(phone);
-    const existing = await this.userRepo.findOneBy({ phone: normalizedPhone });
-    const user =
-      existing ??
-      (await this.userRepo.save(
-        this.userRepo.create({
+    const user = await this.userRepo.manager.transaction(async (manager) => {
+      const existing = await manager.findOneBy(User, {
+        phone: normalizedPhone,
+      });
+      if (existing) return existing;
+      const created = await manager.save(
+        manager.create(User, {
           role: 'USER',
           phone: normalizedPhone,
           fullName: normalizedPhone,
           updatedAt: new Date(),
         }),
-      ));
-    if (!existing) {
-      await this.customerReferrals.applyOnSignup(user.id, referralCode);
-    }
+      );
+      await this.customerReferrals.applyOnSignup(
+        manager,
+        created.id,
+        referralCode,
+      );
+      return created;
+    });
     if (!user.isActive) {
       throw new ForbiddenException({
         code: 'ACCOUNT_SUSPENDED',

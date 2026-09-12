@@ -13,6 +13,7 @@ import {
 } from '../../common/referral-code.util';
 import { resolveTierForPoints } from '../club/club.service';
 import type { AuthenticatedUser } from '../../common/types/authenticated-user';
+import { LoyaltyProjectionEventService } from '../loyalty-projection-outbox/loyalty-projection-event.service';
 
 /** Server-side reward per referred friend's first ticketed booking — matches
  * design-reference-v2/پنل کاربر.dc.html copy («۵۰۰ امتیاز»). */
@@ -25,6 +26,7 @@ export class CustomerReferralsService {
     private readonly userRepo: Repository<User>,
     @InjectRepository(CustomerReferral)
     private readonly referralRepo: Repository<CustomerReferral>,
+    private readonly projection: LoyaltyProjectionEventService,
   ) {}
 
   private sharePath(code: string): string {
@@ -86,27 +88,34 @@ export class CustomerReferralsService {
 
   /** Called when a brand-new customer account is created via OTP. Invalid or
    * self-referral codes are ignored silently so signup never fails. */
-  async applyOnSignup(referredUserId: string, rawCode?: string): Promise<void> {
+  async applyOnSignup(
+    manager: EntityManager,
+    referredUserId: string,
+    rawCode?: string,
+  ): Promise<void> {
     if (!rawCode?.trim()) return;
     const code = normalizeReferralCode(rawCode);
-    const referrer = await this.userRepo.findOneBy({
+    const referrer = await manager.findOneBy(User, {
       referralCode: code,
       role: 'USER',
       isActive: true,
     });
     if (!referrer || referrer.id === referredUserId) return;
 
-    const already = await this.referralRepo.findOneBy({ referredUserId });
+    const already = await manager.findOneBy(CustomerReferral, {
+      referredUserId,
+    });
     if (already) return;
 
-    await this.referralRepo.save(
-      this.referralRepo.create({
+    const referral = await manager.save(
+      manager.create(CustomerReferral, {
         referrerUserId: referrer.id,
         referredUserId,
         status: 'SIGNED_UP',
         updatedAt: new Date(),
       }),
     );
+    await this.projection.recordReferral(manager, referral, 'CREATED');
   }
 
   /** Award referrer when a referred user completes their first ticketed
@@ -116,26 +125,32 @@ export class CustomerReferralsService {
     referredUserId: string,
     bookingId: string,
   ): Promise<void> {
-    const referral = await manager.findOneBy(CustomerReferral, {
-      referredUserId,
+    const referral = await manager.findOne(CustomerReferral, {
+      where: { referredUserId },
+      lock: { mode: 'pessimistic_write' },
     });
     if (!referral || referral.status !== 'SIGNED_UP') return;
 
-    const referrerMember = await manager.findOneBy(ClubMember, {
-      userId: referral.referrerUserId,
-      deactivatedAt: IsNull(),
+    const referrerMember = await manager.findOne(ClubMember, {
+      where: {
+        userId: referral.referrerUserId,
+        deactivatedAt: IsNull(),
+      },
+      lock: { mode: 'pessimistic_write' },
     });
 
     let pointsAwarded = 0;
     if (referrerMember) {
       pointsAwarded = REFERRAL_REWARD_POINTS;
-      await manager.save(
+      const pointsEntry = await manager.save(
         manager.create(ClubPointsEntry, {
           clubMemberId: referrerMember.id,
           type: 'EARN',
           signedPoints: pointsAwarded,
+          bookingId,
         }),
       );
+      await this.projection.recordPointsEntry(manager, pointsEntry, 'CREATED');
       const sumRow = await manager
         .createQueryBuilder(ClubPointsEntry, 'e')
         .select('SUM(e."signedPoints")', 'sum')
@@ -154,18 +169,22 @@ export class CustomerReferralsService {
         { id: referrerMember.id },
         { points, ...(level ? { level } : {}) },
       );
+      const updatedMember = await manager.findOneByOrFail(ClubMember, {
+        id: referrerMember.id,
+      });
+      await this.projection.recordMember(
+        manager,
+        updatedMember,
+        'POINTS_CHANGED',
+      );
     }
 
-    await manager.update(
-      CustomerReferral,
-      { id: referral.id },
-      {
-        status: 'REWARDED',
-        firstBookingId: bookingId,
-        pointsAwarded,
-        rewardedAt: new Date(),
-        updatedAt: new Date(),
-      },
-    );
+    referral.status = 'REWARDED';
+    referral.firstBookingId = bookingId;
+    referral.pointsAwarded = pointsAwarded;
+    referral.rewardedAt = new Date();
+    referral.updatedAt = new Date();
+    const rewarded = await manager.save(referral);
+    await this.projection.recordReferral(manager, rewarded, 'REWARDED');
   }
 }

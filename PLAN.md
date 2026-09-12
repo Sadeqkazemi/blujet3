@@ -1,5 +1,14 @@
 # PLAN.md — blujet roadmap & progress
 
+## Loyalty referral publisher (2026-09-12)
+
+- [x] Publish referral signup with customer creation.
+- [x] Serialize first-ticket rewards and publish referral/points/member snapshots.
+- [x] Prove single reward under concurrency and transaction rollback.
+- [x] 4 Referral, 28 Auth and 16 Purchase Extras E2E tests, typecheck, scoped
+  lint, production build and diff validation pass.
+- [ ] GitHub CI and merge approval. No deployment or cutover.
+
 ## Loyalty price-lock booking lifecycle (2026-09-12)
 
 - [x] Enforce exactly-one booking attachment under concurrency.
@@ -7,7 +16,8 @@
 - [x] Prove failed payment rollback and audit/outbox atomicity.
 - [x] 16 Purchase Extras E2E tests, typecheck and scoped lint pass.
 - [x] Production build and diff validation pass.
-- [ ] GitHub CI and merge approval. No deployment or cutover.
+- [x] GitHub CI and approved merge: PR #125, main commit aaa9224.
+- [x] No deployment or cutover.
 
 ## Loyalty price-lock create/cancel publisher (2026-09-12)
 
