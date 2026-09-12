@@ -1,5 +1,14 @@
 # PLAN.md — blujet roadmap & progress
 
+## Loyalty price-lock create/cancel publisher (2026-09-12)
+
+- [x] Publish create/cancel snapshots in the wallet transaction.
+- [x] Lock cancellation row before status validation; concurrent requests have
+  exactly one winner (`purchase-extras.e2e-spec.ts`).
+- [x] 16 E2E and 4 unit tests, typecheck, scoped lint and build pass.
+- [ ] CI and merge approval. No deployment or cutover.
+- Next: booking attachment/consumption publishers and rollback coverage.
+
 ## Loyalty points publisher (2026-09-12)
 
 - [x] Publish purchase earnings and payment redemptions with member snapshots
@@ -7,8 +16,8 @@
 - [x] Lock the member before ledger balance calculation; prove rollback and
   concurrent redemption safety in `backend/test/club.e2e-spec.ts`.
 - [x] Local verification: 31 Club E2E tests, typecheck, scoped lint and build.
-- [ ] GitHub CI.
-- [ ] Present this slice for merge approval; no deployment or database cutover.
+- [x] GitHub CI and approved merge: PR #123, main commit 2c21861.
+- [x] No deployment or database cutover.
 - Next: remaining Loyalty mutation publishers, then version-aware consumption
   and reconciliation before any writer cutover.
 

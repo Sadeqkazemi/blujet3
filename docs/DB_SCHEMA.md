@@ -1,5 +1,9 @@
 # DB_SCHEMA.md — blujet data model
 
+Price-lock creation/cancellation writes its encrypted projection outbox event
+in the wallet-fee transaction. Cancellation uses a row lock before validation.
+No new table or migration is required for this publisher activation.
+
 ## Commerce outbox claim sequence and Club publication
 
 Purchase earnings and redemption now publish immutable points-entry snapshots

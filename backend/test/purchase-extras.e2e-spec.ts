@@ -13,6 +13,7 @@ import { Flight } from '../src/database/entities/flight.entity';
 import { FlightInstance } from '../src/database/entities/flight-instance.entity';
 import { LedgerEntry } from '../src/database/entities/ledger-entry.entity';
 import { PriceLock } from '../src/database/entities/price-lock.entity';
+import { LoyaltyProjectionAudit } from '../src/database/entities/loyalty-projection-audit.entity';
 import { PromoCode } from '../src/database/entities/promo-code.entity';
 import { Route } from '../src/database/entities/route.entity';
 import { encryptPii, hashPii } from '../src/common/pii-crypto';
@@ -599,11 +600,26 @@ describe('Purchase extras: promo codes, wallet, club points, price lock (e2e)', 
       .set('Authorization', `Bearer ${accessToken}`)
       .send({ flightInstanceId: instance.id, cabin: 'ECONOMY' });
 
-    const cancelRes = await request(app.getHttpServer())
-      .delete(`/my/price-locks/${created.body.data.id}`)
-      .set('Authorization', `Bearer ${accessToken}`);
-    expect(cancelRes.status).toBe(200);
-    expect(cancelRes.body.data.status).toBe('CANCELLED');
+    expect(created.status).toBe(201);
+    const lockId = String(created.body.data.id);
+    const cancellations = await Promise.all(
+      [1, 2].map(() =>
+        request(app.getHttpServer())
+          .delete(`/my/price-locks/${lockId}`)
+          .set('Authorization', `Bearer ${accessToken}`),
+      ),
+    );
+    expect(cancellations.map((result) => result.status).sort()).toEqual([
+      200, 400,
+    ]);
+    const audits = await dataSource.getRepository(LoyaltyProjectionAudit).find({
+      where: { aggregateType: 'LoyaltyPriceLock', aggregateId: lockId },
+      order: { recordVersion: 'ASC' },
+    });
+    expect(audits.map((audit) => audit.mutation)).toEqual([
+      'CREATED',
+      'CANCELLED',
+    ]);
   });
 
   it('GET /my/price-locks includes the locked flight route/number/departure, not just raw ids', async () => {
