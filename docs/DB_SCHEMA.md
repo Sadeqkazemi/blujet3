@@ -2,6 +2,10 @@
 
 ## Commerce outbox claim sequence and Club publication
 
+Purchase earnings and redemption now publish immutable points-entry snapshots
+and the updated member display cache through the same Core outbox transaction.
+This introduces no new table or standalone writer.
+
 Migration `1793433600000-CommerceOutboxSequence` adds a generated bigint
 `sequence` and unique index to `orders.commerce_outbox_events`. Eligible events
 are claimed in sequence order. This is not a guarantee of delivery ordering

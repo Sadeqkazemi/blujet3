@@ -2,6 +2,10 @@
 
 ## Loyalty Club publisher activation
 
+Purchase earnings and points redemption additionally enqueue points-entry and
+member-cache snapshots in the caller's Core transaction. The member row is
+locked before balance calculation. Existing points read endpoints are unchanged.
+
 Club member, tier-rule and card-request mutations now save their versioned
 snapshots to the encrypted Core outbox in the business transaction. Failures
 roll back both the mutation and audit. Concurrent card decisions are serialized;
