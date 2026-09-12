@@ -16,6 +16,10 @@ import { createTestApp } from './helpers/app.helper';
 import { resetCustomerPhones } from './helpers/customer-state.helper';
 import { encryptPii, hashPii } from '../src/common/pii-crypto';
 import { ClubPointsService } from '../src/modules/booking-engine/club-points.service';
+import { CommerceOutboxEvent } from '../src/database/entities/commerce-outbox-event.entity';
+import { LoyaltyProjectionAudit } from '../src/database/entities/loyalty-projection-audit.entity';
+import { LoyaltyProjectionEventService } from '../src/modules/loyalty-projection-outbox/loyalty-projection-event.service';
+import { User } from '../src/database/entities/user.entity';
 
 /** Generates a checksum-valid, non-repeating synthetic national ID. */
 function validNationalId(): string {
@@ -51,6 +55,30 @@ describe('Club (e2e)', () => {
       .andWhere('a.entityId = :entityId', { entityId: where.entityId })
       .orderBy('a.createdAt', 'DESC')
       .getOne();
+  }
+
+  async function expectProjection(input: {
+    aggregateType: string;
+    aggregateId: string;
+    recordVersion: number;
+    mutation: string;
+  }) {
+    const projectionAudit = await dataSource
+      .getRepository(LoyaltyProjectionAudit)
+      .findOneBy({
+        aggregateType: input.aggregateType,
+        aggregateId: input.aggregateId,
+        recordVersion: input.recordVersion,
+      });
+    expect(projectionAudit?.mutation).toBe(input.mutation);
+    await expect(
+      dataSource.getRepository(CommerceOutboxEvent).findOneBy({
+        producer: 'core-loyalty',
+        idempotencyKey:
+          `loyalty-projected:${input.aggregateType}:` +
+          `${input.aggregateId}:v${input.recordVersion}`,
+      }),
+    ).resolves.not.toBeNull();
   }
 
   beforeEach(async () => {
@@ -418,6 +446,12 @@ describe('Club (e2e)', () => {
       .getRepository(ClubMember)
       .findOneByOrFail({ id: member.id });
     expect(persisted.deactivatedAt).toBeInstanceOf(Date);
+    await expectProjection({
+      aggregateType: 'LoyaltyMember',
+      aggregateId: persisted.id,
+      recordVersion: persisted.version,
+      mutation: 'DEACTIVATED',
+    });
 
     const membership = await request(app.getHttpServer())
       .get('/my/club/membership')
@@ -474,6 +508,15 @@ describe('Club (e2e)', () => {
     expect(ok.body.data.cardStatus).toBe('ISSUED');
     expect(ok.body.data.cardNo).toMatch(/^GOLD-\d{4}$/);
     expect(ok.body.data.issuedByLabelFa).toBe('رئیس هیئت مدیره (صدور مستقیم)');
+    const issued = await dataSource
+      .getRepository(ClubMember)
+      .findOneByOrFail({ id: member.id });
+    await expectProjection({
+      aggregateType: 'LoyaltyMember',
+      aggregateId: issued.id,
+      recordVersion: issued.version,
+      mutation: 'ISSUED',
+    });
 
     const again = await request(app.getHttpServer())
       .post(`/club/members/${member.id}/issue-card`)
@@ -784,6 +827,12 @@ describe('Club (e2e)', () => {
         entityId: rule.id,
       });
       expect(audit).not.toBeNull();
+      await expectProjection({
+        aggregateType: 'LoyaltyTierRule',
+        aggregateId: rule.id,
+        recordVersion: rule.version,
+        mutation: 'UPDATED',
+      });
 
       // Restore defaults so later tests in this file see the seeded values.
       await request(app.getHttpServer())
@@ -1008,6 +1057,21 @@ describe('Club (e2e)', () => {
       .getRepository(ClubMember)
       .findOneByOrFail({ id: member.id });
     expect(memberAfter.cardStatus).toBe('REVIEW');
+    const requestAfter = await dataSource
+      .getRepository(ClubCardRequest)
+      .findOneByOrFail({ id: submit.body.data.id as string });
+    await expectProjection({
+      aggregateType: 'LoyaltyCardRequest',
+      aggregateId: requestAfter.id,
+      recordVersion: requestAfter.version,
+      mutation: 'CREATED',
+    });
+    await expectProjection({
+      aggregateType: 'LoyaltyMember',
+      aggregateId: memberAfter.id,
+      recordVersion: memberAfter.version,
+      mutation: 'UPDATED',
+    });
 
     const duplicate = await request(app.getHttpServer())
       .post('/my/club/card-request')
@@ -1026,5 +1090,277 @@ describe('Club (e2e)', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .send({});
     expect(res.status).toBe(400);
+  });
+
+  it('publishes a new customer membership from the local join writer', async () => {
+    const { accessToken, userId } = await loginAsCustomer(app, '09180000004');
+    const nationalId = validNationalId();
+    await dataSource.getRepository(User).update(userId!, {
+      fullName: 'مشتری عضویت تست',
+      email: `${crypto.randomUUID().slice(0, 8)}@join.example`,
+      nationalIdEnc: encryptPii(nationalId),
+      nationalIdHash: hashPii(nationalId),
+    });
+
+    const response = await request(app.getHttpServer())
+      .post('/my/club/join')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({});
+    expect(response.status).toBe(201);
+    const joined = await dataSource
+      .getRepository(ClubMember)
+      .findOneByOrFail({ userId: userId! });
+    await expectProjection({
+      aggregateType: 'LoyaltyMember',
+      aggregateId: joined.id,
+      recordVersion: joined.version,
+      mutation: 'CREATED',
+    });
+  });
+
+  it('publishes restored and newly linked memberships with their new versions', async () => {
+    const nationalId = validNationalId();
+    const memberRepo = dataSource.getRepository(ClubMember);
+    const inactive = await memberRepo.save(
+      memberRepo.create({
+        fullName: 'عضو غیرفعال',
+        email: `${crypto.randomUUID().slice(0, 8)}@inactive.example`,
+        nationalIdEnc: encryptPii(nationalId),
+        nationalIdHash: hashPii(nationalId),
+        level: 'SILVER',
+        deactivatedAt: new Date(),
+      }),
+    );
+    const senior = await loginAs(app, 'senior');
+    const restoredResponse = await request(app.getHttpServer())
+      .post('/club/members')
+      .set('Authorization', `Bearer ${senior.accessToken}`)
+      .send({
+        fullName: 'عضو بازگردانده',
+        email: `${crypto.randomUUID().slice(0, 8)}@restored.example`,
+        nationalId,
+        level: 'GOLD',
+      });
+    expect(restoredResponse.status).toBe(201);
+    const restored = await memberRepo.findOneByOrFail({ id: inactive.id });
+    await expectProjection({
+      aggregateType: 'LoyaltyMember',
+      aggregateId: restored.id,
+      recordVersion: restored.version,
+      mutation: 'UPDATED',
+    });
+
+    const customer = await loginAsCustomer(app, '09180000003');
+    const linkNationalId = validNationalId();
+    await dataSource.getRepository(User).update(customer.userId!, {
+      fullName: 'مشتری اتصال تست',
+      email: `${crypto.randomUUID().slice(0, 8)}@link.example`,
+      nationalIdEnc: encryptPii(linkNationalId),
+      nationalIdHash: hashPii(linkNationalId),
+    });
+    const unlinked = await memberRepo.save(
+      memberRepo.create({
+        fullName: 'عضو بدون حساب',
+        email: `${crypto.randomUUID().slice(0, 8)}@unlinked.example`,
+        nationalIdEnc: encryptPii(linkNationalId),
+        nationalIdHash: hashPii(linkNationalId),
+        level: 'SILVER',
+      }),
+    );
+    const linkedResponse = await request(app.getHttpServer())
+      .post('/my/club/join')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({});
+    expect(linkedResponse.status).toBe(201);
+    const linked = await memberRepo.findOneByOrFail({ id: unlinked.id });
+    expect(linked.userId).toBe(customer.userId);
+    await expectProjection({
+      aggregateType: 'LoyaltyMember',
+      aggregateId: linked.id,
+      recordVersion: linked.version,
+      mutation: 'LINKED',
+    });
+  });
+
+  it('publishes ordered Club member and card-request snapshots without exposing versions', async () => {
+    const senior = await loginAs(app, 'senior');
+    const memberResponse = await request(app.getHttpServer())
+      .post('/club/members')
+      .set('Authorization', `Bearer ${senior.accessToken}`)
+      .send({
+        fullName: 'عضو publisher',
+        email: `${crypto.randomUUID().slice(0, 8)}@publisher.example`,
+        nationalId: validNationalId(),
+        level: 'GOLD',
+      });
+    expect(memberResponse.status).toBe(201);
+    expect(memberResponse.body.data.version).toBeUndefined();
+    const memberId = memberResponse.body.data.id as string;
+    const created = await dataSource
+      .getRepository(ClubMember)
+      .findOneByOrFail({ id: memberId });
+    await expectProjection({
+      aggregateType: 'LoyaltyMember',
+      aggregateId: memberId,
+      recordVersion: created.version,
+      mutation: 'CREATED',
+    });
+
+    const levelResponse = await request(app.getHttpServer())
+      .patch(`/club/members/${memberId}/level`)
+      .set('Authorization', `Bearer ${senior.accessToken}`)
+      .send({ level: 'PLATINUM' });
+    expect(levelResponse.status).toBe(200);
+    expect(levelResponse.body.data.version).toBeUndefined();
+    const leveled = await dataSource
+      .getRepository(ClubMember)
+      .findOneByOrFail({ id: memberId });
+    await expectProjection({
+      aggregateType: 'LoyaltyMember',
+      aggregateId: memberId,
+      recordVersion: leveled.version,
+      mutation: 'UPDATED',
+    });
+
+    const { req } = await createSubmittedRequest();
+    const siteAdmin = await loginAs(app, 'site.admin');
+    const referResponse = await request(app.getHttpServer())
+      .patch(`/club/card-requests/${req.id}/refer`)
+      .set('Authorization', `Bearer ${siteAdmin.accessToken}`)
+      .send({ assignedTo: 'SENIOR' });
+    expect(referResponse.status).toBe(200);
+    expect(referResponse.body.data.version).toBeUndefined();
+    const referred = await dataSource
+      .getRepository(ClubCardRequest)
+      .findOneByOrFail({ id: req.id });
+    await expectProjection({
+      aggregateType: 'LoyaltyCardRequest',
+      aggregateId: req.id,
+      recordVersion: referred.version,
+      mutation: 'REFERRED',
+    });
+
+    const decisionResponse = await request(app.getHttpServer())
+      .patch(`/club/card-requests/${req.id}/approve`)
+      .set('Authorization', `Bearer ${senior.accessToken}`);
+    expect(decisionResponse.status).toBe(200);
+    expect(decisionResponse.body.data.version).toBeUndefined();
+    const decided = await dataSource
+      .getRepository(ClubCardRequest)
+      .findOneByOrFail({ id: req.id });
+    const issuedMember = await dataSource
+      .getRepository(ClubMember)
+      .findOneByOrFail({ id: req.memberId });
+    await expectProjection({
+      aggregateType: 'LoyaltyCardRequest',
+      aggregateId: req.id,
+      recordVersion: decided.version,
+      mutation: 'DECIDED',
+    });
+    await expectProjection({
+      aggregateType: 'LoyaltyMember',
+      aggregateId: issuedMember.id,
+      recordVersion: issuedMember.version,
+      mutation: 'ISSUED',
+    });
+  });
+
+  it('allows only one concurrent card decision and rolls back both rows on publisher failure', async () => {
+    const { member, req } = await createReferredRequest('SENIOR');
+    const senior = await loginAs(app, 'senior');
+    const projection = app.get(LoyaltyProjectionEventService);
+    const failure = jest
+      .spyOn(projection, 'recordMember')
+      .mockRejectedValueOnce(new Error('forced member projection failure'));
+    try {
+      await request(app.getHttpServer())
+        .patch(`/club/card-requests/${req.id}/approve`)
+        .set('Authorization', `Bearer ${senior.accessToken}`)
+        .expect(500);
+      expect(
+        (
+          await dataSource
+            .getRepository(ClubCardRequest)
+            .findOneByOrFail({ id: req.id })
+        ).status,
+      ).toBe('REFERRED');
+      expect(
+        (
+          await dataSource
+            .getRepository(ClubMember)
+            .findOneByOrFail({ id: member.id })
+        ).cardStatus,
+      ).toBe(member.cardStatus);
+      expect(
+        await dataSource
+          .getRepository(LoyaltyProjectionAudit)
+          .countBy({ aggregateId: req.id }),
+      ).toBe(0);
+      expect(
+        await dataSource.getRepository(CommerceOutboxEvent).countBy({
+          producer: 'core-loyalty',
+          idempotencyKey: `loyalty-projected:LoyaltyCardRequest:${req.id}:v2`,
+        }),
+      ).toBe(0);
+    } finally {
+      failure.mockRestore();
+    }
+    const responses = await Promise.all(
+      ['approve', 'reject'].map((decision) =>
+        request(app.getHttpServer())
+          .patch(`/club/card-requests/${req.id}/${decision}`)
+          .set('Authorization', `Bearer ${senior.accessToken}`),
+      ),
+    );
+    expect(responses.map((response) => response.status).sort()).toEqual([
+      200, 409,
+    ]);
+    expect(
+      await dataSource
+        .getRepository(LoyaltyProjectionAudit)
+        .countBy({ aggregateId: req.id }),
+    ).toBe(1);
+  });
+
+  it('rolls back the Club row and business audit when projection enqueue fails', async () => {
+    const senior = await loginAs(app, 'senior');
+    const projection = app.get(LoyaltyProjectionEventService);
+    const failure = jest
+      .spyOn(projection, 'recordMember')
+      .mockRejectedValueOnce(new Error('forced projection failure'));
+    const nationalId = validNationalId();
+    const auditCount = await dataSource.getRepository(AuditLog).countBy({
+      category: 'CLUB',
+    });
+    const outboxCount = await dataSource
+      .getRepository(CommerceOutboxEvent)
+      .countBy({ producer: 'core-loyalty' });
+    try {
+      const response = await request(app.getHttpServer())
+        .post('/club/members')
+        .set('Authorization', `Bearer ${senior.accessToken}`)
+        .send({
+          fullName: 'عضو rollback',
+          email: `${crypto.randomUUID().slice(0, 8)}@rollback.example`,
+          nationalId,
+          level: 'SILVER',
+        });
+      expect(response.status).toBe(500);
+      await expect(
+        dataSource.getRepository(ClubMember).findOneBy({
+          nationalIdHash: hashPii(nationalId),
+        }),
+      ).resolves.toBeNull();
+      await expect(
+        dataSource.getRepository(AuditLog).countBy({ category: 'CLUB' }),
+      ).resolves.toBe(auditCount);
+      await expect(
+        dataSource
+          .getRepository(CommerceOutboxEvent)
+          .countBy({ producer: 'core-loyalty' }),
+      ).resolves.toBe(outboxCount);
+    } finally {
+      failure.mockRestore();
+    }
   });
 });

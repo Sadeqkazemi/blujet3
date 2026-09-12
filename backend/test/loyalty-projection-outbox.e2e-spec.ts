@@ -76,7 +76,7 @@ describe('Loyalty projection source outbox (PostgreSQL)', () => {
 
       const rows = await runner.manager.find(CommerceOutboxEvent, {
         where: { producer: 'core-loyalty' },
-        order: { createdAt: 'ASC' },
+        order: { sequence: 'ASC' },
       });
       const events = rows
         .map((row) =>

@@ -1,5 +1,16 @@
 # DB_SCHEMA.md — blujet data model
 
+## Commerce outbox claim sequence and Club publication
+
+Migration `1793433600000-CommerceOutboxSequence` adds a generated bigint
+`sequence` and unique index to `orders.commerce_outbox_events`. Eligible events
+are claimed in sequence order. This is not a guarantee of delivery ordering
+across retries, concurrent dispatchers or concurrent transaction commits.
+Consumers must enforce aggregate versions. Existing rows receive sequence
+values during migration; historical insertion order cannot be reconstructed.
+Club writes now atomically persist their source row, business audit, projection
+audit and encrypted event in Core. No standalone database writer is activated.
+
 ## Loyalty projection outbox foundation (microservices phase 6)
 
 All six Loyalty-owned tables gain `version integer NOT NULL DEFAULT 1` with a

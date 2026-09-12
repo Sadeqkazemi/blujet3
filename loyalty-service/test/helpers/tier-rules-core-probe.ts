@@ -57,6 +57,7 @@ async function run() {
       },
     } as never,
     undefined as never,
+    undefined as never, // Read-only probe: no projection writes.
   );
   const originalFetch = globalThis.fetch;
   try {

@@ -14,6 +14,7 @@ import { LoyaltyMembershipClient } from './loyalty-membership.client';
 import { LoyaltyTierRulesClient } from './loyalty-tier-rules.client';
 import { LoyaltyMembersListClient } from './loyalty-members-list.client';
 import { LoyaltyCardRequestsClient } from './loyalty-card-requests.client';
+import { LoyaltyProjectionOutboxModule } from '../loyalty-projection-outbox/loyalty-projection-outbox.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { LoyaltyCardRequestsClient } from './loyalty-card-requests.client';
     ]),
     PanelsModule,
     AuditModule,
+    LoyaltyProjectionOutboxModule,
   ],
   controllers: [ClubController, MyClubController],
   providers: [

@@ -1,5 +1,13 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Loyalty Club publisher activation
+
+Club member, tier-rule and card-request mutations now save their versioned
+snapshots to the encrypted Core outbox in the business transaction. Failures
+roll back both the mutation and audit. Concurrent card decisions are serialized;
+the second decision returns CONFLICT. Routes and authorization are unchanged.
+Internal versions are excluded from Club responses. No service cutover occurs.
+
 ## Loyalty projection outbox foundation
 
 No public or internal HTTP route changes in this slice. Loyalty rows gain

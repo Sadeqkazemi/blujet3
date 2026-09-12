@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as crypto from 'node:crypto';
-import { IsNull, Repository } from 'typeorm';
+import { EntityManager, IsNull, Repository } from 'typeorm';
 import type { JsonValue } from '../../database/json-types';
 import { ClubTierRule } from '../../database/entities/club-tier-rule.entity';
 import { ClubMember } from '../../database/entities/club-member.entity';
@@ -36,6 +36,7 @@ import { LoyaltyTierRulesClient } from './loyalty-tier-rules.client';
 import { LoyaltyMembersListClient } from './loyalty-members-list.client';
 import { LoyaltyCardRequestsClient } from './loyalty-card-requests.client';
 import { Optional } from '@nestjs/common';
+import { LoyaltyProjectionEventService } from '../loyalty-projection-outbox/loyalty-projection-event.service';
 
 const CARD_PREFIX: Record<ClubTier, string> = {
   SILVER: 'SILV',
@@ -118,6 +119,12 @@ function toMemberView(m: ClubMember) {
   return rest;
 }
 
+function toCardRequestView<T extends ClubCardRequest>(request: T) {
+  const { version, member, ...view } = request;
+  void version;
+  return { ...view, ...(member ? { member: toMemberView(member) } : {}) };
+}
+
 @Injectable()
 export class ClubService {
   constructor(
@@ -133,22 +140,39 @@ export class ClubService {
     private readonly loyaltyMembership: LoyaltyMembershipClient,
     private readonly loyaltyTierRules: LoyaltyTierRulesClient,
     private readonly loyaltyMembersList: LoyaltyMembersListClient,
+    private readonly loyaltyProjection: LoyaltyProjectionEventService,
     @Optional()
     private readonly loyaltyCardRequests?: LoyaltyCardRequestsClient,
   ) {}
 
   // ── Phase 65: club tier rules (singleton config) ────────────────────────
 
-  private async getOrCreateTierRule(): Promise<ClubTierRule> {
-    const existing = await this.tierRuleRepo.findOne({
+  private async getOrCreateTierRule(
+    manager?: EntityManager,
+  ): Promise<ClubTierRule> {
+    if (manager) {
+      await manager.query(
+        "SELECT pg_advisory_xact_lock(hashtextextended('loyalty-tier-rule', 0))",
+      );
+    }
+    const repository =
+      manager?.getRepository(ClubTierRule) ?? this.tierRuleRepo;
+    const existing = await repository.findOne({
       where: {},
       order: { createdAt: 'ASC' },
     });
     if (existing) return existing;
+    if (!manager) {
+      return this.tierRuleRepo.manager.transaction((tx) =>
+        this.getOrCreateTierRule(tx),
+      );
+    }
     // Defense in depth only — src/database/seed.ts creates this row normally.
-    return this.tierRuleRepo.save(
-      this.tierRuleRepo.create({ updatedAt: new Date() }),
+    const created = await repository.save(
+      repository.create({ updatedAt: new Date() }),
     );
+    await this.loyaltyProjection.recordTierRule(manager, created, 'CREATED');
+    return created;
   }
 
   private async tierRuleView(
@@ -197,36 +221,48 @@ export class ClubService {
       });
     }
 
-    const before = await this.getOrCreateTierRule();
-    const beforeSnapshot = { ...before };
-    before.goldMinPoints = dto.goldMinPoints;
-    before.platinumMinPoints = dto.platinumMinPoints;
-    before.cardRequestMinPoints = dto.cardRequestMinPoints;
-    before.updatedById = actor.id;
-    before.updatedAt = new Date();
-    const updated = await this.tierRuleRepo.save(before);
+    const updated = await this.tierRuleRepo.manager.transaction(async (tx) => {
+      const before = await this.getOrCreateTierRule(tx);
+      const beforeSnapshot = { ...before };
+      before.goldMinPoints = dto.goldMinPoints;
+      before.platinumMinPoints = dto.platinumMinPoints;
+      before.cardRequestMinPoints = dto.cardRequestMinPoints;
+      before.updatedById = actor.id;
+      before.updatedAt = new Date();
+      const saved = await tx.save(before);
 
-    await this.audit.record({
-      actorId: actor.id,
-      actorRole: actor.role,
-      category: 'CLUB',
-      action: 'تغییر قوانین باشگاه مشتریان',
-      detail:
-        `قوانین باشگاه مشتریان توسط ${actor.fullName} تغییر کرد: ` +
-        `حد نصاب طلایی از ${beforeSnapshot.goldMinPoints} به ${updated.goldMinPoints}، ` +
-        `حد نصاب پلاتین از ${beforeSnapshot.platinumMinPoints} به ${updated.platinumMinPoints}، ` +
-        `حد نصاب کارت از ${beforeSnapshot.cardRequestMinPoints} به ${updated.cardRequestMinPoints}.`,
-      entityType: 'ClubTierRule',
-      entityId: updated.id,
+      await this.audit.record(
+        {
+          actorId: actor.id,
+          actorRole: actor.role,
+          category: 'CLUB',
+          action: 'تغییر قوانین باشگاه مشتریان',
+          detail:
+            `قوانین باشگاه مشتریان توسط ${actor.fullName} تغییر کرد: ` +
+            `حد نصاب طلایی از ${beforeSnapshot.goldMinPoints} به ${saved.goldMinPoints}، ` +
+            `حد نصاب پلاتین از ${beforeSnapshot.platinumMinPoints} به ${saved.platinumMinPoints}، ` +
+            `حد نصاب کارت از ${beforeSnapshot.cardRequestMinPoints} به ${saved.cardRequestMinPoints}.`,
+          entityType: 'ClubTierRule',
+          entityId: saved.id,
+        },
+        tx,
+      );
+      await this.loyaltyProjection.recordTierRule(tx, saved, 'UPDATED');
+      return saved;
     });
 
     return toTierRuleView(updated, ROLE_LABELS_FA[actor.role]);
   }
 
-  private async getMemberOrThrow(id: string): Promise<ClubMember> {
-    const member = await this.clubMemberRepo.findOneBy({
-      id,
-      deactivatedAt: IsNull(),
+  private async getMemberOrThrow(
+    id: string,
+    manager?: EntityManager,
+  ): Promise<ClubMember> {
+    const repository =
+      manager?.getRepository(ClubMember) ?? this.clubMemberRepo;
+    const member = await repository.findOne({
+      where: { id, deactivatedAt: IsNull() },
+      ...(manager ? { lock: { mode: 'pessimistic_write' as const } } : {}),
     });
     if (!member) {
       throw new NotFoundException({
@@ -332,11 +368,22 @@ export class ClubService {
         message: 'کد ملی واردشده معتبر نیست.',
       });
     }
-    const duplicate = await this.clubMemberRepo.findOne({
-      where: { nationalIdHash: hashPii(nationalId) },
-    });
-    if (duplicate) {
-      if (duplicate.deactivatedAt) {
+    const member = await this.clubMemberRepo.manager.transaction(async (tx) => {
+      const repository = tx.getRepository(ClubMember);
+      await tx.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [
+        hashPii(nationalId),
+      ]);
+      const duplicate = await repository.findOne({
+        where: { nationalIdHash: hashPii(nationalId) },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (duplicate) {
+        if (!duplicate.deactivatedAt) {
+          throw new ConflictException({
+            code: ErrorCode.CONFLICT,
+            message: 'عضوی با این کد ملی قبلاً ثبت شده است.',
+          });
+        }
         duplicate.fullName = dto.fullName;
         duplicate.email = dto.email;
         duplicate.birthDate = dto.birthDate ? new Date(dto.birthDate) : null;
@@ -344,63 +391,75 @@ export class ClubService {
         duplicate.points = dto.points ?? duplicate.points;
         duplicate.deactivatedAt = null;
         duplicate.deactivatedById = null;
-        const restored = await this.clubMemberRepo.save(duplicate);
-        await this.audit.record({
+        const restored = await repository.save(duplicate);
+        await this.audit.record(
+          {
+            actorId: actor.id,
+            actorRole: actor.role,
+            category: 'CLUB',
+            action: 'بازگردانی مشتری VIP',
+            detail: `عضویت VIP «${dto.fullName}» توسط ${actor.fullName} دوباره فعال شد.`,
+            entityType: 'ClubMember',
+            entityId: restored.id,
+          },
+          tx,
+        );
+        await this.loyaltyProjection.recordMember(tx, restored, 'UPDATED');
+        return restored;
+      }
+
+      const created = await repository.save(
+        repository.create({
+          fullName: dto.fullName,
+          email: dto.email,
+          birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
+          nationalIdEnc: encryptPii(nationalId),
+          nationalIdHash: hashPii(nationalId),
+          level: dto.level,
+          points: dto.points ?? 0,
+        }),
+      );
+
+      await this.audit.record(
+        {
           actorId: actor.id,
           actorRole: actor.role,
           category: 'CLUB',
-          action: 'بازگردانی مشتری VIP',
-          detail: `عضویت VIP «${dto.fullName}» توسط ${actor.fullName} دوباره فعال شد.`,
+          action: 'تعریف مشتری VIP جدید',
+          detail: `عضو «${dto.fullName}» با سطح ${dto.level} توسط ${actor.fullName} به باشگاه افزوده شد.`,
           entityType: 'ClubMember',
-          entityId: restored.id,
-        });
-        return toMemberView(restored);
-      }
-      throw new ConflictException({
-        code: ErrorCode.CONFLICT,
-        message: 'عضوی با این کد ملی قبلاً ثبت شده است.',
-      });
-    }
-
-    const member = await this.clubMemberRepo.save(
-      this.clubMemberRepo.create({
-        fullName: dto.fullName,
-        email: dto.email,
-        birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
-        nationalIdEnc: encryptPii(nationalId),
-        nationalIdHash: hashPii(nationalId),
-        level: dto.level,
-        points: dto.points ?? 0,
-      }),
-    );
-
-    await this.audit.record({
-      actorId: actor.id,
-      actorRole: actor.role,
-      category: 'CLUB',
-      action: 'تعریف مشتری VIP جدید',
-      detail: `عضو «${dto.fullName}» با سطح ${dto.level} توسط ${actor.fullName} به باشگاه افزوده شد.`,
-      entityType: 'ClubMember',
-      entityId: member.id,
+          entityId: created.id,
+        },
+        tx,
+      );
+      await this.loyaltyProjection.recordMember(tx, created, 'CREATED');
+      return created;
     });
 
     return toMemberView(member);
   }
 
   async deactivateMember(actor: AuthenticatedUser, id: string) {
-    const member = await this.getMemberOrThrow(id);
-    member.deactivatedAt = new Date();
-    member.deactivatedById = actor.id;
-    await this.clubMemberRepo.save(member);
+    const member = await this.clubMemberRepo.manager.transaction(async (tx) => {
+      const current = await this.getMemberOrThrow(id, tx);
+      current.deactivatedAt = new Date();
+      current.deactivatedById = actor.id;
+      const saved = await tx.save(current);
 
-    await this.audit.record({
-      actorId: actor.id,
-      actorRole: actor.role,
-      category: 'CLUB',
-      action: 'غیرفعال‌سازی مشتری VIP',
-      detail: `عضویت VIP «${member.fullName}» توسط ${actor.fullName} غیرفعال شد؛ مزایا متوقف و تمام سوابق مشتری حفظ شد.`,
-      entityType: 'ClubMember',
-      entityId: member.id,
+      await this.audit.record(
+        {
+          actorId: actor.id,
+          actorRole: actor.role,
+          category: 'CLUB',
+          action: 'غیرفعال‌سازی مشتری VIP',
+          detail: `عضویت VIP «${saved.fullName}» توسط ${actor.fullName} غیرفعال شد؛ مزایا متوقف و تمام سوابق مشتری حفظ شد.`,
+          entityType: 'ClubMember',
+          entityId: saved.id,
+        },
+        tx,
+      );
+      await this.loyaltyProjection.recordMember(tx, saved, 'DEACTIVATED');
+      return saved;
     });
 
     return {
@@ -411,49 +470,68 @@ export class ClubService {
   }
 
   async updateLevel(actor: AuthenticatedUser, id: string, level: ClubTier) {
-    const member = await this.getMemberOrThrow(id);
-    const previousLevel = member.level;
-    member.level = level;
-    const updated = await this.clubMemberRepo.save(member);
+    const updated = await this.clubMemberRepo.manager.transaction(
+      async (tx) => {
+        const member = await this.getMemberOrThrow(id, tx);
+        const previousLevel = member.level;
+        if (previousLevel === level) return member;
+        member.level = level;
+        const saved = await tx.save(member);
 
-    await this.audit.record({
-      actorId: actor.id,
-      actorRole: actor.role,
-      category: 'CLUB',
-      action: 'تغییر سطح عضویت',
-      detail: `سطح عضویت «${member.fullName}» توسط ${actor.fullName} از ${previousLevel} به ${level} تغییر کرد.`,
-      entityType: 'ClubMember',
-      entityId: id,
-    });
+        await this.audit.record(
+          {
+            actorId: actor.id,
+            actorRole: actor.role,
+            category: 'CLUB',
+            action: 'تغییر سطح عضویت',
+            detail: `سطح عضویت «${member.fullName}» توسط ${actor.fullName} از ${previousLevel} به ${level} تغییر کرد.`,
+            entityType: 'ClubMember',
+            entityId: id,
+          },
+          tx,
+        );
+        await this.loyaltyProjection.recordMember(tx, saved, 'UPDATED');
+        return saved;
+      },
+    );
 
     return toMemberView(updated);
   }
 
   async issueCardDirect(actor: AuthenticatedUser, id: string) {
-    const member = await this.getMemberOrThrow(id);
-    if (member.cardStatus === ClubCardStatus.ISSUED) {
-      throw new ConflictException({
-        code: ErrorCode.CONFLICT,
-        message: 'برای این عضو قبلاً کارت صادر شده است.',
-      });
-    }
+    const updated = await this.clubMemberRepo.manager.transaction(
+      async (tx) => {
+        const member = await this.getMemberOrThrow(id, tx);
+        if (member.cardStatus === ClubCardStatus.ISSUED) {
+          throw new ConflictException({
+            code: ErrorCode.CONFLICT,
+            message: 'برای این عضو قبلاً کارت صادر شده است.',
+          });
+        }
 
-    const roleLabel = ROLE_LABELS_FA[actor.role];
-    member.cardStatus = ClubCardStatus.ISSUED;
-    member.cardNo = generateCardNo(member.level);
-    member.issuedByLabelFa = `${roleLabel} (صدور مستقیم)`;
-    const updated = await this.clubMemberRepo.save(member);
+        const roleLabel = ROLE_LABELS_FA[actor.role];
+        member.cardStatus = ClubCardStatus.ISSUED;
+        member.cardNo = generateCardNo(member.level);
+        member.issuedByLabelFa = `${roleLabel} (صدور مستقیم)`;
+        const saved = await tx.save(member);
 
-    // The mocks issue silently with no trail — the real system audits (⚑).
-    await this.audit.record({
-      actorId: actor.id,
-      actorRole: actor.role,
-      category: 'CLUB',
-      action: 'صدور مستقیم کارت عضویت',
-      detail: `کارت ${updated.cardNo} برای «${member.fullName}» توسط ${actor.fullName} صادر شد (صدور مستقیم).`,
-      entityType: 'ClubMember',
-      entityId: id,
-    });
+        // The mocks issue silently with no trail — the real system audits (⚑).
+        await this.audit.record(
+          {
+            actorId: actor.id,
+            actorRole: actor.role,
+            category: 'CLUB',
+            action: 'صدور مستقیم کارت عضویت',
+            detail: `کارت ${saved.cardNo} برای «${member.fullName}» توسط ${actor.fullName} صادر شد (صدور مستقیم).`,
+            entityType: 'ClubMember',
+            entityId: id,
+          },
+          tx,
+        );
+        await this.loyaltyProjection.recordMember(tx, saved, 'ISSUED');
+        return saved;
+      },
+    );
 
     return toMemberView(updated);
   }
@@ -484,38 +562,43 @@ export class ClubService {
       nid = base + String(r < 2 ? r : 11 - r);
       break;
     }
-    const member = await this.clubMemberRepo.save(
-      this.clubMemberRepo.create({
-        fullName: `عضو آزمایشی ${crypto.randomUUID().slice(0, 6)}`,
-        email: `${crypto.randomUUID().slice(0, 8)}@e2e.example`,
-        nationalIdEnc: encryptPii(nid),
-        nationalIdHash: hashPii(nid),
-        points: 6000,
-        level: ClubTier.GOLD,
-        cardStatus: ClubCardStatus.REVIEW,
-      }),
-    );
-    return this.cardRequestRepo.save(
-      this.cardRequestRepo.create({
-        memberId: member.id,
-        level: ClubTier.GOLD,
-        points: 6000,
-        status: ClubCardRequestStatus.REFERRED,
-        assignedTo,
-        history: [
-          {
-            step: 'submitted',
-            labelFa: 'رسیدن به حد امتیاز و ثبت درخواست صدور کارت',
-            at: 'اکنون',
-          },
-          {
-            step: 'referred',
-            labelFa: `ارجاع به ${assignedTo === 'SENIOR' ? 'مدیر ارشد' : 'رئیس هیئت مدیره'} توسط ادمین سایت`,
-            at: 'اکنون',
-          },
-        ],
-      }),
-    );
+    return this.clubMemberRepo.manager.transaction(async (tx) => {
+      const member = await tx.save(
+        tx.create(ClubMember, {
+          fullName: `عضو آزمایشی ${crypto.randomUUID().slice(0, 6)}`,
+          email: `${crypto.randomUUID().slice(0, 8)}@e2e.example`,
+          nationalIdEnc: encryptPii(nid),
+          nationalIdHash: hashPii(nid),
+          points: 6000,
+          level: ClubTier.GOLD,
+          cardStatus: ClubCardStatus.REVIEW,
+        }),
+      );
+      await this.loyaltyProjection.recordMember(tx, member, 'CREATED');
+      const request = await tx.save(
+        tx.create(ClubCardRequest, {
+          memberId: member.id,
+          level: ClubTier.GOLD,
+          points: 6000,
+          status: ClubCardRequestStatus.REFERRED,
+          assignedTo,
+          history: [
+            {
+              step: 'submitted',
+              labelFa: 'رسیدن به حد امتیاز و ثبت درخواست صدور کارت',
+              at: 'اکنون',
+            },
+            {
+              step: 'referred',
+              labelFa: `ارجاع به ${assignedTo === 'SENIOR' ? 'مدیر ارشد' : 'رئیس هیئت مدیره'} توسط ادمین سایت`,
+              at: 'اکنون',
+            },
+          ],
+        }),
+      );
+      await this.loyaltyProjection.recordCardRequest(tx, request, 'CREATED');
+      return toCardRequestView(request);
+    });
   }
 
   // ── Card requests ─────────────────────────────────────────────────────
@@ -544,11 +627,7 @@ export class ClubService {
       })
       .orderBy('r.createdAt', 'DESC')
       .getMany();
-    return requests.map((request) => {
-      const { version, ...view } = request;
-      void version;
-      return view;
-    });
+    return requests.map(toCardRequestView);
   }
 
   /** SITE_ADMIN track: all card requests (refer only allowed on SUBMITTED). */
@@ -597,51 +676,58 @@ export class ClubService {
     id: string,
     assignedTo: 'SENIOR' | 'CHAIR',
   ) {
-    const request = await this.cardRequestRepo
-      .createQueryBuilder('r')
-      .leftJoinAndSelect('r.member', 'member')
-      .where('r.id = :id', { id })
-      .getOne();
-    if (!request) {
-      throw new NotFoundException({
-        code: ErrorCode.NOT_FOUND,
-        message: 'درخواست یافت نشد.',
+    return this.cardRequestRepo.manager.transaction(async (tx) => {
+      const request = await tx
+        .getRepository(ClubCardRequest)
+        .createQueryBuilder('r')
+        .leftJoinAndSelect('r.member', 'member')
+        .where('r.id = :id', { id })
+        .setLock('pessimistic_write', undefined, ['r'])
+        .getOne();
+      if (!request) {
+        throw new NotFoundException({
+          code: ErrorCode.NOT_FOUND,
+          message: 'درخواست یافت نشد.',
+        });
+      }
+      if (request.status !== ClubCardRequestStatus.SUBMITTED) {
+        throw new ConflictException({
+          code: ErrorCode.CONFLICT,
+          message: 'این درخواست قبلاً ارجاع شده است.',
+        });
+      }
+
+      const assigneeLabel =
+        assignedTo === 'SENIOR' ? 'مدیر ارشد' : 'رئیس هیئت مدیره';
+      const history = Array.isArray(request.history)
+        ? [...(request.history as unknown[])]
+        : [];
+      history.push({
+        step: 'referred',
+        labelFa: `ارجاع به ${assigneeLabel} توسط ادمین سایت`,
+        at: this.nowJalaliLabel(),
       });
-    }
-    if (request.status !== ClubCardRequestStatus.SUBMITTED) {
-      throw new ConflictException({
-        code: ErrorCode.CONFLICT,
-        message: 'این درخواست قبلاً ارجاع شده است.',
-      });
-    }
 
-    const assigneeLabel =
-      assignedTo === 'SENIOR' ? 'مدیر ارشد' : 'رئیس هیئت مدیره';
-    const history = Array.isArray(request.history)
-      ? [...(request.history as unknown[])]
-      : [];
-    history.push({
-      step: 'referred',
-      labelFa: `ارجاع به ${assigneeLabel} توسط ادمین سایت`,
-      at: this.nowJalaliLabel(),
+      request.status = ClubCardRequestStatus.REFERRED;
+      request.assignedTo = assignedTo;
+      request.history = history as JsonValue;
+      const updated = await tx.save(request);
+
+      await this.audit.record(
+        {
+          actorId: actor.id,
+          actorRole: actor.role,
+          category: 'CLUB',
+          action: 'ارجاع درخواست کارت عضویت',
+          detail: `درخواست کارت «${request.member.fullName}» توسط ${actor.fullName} به ${assigneeLabel} ارجاع شد.`,
+          entityType: 'ClubCardRequest',
+          entityId: id,
+        },
+        tx,
+      );
+      await this.loyaltyProjection.recordCardRequest(tx, updated, 'REFERRED');
+      return toCardRequestView(updated);
     });
-
-    request.status = ClubCardRequestStatus.REFERRED;
-    request.assignedTo = assignedTo;
-    request.history = history as JsonValue;
-    const updated = await this.cardRequestRepo.save(request);
-
-    await this.audit.record({
-      actorId: actor.id,
-      actorRole: actor.role,
-      category: 'CLUB',
-      action: 'ارجاع درخواست کارت عضویت',
-      detail: `درخواست کارت «${request.member.fullName}» توسط ${actor.fullName} به ${assigneeLabel} ارجاع شد.`,
-      entityType: 'ClubCardRequest',
-      entityId: id,
-    });
-
-    return updated;
   }
 
   /** ⚑ Design authority rule: CEO/BOARD_CHAIR act on any REFERRED request;
@@ -687,72 +773,86 @@ export class ClubService {
       return this.getMyMembershipLocal(userId);
     }
 
-    const user = await this.userRepo.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new NotFoundException({
-        code: ErrorCode.NOT_FOUND,
-        message: 'کاربر یافت نشد.',
+    await this.clubMemberRepo.manager.transaction(async (tx) => {
+      const user = await tx.getRepository(User).findOne({
+        where: { id: userId },
       });
-    }
-    if (!user.nationalIdEnc) {
-      throw new BadRequestException({
-        code: ErrorCode.VALIDATION_FAILED,
-        message:
-          'برای عضویت در باشگاه، ابتدا کد ملی را در پروفایل خود تکمیل کنید.',
-      });
-    }
-    const nationalId = normalizeNationalId(decryptPii(user.nationalIdEnc));
-    if (!isValidIranianNationalId(nationalId)) {
-      throw new BadRequestException({
-        code: ErrorCode.VALIDATION_FAILED,
-        message: 'کد ملی پروفایل معتبر نیست.',
-      });
-    }
-    const byNid = await this.clubMemberRepo.findOne({
-      where: { nationalIdHash: hashPii(nationalId) },
-    });
-    if (byNid) {
-      if (byNid.deactivatedAt) {
-        throw new ConflictException({
-          code: ErrorCode.CONFLICT,
+      if (!user) {
+        throw new NotFoundException({
+          code: ErrorCode.NOT_FOUND,
+          message: 'کاربر یافت نشد.',
+        });
+      }
+      if (!user.nationalIdEnc) {
+        throw new BadRequestException({
+          code: ErrorCode.VALIDATION_FAILED,
           message:
-            'عضویت باشگاه با این کد ملی غیرفعال است؛ برای فعال‌سازی مجدد با پشتیبانی تماس بگیرید.',
+            'برای عضویت در باشگاه، ابتدا کد ملی را در پروفایل خود تکمیل کنید.',
         });
       }
-      if (byNid.userId && byNid.userId !== userId) {
-        throw new ConflictException({
-          code: ErrorCode.CONFLICT,
-          message: 'عضویت باشگاه با این کد ملی قبلاً به حساب دیگری وصل است.',
+      const nationalId = normalizeNationalId(decryptPii(user.nationalIdEnc));
+      if (!isValidIranianNationalId(nationalId)) {
+        throw new BadRequestException({
+          code: ErrorCode.VALIDATION_FAILED,
+          message: 'کد ملی پروفایل معتبر نیست.',
         });
       }
-      byNid.userId = userId;
-      await this.clubMemberRepo.save(byNid);
-      return this.getMyMembershipLocal(userId);
-    }
-
-    const email =
-      user.email?.trim() ||
-      (user.phone ? `${user.phone.replace(/\D/g, '')}@users.blujet.local` : '');
-    if (!email) {
-      throw new BadRequestException({
-        code: ErrorCode.VALIDATION_FAILED,
-        message:
-          'برای عضویت در باشگاه، ابتدا ایمیل یا شماره موبایل را در پروفایل تکمیل کنید.',
+      const repository = tx.getRepository(ClubMember);
+      await tx.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [
+        hashPii(nationalId),
+      ]);
+      const byNid = await repository.findOne({
+        where: { nationalIdHash: hashPii(nationalId) },
+        lock: { mode: 'pessimistic_write' },
       });
-    }
+      if (byNid) {
+        if (byNid.deactivatedAt) {
+          throw new ConflictException({
+            code: ErrorCode.CONFLICT,
+            message:
+              'عضویت باشگاه با این کد ملی غیرفعال است؛ برای فعال‌سازی مجدد با پشتیبانی تماس بگیرید.',
+          });
+        }
+        if (byNid.userId && byNid.userId !== userId) {
+          throw new ConflictException({
+            code: ErrorCode.CONFLICT,
+            message: 'عضویت باشگاه با این کد ملی قبلاً به حساب دیگری وصل است.',
+          });
+        }
+        if (byNid.userId === userId) return;
+        byNid.userId = userId;
+        const linked = await repository.save(byNid);
+        await this.loyaltyProjection.recordMember(tx, linked, 'LINKED');
+        return;
+      }
 
-    await this.clubMemberRepo.save(
-      this.clubMemberRepo.create({
-        userId,
-        fullName: user.fullName,
-        email,
-        birthDate: user.birthDate ?? null,
-        nationalIdEnc: encryptPii(nationalId),
-        nationalIdHash: hashPii(nationalId),
-        level: ClubTier.SILVER,
-        points: 0,
-      }),
-    );
+      const email =
+        user.email?.trim() ||
+        (user.phone
+          ? `${user.phone.replace(/\D/g, '')}@users.blujet.local`
+          : '');
+      if (!email) {
+        throw new BadRequestException({
+          code: ErrorCode.VALIDATION_FAILED,
+          message:
+            'برای عضویت در باشگاه، ابتدا ایمیل یا شماره موبایل را در پروفایل تکمیل کنید.',
+        });
+      }
+
+      const created = await repository.save(
+        repository.create({
+          userId,
+          fullName: user.fullName,
+          email,
+          birthDate: user.birthDate ?? null,
+          nationalIdEnc: encryptPii(nationalId),
+          nationalIdHash: hashPii(nationalId),
+          level: ClubTier.SILVER,
+          points: 0,
+        }),
+      );
+      await this.loyaltyProjection.recordMember(tx, created, 'CREATED');
+    });
 
     return this.getMyMembershipLocal(userId);
   }
@@ -837,59 +937,61 @@ export class ClubService {
 
   /** Customer self-service: submit a membership-card issuance request. */
   async submitCardRequest(userId: string) {
-    const member = await this.clubMemberRepo.findOne({
-      where: { userId, deactivatedAt: IsNull() },
-    });
-    if (!member) {
-      throw new NotFoundException({
-        code: ErrorCode.NOT_FOUND,
-        message: 'عضو باشگاه یافت نشد.',
-      });
-    }
-
-    const rule = await this.getOrCreateTierRule();
-    const balance = await this.getMemberPointsBalance(member.id);
-
-    if (balance < rule.cardRequestMinPoints) {
-      throw new BadRequestException({
-        code: ErrorCode.VALIDATION_FAILED,
-        message: 'برای درخواست کارت عضویت به حد نصاب امتیاز نرسیده‌اید.',
-      });
-    }
-
-    if (member.cardStatus === ClubCardStatus.ISSUED) {
-      throw new ConflictException({
-        code: ErrorCode.CONFLICT,
-        message: 'کارت عضویت شما قبلاً صادر شده است.',
-      });
-    }
-
-    const pending = await this.cardRequestRepo
-      .createQueryBuilder('r')
-      .where('r.memberId = :memberId', { memberId: member.id })
-      .andWhere('r.status IN (:...statuses)', {
-        statuses: [
-          ClubCardRequestStatus.SUBMITTED,
-          ClubCardRequestStatus.REFERRED,
-        ],
-      })
-      .getOne();
-    if (pending) {
-      throw new ConflictException({
-        code: ErrorCode.CONFLICT,
-        message: 'درخواست قبلی شما در حال بررسی است.',
-      });
-    }
-
-    const history = [
-      {
-        step: 'submitted',
-        labelFa: 'رسیدن به حد امتیاز و ثبت درخواست صدور کارت',
-        at: this.nowJalaliLabel(),
-      },
-    ];
-
     return this.clubMemberRepo.manager.transaction(async (tx) => {
+      const member = await tx.getRepository(ClubMember).findOne({
+        where: { userId, deactivatedAt: IsNull() },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!member) {
+        throw new NotFoundException({
+          code: ErrorCode.NOT_FOUND,
+          message: 'عضو باشگاه یافت نشد.',
+        });
+      }
+
+      const rule = await this.getOrCreateTierRule();
+      const balance = await this.getMemberPointsBalance(member.id);
+
+      if (balance < rule.cardRequestMinPoints) {
+        throw new BadRequestException({
+          code: ErrorCode.VALIDATION_FAILED,
+          message: 'برای درخواست کارت عضویت به حد نصاب امتیاز نرسیده‌اید.',
+        });
+      }
+
+      if (member.cardStatus === ClubCardStatus.ISSUED) {
+        throw new ConflictException({
+          code: ErrorCode.CONFLICT,
+          message: 'کارت عضویت شما قبلاً صادر شده است.',
+        });
+      }
+
+      const pending = await tx
+        .getRepository(ClubCardRequest)
+        .createQueryBuilder('r')
+        .where('r.memberId = :memberId', { memberId: member.id })
+        .andWhere('r.status IN (:...statuses)', {
+          statuses: [
+            ClubCardRequestStatus.SUBMITTED,
+            ClubCardRequestStatus.REFERRED,
+          ],
+        })
+        .getOne();
+      if (pending) {
+        throw new ConflictException({
+          code: ErrorCode.CONFLICT,
+          message: 'درخواست قبلی شما در حال بررسی است.',
+        });
+      }
+
+      const history = [
+        {
+          step: 'submitted',
+          labelFa: 'رسیدن به حد امتیاز و ثبت درخواست صدور کارت',
+          at: this.nowJalaliLabel(),
+        },
+      ];
+
       const req = await tx.save(
         tx.create(ClubCardRequest, {
           memberId: member.id,
@@ -899,9 +1001,13 @@ export class ClubService {
           history,
         }),
       );
-      await tx.update(ClubMember, member.id, {
-        cardStatus: ClubCardStatus.REVIEW,
+      const currentMember = await tx.getRepository(ClubMember).findOneByOrFail({
+        id: member.id,
       });
+      currentMember.cardStatus = ClubCardStatus.REVIEW;
+      const updatedMember = await tx.save(currentMember);
+      await this.loyaltyProjection.recordCardRequest(tx, req, 'CREATED');
+      await this.loyaltyProjection.recordMember(tx, updatedMember, 'UPDATED');
       return {
         id: req.id,
         status: req.status,
@@ -917,37 +1023,42 @@ export class ClubService {
     id: string,
     decision: 'approve' | 'reject',
   ) {
-    const request = await this.cardRequestRepo
-      .createQueryBuilder('r')
-      .leftJoinAndSelect('r.member', 'member')
-      .where('r.id = :id', { id })
-      .getOne();
-    if (!request) {
-      throw new NotFoundException({
-        code: ErrorCode.NOT_FOUND,
-        message: 'درخواست یافت نشد.',
-      });
-    }
-    if (request.member.deactivatedAt) {
-      throw new ConflictException({
-        code: ErrorCode.CONFLICT,
-        message: 'عضویت این مشتری غیرفعال است و صدور کارت مجاز نیست.',
-      });
-    }
-    if (request.status !== ClubCardRequestStatus.REFERRED) {
-      throw new ConflictException({
-        code: ErrorCode.CONFLICT,
-        message: 'این درخواست قبلاً بررسی شده است.',
-      });
-    }
-    this.assertCanDecide(actor, request.assignedTo);
+    return this.clubMemberRepo.manager.transaction(async (tx) => {
+      const request = await tx
+        .getRepository(ClubCardRequest)
+        .createQueryBuilder('r')
+        .leftJoinAndSelect('r.member', 'member')
+        .where('r.id = :id', { id })
+        .setLock('pessimistic_write', undefined, ['r'])
+        .getOne();
+      if (!request) {
+        throw new NotFoundException({
+          code: ErrorCode.NOT_FOUND,
+          message: 'درخواست یافت نشد.',
+        });
+      }
+      if (request.member.deactivatedAt) {
+        throw new ConflictException({
+          code: ErrorCode.CONFLICT,
+          message: 'عضویت این مشتری غیرفعال است و صدور کارت مجاز نیست.',
+        });
+      }
+      if (request.status !== ClubCardRequestStatus.REFERRED) {
+        throw new ConflictException({
+          code: ErrorCode.CONFLICT,
+          message: 'این درخواست قبلاً بررسی شده است.',
+        });
+      }
+      this.assertCanDecide(actor, request.assignedTo);
 
-    const roleLabel = ROLE_LABELS_FA[actor.role];
-    const history = (
-      Array.isArray(request.history) ? [...(request.history as unknown[])] : []
-    ) as JsonValue;
+      const roleLabel = ROLE_LABELS_FA[actor.role];
+      const history = (
+        Array.isArray(request.history)
+          ? [...(request.history as unknown[])]
+          : []
+      ) as JsonValue;
+      const member = await this.getMemberOrThrow(request.memberId, tx);
 
-    await this.clubMemberRepo.manager.transaction(async (tx) => {
       if (decision === 'approve') {
         const cardNo = generateCardNo(request.level);
         (history as unknown[]).push({
@@ -960,52 +1071,53 @@ export class ClubService {
         request.decidedById = actor.id;
         request.decidedAt = new Date();
         request.history = history;
-        await tx.save(request);
-        await tx.update(ClubMember, request.memberId, {
-          cardStatus: ClubCardStatus.ISSUED,
-          cardNo,
-          issuedByLabelFa: `${roleLabel} (تأیید درخواست)`,
+        member.cardStatus = ClubCardStatus.ISSUED;
+        member.cardNo = cardNo;
+        member.issuedByLabelFa = `${roleLabel} (تأیید درخواست)`;
+      } else {
+        (history as unknown[]).push({
+          step: 'rejected',
+          labelFa: `رد درخواست توسط ${roleLabel}`,
+          at: this.nowJalaliLabel(),
         });
-        return;
+        request.status = ClubCardRequestStatus.REJECTED;
+        request.decidedById = actor.id;
+        request.decidedAt = new Date();
+        request.history = history;
+        member.cardStatus = ClubCardStatus.NONE;
       }
 
-      (history as unknown[]).push({
-        step: 'rejected',
-        labelFa: `رد درخواست توسط ${roleLabel}`,
-        at: this.nowJalaliLabel(),
-      });
-      request.status = ClubCardRequestStatus.REJECTED;
-      request.decidedById = actor.id;
-      request.decidedAt = new Date();
-      request.history = history;
-      await tx.save(request);
-      await tx.update(ClubMember, request.memberId, {
-        cardStatus: ClubCardStatus.NONE,
-      });
+      const updated = await tx.save(request);
+      const updatedMember = await tx.save(member);
+      await this.audit.record(
+        {
+          actorId: actor.id,
+          actorRole: actor.role,
+          category: 'CLUB',
+          action:
+            decision === 'approve'
+              ? 'تأیید و صدور کارت عضویت'
+              : 'رد درخواست کارت عضویت',
+          detail: `درخواست کارت «${request.member.fullName}» توسط ${actor.fullName} ${
+            decision === 'approve'
+              ? `تأیید و کارت ${updated.cardNo} صادر شد`
+              : 'رد شد'
+          }.`,
+          entityType: 'ClubCardRequest',
+          entityId: id,
+        },
+        tx,
+      );
+      await this.loyaltyProjection.recordCardRequest(tx, updated, 'DECIDED');
+      await this.loyaltyProjection.recordMember(
+        tx,
+        updatedMember,
+        decision === 'approve' ? 'ISSUED' : 'UPDATED',
+      );
+      const { version, member: joinedMember, ...view } = updated;
+      void version;
+      void joinedMember;
+      return view;
     });
-
-    const updated = await this.cardRequestRepo
-      .createQueryBuilder('r')
-      .where('r.id = :id', { id })
-      .getOneOrFail();
-
-    await this.audit.record({
-      actorId: actor.id,
-      actorRole: actor.role,
-      category: 'CLUB',
-      action:
-        decision === 'approve'
-          ? 'تأیید و صدور کارت عضویت'
-          : 'رد درخواست کارت عضویت',
-      detail: `درخواست کارت «${request.member.fullName}» توسط ${actor.fullName} ${
-        decision === 'approve'
-          ? `تأیید و کارت ${updated.cardNo} صادر شد`
-          : 'رد شد'
-      }.`,
-      entityType: 'ClubCardRequest',
-      entityId: id,
-    });
-
-    return updated;
   }
 }

@@ -7,6 +7,7 @@ import { DataSource } from 'typeorm';
 import { dataSourceOptions } from '../src/database/data-source.options';
 import { CommerceOutboxEvent } from '../src/database/entities/commerce-outbox-event.entity';
 import { CommerceOutbox1791561600000 } from '../src/database/migrations/1791561600000-CommerceOutbox';
+import { CommerceOutboxSequence1793433600000 } from '../src/database/migrations/1793433600000-CommerceOutboxSequence';
 import { CommerceOutboxService } from '../src/modules/commerce-outbox/commerce-outbox.service';
 import { CommerceOutboxModule } from '../src/modules/commerce-outbox/commerce-outbox.module';
 import { CommerceOutboxDispatcher } from '../src/modules/commerce-outbox/commerce-outbox.dispatcher';
@@ -157,6 +158,33 @@ describe('Commerce outbox (PostgreSQL)', () => {
     expect(JSON.parse(decryptPii(stored.envelopeEncrypted))).toEqual(value);
     expect(stored.deliveredAt).toBeNull();
     expect(publish).not.toHaveBeenCalled();
+  });
+  it('claims same-millisecond events in database insertion order', async () => {
+    const first = {
+      ...event(),
+      eventId: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+    };
+    const second = {
+      ...event(),
+      eventId: '00000000-0000-4000-8000-000000000001',
+    };
+    await db.transaction(async (manager) => {
+      await service.enqueue(manager, first);
+      await service.enqueue(manager, second);
+    });
+    const sameMillisecond = new Date('2026-09-11T10:00:00.000Z');
+    await db
+      .getRepository(CommerceOutboxEvent)
+      .update({ producer }, { createdAt: sameMillisecond });
+
+    const dispatcher = worker();
+    await dispatcher.drainOnce();
+    await dispatcher.drainOnce();
+
+    expect(publish.mock.calls.map(([published]) => published.eventId)).toEqual([
+      first.eventId,
+      second.eventId,
+    ]);
   });
   it('serializes concurrent semantic retries and rejects changed payloads', async () => {
     const first = event();
@@ -314,14 +342,19 @@ describe('Commerce outbox (PostgreSQL)', () => {
     await runner.startTransaction();
     try {
       const migration = new CommerceOutbox1791561600000();
+      const sequenceMigration = new CommerceOutboxSequence1793433600000();
+      await sequenceMigration.down(runner);
       await migration.down(runner);
       expect(await runner.hasTable('orders.commerce_outbox_events')).toBe(
         false,
       );
       await migration.up(runner);
+      await sequenceMigration.up(runner);
       expect(await runner.hasTable('orders.commerce_outbox_events')).toBe(true);
+      await sequenceMigration.down(runner);
       await migration.down(runner);
       await migration.up(runner);
+      await sequenceMigration.up(runner);
     } finally {
       await runner.rollbackTransaction();
       await runner.release();
