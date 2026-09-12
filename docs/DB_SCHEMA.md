@@ -4,6 +4,11 @@ Price-lock creation/cancellation writes its encrypted projection outbox event
 in the wallet-fee transaction. Cancellation uses a row lock before validation.
 No new table or migration is required for this publisher activation.
 
+Booking attachment conditionally sets `loyalty.price_locks.bookingId`; zero
+affected rows is a transaction conflict. Payment locks that row before changing
+`ACTIVE` to `USED`. Both transitions and their encrypted outbox events share the
+Core transaction; rollback removes both. No schema change is required.
+
 ## Commerce outbox claim sequence and Club publication
 
 Purchase earnings and redemption now publish immutable points-entry snapshots

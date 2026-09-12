@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import * as crypto from 'node:crypto';
-import { DataSource } from 'typeorm';
+import { DataSource, Like } from 'typeorm';
 import { AircraftSeatMap } from '../src/database/entities/aircraft-seat-map.entity';
 import { AncillaryService } from '../src/database/entities/ancillary-service.entity';
 import { Booking } from '../src/database/entities/booking.entity';
@@ -14,6 +14,7 @@ import { FlightInstance } from '../src/database/entities/flight-instance.entity'
 import { LedgerEntry } from '../src/database/entities/ledger-entry.entity';
 import { PriceLock } from '../src/database/entities/price-lock.entity';
 import { LoyaltyProjectionAudit } from '../src/database/entities/loyalty-projection-audit.entity';
+import { CommerceOutboxEvent } from '../src/database/entities/commerce-outbox-event.entity';
 import { PromoCode } from '../src/database/entities/promo-code.entity';
 import { Route } from '../src/database/entities/route.entity';
 import { encryptPii, hashPii } from '../src/common/pii-crypto';
@@ -643,26 +644,91 @@ describe('Purchase extras: promo codes, wallet, club points, price lock (e2e)', 
     });
   });
 
-  it('a booking created against an active lock is flagged isPriceLocked; an ordinary booking is not', async () => {
-    const { accessToken, instance: lockedInstance } = await lockAsGold(
-      phoneFor(13),
-      48,
-    );
+  it('attaches one concurrent booking and publishes the lock through payment consumption', async () => {
+    const {
+      accessToken,
+      userId,
+      instance: lockedInstance,
+    } = await lockAsGold(phoneFor(13), 48);
 
-    await request(app.getHttpServer())
+    const createdLock = await request(app.getHttpServer())
       .post('/my/price-locks')
       .set('Authorization', `Bearer ${accessToken}`)
       .send({ flightInstanceId: lockedInstance.id, cabin: 'ECONOMY' });
+    expect(createdLock.status).toBe(201);
+    const lockId = String(createdLock.body.data.id);
 
-    const lockedBooking = await request(app.getHttpServer())
-      .post('/bookings')
-      .set('Authorization', `Bearer ${accessToken}`)
-      .send({
-        flightInstanceId: lockedInstance.id,
-        cabin: 'ECONOMY',
-        passengers: [{ fullName: 'قفل قیمت', seatCode: '7A' }],
-      });
+    const bookingAttempts = await Promise.all(
+      ['7A', '7B'].map((seatCode) =>
+        request(app.getHttpServer())
+          .post('/bookings')
+          .set('Authorization', `Bearer ${accessToken}`)
+          .send({
+            flightInstanceId: lockedInstance.id,
+            cabin: 'ECONOMY',
+            passengers: [{ fullName: 'قفل قیمت', seatCode }],
+          }),
+      ),
+    );
+    expect(bookingAttempts.map((result) => result.status).sort()).toEqual([
+      201, 409,
+    ]);
+    const lockedBooking = bookingAttempts.find(
+      (result) => result.status === 201,
+    )!;
     expect(lockedBooking.body.data.isPriceLocked).toBe(true);
+    const bookingId = String(lockedBooking.body.data.id);
+    expect(
+      await dataSource.getRepository(Booking).countBy({
+        flightInstanceId: lockedInstance.id,
+        userId,
+      }),
+    ).toBe(1);
+    const projectionRepo = dataSource.getRepository(LoyaltyProjectionAudit);
+    const mutations = async () =>
+      (
+        await projectionRepo.find({
+          where: { aggregateType: 'LoyaltyPriceLock', aggregateId: lockId },
+          order: { recordVersion: 'ASC' },
+        })
+      ).map((audit) => audit.mutation);
+    const outboxCount = () =>
+      dataSource.getRepository(CommerceOutboxEvent).countBy({
+        producer: 'core-loyalty',
+        idempotencyKey: Like(`loyalty-projected:LoyaltyPriceLock:${lockId}:v%`),
+      });
+    expect(await mutations()).toEqual(['CREATED', 'LINKED']);
+    expect(await outboxCount()).toBe(2);
+
+    const failedPayment = await request(app.getHttpServer())
+      .post(`/bookings/${bookingId}/pay`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ paymentMethod: 'POINTS' });
+    expect(failedPayment.status).toBe(400);
+    expect(
+      (
+        await dataSource
+          .getRepository(PriceLock)
+          .findOneByOrFail({ id: lockId })
+      ).status,
+    ).toBe('ACTIVE');
+    expect(await mutations()).toEqual(['CREATED', 'LINKED']);
+    expect(await outboxCount()).toBe(2);
+
+    const paid = await request(app.getHttpServer())
+      .post(`/bookings/${bookingId}/pay`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({});
+    expect(paid.status).toBe(201);
+    expect(
+      (
+        await dataSource
+          .getRepository(PriceLock)
+          .findOneByOrFail({ id: lockId })
+      ).status,
+    ).toBe('USED');
+    expect(await mutations()).toEqual(['CREATED', 'LINKED', 'CONSUMED']);
+    expect(await outboxCount()).toBe(3);
 
     const otherInstance = await freshInstance(49);
     const ordinaryBooking = await request(app.getHttpServer())

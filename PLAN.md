@@ -1,12 +1,21 @@
 # PLAN.md — blujet roadmap & progress
 
+## Loyalty price-lock booking lifecycle (2026-09-12)
+
+- [x] Enforce exactly-one booking attachment under concurrency.
+- [x] Publish `LINKED` and `CONSUMED` snapshots in Core transactions.
+- [x] Prove failed payment rollback and audit/outbox atomicity.
+- [x] 16 Purchase Extras E2E tests, typecheck and scoped lint pass.
+- [x] Production build and diff validation pass.
+- [ ] GitHub CI and merge approval. No deployment or cutover.
+
 ## Loyalty price-lock create/cancel publisher (2026-09-12)
 
 - [x] Publish create/cancel snapshots in the wallet transaction.
 - [x] Lock cancellation row before status validation; concurrent requests have
   exactly one winner (`purchase-extras.e2e-spec.ts`).
 - [x] 16 E2E and 4 unit tests, typecheck, scoped lint and build pass.
-- [ ] CI and merge approval. No deployment or cutover.
+- [x] CI and approved merge: PR #124, main commit 3e6db6c.
 - Next: booking attachment/consumption publishers and rollback coverage.
 
 ## Loyalty points publisher (2026-09-12)
