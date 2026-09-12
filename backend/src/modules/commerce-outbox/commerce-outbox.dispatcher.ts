@@ -66,8 +66,7 @@ export class CommerceOutboxDispatcher
         .andWhere('(event.claimedAt IS NULL OR event.claimedAt < :stale)', {
           stale: new Date(Date.now() - COMMERCE_OUTBOX_LEASE_MS),
         })
-        .orderBy('event.createdAt', 'ASC')
-        .addOrderBy('event.id', 'ASC')
+        .orderBy('event.sequence', 'ASC')
         .take(1)
         .setLock('pessimistic_write')
         .setOnLocked('skip_locked')

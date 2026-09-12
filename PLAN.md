@@ -1,5 +1,18 @@
 # PLAN.md — blujet roadmap & progress
 
+## Microservices architecture v1.1 — phase 6 Loyalty Club publisher activation (2026-09-11)
+
+- [x] Freeze the Club-only activation boundary before changing runtime writes.
+- [x] Make tier-rule, member and card-request changes transactional and publish
+  their approved full snapshots through the encrypted Core outbox.
+- [x] Keep public `/api/v1/club/**` and `/api/v1/my/club/**` responses unchanged;
+  never expose the internal source version or encrypted identity fields.
+- [x] Prove one row mutation, projection audit and outbox event commit or roll
+  back together, including multi-aggregate card-request decisions.
+- [x] Pass focused and full Backend checks, then present the diff for explicit
+  approval before commit/push/merge. Do not deploy, enable a consumer or switch
+  a Loyalty database URL.
+
 ## Microservices architecture v1.1 — phase 6 Loyalty outbox foundation (2026-09-11)
 
 - [x] Freeze the expand-only version, content-free audit, encrypted outbox and

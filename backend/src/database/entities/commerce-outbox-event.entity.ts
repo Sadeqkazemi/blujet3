@@ -10,6 +10,7 @@ import {
 @Index('commerce_outbox_idempotency_key', ['producer', 'idempotencyKey'], {
   unique: true,
 })
+@Index('commerce_outbox_sequence_key', ['sequence'], { unique: true })
 @Index('commerce_outbox_delivery_idx', [
   'deliveredAt',
   'deadLetterAt',
@@ -21,6 +22,8 @@ export class CommerceOutboxEvent {
     primaryKeyConstraintName: 'commerce_outbox_events_pkey',
   })
   id!: string;
+  @Column({ type: 'bigint', generated: 'increment' })
+  sequence!: string;
   @Column({ type: 'text' })
   producer!: string;
   @Column({ type: 'text' })
