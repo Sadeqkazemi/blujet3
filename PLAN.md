@@ -1,5 +1,17 @@
 # PLAN.md — blujet roadmap & progress
 
+## Loyalty points publisher (2026-09-12)
+
+- [x] Publish purchase earnings and payment redemptions with member snapshots
+  inside the existing Core transaction; no independent database writes.
+- [x] Lock the member before ledger balance calculation; prove rollback and
+  concurrent redemption safety in `backend/test/club.e2e-spec.ts`.
+- [x] Local verification: 31 Club E2E tests, typecheck, scoped lint and build.
+- [ ] GitHub CI.
+- [ ] Present this slice for merge approval; no deployment or database cutover.
+- Next: remaining Loyalty mutation publishers, then version-aware consumption
+  and reconciliation before any writer cutover.
+
 ## Microservices architecture v1.1 — phase 6 Loyalty Club publisher activation (2026-09-11)
 
 - [x] Freeze the Club-only activation boundary before changing runtime writes.

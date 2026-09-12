@@ -883,6 +883,83 @@ describe('Club (e2e)', () => {
       const updated = await memberRepo.findOneByOrFail({ id: member.id });
       expect(updated.points).toBe(20000);
       expect(updated.level).toBe('PLATINUM');
+      await expectProjection({
+        aggregateType: 'LoyaltyMember',
+        aggregateId: updated.id,
+        recordVersion: updated.version,
+        mutation: 'POINTS_CHANGED',
+      });
+      const entry = await dataSource
+        .getRepository(ClubPointsEntry)
+        .findOneByOrFail({
+          clubMemberId: member.id,
+          bookingId: booking.id,
+        });
+      await expectProjection({
+        aggregateType: 'LoyaltyPointsEntry',
+        aggregateId: entry.id,
+        recordVersion: entry.version,
+        mutation: 'CREATED',
+      });
+      const auditRepo = dataSource.getRepository(LoyaltyProjectionAudit);
+      const outboxRepo = dataSource.getRepository(CommerceOutboxEvent);
+      const auditCount = await auditRepo.count();
+      const outboxCount = await outboxRepo.count();
+      await expect(
+        dataSource.transaction(async (tx) => {
+          await clubPoints.redeemForPayment(tx, member.id, 10_000n, booking.id);
+          throw new Error('forced points rollback');
+        }),
+      ).rejects.toThrow('forced points rollback');
+      expect(await clubPoints.getBalance(member.id)).toBe(20000);
+      expect(await memberRepo.findOneByOrFail({ id: member.id })).toMatchObject(
+        {
+          points: updated.points,
+          version: updated.version,
+        },
+      );
+      expect(await auditRepo.count()).toBe(auditCount);
+      expect(await outboxRepo.count()).toBe(outboxCount);
+
+      const attempts = await Promise.allSettled(
+        [1, 2].map(() =>
+          dataSource.transaction((tx) =>
+            clubPoints.redeemForPayment(
+              tx,
+              member.id,
+              150_000_000n,
+              booking.id,
+            ),
+          ),
+        ),
+      );
+      expect(
+        attempts.filter((result) => result.status === 'fulfilled'),
+      ).toHaveLength(1);
+      expect(
+        attempts.filter((result) => result.status === 'rejected'),
+      ).toHaveLength(1);
+      expect(await clubPoints.getBalance(member.id)).toBe(5000);
+      const redeemed = await memberRepo.findOneByOrFail({ id: member.id });
+      expect(redeemed.points).toBe(5000);
+      await expectProjection({
+        aggregateType: 'LoyaltyMember',
+        aggregateId: member.id,
+        recordVersion: redeemed.version,
+        mutation: 'POINTS_CHANGED',
+      });
+      const redemption = await dataSource
+        .getRepository(ClubPointsEntry)
+        .findOneByOrFail({
+          clubMemberId: member.id,
+          type: 'REDEEM',
+        });
+      await expectProjection({
+        aggregateType: 'LoyaltyPointsEntry',
+        aggregateId: redemption.id,
+        recordVersion: redemption.version,
+        mutation: 'CREATED',
+      });
     });
   });
 

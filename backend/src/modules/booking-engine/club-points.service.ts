@@ -8,6 +8,7 @@ import { ErrorCode } from '../../common/errors';
 import { resolveTierForPoints } from '../club/club.service';
 import type { Irr } from '../../common/money';
 import { LoyaltyPointsClient } from './loyalty-points.client';
+import { LoyaltyProjectionEventService } from '../loyalty-projection-outbox/loyalty-projection-event.service';
 
 /** Server-side config (CLAUDE.md: "conversion rate is server-side config")
  * — documented constants rather than a SystemSetting key, since no other
@@ -23,6 +24,7 @@ export class ClubPointsService {
     @InjectRepository(ClubPointsEntry)
     private readonly pointsRepo: Repository<ClubPointsEntry>,
     private readonly loyaltyClient: LoyaltyPointsClient,
+    private readonly projection: LoyaltyProjectionEventService,
   ) {}
 
   async findMemberByUserId(userId: string) {
@@ -76,7 +78,8 @@ export class ClubPointsService {
     // never routes the amount through a float.
     const points = Number(paidIrr / BigInt(IRR_PER_EARNED_POINT));
     if (points <= 0) return;
-    await manager.save(
+    await this.lockMember(manager, clubMemberId);
+    const entry = await manager.save(
       manager.create(ClubPointsEntry, {
         clubMemberId,
         type: 'EARN',
@@ -84,6 +87,7 @@ export class ClubPointsService {
         bookingId,
       }),
     );
+    await this.projection.recordPointsEntry(manager, entry, 'CREATED');
     await this.syncCache(manager, clubMemberId);
   }
 
@@ -100,6 +104,8 @@ export class ClubPointsService {
     // Math.ceil, no float involved.
     const rate = BigInt(IRR_PER_REDEEMED_POINT);
     const pointsNeeded = Number((priceIrr + rate - 1n) / rate);
+    if (pointsNeeded <= 0) return 0;
+    await this.lockMember(manager, clubMemberId);
     const balance = await this.sumPoints(manager, clubMemberId);
     if (balance < pointsNeeded) {
       throw new BadRequestException({
@@ -107,7 +113,7 @@ export class ClubPointsService {
         message: 'امتیاز باشگاه کافی نیست.',
       });
     }
-    await manager.save(
+    const entry = await manager.save(
       manager.create(ClubPointsEntry, {
         clubMemberId,
         type: 'REDEEM',
@@ -115,16 +121,22 @@ export class ClubPointsService {
         bookingId,
       }),
     );
+    await this.projection.recordPointsEntry(manager, entry, 'CREATED');
     await this.syncCache(manager, clubMemberId);
     return pointsNeeded;
   }
 
-  /** Keeps ClubMember.points (Phase 5's staff-facing display cache) in
-   * sync — write-only from here, never read as the source of truth.
-   * Phase 65: also recomputes ClubMember.level from the manager-configured
-   * ClubTierRule thresholds every time points change, so tier promotion
-   * (and demotion, on a redemption) is real rather than a manual-only
-   * staff action. */
+  private async lockMember(manager: EntityManager, clubMemberId: string) {
+    if (!manager.queryRunner?.isTransactionActive) {
+      throw new Error('Loyalty points require an active Core transaction');
+    }
+    await manager.getRepository(ClubMember).findOneOrFail({
+      where: { id: clubMemberId },
+      lock: { mode: 'pessimistic_write' },
+    });
+  }
+
+  /** The ledger remains authoritative; points and tier are display caches. */
   private async syncCache(manager: EntityManager, clubMemberId: string) {
     const points = await this.sumPoints(manager, clubMemberId);
     const rule = await manager
@@ -137,5 +149,9 @@ export class ClubPointsService {
       { id: clubMemberId },
       { points, ...(level ? { level } : {}) },
     );
+    const member = await manager
+      .getRepository(ClubMember)
+      .findOneByOrFail({ id: clubMemberId });
+    await this.projection.recordMember(manager, member, 'POINTS_CHANGED');
   }
 }
