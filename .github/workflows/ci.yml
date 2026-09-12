@@ -223,6 +223,8 @@ jobs:
               'club_points_entries',
               'club_tier_rules',
               'customer_referrals',
+              'loyalty_projection_event_receipts',
+              'loyalty_projection_slots',
               'price_locks',
             ];
             if (JSON.stringify(tables.rows.map((row) => row.table_name)) !== JSON.stringify(expected)) process.exit(1);
@@ -254,12 +256,14 @@ jobs:
           npm run build
           npm test
           npm run test:e2e
+          npm run test:projection
       - name: Prove compiled Loyalty rollback and restore
         working-directory: loyalty-service
         env:
           LOYALTY_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_loyalty_bootstrap_test
         run: |
           set -euo pipefail
+          npm run migration:revert:prod
           npm run migration:revert:prod
           npm run migration:revert:prod
           node - <<'NODE'

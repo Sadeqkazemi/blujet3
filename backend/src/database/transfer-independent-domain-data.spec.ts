@@ -40,6 +40,10 @@ describe('independent domain transfer contract', () => {
       'customer_referrals',
     ]);
     expect(loyalty.sourceControlTables).toEqual(['loyalty_projection_audits']);
+    expect(loyalty.targetControlTables).toEqual([
+      'loyalty_projection_event_receipts',
+      'loyalty_projection_slots',
+    ]);
     expect(() => transferDomainContract('payments')).toThrow(
       'must be notify, experience, identity or loyalty',
     );
@@ -66,7 +70,7 @@ describe('independent domain transfer contract', () => {
     ).toThrow('must use PostgreSQL');
   });
 
-  it('allows only the known Core audit table on a Loyalty source', () => {
+  it('allows only known control tables on Loyalty source and target', () => {
     const contract = transferDomainContract('loyalty');
     const transferTables = [...contract.tables];
 
@@ -85,6 +89,13 @@ describe('independent domain transfer contract', () => {
         'unexpected_table',
       ]),
     ).toThrow('table contract mismatch');
+    expect(() =>
+      validateDomainTableContract(contract, 'target', [
+        ...transferTables,
+        'loyalty_projection_event_receipts',
+        'loyalty_projection_slots',
+      ]),
+    ).not.toThrow();
     expect(() =>
       validateDomainTableContract(contract, 'target', [
         ...transferTables,

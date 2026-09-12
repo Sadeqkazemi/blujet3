@@ -1,5 +1,16 @@
 # PLAN.md — blujet roadmap & progress
 
+## Loyalty version-aware projection consumer (2026-09-12)
+
+- [x] Freeze transactional receipt/slot, replay and dependency rules before
+  implementation.
+- [x] Add the expand-only projection-control migration and exact TypeORM metadata.
+- [x] Apply all six strict snapshots with event-ID and aggregate-version safety.
+- [x] Add content-free six-table reconciliation and rollback/retry evidence.
+- [x] Pass Loyalty tests, lint, typecheck, build and migration checks.
+- [x] Present the completed diff for approval before push/merge. Do not activate
+  Kafka, switch credentials/read flags or deploy.
+
 ## Loyalty referral publisher (2026-09-12)
 
 - [x] Publish referral signup with customer creation.
@@ -7,7 +18,8 @@
 - [x] Prove single reward under concurrency and transaction rollback.
 - [x] 4 Referral, 28 Auth and 16 Purchase Extras E2E tests, typecheck, scoped
   lint, production build and diff validation pass.
-- [ ] GitHub CI and merge approval. No deployment or cutover.
+- [x] GitHub CI and approved merge: PR #126, main commit b256221.
+- [x] No deployment or cutover.
 
 ## Loyalty price-lock booking lifecycle (2026-09-12)
 

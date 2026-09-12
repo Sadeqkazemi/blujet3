@@ -5,6 +5,7 @@ import {
 } from './data-source.options';
 import { CreateLoyaltyDatabase1793088060000 } from './migrations/1793088060000-CreateLoyaltyDatabase';
 import { LoyaltyProjectionVersions1793347200000 } from './migrations/1793347200000-LoyaltyProjectionVersions';
+import { LoyaltyProjectionInbox1793516400000 } from './migrations/1793516400000-LoyaltyProjectionInbox';
 
 describe('loyaltyMigrationDataSourceOptions', () => {
   it('registers only Loyalty metadata and its ordered migrations', () => {
@@ -19,10 +20,11 @@ describe('loyaltyMigrationDataSourceOptions', () => {
       synchronize: false,
       logging: false,
     });
-    expect(loyaltyEntities).toHaveLength(6);
+    expect(loyaltyEntities).toHaveLength(8);
     expect(loyaltyMigrations).toEqual([
       CreateLoyaltyDatabase1793088060000,
       LoyaltyProjectionVersions1793347200000,
+      LoyaltyProjectionInbox1793516400000,
     ]);
   });
 

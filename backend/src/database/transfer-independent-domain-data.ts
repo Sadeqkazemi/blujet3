@@ -6,6 +6,7 @@ export interface TransferDomainContract {
   domain: IndependentDomain;
   tables: readonly string[];
   sourceControlTables?: readonly string[];
+  targetControlTables?: readonly string[];
   deferredSelfReference?: {
     table: string;
     keyColumn: string;
@@ -95,6 +96,10 @@ const TRANSFER_CONTRACTS: Record<IndependentDomain, TransferDomainContract> = {
       'customer_referrals',
     ],
     sourceControlTables: ['loyalty_projection_audits'],
+    targetControlTables: [
+      'loyalty_projection_event_receipts',
+      'loyalty_projection_slots',
+    ],
   },
 };
 
@@ -190,6 +195,7 @@ export function validateDomainTableContract(
   const allowed = new Set([
     ...contract.tables,
     ...(side === 'source' ? (contract.sourceControlTables ?? []) : []),
+    ...(side === 'target' ? (contract.targetControlTables ?? []) : []),
   ]);
   if (
     contract.tables.some((table) => !actualNames.includes(table)) ||

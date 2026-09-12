@@ -13,11 +13,13 @@
     "migration:revert:prod": "typeorm migration:revert -d dist/database/data-source.js",
     "schema:log": "typeorm-ts-node-commonjs schema:log -d src/database/data-source.ts",
     "verify:reader": "node dist/verify-reader.js",
+    "reconcile:projection:prod": "node dist/report-loyalty-projection-reconciliation.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint \"{src,test}/**/*.ts\"",
     "lint:check": "npm run lint",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
-    "test:e2e": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config ./test/jest-e2e.json --runInBand"
+    "test:e2e": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config ./test/jest-e2e.json --runInBand",
+    "test:projection": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config ./test/jest-projection.json --runInBand"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
