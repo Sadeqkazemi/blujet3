@@ -1,5 +1,14 @@
 # DB_SCHEMA.md — blujet data model
 
+## Loyalty Kafka projection worker
+
+No table, column, index, role or migration is added. The standalone worker uses
+only `LOYALTY_PROJECTION_DATABASE_URL`, a dedicated writable credential for the
+already separated Loyalty database. The HTTP service continues to use its
+independent `LOYALTY_DATABASE_URL` reader with read-only transactions. Runtime
+code does not fall back between these URLs, which prevents accidental writes
+through the reader and prevents the HTTP process from receiving writer access.
+
 ## Loyalty Kafka acknowledgement adapter
 
 No table, column, index, role or migration is added. The adapter relies on the

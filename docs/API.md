@@ -1,5 +1,14 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Loyalty Kafka projection worker
+
+The standalone worker exposes only `GET /health` and `GET /ready`. Liveness
+returns service version and commit without checking dependencies. Readiness
+returns a content-free 503 unless the dedicated Loyalty projection schema is
+queryable and the configured Kafka lifecycle is running. Topic, group, broker,
+offset, payload and credentials are never returned. Existing public and
+internal Loyalty routes are unchanged; the HTTP service stays read-only.
+
 ## Loyalty Kafka acknowledgement adapter
 
 No public or internal HTTP route changes. A disabled-by-construction KafkaJS

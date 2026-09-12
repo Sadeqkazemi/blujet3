@@ -5,6 +5,24 @@ migration, seed, event writer, public route or purchase integration.
 The backend remains the **only writer**; these projections never authorize
 a sale, redeem points, debit a wallet or claim a price lock.
 
+## Standalone projection worker (not activated)
+
+`npm run start:worker:prod` starts the dedicated Kafka projection process after
+build. It requires `LOYALTY_KAFKA_CONSUMER_ENABLED=true`, an independent
+`LOYALTY_PROJECTION_DATABASE_URL` writer credential and valid Kafka settings.
+Production also requires Loyalty-specific TLS/SCRAM credentials. The HTTP
+service must not receive the writer URL, while the worker does not need
+`LOYALTY_DATABASE_URL` or `LOYALTY_INTERNAL_TOKEN`.
+
+Use `.env.worker.example` as the worker-only template in a separate process or
+container environment. Do not combine it with the HTTP `.env.example`.
+
+The worker exposes only `/health` and `/ready`; it runs the strict sequential
+manual-ACK adapter and acknowledges after the existing transactional projection
+commit. It is not included in Compose or deployment manifests and remains
+disabled until baseline/delta, checkpoint, DLQ, broker UAT and cutover gates are
+separately approved.
+
 ## Local validation
 
 Use Node 22 and the lockfile. Prepare an isolated database whose name ends
