@@ -17,7 +17,6 @@ import {
 import { HealthController } from './health.controller';
 import { LoyaltyController } from './loyalty/loyalty.controller';
 import { LoyaltyService } from './loyalty/loyalty.service';
-import { LoyaltyProjectionModule } from './projection/loyalty-projection.module';
 
 @Module({
   imports: [
@@ -47,7 +46,6 @@ import { LoyaltyProjectionModule } from './projection/loyalty-projection.module'
         retryAttempts: 0,
       }),
     }),
-    LoyaltyProjectionModule,
   ],
   controllers: [LoyaltyController, HealthController],
   providers: [

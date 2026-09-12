@@ -1,5 +1,19 @@
 # PLAN.md — blujet roadmap & progress
 
+## Loyalty Kafka projection worker (2026-09-12)
+
+- [x] Freeze the standalone writer process, default-off and no-cutover boundary.
+- [x] Add strict Loyalty-specific Kafka and writable projection-database config.
+- [x] Add lifecycle, health/readiness and shutdown behavior around the existing
+  sequential manual-ACK adapter.
+- [x] Prove disabled, failure and happy paths; pass all scoped Loyalty checks.
+- [x] Present the diff and obtain explicit approval before commit/push/merge. Do not
+  activate, copy data, switch reads or deploy.
+
+Local evidence: 106 unit tests, 6 real-PostgreSQL projection tests and 9 focused
+HTTP contract tests pass; Loyalty lint, typecheck and production build pass.
+The standalone worker artifact is built but is absent from Compose/deployment.
+
 ## Loyalty Kafka acknowledgement adapter (2026-09-12)
 
 - [x] Freeze the exact topic/key/header/offset and content-free failure contract.
@@ -11,7 +25,7 @@
   consumption, credentials, cutover or deployment.
 - [x] Pass 67 Loyalty unit tests, 6 real-PostgreSQL projection tests, lint,
   typecheck and build.
-- [ ] Obtain explicit approval before commit/push/merge. Do not deploy.
+- [x] Approved merge: PR #128, main commit e3d5930. No deployment.
 
 ## Loyalty version-aware projection consumer (2026-09-12)
 
