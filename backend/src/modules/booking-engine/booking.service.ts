@@ -103,6 +103,7 @@ import {
 } from './seat-assignment-policy';
 import { BookingHoldExpiryService } from './booking-hold-expiry.service';
 import { TicketingService } from './ticketing.service';
+import { LoyaltyProjectionEventService } from '../loyalty-projection-outbox/loyalty-projection-event.service';
 
 export type PaymentMethod = 'GATEWAY' | 'WALLET' | 'POINTS';
 
@@ -207,6 +208,7 @@ export class BookingService {
     private readonly ancillary: AncillaryServicesService,
     private readonly search: SearchService,
     private readonly priceLocks: PriceLockService,
+    private readonly loyaltyProjection: LoyaltyProjectionEventService,
     private readonly wallet: WalletService,
     private readonly clubPoints: ClubPointsService,
     private readonly customerReferrals: CustomerReferralsService,
@@ -868,11 +870,21 @@ export class BookingService {
       if (usableLock) {
         // Conditional update: guards against the same user's lock being
         // consumed twice by a concurrent duplicate request.
-        await tx.update(
+        const attached = await tx.update(
           PriceLock,
           { id: usableLock.id, bookingId: IsNull() },
           { bookingId: created.id },
         );
+        if ((attached.affected ?? 0) !== 1) {
+          throw new ConflictException({
+            code: ErrorCode.CONFLICT,
+            message: 'این قفل قیمت هم‌زمان برای رزرو دیگری استفاده شده است.',
+          });
+        }
+        const linkedLock = await tx.findOneByOrFail(PriceLock, {
+          id: usableLock.id,
+        });
+        await this.loyaltyProjection.recordPriceLock(tx, linkedLock, 'LINKED');
       }
 
       return { booking: created, created: true };
@@ -1775,6 +1787,19 @@ export class BookingService {
           .where('b.id = :id', { id })
           .getOneOrFail();
         const lockedBooking = await this.loadBookingRelations(lockedRaw, tx);
+        let lockedPriceLock: PriceLock | null = null;
+        if (isLocked) {
+          lockedPriceLock = await tx.findOne(PriceLock, {
+            where: { id: booking.priceLock!.id, bookingId: id },
+            lock: { mode: 'pessimistic_write' },
+          });
+          if (!lockedPriceLock || lockedPriceLock.status !== 'ACTIVE') {
+            throw new ConflictException({
+              code: ErrorCode.CONFLICT,
+              message: 'قفل قیمت این رزرو دیگر فعال نیست.',
+            });
+          }
+        }
         await this.assertGatewayQuarantine(tx, id, paymentAttemptId);
         // Legacy capture rows also prohibit a fallback debit, even after manual resolution.
         if (
@@ -1925,11 +1950,13 @@ export class BookingService {
           gatewayRefId ?? walletEntryId,
         );
 
-        if (isLocked) {
-          await tx.update(
-            PriceLock,
-            { id: booking.priceLock!.id },
-            { status: 'USED' },
+        if (lockedPriceLock) {
+          lockedPriceLock.status = 'USED';
+          const consumedLock = await tx.save(lockedPriceLock);
+          await this.loyaltyProjection.recordPriceLock(
+            tx,
+            consumedLock,
+            'CONSUMED',
           );
         }
 

@@ -5,6 +5,11 @@
 Price-lock creation/cancellation also publishes snapshots atomically with wallet
 fees. Cancellation validates under a row lock. Routes and fee policy are unchanged.
 
+Booking attachment requires the conditional price-lock claim to affect one row;
+a concurrent loser receives `409 CONFLICT` and its booking transaction rolls
+back. Successful attachment and payment publish `LINKED` and `CONSUMED`
+snapshots. A failed payment keeps the lock active and publishes no consumption.
+
 Purchase earnings and points redemption additionally enqueue points-entry and
 member-cache snapshots in the caller's Core transaction. The member row is
 locked before balance calculation. Existing points read endpoints are unchanged.
