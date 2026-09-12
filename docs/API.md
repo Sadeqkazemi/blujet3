@@ -1,5 +1,15 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Loyalty Kafka acknowledgement adapter
+
+No public or internal HTTP route changes. A disabled-by-construction KafkaJS
+adapter validates canonical `core-loyalty` transport metadata and invokes the
+existing transactional projection boundary. It uses sequential partition
+processing with auto commit disabled and acknowledges only after projection
+commit. Runtime subscription, retry/DLQ activation, database/read cutover and
+deployment remain separate gates
+(`docs/features/microservices-phase-6-loyalty-kafka-ack-adapter.md`).
+
 ## Loyalty version-aware projection consumer
 
 No public or internal HTTP route changes. The independent Loyalty database can
