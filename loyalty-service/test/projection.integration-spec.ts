@@ -1,7 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { ConflictException } from '@nestjs/common';
+import type { EachMessagePayload } from 'kafkajs';
 import { DataSource } from 'typeorm';
 import { loyaltyMigrationDataSourceOptions } from '../src/database/data-source.options';
+import { LoyaltyKafkaHandler } from '../src/projection/loyalty-kafka.handler';
+import { parseLoyaltyProjectionEvent } from '../src/projection/loyalty-projection-event';
 import { LoyaltyProjectionConsumer } from '../src/projection/loyalty-projection.consumer';
 import { reconcileLoyaltyProjection } from '../src/projection/loyalty-projection-reconciliation';
 import { LoyaltyProjectionStore } from '../src/projection/loyalty-projection.store';
@@ -316,6 +319,56 @@ describe('Loyalty version-aware projection (real PostgreSQL)', () => {
 
     await consumer.consume(memberEvent(missingMemberId));
     await expect(consumer.consume(points)).resolves.toBe('applied');
+  });
+
+  it('replays an acknowledgement gap without another business row', async () => {
+    const projected = parseLoyaltyProjectionEvent(memberEvent(randomUUID()));
+    const handler = new LoyaltyKafkaHandler(consumer);
+    const commitOffsets = jest
+      .fn<Promise<void>, [unknown]>()
+      .mockRejectedValueOnce(new Error('broker unavailable'))
+      .mockResolvedValueOnce();
+    const delivery: EachMessagePayload = {
+      topic: 'blujet.events.v1',
+      partition: 0,
+      heartbeat: jest.fn<Promise<void>, []>().mockResolvedValue(),
+      pause: jest.fn(),
+      message: {
+        offset: '10',
+        key: Buffer.from(
+          `${projected.producer}:${projected.aggregateType}:${projected.aggregateId}`,
+        ),
+        value: Buffer.from(JSON.stringify(projected)),
+        headers: {
+          'event-id': Buffer.from(projected.eventId),
+          'correlation-id': Buffer.from(projected.correlationId),
+          'event-version': Buffer.from('1'),
+          'event-schema-id': Buffer.from(
+            'blujet.loyalty.LoyaltyMemberProjected.v1',
+          ),
+        },
+      },
+    } as unknown as EachMessagePayload;
+    const config = handler.runConfig(
+      { commitOffsets },
+      { topic: delivery.topic, requireSchemaId: true },
+    );
+
+    await expect(config.eachMessage!(delivery)).rejects.toThrow(
+      'Loyalty Kafka processing failed',
+    );
+    await expect(config.eachMessage!(delivery)).resolves.toBeUndefined();
+
+    const counts = await projection.query<
+      Array<{ members: string; receipts: string; slots: string }>
+    >(`SELECT
+      (SELECT COUNT(*)::text FROM loyalty.club_members) AS members,
+      (SELECT COUNT(*)::text FROM loyalty.loyalty_projection_event_receipts) AS receipts,
+      (SELECT COUNT(*)::text FROM loyalty.loyalty_projection_slots) AS slots`);
+    expect(counts[0]).toEqual({ members: '1', receipts: '1', slots: '1' });
+    expect(commitOffsets).toHaveBeenLastCalledWith([
+      { topic: delivery.topic, partition: 0, offset: '11' },
+    ]);
   });
 
   it('reconciles six business tables without reading control tables', async () => {

@@ -1,5 +1,18 @@
 # PLAN.md — blujet roadmap & progress
 
+## Loyalty Kafka acknowledgement adapter (2026-09-12)
+
+- [x] Freeze the exact topic/key/header/offset and content-free failure contract.
+- [x] Add a sequential, manual-ACK KafkaJS adapter around the transactional
+  Loyalty projection consumer.
+- [x] Prove projection-before-ACK, acknowledgement-gap replay safety and strict
+  transport rejection with focused tests.
+- [x] Wire construction only; do not create a Kafka client or activate runtime
+  consumption, credentials, cutover or deployment.
+- [x] Pass 67 Loyalty unit tests, 6 real-PostgreSQL projection tests, lint,
+  typecheck and build.
+- [ ] Obtain explicit approval before commit/push/merge. Do not deploy.
+
 ## Loyalty version-aware projection consumer (2026-09-12)
 
 - [x] Freeze transactional receipt/slot, replay and dependency rules before

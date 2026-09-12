@@ -1,5 +1,15 @@
 # DB_SCHEMA.md — blujet data model
 
+## Loyalty Kafka acknowledgement adapter
+
+No table, column, index, role or migration is added. The adapter relies on the
+existing atomic write of the Loyalty business snapshot,
+`loyalty_projection_event_receipts` and `loyalty_projection_slots`. Kafka
+offset + 1 is committed only after that transaction succeeds, so an ACK gap is
+handled by the existing event-ID receipt without duplicate business writes.
+Durable Kafka checkpoints and failure quarantine are not introduced by this
+slice and remain required before runtime activation.
+
 ## Loyalty projection inbox and aggregate slots
 
 The standalone Loyalty database adds two control tables. Neither is a business
