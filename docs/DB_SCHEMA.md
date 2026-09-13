@@ -31,8 +31,24 @@ existing atomic write of the Loyalty business snapshot,
 `loyalty_projection_event_receipts` and `loyalty_projection_slots`. Kafka
 offset + 1 is committed only after that transaction succeeds, so an ACK gap is
 handled by the existing event-ID receipt without duplicate business writes.
-Durable Kafka checkpoints and failure quarantine are not introduced by this
-slice and remain required before runtime activation.
+The later checkpoint and quarantine slices add only operational control tables;
+neither changes the six Loyalty business projections or the Core writer.
+
+## Loyalty Kafka failure quarantine
+
+Migration `1793689200000-LoyaltyKafkaFailureQuarantine` adds
+`loyalty.kafka_processing_failures`. A generated UUID identifies each row and a
+unique `(consumerGroup, topic, partition, offset)` index identifies the source
+delivery. The row stores a SHA-256 message fingerprint, optional validated event
+UUID, safe `TRANSPORT|PROJECTION` stage, bounded attempt counters, lifecycle
+status, timestamps and operator approval audit fields.
+
+Kafka payloads, keys, headers, raw errors and credentials are never persisted.
+Transitions are `RETRYING -> QUARANTINED -> RETRY_APPROVED|SKIP_APPROVED`, then
+`RESOLVED|SKIPPED`. Decisions use a row lock. A skip changes the terminal status
+and advances `loyalty.kafka_consumer_checkpoints` in one database transaction;
+Kafka acknowledgement happens only afterward. The table has no foreign key and
+the migration changes no existing table.
 
 ## Loyalty projection inbox and aggregate slots
 

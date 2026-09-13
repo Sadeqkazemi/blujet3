@@ -7,6 +7,7 @@ import { PriceLock } from './entities/price-lock.entity';
 import { LoyaltyProjectionEventReceipt } from './entities/loyalty-projection-event-receipt.entity';
 import { LoyaltyProjectionSlot } from './entities/loyalty-projection-slot.entity';
 import { LoyaltyKafkaConsumerCheckpoint } from './entities/loyalty-kafka-consumer-checkpoint.entity';
+import { LoyaltyKafkaProcessingFailure } from './entities/loyalty-kafka-processing-failure.entity';
 
 export const loyaltyEntities = [
   ClubMember,
@@ -18,4 +19,5 @@ export const loyaltyEntities = [
   LoyaltyProjectionEventReceipt,
   LoyaltyProjectionSlot,
   LoyaltyKafkaConsumerCheckpoint,
+  LoyaltyKafkaProcessingFailure,
 ];

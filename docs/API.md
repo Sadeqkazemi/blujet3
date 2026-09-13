@@ -271,6 +271,24 @@ not acknowledged until an operator explicitly approves retry or skip.
 All three routes use the independent `REPORTING_DLQ_OPERATOR_TOKEN`. Automatic
 skip, automatic replay and historical payload republishing are forbidden.
 
+### Loyalty poison-message quarantine
+
+The standalone Loyalty projection worker has the same fail-closed operational
+boundary under its own disabled-by-default configuration. When
+`LOYALTY_DLQ_ENABLED=true`, failed deliveries remain unacknowledged and are
+quarantined after the configured bounded attempts. No payload, key, header, raw
+error, topic, partition or offset is returned by the operator API.
+
+| Method | Path | Contract |
+| --- | --- | --- |
+| GET | `/internal/v1/loyalty/dlq?status=QUARANTINED&limit=50` | Bounded, sanitized failure metadata. |
+| POST | `/internal/v1/loyalty/dlq/:id/retry` | Approves retry of the retained source delivery. Body: `{ operatorId, reason }`. |
+| POST | `/internal/v1/loyalty/dlq/:id/skip` | Approves atomic checkpoint advancement followed by ACK on the next delivery. Body: `{ operatorId, reason }`. |
+
+All three routes require `LOYALTY_DLQ_OPERATOR_TOKEN`. There is no automatic
+skip or historical payload republishing. The routes exist only in the internal
+worker process and do not change `/api/v1/club/**` or `/api/v1/my/club/**`.
+
 Kafka receive adapter: `CommerceInboxKafkaHandler.runConfig` validates the
 existing publisher wire metadata and returns manual-ack, sequential KafkaJS
 handling. It commits offset + 1 only after the Core inbox DB transaction commits.

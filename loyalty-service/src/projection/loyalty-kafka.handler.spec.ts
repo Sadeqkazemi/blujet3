@@ -1,5 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import type { EachMessagePayload } from 'kafkajs';
+import type { LoyaltyDlqConfig } from '../loyalty-dlq.config';
+import type { LoyaltyKafkaFailureStage } from '../database/entities/loyalty-kafka-processing-failure.entity';
+import {
+  type LoyaltyFailedDelivery,
+  type LoyaltyFailureAction,
+  type LoyaltyDlqStore,
+} from './loyalty-dlq.store';
 import type { LoyaltyProjectionEvent } from './loyalty-projection-event';
 import { LoyaltyKafkaHandler } from './loyalty-kafka.handler';
 import type { LoyaltyProjectionConsumer } from './loyalty-projection.consumer';
@@ -36,9 +43,42 @@ describe('LoyaltyKafkaHandler', () => {
     >(),
   };
   const commitOffsets = jest.fn<Promise<void>, [unknown]>().mockResolvedValue();
+  const dlq = {
+    actionFor: jest
+      .fn<Promise<LoyaltyFailureAction>, [LoyaltyFailedDelivery]>()
+      .mockResolvedValue('process'),
+    recordFailure: jest
+      .fn<
+        Promise<'retry' | 'quarantined'>,
+        [LoyaltyFailedDelivery, LoyaltyKafkaFailureStage, string | null, number]
+      >()
+      .mockResolvedValue('retry'),
+    markResolved: jest
+      .fn<Promise<void>, [LoyaltyFailedDelivery]>()
+      .mockResolvedValue(undefined),
+    markSkipped: jest
+      .fn<Promise<void>, [LoyaltyFailedDelivery]>()
+      .mockResolvedValue(undefined),
+  };
   const handler = new LoyaltyKafkaHandler(
     loyalty as unknown as LoyaltyProjectionConsumer,
+    dlq as unknown as LoyaltyDlqStore,
+    { enabled: false },
   );
+
+  function dlqHandler(
+    config: LoyaltyDlqConfig = {
+      enabled: true,
+      maxAttempts: 3,
+      operatorToken: 'loyalty-operator-token-at-least-32-chars',
+    },
+  ): LoyaltyKafkaHandler {
+    return new LoyaltyKafkaHandler(
+      loyalty as unknown as LoyaltyProjectionConsumer,
+      dlq as unknown as LoyaltyDlqStore,
+      config,
+    );
+  }
 
   function payload(
     overrides: Partial<EachMessagePayload> = {},
@@ -72,6 +112,10 @@ describe('LoyaltyKafkaHandler', () => {
     jest.clearAllMocks();
     loyalty.consume.mockResolvedValue('applied');
     commitOffsets.mockResolvedValue();
+    dlq.actionFor.mockResolvedValue('process');
+    dlq.recordFailure.mockResolvedValue('retry');
+    dlq.markResolved.mockResolvedValue(undefined);
+    dlq.markSkipped.mockResolvedValue(undefined);
   });
 
   it('commits offset only after the projection transaction returns', async () => {
@@ -269,6 +313,92 @@ describe('LoyaltyKafkaHandler', () => {
       ),
     ).rejects.toThrow('Loyalty Kafka processing failed');
     expect(loyalty.consume).toHaveBeenCalledTimes(1);
+  });
+
+  it('records a bounded projection failure without acknowledging it', async () => {
+    loyalty.consume.mockRejectedValue(new Error('secret SQL value'));
+
+    await expect(
+      dlqHandler().runConfig({ commitOffsets }, subscription).eachMessage!(
+        payload(),
+      ),
+    ).rejects.toThrow('Loyalty Kafka processing failed');
+
+    const [failed, stage, eventId, maxAttempts] =
+      dlq.recordFailure.mock.calls[0];
+    expect(failed).toMatchObject({
+      consumerGroup: 'loyalty-v1',
+      topic: subscription.topic,
+      partition: 0,
+      offset: '4',
+      nextOffset: '5',
+      highWatermark: '8',
+    });
+    expect(failed.fingerprint).toMatch(/^[a-f0-9]{64}$/);
+    expect({ stage, eventId, maxAttempts }).toEqual({
+      stage: 'PROJECTION',
+      eventId: event.eventId,
+      maxAttempts: 3,
+    });
+    expect(commitOffsets).not.toHaveBeenCalled();
+  });
+
+  it('blocks quarantined deliveries without incrementing attempts', async () => {
+    dlq.actionFor.mockResolvedValue('block');
+
+    await expect(
+      dlqHandler().runConfig({ commitOffsets }, subscription).eachMessage!(
+        payload(),
+      ),
+    ).rejects.toThrow('Loyalty Kafka processing failed');
+
+    expect(loyalty.consume).not.toHaveBeenCalled();
+    expect(dlq.recordFailure).not.toHaveBeenCalled();
+    expect(commitOffsets).not.toHaveBeenCalled();
+  });
+
+  it('persists an approved skip before acknowledging the source offset', async () => {
+    const order: string[] = [];
+    dlq.actionFor.mockResolvedValue('skip');
+    dlq.markSkipped.mockImplementation(() => {
+      order.push('skip');
+      return Promise.resolve();
+    });
+    const client = {
+      commitOffsets: jest.fn(() => {
+        order.push('ack');
+        return Promise.resolve();
+      }),
+    };
+
+    await dlqHandler().runConfig(client, subscription).eachMessage!(payload());
+
+    expect(order).toEqual(['skip', 'ack']);
+    expect(loyalty.consume).not.toHaveBeenCalled();
+    expect(dlq.recordFailure).not.toHaveBeenCalled();
+    expect(client.commitOffsets).toHaveBeenCalledWith([
+      { topic: subscription.topic, partition: 0, offset: '5' },
+    ]);
+  });
+
+  it('does not classify an acknowledgement gap as poison data', async () => {
+    commitOffsets.mockRejectedValue(new Error('broker unavailable'));
+
+    await expect(
+      dlqHandler().runConfig({ commitOffsets }, subscription).eachMessage!(
+        payload(),
+      ),
+    ).rejects.toThrow('Loyalty Kafka processing failed');
+
+    expect(loyalty.consume).toHaveBeenCalledTimes(1);
+    expect(dlq.markResolved).toHaveBeenCalledTimes(1);
+    expect(dlq.recordFailure).not.toHaveBeenCalled();
+  });
+
+  it('requires a consumer group when quarantine is enabled', () => {
+    expect(() =>
+      dlqHandler().runConfig({ commitOffsets }, { topic: subscription.topic }),
+    ).toThrow('Loyalty DLQ requires a consumer group');
   });
 
   it('validates and snapshots the subscription byte limit', async () => {

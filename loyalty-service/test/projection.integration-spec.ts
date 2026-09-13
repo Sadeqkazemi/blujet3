@@ -3,6 +3,15 @@ import { ConflictException } from '@nestjs/common';
 import type { EachMessagePayload } from 'kafkajs';
 import { DataSource } from 'typeorm';
 import { loyaltyMigrationDataSourceOptions } from '../src/database/data-source.options';
+import {
+  LoyaltyKafkaFailureStage,
+  LoyaltyKafkaFailureStatus,
+  LoyaltyKafkaProcessingFailure,
+} from '../src/database/entities/loyalty-kafka-processing-failure.entity';
+import {
+  type LoyaltyFailedDelivery,
+  LoyaltyDlqStore,
+} from '../src/projection/loyalty-dlq.store';
 import { LoyaltyKafkaHandler } from '../src/projection/loyalty-kafka.handler';
 import { parseLoyaltyProjectionEvent } from '../src/projection/loyalty-projection-event';
 import { LoyaltyProjectionConsumer } from '../src/projection/loyalty-projection.consumer';
@@ -82,6 +91,7 @@ describe('Loyalty version-aware projection (real PostgreSQL)', () => {
   let source: DataSource;
   let projection: DataSource;
   let consumer: LoyaltyProjectionConsumer;
+  let dlq: LoyaltyDlqStore;
   const suffix = randomUUID().replaceAll('-', '').slice(0, 8);
   const sourceName = `blujet_loyalty_src_${suffix}_test`;
   const projectionName = `blujet_loyalty_dst_${suffix}_test`;
@@ -121,12 +131,14 @@ describe('Loyalty version-aware projection (real PostgreSQL)', () => {
     consumer = new LoyaltyProjectionConsumer(
       new LoyaltyProjectionStore(projection),
     );
+    dlq = new LoyaltyDlqStore(projection);
   });
 
   beforeEach(async () => {
     for (const db of [source, projection]) {
       await db.query(`TRUNCATE
         loyalty.kafka_consumer_checkpoints,
+        loyalty.kafka_processing_failures,
         loyalty.loyalty_projection_event_receipts,
         loyalty.loyalty_projection_slots,
         loyalty.club_points_entries,
@@ -361,7 +373,7 @@ describe('Loyalty version-aware projection (real PostgreSQL)', () => {
 
   it('replays an acknowledgement gap without another business row', async () => {
     const projected = parseLoyaltyProjectionEvent(memberEvent(randomUUID()));
-    const handler = new LoyaltyKafkaHandler(consumer);
+    const handler = new LoyaltyKafkaHandler(consumer, dlq, { enabled: false });
     const commitOffsets = jest
       .fn<Promise<void>, [unknown]>()
       .mockRejectedValueOnce(new Error('broker unavailable'))
@@ -472,6 +484,126 @@ describe('Loyalty version-aware projection (real PostgreSQL)', () => {
     expect(typeof state.lastCheckpointAt).toBe('string');
   });
 
+  it('quarantines bounded failures and requires matching delivery content', async () => {
+    const delivery: LoyaltyFailedDelivery = {
+      consumerGroup: 'loyalty-v1',
+      topic: 'blujet.events.v1',
+      partition: 2,
+      offset: '14',
+      nextOffset: '15',
+      highWatermark: '20',
+      fingerprint: 'a'.repeat(64),
+    };
+
+    await expect(
+      dlq.recordFailure(delivery, LoyaltyKafkaFailureStage.TRANSPORT, null, 3),
+    ).resolves.toBe('retry');
+    await expect(
+      dlq.recordFailure(
+        delivery,
+        LoyaltyKafkaFailureStage.PROJECTION,
+        randomUUID(),
+        3,
+      ),
+    ).resolves.toBe('retry');
+    await expect(
+      dlq.recordFailure(
+        delivery,
+        LoyaltyKafkaFailureStage.PROJECTION,
+        randomUUID(),
+        3,
+      ),
+    ).resolves.toBe('quarantined');
+    await expect(dlq.actionFor(delivery)).resolves.toBe('block');
+    await expect(
+      dlq.actionFor({ ...delivery, fingerprint: 'b'.repeat(64) }),
+    ).rejects.toBeInstanceOf(ConflictException);
+
+    const row = await projection
+      .getRepository(LoyaltyKafkaProcessingFailure)
+      .findOneByOrFail({ offset: delivery.offset });
+    expect(row).toMatchObject({
+      attempts: 3,
+      totalAttempts: 3,
+      status: LoyaltyKafkaFailureStatus.QUARANTINED,
+      stage: LoyaltyKafkaFailureStage.PROJECTION,
+    });
+    const listed = await dlq.list(LoyaltyKafkaFailureStatus.QUARANTINED, 1);
+    expect(listed).toHaveLength(1);
+    expect(Object.keys(listed[0])).not.toEqual(
+      expect.arrayContaining(['consumerGroup', 'topic', 'partition', 'offset']),
+    );
+
+    await dlq.approve(row.id, 'retry', 'operator-1', 'dependency restored');
+    await expect(dlq.actionFor(delivery)).resolves.toBe('process');
+    await expect(
+      dlq.recordFailure(
+        delivery,
+        LoyaltyKafkaFailureStage.PROJECTION,
+        row.eventId,
+        3,
+      ),
+    ).resolves.toBe('retry');
+    await dlq.markResolved(delivery);
+    const resolved = await projection
+      .getRepository(LoyaltyKafkaProcessingFailure)
+      .findOneByOrFail({ id: row.id });
+    expect(resolved).toMatchObject({
+      attempts: 1,
+      totalAttempts: 4,
+      status: LoyaltyKafkaFailureStatus.RESOLVED,
+    });
+  });
+
+  it('advances checkpoint atomically for an approved skip and replays safely', async () => {
+    const delivery: LoyaltyFailedDelivery = {
+      consumerGroup: 'loyalty-v1',
+      topic: 'blujet.events.v1',
+      partition: 4,
+      offset: '40',
+      nextOffset: '41',
+      highWatermark: '50',
+      fingerprint: 'c'.repeat(64),
+    };
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await dlq.recordFailure(
+        delivery,
+        LoyaltyKafkaFailureStage.TRANSPORT,
+        null,
+        3,
+      );
+    }
+    const row = await projection
+      .getRepository(LoyaltyKafkaProcessingFailure)
+      .findOneByOrFail({ offset: delivery.offset });
+    await dlq.approve(row.id, 'skip', 'operator-2', 'invalid legacy envelope');
+    await expect(dlq.actionFor(delivery)).resolves.toBe('skip');
+
+    await dlq.markSkipped(delivery);
+    await dlq.markSkipped(delivery);
+
+    const state = await projection.query<
+      Array<{ status: string; nextOffset: string; highWatermark: string }>
+    >(
+      `SELECT failure.status, checkpoint."nextOffset", checkpoint."highWatermark"
+       FROM loyalty.kafka_processing_failures failure
+       JOIN loyalty.kafka_consumer_checkpoints checkpoint
+         ON checkpoint."consumerGroup"=failure."consumerGroup"
+        AND checkpoint.topic=failure.topic
+        AND checkpoint.partition=failure.partition
+       WHERE failure.id=$1`,
+      [row.id],
+    );
+    expect(state).toEqual([
+      {
+        status: LoyaltyKafkaFailureStatus.SKIPPED,
+        nextOffset: '41',
+        highWatermark: '50',
+      },
+    ]);
+    await expect(dlq.actionFor(delivery)).resolves.toBe('skip');
+  });
+
   it('reconciles six business tables without reading control tables', async () => {
     const member = memberEvent(randomUUID());
     const priceLock = event(
@@ -539,30 +671,43 @@ describe('Loyalty version-aware projection (real PostgreSQL)', () => {
     ).rejects.toThrow('limit must be');
   });
 
-  it('rolls back and restores only the checkpoint migration', async () => {
+  it('keeps the complete standalone migration and entity metadata aligned', async () => {
+    const schema = await projection.driver.createSchemaBuilder().log();
+
+    expect(schema.upQueries.map((query) => query.query)).toEqual([]);
+  });
+
+  it('rolls back and restores only the failure-registry migration', async () => {
     await projection.undoLastMigration({ transaction: 'all' });
     const controls = await projection.query<
       Array<{
         checkpoints: boolean;
+        failures: boolean;
         receipts: boolean;
         slots: boolean;
         members: boolean;
       }>
     >(`SELECT
       to_regclass('loyalty.kafka_consumer_checkpoints') IS NOT NULL AS checkpoints,
+      to_regclass('loyalty.kafka_processing_failures') IS NOT NULL AS failures,
       to_regclass('loyalty.loyalty_projection_event_receipts') IS NOT NULL AS receipts,
       to_regclass('loyalty.loyalty_projection_slots') IS NOT NULL AS slots,
       to_regclass('loyalty.club_members') IS NOT NULL AS members`);
     expect(controls[0]).toEqual({
-      checkpoints: false,
+      checkpoints: true,
+      failures: false,
       receipts: true,
       slots: true,
       members: true,
     });
     await projection.runMigrations({ transaction: 'all' });
-    const restored = await projection.query<Array<{ checkpoints: boolean }>>(
-      `SELECT to_regclass('loyalty.kafka_consumer_checkpoints') IS NOT NULL AS checkpoints`,
+    const restored = await projection.query<
+      Array<{ checkpoints: boolean; failures: boolean }>
+    >(
+      `SELECT
+        to_regclass('loyalty.kafka_consumer_checkpoints') IS NOT NULL AS checkpoints,
+        to_regclass('loyalty.kafka_processing_failures') IS NOT NULL AS failures`,
     );
-    expect(restored[0]).toEqual({ checkpoints: true });
+    expect(restored[0]).toEqual({ checkpoints: true, failures: true });
   });
 });
