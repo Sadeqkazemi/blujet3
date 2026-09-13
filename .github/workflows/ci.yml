@@ -354,7 +354,7 @@ jobs:
               `SELECT table_name FROM information_schema.tables
                WHERE table_schema = 'agency' ORDER BY table_name`,
             );
-            const expected = ['agency_credit_requests', 'agency_invoices', 'agency_profiles', 'agency_projection_event_receipts', 'agency_projection_slots'];
+            const expected = ['agency_credit_requests', 'agency_invoices', 'agency_profiles', 'agency_projection_event_receipts', 'agency_projection_slots', 'kafka_consumer_checkpoints'];
             if (JSON.stringify(tables.rows.map((row) => row.table_name)) !== JSON.stringify(expected)) process.exit(1);
             const enums = await client.query(
               `SELECT count(DISTINCT t.oid)::int AS count
