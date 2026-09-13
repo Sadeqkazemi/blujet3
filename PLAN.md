@@ -1,5 +1,16 @@
 # PLAN.md — blujet roadmap & progress
 
+## Agency projection outbox foundation (2026-09-13)
+
+- [x] Add expand-only positive source revisions and immutable content-free
+  Agency projection audit storage.
+- [x] Add a transaction-only recorder for profile, invoice and credit-request
+  snapshots through the encrypted commerce outbox.
+- [x] Prove idempotent replay, conflict rejection, encryption and atomic
+  commit/rollback with focused unit and PostgreSQL tests.
+- [x] Pass Backend lint, typecheck and build; present for approval before
+  commit/push/merge. No publisher activation, cutover or deployment.
+
 ## Agency projection event contract (2026-09-13)
 
 - [x] Freeze exact v1 schema/routing and full-snapshot fields before code.

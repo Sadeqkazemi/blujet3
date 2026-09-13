@@ -15,6 +15,7 @@ import { CommerceOutboxEvent } from '../../database/entities/commerce-outbox-eve
 import { parseCoreItineraryEvent } from '../../common/events/core-itinerary-events';
 import { parseCartableTaskProjectedEvent } from '../../common/events/ops-admin-events';
 import { parseLoyaltyProjectionEvent } from '../../common/events/loyalty-events';
+import { parseAgencyProjectionEvent } from '../../common/events/agency-events';
 
 @Injectable()
 export class CommerceOutboxService {
@@ -37,6 +38,13 @@ export class CommerceOutboxService {
     input: unknown,
   ): Promise<{ eventId: string }> {
     return this.enqueue(manager, parseLoyaltyProjectionEvent(input));
+  }
+
+  enqueueAgency(
+    manager: EntityManager,
+    input: unknown,
+  ): Promise<{ eventId: string }> {
+    return this.enqueue(manager, parseAgencyProjectionEvent(input));
   }
 
   async enqueue(

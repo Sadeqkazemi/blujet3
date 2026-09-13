@@ -1,21 +1,36 @@
 import {
+  Check,
   Column,
   CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
   PrimaryColumn,
+  VersionColumn,
 } from 'typeorm';
 import { AgencyTier } from '../enums';
 import { User } from './user.entity';
 
+@Check('agency_profiles_version_check', '"version" > 0')
 @Entity('agency_profiles', { schema: 'agency' })
 export class AgencyProfile {
+  #recordVersion = 1;
+
   @PrimaryColumn({
     type: 'text',
     primaryKeyConstraintName: 'agency_profiles_pkey',
   })
   userId!: string;
+
+  /** Stored as a TypeORM revision while remaining absent from JSON responses. */
+  @VersionColumn({ type: 'int', default: 1 })
+  get version(): number {
+    return this.#recordVersion;
+  }
+
+  set version(value: number) {
+    this.#recordVersion = value;
+  }
 
   @ManyToOne(() => User, { onDelete: 'RESTRICT', onUpdate: 'CASCADE' })
   @JoinColumn({
