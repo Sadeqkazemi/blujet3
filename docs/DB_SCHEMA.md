@@ -287,6 +287,15 @@ ownership, introduce a dual-write, switch a URL or deploy anything. Credential
 writer cutover remains gated by backup, transfer/checksum reconciliation,
 writer freeze and UAT rollback evidence.
 
+## Agency Kafka acknowledgement adapter (microservices phase 6)
+
+No database schema or migration changes. The adapter writes only through the
+existing atomic Agency projection store, which commits the projection row,
+immutable event receipt and aggregate version slot in one local transaction.
+Kafka acknowledgement occurs only after that transaction succeeds. A failed
+acknowledgement leaves the committed receipt available for safe duplicate
+redelivery. Checkpoint and failure-quarantine storage remain deferred.
+
 ## Agency projection database bootstrap (microservices phase 6)
 
 `agency-service` currently owns a physical read-model bootstrap for three
