@@ -6,7 +6,12 @@ import type { AgencyKafkaRuntime } from './projection/agency-kafka.runtime';
 describe('AgencyWorkerHealthController', () => {
   const runtime = {
     isReady: jest.fn().mockReturnValue(true),
-    getStatus: jest.fn().mockReturnValue({ state: 'running' }),
+    getStatus: jest.fn().mockReturnValue({
+      state: 'running',
+      checkpointPartitions: 2,
+      maxObservedLag: '4',
+      lastCheckpointAt: '2026-09-13T18:30:00.000Z',
+    }),
   };
 
   function dataSource(query: jest.Mock): DataSource {
@@ -47,10 +52,18 @@ describe('AgencyWorkerHealthController', () => {
       service: 'blujet-agency-projection-worker',
       info: {
         database: { status: 'up' },
-        consumer: { status: 'up', state: 'running' },
+        consumer: {
+          status: 'up',
+          state: 'running',
+          checkpoint: {
+            partitions: 2,
+            maxObservedLag: '4',
+            lastCheckpointAt: '2026-09-13T18:30:00.000Z',
+          },
+        },
       },
     });
-    expect(query).toHaveBeenCalledTimes(5);
+    expect(query).toHaveBeenCalledTimes(6);
   });
 
   it('returns safe 503 semantics when PostgreSQL is unavailable', async () => {

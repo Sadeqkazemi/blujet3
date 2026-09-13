@@ -30,9 +30,15 @@ describe('AgencyKafkaHandler', () => {
       joinedAt: '2026-09-13T10:00:00.000Z',
     },
   };
-  const subscription = { topic: 'blujet.events.v1' };
+  const subscription = {
+    topic: 'blujet.events.v1',
+    consumerGroup: 'agency-v1',
+  };
   const agency = {
-    consume: jest.fn<Promise<'applied' | 'duplicate' | 'stale'>, [unknown]>(),
+    consume: jest.fn<
+      Promise<'applied' | 'duplicate' | 'stale'>,
+      [unknown, unknown?]
+    >(),
   };
   const commitOffsets = jest.fn<Promise<void>, [unknown]>().mockResolvedValue();
   const handler = new AgencyKafkaHandler(
@@ -49,6 +55,7 @@ describe('AgencyKafkaHandler', () => {
       pause: jest.fn(),
       message: {
         offset: '4',
+        highWatermark: '8',
         key: Buffer.from(
           `${event.producer}:${event.aggregateType}:${event.aggregateId}`,
         ),
@@ -94,6 +101,13 @@ describe('AgencyKafkaHandler', () => {
     expect(client.commitOffsets).toHaveBeenCalledWith([
       { topic: subscription.topic, partition: 0, offset: '5' },
     ]);
+    expect(agency.consume).toHaveBeenCalledWith(event, {
+      consumerGroup: 'agency-v1',
+      topic: subscription.topic,
+      partition: 0,
+      nextOffset: '5',
+      highWatermark: '8',
+    });
   });
 
   it.each(['applied', 'duplicate', 'stale'] as const)(
@@ -127,7 +141,13 @@ describe('AgencyKafkaHandler', () => {
       }),
     );
 
-    expect(agency.consume).toHaveBeenCalledWith(event);
+    expect(agency.consume).toHaveBeenCalledWith(event, {
+      consumerGroup: 'agency-v1',
+      topic: subscription.topic,
+      partition: 0,
+      nextOffset: '5',
+      highWatermark: '8',
+    });
     expect(commitOffsets).toHaveBeenCalledTimes(1);
   });
 
@@ -160,6 +180,8 @@ describe('AgencyKafkaHandler', () => {
     { partition: -1 },
     { partition: 0.5 },
     { message: { ...payload().message, offset: '4x' } },
+    { message: { ...payload().message, highWatermark: '4' } },
+    { message: { ...payload().message, highWatermark: '4x' } },
     { message: { ...payload().message, key: Buffer.from('wrong') } },
     { message: { ...payload().message, value: null } },
     { message: { ...payload().message, value: Buffer.from('{') } },
@@ -266,6 +288,12 @@ describe('AgencyKafkaHandler', () => {
     expect(() => handler.runConfig({ commitOffsets }, { topic: '' })).toThrow(
       'Invalid Agency Kafka subscription',
     );
+    expect(() =>
+      handler.runConfig(
+        { commitOffsets },
+        { topic: subscription.topic, consumerGroup: `a${'b'.repeat(128)}` },
+      ),
+    ).toThrow('Invalid Agency Kafka subscription');
     const mutable = { ...subscription, maxBytes: 8 };
     const config = handler.runConfig({ commitOffsets }, mutable);
     mutable.maxBytes = 256 * 1024;
@@ -280,7 +308,13 @@ describe('AgencyKafkaHandler', () => {
     const offset = '9007199254740993';
 
     await handler.runConfig({ commitOffsets }, subscription).eachMessage!(
-      payload({ message: { ...payload().message, offset } }),
+      payload({
+        message: {
+          ...payload().message,
+          offset,
+          highWatermark: '9007199254740995',
+        } as unknown as EachMessagePayload['message'],
+      }),
     );
 
     expect(commitOffsets).toHaveBeenCalledWith([

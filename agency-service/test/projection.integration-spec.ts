@@ -6,7 +6,10 @@ import { agencyMigrationDataSourceOptions } from '../src/database/data-source.op
 import { AgencyKafkaHandler } from '../src/projection/agency-kafka.handler';
 import { AgencyProjectionConsumer } from '../src/projection/agency-projection.consumer';
 import { reconcileAgencyProjection } from '../src/projection/agency-projection-reconciliation';
-import { AgencyProjectionStore } from '../src/projection/agency-projection.store';
+import {
+  type AgencyEventDelivery,
+  AgencyProjectionStore,
+} from '../src/projection/agency-projection.store';
 
 const at = '2026-09-13T10:00:00.000Z';
 
@@ -97,6 +100,16 @@ function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
+function kafkaDelivery(nextOffset: string): AgencyEventDelivery {
+  return {
+    consumerGroup: 'agency-v1',
+    topic: 'blujet.events.v1',
+    partition: 0,
+    nextOffset,
+    highWatermark: '10',
+  };
+}
+
 function kafkaPayload(input: Record<string, unknown>): EachMessagePayload {
   return {
     topic: 'blujet.events.v1',
@@ -105,6 +118,7 @@ function kafkaPayload(input: Record<string, unknown>): EachMessagePayload {
     pause: jest.fn(),
     message: {
       offset: '11',
+      highWatermark: '13',
       timestamp: '0',
       attributes: 0,
       key: Buffer.from(
@@ -120,7 +134,7 @@ function kafkaPayload(input: Record<string, unknown>): EachMessagePayload {
         ),
       },
     },
-  };
+  } as unknown as EachMessagePayload;
 }
 
 describe('Agency version-aware projection (real PostgreSQL)', () => {
@@ -169,6 +183,7 @@ describe('Agency version-aware projection (real PostgreSQL)', () => {
   beforeEach(async () => {
     for (const db of [source, projection]) {
       await db.query(`TRUNCATE
+        agency.kafka_consumer_checkpoints,
         agency.agency_projection_event_receipts,
         agency.agency_projection_slots,
         agency.agency_invoices,
@@ -233,10 +248,18 @@ describe('Agency version-aware projection (real PostgreSQL)', () => {
     const newer = profileEvent(agencyId, 3, 'شیراز');
     const stale = profileEvent(agencyId, 2, 'تبریز');
 
-    await expect(consumer.consume(initial)).resolves.toBe('applied');
-    await expect(consumer.consume(initial)).resolves.toBe('duplicate');
-    await expect(consumer.consume(newer)).resolves.toBe('applied');
-    await expect(consumer.consume(stale)).resolves.toBe('stale');
+    await expect(consumer.consume(initial, kafkaDelivery('2'))).resolves.toBe(
+      'applied',
+    );
+    await expect(consumer.consume(initial, kafkaDelivery('3'))).resolves.toBe(
+      'duplicate',
+    );
+    await expect(consumer.consume(newer, kafkaDelivery('4'))).resolves.toBe(
+      'applied',
+    );
+    await expect(consumer.consume(stale, kafkaDelivery('5'))).resolves.toBe(
+      'stale',
+    );
 
     expect(
       await projection.query(
@@ -249,6 +272,19 @@ describe('Agency version-aware projection (real PostgreSQL)', () => {
         'SELECT count(*)::int AS count FROM agency.agency_projection_event_receipts',
       ),
     ).toEqual([{ count: 3 }]);
+
+    await projection.query(
+      'UPDATE agency.agency_profiles SET city=$1 WHERE "userId"=$2',
+      ['ناسازگار', agencyId],
+    );
+    await expect(
+      consumer.consume(profileEvent(agencyId, 4, 'مشهد'), kafkaDelivery('6')),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(
+      await projection.query(
+        'SELECT "nextOffset" FROM agency.kafka_consumer_checkpoints',
+      ),
+    ).toEqual([{ nextOffset: '5' }]);
   });
 
   it('rejects event-ID reuse and divergent same-version snapshots', async () => {
@@ -283,12 +319,17 @@ describe('Agency version-aware projection (real PostgreSQL)', () => {
     const agencyId = randomUUID();
     const invoice = invoiceEvent(agencyId);
 
-    await expect(consumer.consume(invoice)).rejects.toBeInstanceOf(
-      ConflictException,
-    );
+    await expect(
+      consumer.consume(invoice, kafkaDelivery('4')),
+    ).rejects.toBeInstanceOf(ConflictException);
     expect(
       await projection.query(
         'SELECT count(*)::int AS count FROM agency.agency_projection_event_receipts',
+      ),
+    ).toEqual([{ count: 0 }]);
+    expect(
+      await projection.query(
+        'SELECT count(*)::int AS count FROM agency.kafka_consumer_checkpoints',
       ),
     ).toEqual([{ count: 0 }]);
 
@@ -326,13 +367,21 @@ describe('Agency version-aware projection (real PostgreSQL)', () => {
     await expect(
       handler.runConfig(
         { commitOffsets: firstAck },
-        { topic: 'blujet.events.v1' },
+        {
+          topic: 'blujet.events.v1',
+          consumerGroup: 'agency-v1',
+          requireSchemaId: true,
+        },
       ).eachMessage!(kafkaPayload(input)),
     ).rejects.toThrow('Agency Kafka processing failed');
 
     await handler.runConfig(
       { commitOffsets: secondAck },
-      { topic: 'blujet.events.v1' },
+      {
+        topic: 'blujet.events.v1',
+        consumerGroup: 'agency-v1',
+        requireSchemaId: true,
+      },
     ).eachMessage!(kafkaPayload(input));
 
     expect(firstAck).toHaveBeenCalledTimes(1);
@@ -344,9 +393,52 @@ describe('Agency version-aware projection (real PostgreSQL)', () => {
         `SELECT
           (SELECT count(*)::int FROM agency.agency_profiles) AS profiles,
           (SELECT count(*)::int FROM agency.agency_projection_event_receipts) AS receipts,
-          (SELECT count(*)::int FROM agency.agency_projection_slots) AS slots`,
+          (SELECT count(*)::int FROM agency.agency_projection_slots) AS slots,
+          (SELECT count(*)::int FROM agency.kafka_consumer_checkpoints) AS checkpoints`,
       ),
-    ).toEqual([{ profiles: 1, receipts: 1, slots: 1 }]);
+    ).toEqual([{ profiles: 1, receipts: 1, slots: 1, checkpoints: 1 }]);
+    expect(
+      await projection.query(
+        `SELECT "nextOffset", "highWatermark"
+         FROM agency.kafka_consumer_checkpoints
+         WHERE "consumerGroup"=$1 AND topic=$2 AND "partition"=$3`,
+        ['agency-v1', 'blujet.events.v1', 2],
+      ),
+    ).toEqual([{ nextOffset: '12', highWatermark: '13' }]);
+  });
+
+  it('keeps durable checkpoint coordinates monotonic on replay', async () => {
+    const projected = profileEvent(randomUUID());
+
+    await expect(
+      consumer.consume(projected, {
+        consumerGroup: 'agency-v1',
+        topic: 'blujet.events.v1',
+        partition: 3,
+        nextOffset: '21',
+        highWatermark: '30',
+      }),
+    ).resolves.toBe('applied');
+    await expect(
+      consumer.consume(projected, {
+        consumerGroup: 'agency-v1',
+        topic: 'blujet.events.v1',
+        partition: 3,
+        nextOffset: '11',
+        highWatermark: '15',
+      }),
+    ).resolves.toBe('duplicate');
+
+    expect(
+      await projection.query(
+        'SELECT "nextOffset", "highWatermark" FROM agency.kafka_consumer_checkpoints',
+      ),
+    ).toEqual([{ nextOffset: '21', highWatermark: '30' }]);
+    const state = await new AgencyProjectionStore(
+      projection,
+    ).getCheckpointState('agency-v1', 'blujet.events.v1');
+    expect(state).toMatchObject({ partitions: [3], maxLag: '9' });
+    expect(typeof state.lastCheckpointAt).toBe('string');
   });
 
   it('reconciles only business tables without emitting business values', async () => {
@@ -397,22 +489,38 @@ describe('Agency version-aware projection (real PostgreSQL)', () => {
     expect(schema.upQueries.map((query) => query.query)).toEqual([]);
   });
 
-  it('rolls back and restores only the versioned projection migration', async () => {
+  it('rolls back and restores only the checkpoint migration', async () => {
     await projection.undoLastMigration({ transaction: 'all' });
     const state = await projection.query<
-      Array<{ profiles: boolean; receipts: boolean; versionColumn: boolean }>
+      Array<{
+        profiles: boolean;
+        receipts: boolean;
+        checkpoints: boolean;
+        versionColumn: boolean;
+      }>
     >(`SELECT
       to_regclass('agency.agency_profiles') IS NOT NULL AS profiles,
       to_regclass('agency.agency_projection_event_receipts') IS NOT NULL AS receipts,
+      to_regclass('agency.kafka_consumer_checkpoints') IS NOT NULL AS checkpoints,
       EXISTS (
         SELECT 1 FROM information_schema.columns
         WHERE table_schema='agency' AND table_name='agency_profiles'
           AND column_name='version'
       ) AS "versionColumn"`);
     expect(state).toEqual([
-      { profiles: true, receipts: false, versionColumn: false },
+      {
+        profiles: true,
+        receipts: true,
+        checkpoints: false,
+        versionColumn: true,
+      },
     ]);
 
     await projection.runMigrations({ transaction: 'all' });
+    expect(
+      await projection.query(
+        `SELECT to_regclass('agency.kafka_consumer_checkpoints') IS NOT NULL AS checkpoints`,
+      ),
+    ).toEqual([{ checkpoints: true }]);
   });
 });

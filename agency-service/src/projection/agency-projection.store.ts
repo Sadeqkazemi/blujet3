@@ -3,6 +3,7 @@ import { DataSource, type EntityManager } from 'typeorm';
 import { ErrorCode } from '../common/errors';
 import { AgencyCreditRequest } from '../database/entities/agency-credit-request.entity';
 import { AgencyInvoice } from '../database/entities/agency-invoice.entity';
+import { AgencyKafkaConsumerCheckpoint } from '../database/entities/agency-kafka-consumer-checkpoint.entity';
 import { AgencyProfile } from '../database/entities/agency-profile.entity';
 import { AgencyProjectionEventReceipt } from '../database/entities/agency-projection-event-receipt.entity';
 import { AgencyProjectionSlot } from '../database/entities/agency-projection-slot.entity';
@@ -13,6 +14,18 @@ import {
 import { fingerprintJson } from './fingerprint';
 
 export type AgencyProjectionResult = 'applied' | 'duplicate' | 'stale';
+export type AgencyEventDelivery = {
+  consumerGroup: string;
+  topic: string;
+  partition: number;
+  nextOffset: string;
+  highWatermark?: string;
+};
+export type AgencyCheckpointState = {
+  partitions: readonly number[];
+  maxLag: string | null;
+  lastCheckpointAt: string | null;
+};
 
 type CurrentProjection = {
   version: number;
@@ -35,7 +48,10 @@ function nullableDate(value: Date | null): string | null {
 export class AgencyProjectionStore {
   constructor(private readonly dataSource: DataSource) {}
 
-  project(event: AgencyProjectionEvent): Promise<AgencyProjectionResult> {
+  project(
+    event: AgencyProjectionEvent,
+    delivery?: AgencyEventDelivery,
+  ): Promise<AgencyProjectionResult> {
     return this.dataSource.transaction('READ COMMITTED', async (manager) => {
       for (const lock of [
         `aggregate:${event.aggregateType}:${event.aggregateId}`,
@@ -54,8 +70,10 @@ export class AgencyProjectionStore {
         eventId: event.eventId,
       });
       if (existingReceipt) {
-        if (existingReceipt.envelopeFingerprint === envelopeFingerprint)
+        if (existingReceipt.envelopeFingerprint === envelopeFingerprint) {
+          await this.saveCheckpoint(manager, delivery);
           return 'duplicate';
+        }
         conflict('شناسهٔ رویداد آژانس با محتوای متفاوت تکرار شده است.');
       }
 
@@ -87,6 +105,7 @@ export class AgencyProjectionStore {
           envelopeFingerprint,
           semanticFingerprint,
         );
+        await this.saveCheckpoint(manager, delivery);
         return 'stale';
       }
 
@@ -104,6 +123,7 @@ export class AgencyProjectionStore {
           semanticFingerprint,
         );
         if (!slot) await this.saveSlot(manager, event, semanticFingerprint);
+        await this.saveCheckpoint(manager, delivery);
         return 'duplicate';
       }
 
@@ -115,8 +135,34 @@ export class AgencyProjectionStore {
       );
       await this.apply(manager, event);
       await this.saveSlot(manager, event, semanticFingerprint);
+      await this.saveCheckpoint(manager, delivery);
       return 'applied';
     });
+  }
+
+  async getCheckpointState(
+    consumerGroup: string,
+    topic: string,
+  ): Promise<AgencyCheckpointState> {
+    const rows = await this.dataSource
+      .getRepository(AgencyKafkaConsumerCheckpoint)
+      .find({ where: { consumerGroup, topic }, order: { partition: 'ASC' } });
+    let maxLag: bigint | null = null;
+    let lastCheckpointAt: Date | null = null;
+    for (const row of rows) {
+      if (row.highWatermark !== null) {
+        const observed = BigInt(row.highWatermark) - BigInt(row.nextOffset);
+        const lag = observed > 0n ? observed : 0n;
+        if (maxLag === null || lag > maxLag) maxLag = lag;
+      }
+      if (lastCheckpointAt === null || row.updatedAt > lastCheckpointAt)
+        lastCheckpointAt = row.updatedAt;
+    }
+    return {
+      partitions: rows.map((row) => row.partition),
+      maxLag: maxLag?.toString() ?? null,
+      lastCheckpointAt: lastCheckpointAt?.toISOString() ?? null,
+    };
   }
 
   private async current(
@@ -311,6 +357,43 @@ export class AgencyProjectionStore {
         auditId: event.payload.auditId,
       }),
     );
+  }
+
+  private saveCheckpoint(
+    manager: EntityManager,
+    delivery?: AgencyEventDelivery,
+  ): Promise<void> {
+    if (delivery === undefined) return Promise.resolve();
+    return manager
+      .query(
+        `INSERT INTO "agency"."kafka_consumer_checkpoints"
+          ("consumerGroup", "topic", "partition", "nextOffset", "highWatermark")
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT ("consumerGroup", "topic", "partition") DO UPDATE SET
+           "nextOffset" = GREATEST(
+             "agency"."kafka_consumer_checkpoints"."nextOffset",
+             EXCLUDED."nextOffset"
+           ),
+           "highWatermark" = CASE
+             WHEN EXCLUDED."highWatermark" IS NULL
+               THEN "agency"."kafka_consumer_checkpoints"."highWatermark"
+             WHEN "agency"."kafka_consumer_checkpoints"."highWatermark" IS NULL
+               THEN EXCLUDED."highWatermark"
+             ELSE GREATEST(
+               "agency"."kafka_consumer_checkpoints"."highWatermark",
+               EXCLUDED."highWatermark"
+             )
+           END,
+           "updatedAt" = now()`,
+        [
+          delivery.consumerGroup,
+          delivery.topic,
+          delivery.partition,
+          delivery.nextOffset,
+          delivery.highWatermark ?? null,
+        ],
+      )
+      .then(() => undefined);
   }
 
   private semanticFingerprint(event: AgencyProjectionEvent): string {

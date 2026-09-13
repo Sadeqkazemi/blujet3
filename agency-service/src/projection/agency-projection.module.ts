@@ -9,6 +9,10 @@ import { AgencyProjectionStore } from './agency-projection.store';
     AgencyProjectionConsumer,
     AgencyKafkaHandler,
   ],
-  exports: [AgencyProjectionConsumer, AgencyKafkaHandler],
+  exports: [
+    AgencyProjectionConsumer,
+    AgencyKafkaHandler,
+    AgencyProjectionStore,
+  ],
 })
 export class AgencyProjectionModule {}
