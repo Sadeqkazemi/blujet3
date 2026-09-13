@@ -9,6 +9,7 @@ import { CommerceOutboxEvent } from '../src/database/entities/commerce-outbox-ev
 import { User } from '../src/database/entities/user.entity';
 import { AgencyTier, Role } from '../src/database/enums';
 import { AgencyProjectionOutboxFoundation1793775600000 } from '../src/database/migrations/1793775600000-AgencyProjectionOutboxFoundation';
+import { AgencyProjectionVersionTriggers1793779200000 } from '../src/database/migrations/1793779200000-AgencyProjectionVersionTriggers';
 import { AgencyProjectionEventService } from '../src/modules/agency-projection-outbox/agency-projection-event.service';
 import { CommerceOutboxService } from '../src/modules/commerce-outbox/commerce-outbox.service';
 
@@ -78,9 +79,24 @@ describe('Agency projection source outbox (PostgreSQL)', () => {
       await projectionEvents.recordProfile(runner.manager, first, 'CREATED');
 
       first.managerName = 'مدیر ویرایش‌شده';
-      const second = await runner.manager.save(first);
-      expect(second.version).toBe(2);
-      await projectionEvents.recordProfile(runner.manager, second, 'UPDATED');
+      await runner.manager.save(first);
+
+      const defaultRead = await runner.manager.findOneByOrFail(AgencyProfile, {
+        userId: id,
+      });
+      expect(defaultRead.version).toBeUndefined();
+      expect(JSON.stringify(defaultRead)).not.toContain('"version"');
+      const revisionRead = await runner.manager
+        .createQueryBuilder(AgencyProfile, 'profile')
+        .addSelect('profile.version')
+        .where('profile.userId = :id', { id })
+        .getOneOrFail();
+      expect(revisionRead.version).toBe(2);
+      await projectionEvents.recordProfile(
+        runner.manager,
+        revisionRead,
+        'UPDATED',
+      );
 
       const audits = await runner.manager.find(AgencyProjectionAudit, {
         where: { aggregateType: 'AgencyProfile', aggregateId: id },
@@ -186,6 +202,8 @@ describe('Agency projection source outbox (PostgreSQL)', () => {
     await runner.startTransaction();
     try {
       const migration = new AgencyProjectionOutboxFoundation1793775600000();
+      const triggers = new AgencyProjectionVersionTriggers1793779200000();
+      await triggers.down(runner);
       await migration.down(runner);
       for (const table of [
         'agency_profiles',
@@ -210,6 +228,16 @@ describe('Agency projection source outbox (PostgreSQL)', () => {
       expect(await runner.hasTable('agency.agency_projection_audits')).toBe(
         true,
       );
+      await triggers.up(runner);
+      const installed = await runner.query<Array<{ count: number }>>(
+        `SELECT count(*)::int AS count FROM pg_trigger
+         WHERE tgname IN (
+           'agency_profiles_version_guard',
+           'agency_invoices_version_guard',
+           'agency_credit_requests_version_guard'
+         ) AND NOT tgisinternal`,
+      );
+      expect(installed).toEqual([{ count: 3 }]);
     } finally {
       await runner.rollbackTransaction();
       await runner.release();
