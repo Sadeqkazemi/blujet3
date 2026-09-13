@@ -22,6 +22,7 @@ describe('LoyaltyProjectionModule', () => {
       ]),
     );
     expect(exports).toContain(LoyaltyKafkaHandler);
+    expect(exports).toContain(LoyaltyProjectionStore);
     expect(
       providers.some(
         (provider) =>

@@ -1,5 +1,14 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Loyalty durable Kafka checkpoints
+
+No public or internal business route changes. The standalone worker's existing
+`GET /ready` response additionally returns a content-free checkpoint summary:
+partition count, maximum observed lag as a decimal string or `null`, and the
+last checkpoint UTC timestamp or `null`. It never returns topic, consumer group,
+partition coordinates, offsets, event identity, payload or credentials. No lag
+threshold changes readiness in this slice.
+
 ## Loyalty Kafka projection worker
 
 The standalone worker exposes only `GET /health` and `GET /ready`. Liveness

@@ -1,5 +1,21 @@
 # PLAN.md — blujet roadmap & progress
 
+## Loyalty durable Kafka checkpoints (2026-09-13)
+
+- [x] Freeze atomic checkpoint, monotonic progress, safe lag and no-activation
+  boundaries before implementation.
+- [x] Add the expand-only checkpoint migration and exact TypeORM metadata.
+- [x] Persist delivery coordinates inside the projection transaction for every
+  successful replay outcome.
+- [x] Restore and expose bounded aggregate evidence through runtime readiness.
+- [x] Prove rollback/monotonicity and pass Loyalty checks.
+- [x] Present the completed diff for approval before commit/push/merge. Do not
+  activate or deploy.
+
+Local evidence: 112 unit tests and 7 real-PostgreSQL projection tests pass;
+Loyalty lint, typecheck and build pass. Backend transfer-contract tests,
+typecheck, scoped lint and build pass. No Kafka activation or deployment.
+
 ## Loyalty Kafka projection worker (2026-09-12)
 
 - [x] Freeze the standalone writer process, default-off and no-cutover boundary.

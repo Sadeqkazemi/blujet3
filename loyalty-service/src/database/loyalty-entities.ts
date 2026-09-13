@@ -6,6 +6,7 @@ import { CustomerReferral } from './entities/customer-referral.entity';
 import { PriceLock } from './entities/price-lock.entity';
 import { LoyaltyProjectionEventReceipt } from './entities/loyalty-projection-event-receipt.entity';
 import { LoyaltyProjectionSlot } from './entities/loyalty-projection-slot.entity';
+import { LoyaltyKafkaConsumerCheckpoint } from './entities/loyalty-kafka-consumer-checkpoint.entity';
 
 export const loyaltyEntities = [
   ClubMember,
@@ -16,4 +17,5 @@ export const loyaltyEntities = [
   CustomerReferral,
   LoyaltyProjectionEventReceipt,
   LoyaltyProjectionSlot,
+  LoyaltyKafkaConsumerCheckpoint,
 ];

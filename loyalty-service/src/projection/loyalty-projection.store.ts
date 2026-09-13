@@ -6,6 +6,7 @@ import { ClubMember } from '../database/entities/club-member.entity';
 import { ClubPointsEntry } from '../database/entities/club-points-entry.entity';
 import { ClubTierRule } from '../database/entities/club-tier-rule.entity';
 import { CustomerReferral } from '../database/entities/customer-referral.entity';
+import { LoyaltyKafkaConsumerCheckpoint } from '../database/entities/loyalty-kafka-consumer-checkpoint.entity';
 import { LoyaltyProjectionEventReceipt } from '../database/entities/loyalty-projection-event-receipt.entity';
 import { LoyaltyProjectionSlot } from '../database/entities/loyalty-projection-slot.entity';
 import { PriceLock } from '../database/entities/price-lock.entity';
@@ -16,6 +17,18 @@ import {
 } from './loyalty-projection-event';
 
 export type LoyaltyProjectionResult = 'applied' | 'duplicate' | 'stale';
+export type LoyaltyEventDelivery = {
+  consumerGroup: string;
+  topic: string;
+  partition: number;
+  nextOffset: string;
+  highWatermark?: string;
+};
+export type LoyaltyCheckpointState = {
+  partitions: readonly number[];
+  maxLag: string | null;
+  lastCheckpointAt: string | null;
+};
 
 type CurrentProjection = {
   version: number;
@@ -38,7 +51,10 @@ function nullableDate(value: Date | null): string | null {
 export class LoyaltyProjectionStore {
   constructor(private readonly dataSource: DataSource) {}
 
-  project(event: LoyaltyProjectionEvent): Promise<LoyaltyProjectionResult> {
+  project(
+    event: LoyaltyProjectionEvent,
+    delivery?: LoyaltyEventDelivery,
+  ): Promise<LoyaltyProjectionResult> {
     return this.dataSource.transaction('READ COMMITTED', async (manager) => {
       for (const lock of [
         `aggregate:${event.aggregateType}:${event.aggregateId}`,
@@ -58,6 +74,7 @@ export class LoyaltyProjectionStore {
       });
       if (existingReceipt) {
         if (existingReceipt.envelopeFingerprint === envelopeFingerprint) {
+          await this.saveCheckpoint(manager, delivery);
           return 'duplicate';
         }
         conflict('شناسهٔ رویداد باشگاه با محتوای متفاوت تکرار شده است.');
@@ -92,6 +109,7 @@ export class LoyaltyProjectionStore {
           envelopeFingerprint,
           semanticFingerprint,
         );
+        await this.saveCheckpoint(manager, delivery);
         return 'stale';
       }
 
@@ -112,6 +130,7 @@ export class LoyaltyProjectionStore {
         if (!slot) {
           await this.saveSlot(manager, event, semanticFingerprint);
         }
+        await this.saveCheckpoint(manager, delivery);
         return 'duplicate';
       }
 
@@ -123,8 +142,34 @@ export class LoyaltyProjectionStore {
       );
       await this.apply(manager, event);
       await this.saveSlot(manager, event, semanticFingerprint);
+      await this.saveCheckpoint(manager, delivery);
       return 'applied';
     });
+  }
+
+  async getCheckpointState(
+    consumerGroup: string,
+    topic: string,
+  ): Promise<LoyaltyCheckpointState> {
+    const rows = await this.dataSource
+      .getRepository(LoyaltyKafkaConsumerCheckpoint)
+      .find({ where: { consumerGroup, topic }, order: { partition: 'ASC' } });
+    let maxLag: bigint | null = null;
+    let lastCheckpointAt: Date | null = null;
+    for (const row of rows) {
+      if (row.highWatermark !== null) {
+        const observed = BigInt(row.highWatermark) - BigInt(row.nextOffset);
+        const lag = observed > 0n ? observed : 0n;
+        if (maxLag === null || lag > maxLag) maxLag = lag;
+      }
+      if (lastCheckpointAt === null || row.updatedAt > lastCheckpointAt)
+        lastCheckpointAt = row.updatedAt;
+    }
+    return {
+      partitions: rows.map((row) => row.partition),
+      maxLag: maxLag?.toString() ?? null,
+      lastCheckpointAt: lastCheckpointAt?.toISOString() ?? null,
+    };
   }
 
   private async current(
@@ -444,6 +489,43 @@ export class LoyaltyProjectionStore {
         auditId: event.payload.auditId,
       }),
     );
+  }
+
+  private saveCheckpoint(
+    manager: EntityManager,
+    delivery?: LoyaltyEventDelivery,
+  ): Promise<void> {
+    if (delivery === undefined) return Promise.resolve();
+    return manager
+      .query(
+        `INSERT INTO "loyalty"."kafka_consumer_checkpoints"
+          ("consumerGroup", "topic", "partition", "nextOffset", "highWatermark")
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT ("consumerGroup", "topic", "partition") DO UPDATE SET
+           "nextOffset" = GREATEST(
+             "loyalty"."kafka_consumer_checkpoints"."nextOffset",
+             EXCLUDED."nextOffset"
+           ),
+           "highWatermark" = CASE
+             WHEN EXCLUDED."highWatermark" IS NULL
+               THEN "loyalty"."kafka_consumer_checkpoints"."highWatermark"
+             WHEN "loyalty"."kafka_consumer_checkpoints"."highWatermark" IS NULL
+               THEN EXCLUDED."highWatermark"
+             ELSE GREATEST(
+               "loyalty"."kafka_consumer_checkpoints"."highWatermark",
+               EXCLUDED."highWatermark"
+             )
+           END,
+           "updatedAt" = now()`,
+        [
+          delivery.consumerGroup,
+          delivery.topic,
+          delivery.partition,
+          delivery.nextOffset,
+          delivery.highWatermark ?? null,
+        ],
+      )
+      .then(() => undefined);
   }
 
   private semanticFingerprint(event: LoyaltyProjectionEvent): string {

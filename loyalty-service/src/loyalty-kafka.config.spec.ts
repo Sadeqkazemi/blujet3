@@ -73,6 +73,7 @@ describe('loyaltyKafkaConsumerConfig', () => {
   it.each([
     { LOYALTY_KAFKA_CLIENT_ID: '../client' },
     { LOYALTY_KAFKA_GROUP_ID: '' },
+    { LOYALTY_KAFKA_GROUP_ID: `a${'b'.repeat(128)}` },
     { LOYALTY_KAFKA_TOPIC: '..' },
     { LOYALTY_KAFKA_FROM_BEGINNING: 'yes' },
     { LOYALTY_EVENT_SCHEMA_HEADER_REQUIRED: 'yes' },

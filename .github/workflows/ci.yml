@@ -223,6 +223,7 @@ jobs:
               'club_points_entries',
               'club_tier_rules',
               'customer_referrals',
+              'kafka_consumer_checkpoints',
               'loyalty_projection_event_receipts',
               'loyalty_projection_slots',
               'price_locks',
@@ -263,6 +264,7 @@ jobs:
           LOYALTY_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_loyalty_bootstrap_test
         run: |
           set -euo pipefail
+          npm run migration:revert:prod
           npm run migration:revert:prod
           npm run migration:revert:prod
           npm run migration:revert:prod
