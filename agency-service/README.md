@@ -1,5 +1,27 @@
 # BluJet Agency — read boundary and optional invoice compatibility
 
+## Version-aware projection foundation
+
+The package contains an internal `AgencyProjectionConsumer` for the approved
+`AgencyProfileProjected`, `AgencyInvoiceProjected` and
+`AgencyCreditRequestProjected` v1 full snapshots. It is deliberately not
+registered in `AppModule` and has no HTTP or Kafka entry point. Applying an
+event writes the business projection, immutable receipt and aggregate-version
+slot in one transaction. Exact replay is idempotent; stale versions do not
+overwrite current state; reused event IDs, divergent same-version snapshots
+and missing local profile dependencies fail closed.
+
+After building, `npm run reconcile:projection:prod -- 10000` compares distinct
+source and target databases supplied through
+`AGENCY_RECONCILIATION_SOURCE_DATABASE_URL` and
+`AGENCY_RECONCILIATION_TARGET_DATABASE_URL`. Both credentials must be
+restricted read-only logins. Output contains only table names, counts, two
+order-independent hashes and MATCH/MISMATCH/INCONCLUSIVE status. It never
+prints Agency fields, identifiers, amounts, URLs or credentials.
+
+Kafka runtime, baseline transfer, checkpoint/DLQ policy, read cutover, writer
+freeze and deployment remain disabled and require separately reviewed phases.
+
 ## Optional credit-request history (A6.19)
 
 Core `AGENCY_CREDIT_REQUESTS_READ_ENABLED=false` and Agency

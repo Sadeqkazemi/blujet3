@@ -1,5 +1,6 @@
 import {
   Column,
+  Check,
   CreateDateColumn,
   Entity,
   Index,
@@ -13,6 +14,7 @@ import { AgencyProfile } from './agency-profile.entity';
 @Index('agency_invoices_agencyId_status_idx', ['agencyId', 'status'])
 @Index('agency_invoices_bookingId_key', ['bookingId'], { unique: true })
 @Index('agency_invoices_invoiceNo_key', ['invoiceNo'], { unique: true })
+@Check('agency_invoices_version_check', '"version" > 0')
 @Entity('agency_invoices', { schema: 'agency' })
 export class AgencyInvoice {
   @PrimaryColumn({
@@ -20,6 +22,9 @@ export class AgencyInvoice {
     primaryKeyConstraintName: 'agency_invoices_pkey',
   })
   id!: string;
+
+  @Column({ type: 'int', default: 1 })
+  version!: number;
 
   @Column({ type: 'text' })
   agencyId!: string;

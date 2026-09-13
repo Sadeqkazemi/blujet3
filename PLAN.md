@@ -5342,8 +5342,24 @@ contracts and retires the production mock adapters.
   separate from shared-schema compatibility tests.
 - [x] Preserve every HTTP contract/flag and Core as sole writer; no Event
   consumer, copy, dual-write, URL cutover or deployment.
-- [ ] Add approved projection events and reconciliation, then cut over reads;
+- [x] Add approved projection events and local ordered/reconciliation
+  foundations without activating transport or a second writer.
+- [ ] Replay a baseline plus deltas and reconcile in UAT before read cutover;
   move each remaining Agency writer only through a separate command/Saga gate.
+
+## Microservices architecture v1.1 — phase 6 agency version-aware projection (2026-09-13)
+
+- [x] Add positive target revisions plus immutable event receipts and
+  aggregate-version slots through an expand-only standalone migration.
+- [x] Parse the three approved Agency snapshots strictly and apply them in one
+  idempotent, monotonic PostgreSQL transaction.
+- [x] Reject event-ID reuse, divergent same-version snapshots and missing local
+  profile dependencies without leaving partial target state.
+- [x] Add bounded, metadata-only reconciliation for the three business tables.
+- [x] Prove migration/schema parity, rollback, projection behavior, lint,
+  typecheck and production build without enabling Kafka or read cutover.
+- [ ] Present the complete diff and obtain explicit owner approval before
+  commit, push or merge. No deployment in this slice.
 
 ## Microservices architecture v1.1 — phase 6 identity physical database bootstrap (2026-09-10)
 

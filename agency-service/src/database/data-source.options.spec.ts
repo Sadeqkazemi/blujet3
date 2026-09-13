@@ -4,9 +4,10 @@ import {
   agencyProjectionMigrations,
 } from './data-source.options';
 import { CreateAgencyProjectionDatabase1793088120000 } from './migrations/1793088120000-CreateAgencyProjectionDatabase';
+import { AgencyVersionedProjection1793865600000 } from './migrations/1793865600000-AgencyVersionedProjection';
 
 describe('agencyMigrationDataSourceOptions', () => {
-  it('registers only the current Agency projections and migration', () => {
+  it('registers only Agency projection metadata and migrations', () => {
     const url = 'postgresql://agency:secret@localhost/agency';
 
     expect(agencyMigrationDataSourceOptions(url)).toMatchObject({
@@ -18,9 +19,10 @@ describe('agencyMigrationDataSourceOptions', () => {
       synchronize: false,
       logging: false,
     });
-    expect(agencyProjectionEntities).toHaveLength(3);
+    expect(agencyProjectionEntities).toHaveLength(5);
     expect(agencyProjectionMigrations).toEqual([
       CreateAgencyProjectionDatabase1793088120000,
+      AgencyVersionedProjection1793865600000,
     ]);
   });
 

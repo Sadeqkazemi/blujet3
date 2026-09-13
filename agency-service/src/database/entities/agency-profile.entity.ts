@@ -1,6 +1,13 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm';
+import {
+  Check,
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryColumn,
+} from 'typeorm';
 import { AgencyTier } from '../agency.enums';
 
+@Check('agency_profiles_version_check', '"version" > 0')
 @Entity('agency_profiles', { schema: 'agency' })
 export class AgencyProfile {
   @PrimaryColumn({
@@ -8,6 +15,9 @@ export class AgencyProfile {
     primaryKeyConstraintName: 'agency_profiles_pkey',
   })
   userId!: string;
+
+  @Column({ type: 'int', default: 1 })
+  version!: number;
 
   @Column({ type: 'text' })
   licenseNo!: string;
