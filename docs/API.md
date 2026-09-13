@@ -174,11 +174,22 @@ public/internal HTTP behavior
 
 No HTTP route or response changes. Core now has the additive persistence and
 typed transaction-only recorder needed to enqueue the three approved Agency
-projection contracts into the existing encrypted commerce outbox. This slice
-does not invoke that recorder from a business mutation, publish Kafka messages,
-copy data or switch Agency reads. Internal source `version` values and audit
+projection contracts into the existing encrypted commerce outbox. The later
+publisher-activation slice invokes that recorder atomically for profile,
+invoice and credit-request mutations. Kafka publication, data copy and Agency
+read cutover are still disabled. Internal source `version` values and audit
 records are not serialized by any existing API
 (`docs/features/microservices-phase-6-agency-projection-outbox-foundation.md`).
+
+## Agency version-aware projection consumer
+
+No HTTP route or response changes. The independent Agency process now owns an
+internal, transaction-only projection consumer for the three approved v1
+full-snapshot events. It validates the complete envelope, applies only newer
+aggregate versions and records exact deliveries idempotently. It is not wired
+to Kafka or the running reader in this slice; all Agency public commands and
+the single business writer remain in Core
+(`docs/features/microservices-phase-6-agency-versioned-consumer.md`).
 
 ## Loyalty physical database bootstrap
 

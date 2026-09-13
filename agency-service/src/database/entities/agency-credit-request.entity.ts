@@ -1,5 +1,6 @@
 import {
   Column,
+  Check,
   CreateDateColumn,
   Entity,
   Index,
@@ -11,6 +12,7 @@ import { AgencyCreditRequestStatus } from '../agency.enums';
 import { AgencyProfile } from './agency-profile.entity';
 
 @Index('agency_credit_requests_agencyId_status_idx', ['agencyId', 'status'])
+@Check('agency_credit_requests_version_check', '"version" > 0')
 @Entity('agency_credit_requests', { schema: 'agency' })
 export class AgencyCreditRequest {
   @PrimaryColumn({
@@ -18,6 +20,9 @@ export class AgencyCreditRequest {
     primaryKeyConstraintName: 'agency_credit_requests_pkey',
   })
   id!: string;
+
+  @Column({ type: 'int', default: 1 })
+  version!: number;
 
   @Column({ type: 'text' })
   agencyId!: string;

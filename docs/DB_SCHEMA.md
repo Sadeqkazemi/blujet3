@@ -327,8 +327,30 @@ contains `id`, `aggregateType`, `aggregateId`, `recordVersion`, `mutation` and
 rejecting update/delete. It deliberately contains no profile, invoice or credit
 payload. Approved snapshots are encrypted before insertion into the existing
 `orders.commerce_outbox_events`; no new plaintext payload column is introduced.
-No business writer calls this foundation and no projection database changes in
-this slice.
+The subsequent publisher activation now calls this recorder inside profile,
+invoice and credit-request business transactions. It writes no Agency
+projection-database row directly; Kafka publication and read cutover remain
+disabled.
+
+## Agency version-aware projection consumer (microservices phase 6)
+
+The independent Agency database adds a positive `version` to each of
+`agency_profiles`, `agency_invoices` and `agency_credit_requests`. New
+`agency_projection_event_receipts` is an immutable inbox keyed by event UUID;
+it stores only envelope/semantic SHA-256 fingerprints, aggregate routing,
+record version, audit reference and receipt time. New
+`agency_projection_slots` stores the latest version and semantic fingerprint
+per aggregate. Both control tables reject aggregate types outside the three
+approved Agency projections; receipts reject update/delete through a database
+trigger.
+
+Applying a snapshot, receipt and latest-version slot is one transaction. Exact
+redelivery is a duplicate, an older version is recorded as stale, reused event
+IDs or divergent same-version snapshots fail closed, and a missing local
+profile dependency leaves no target writes. The reconciliation command reads
+the three business tables in read-only repeatable-read transactions and emits
+only counts, two hashes and status. No Kafka subscription, data transfer,
+public API, URL cutover, second business writer or deployment is introduced.
 
 ## Loyalty physical database bootstrap (microservices phase 6)
 

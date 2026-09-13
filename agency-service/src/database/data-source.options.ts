@@ -1,9 +1,11 @@
 import type { DataSourceOptions } from 'typeorm';
 import { agencyProjectionEntities } from './agency-entities';
 import { CreateAgencyProjectionDatabase1793088120000 } from './migrations/1793088120000-CreateAgencyProjectionDatabase';
+import { AgencyVersionedProjection1793865600000 } from './migrations/1793865600000-AgencyVersionedProjection';
 
 export const agencyProjectionMigrations = [
   CreateAgencyProjectionDatabase1793088120000,
+  AgencyVersionedProjection1793865600000,
 ];
 
 export function agencyMigrationDataSourceOptions(
