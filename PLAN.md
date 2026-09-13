@@ -1,5 +1,18 @@
 # PLAN.md — blujet roadmap & progress
 
+## Agency Kafka acknowledgement adapter (2026-09-13)
+
+- [x] Freeze the construction-only, manual-ACK and no-activation boundary.
+- [x] Validate canonical Agency transport metadata before projection.
+- [x] Commit Kafka offsets only after the existing Agency database transaction.
+- [x] Prove ACK-gap replay, sanitized failures and module wiring.
+- [x] Pass all scoped Agency quality gates with an unchanged OpenAPI contract.
+- [x] Obtain explicit owner approval before commit/push/merge. Do not activate a
+  consumer, cut over reads or deploy.
+
+Local evidence: 53 unit tests, 9 real-PostgreSQL projection tests and 70 E2E
+tests pass; Agency lint, typecheck and production build pass.
+
 ## Agency projection publisher activation (2026-09-13)
 
 - [x] Activate full-snapshot publication at profile creation, suspension and

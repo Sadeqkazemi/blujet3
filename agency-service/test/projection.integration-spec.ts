@@ -1,7 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { ConflictException } from '@nestjs/common';
+import type { EachMessagePayload } from 'kafkajs';
 import { DataSource } from 'typeorm';
 import { agencyMigrationDataSourceOptions } from '../src/database/data-source.options';
+import { AgencyKafkaHandler } from '../src/projection/agency-kafka.handler';
 import { AgencyProjectionConsumer } from '../src/projection/agency-projection.consumer';
 import { reconcileAgencyProjection } from '../src/projection/agency-projection-reconciliation';
 import { AgencyProjectionStore } from '../src/projection/agency-projection.store';
@@ -93,6 +95,32 @@ function creditEvent(
 
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function kafkaPayload(input: Record<string, unknown>): EachMessagePayload {
+  return {
+    topic: 'blujet.events.v1',
+    partition: 2,
+    heartbeat: jest.fn<Promise<void>, []>().mockResolvedValue(),
+    pause: jest.fn(),
+    message: {
+      offset: '11',
+      timestamp: '0',
+      attributes: 0,
+      key: Buffer.from(
+        `${String(input.producer)}:${String(input.aggregateType)}:${String(input.aggregateId)}`,
+      ),
+      value: Buffer.from(JSON.stringify(input)),
+      headers: {
+        'event-id': Buffer.from(String(input.eventId)),
+        'correlation-id': Buffer.from(String(input.correlationId)),
+        'event-version': Buffer.from('1'),
+        'event-schema-id': Buffer.from(
+          `blujet.agency.${String(input.eventType)}.v1`,
+        ),
+      },
+    },
+  };
 }
 
 describe('Agency version-aware projection (real PostgreSQL)', () => {
@@ -277,6 +305,40 @@ describe('Agency version-aware projection (real PostgreSQL)', () => {
     ]);
 
     expect(results.sort()).toEqual(['applied', 'duplicate']);
+    expect(
+      await projection.query(
+        `SELECT
+          (SELECT count(*)::int FROM agency.agency_profiles) AS profiles,
+          (SELECT count(*)::int FROM agency.agency_projection_event_receipts) AS receipts,
+          (SELECT count(*)::int FROM agency.agency_projection_slots) AS slots`,
+      ),
+    ).toEqual([{ profiles: 1, receipts: 1, slots: 1 }]);
+  });
+
+  it('replays an acknowledgement gap without duplicate projection rows', async () => {
+    const input = profileEvent(randomUUID());
+    const handler = new AgencyKafkaHandler(consumer);
+    const firstAck = jest
+      .fn<Promise<void>, [unknown]>()
+      .mockRejectedValue(new Error('broker unavailable'));
+    const secondAck = jest.fn<Promise<void>, [unknown]>().mockResolvedValue();
+
+    await expect(
+      handler.runConfig(
+        { commitOffsets: firstAck },
+        { topic: 'blujet.events.v1' },
+      ).eachMessage!(kafkaPayload(input)),
+    ).rejects.toThrow('Agency Kafka processing failed');
+
+    await handler.runConfig(
+      { commitOffsets: secondAck },
+      { topic: 'blujet.events.v1' },
+    ).eachMessage!(kafkaPayload(input));
+
+    expect(firstAck).toHaveBeenCalledTimes(1);
+    expect(secondAck).toHaveBeenCalledWith([
+      { topic: 'blujet.events.v1', partition: 2, offset: '12' },
+    ]);
     expect(
       await projection.query(
         `SELECT

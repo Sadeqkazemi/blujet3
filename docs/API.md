@@ -1,5 +1,16 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Agency Kafka acknowledgement adapter
+
+No public or internal HTTP route changes. A construction-only KafkaJS adapter
+validates the canonical Agency topic, key, v1 event headers and strict event
+payload before invoking the existing transactional projection consumer. Kafka
+auto commit is disabled, each partition is processed sequentially and its next
+offset is acknowledged only after the projection transaction commits. Runtime
+subscription, checkpoints, retry/DLQ, baseline replay, read cutover and
+deployment remain separate gates
+(`docs/features/microservices-phase-6-agency-kafka-ack-adapter.md`).
+
 ## Loyalty durable Kafka checkpoints
 
 No public or internal business route changes. The standalone worker's existing
