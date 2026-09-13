@@ -7,7 +7,10 @@ import { LoyaltyKafkaHandler } from '../src/projection/loyalty-kafka.handler';
 import { parseLoyaltyProjectionEvent } from '../src/projection/loyalty-projection-event';
 import { LoyaltyProjectionConsumer } from '../src/projection/loyalty-projection.consumer';
 import { reconcileLoyaltyProjection } from '../src/projection/loyalty-projection-reconciliation';
-import { LoyaltyProjectionStore } from '../src/projection/loyalty-projection.store';
+import {
+  type LoyaltyEventDelivery,
+  LoyaltyProjectionStore,
+} from '../src/projection/loyalty-projection.store';
 
 const at = '2026-09-12T10:00:00.000Z';
 
@@ -64,6 +67,16 @@ function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
+function kafkaDelivery(nextOffset: string): LoyaltyEventDelivery {
+  return {
+    consumerGroup: 'loyalty-v1',
+    topic: 'blujet.events.v1',
+    partition: 0,
+    nextOffset,
+    highWatermark: '10',
+  };
+}
+
 describe('Loyalty version-aware projection (real PostgreSQL)', () => {
   let admin: DataSource;
   let source: DataSource;
@@ -113,6 +126,7 @@ describe('Loyalty version-aware projection (real PostgreSQL)', () => {
   beforeEach(async () => {
     for (const db of [source, projection]) {
       await db.query(`TRUNCATE
+        loyalty.kafka_consumer_checkpoints,
         loyalty.loyalty_projection_event_receipts,
         loyalty.loyalty_projection_slots,
         loyalty.club_points_entries,
@@ -242,19 +256,29 @@ describe('Loyalty version-aware projection (real PostgreSQL)', () => {
   it('accepts exact replay, applies newer state and records stale delivery', async () => {
     const memberId = randomUUID();
     const first = memberEvent(memberId);
-    await expect(consumer.consume(first)).resolves.toBe('applied');
-    await expect(consumer.consume(first)).resolves.toBe('duplicate');
+    await expect(consumer.consume(first, kafkaDelivery('1'))).resolves.toBe(
+      'applied',
+    );
+    await expect(consumer.consume(first, kafkaDelivery('2'))).resolves.toBe(
+      'duplicate',
+    );
 
     const alternate = clone(first);
     alternate.eventId = randomUUID();
-    await expect(consumer.consume(alternate)).resolves.toBe('duplicate');
+    await expect(consumer.consume(alternate, kafkaDelivery('3'))).resolves.toBe(
+      'duplicate',
+    );
 
     const second = memberEvent(memberId, 2, 500);
-    await expect(consumer.consume(second)).resolves.toBe('applied');
+    await expect(consumer.consume(second, kafkaDelivery('4'))).resolves.toBe(
+      'applied',
+    );
 
     const stale = clone(first);
     stale.eventId = randomUUID();
-    await expect(consumer.consume(stale)).resolves.toBe('stale');
+    await expect(consumer.consume(stale, kafkaDelivery('5'))).resolves.toBe(
+      'stale',
+    );
 
     const divergent = clone(second);
     divergent.eventId = randomUUID();
@@ -279,9 +303,13 @@ describe('Loyalty version-aware projection (real PostgreSQL)', () => {
       ['drift@example.invalid', memberId],
     );
     const afterDrift = memberEvent(memberId, 3, 900);
-    await expect(consumer.consume(afterDrift)).rejects.toBeInstanceOf(
-      ConflictException,
+    await expect(
+      consumer.consume(afterDrift, kafkaDelivery('6')),
+    ).rejects.toBeInstanceOf(ConflictException);
+    const checkpoints = await projection.query<Array<{ nextOffset: string }>>(
+      'SELECT "nextOffset" FROM loyalty.kafka_consumer_checkpoints',
     );
+    expect(checkpoints).toEqual([{ nextOffset: '5' }]);
   });
 
   it('rejects reused event IDs and rolls back missing dependencies for retry', async () => {
@@ -308,14 +336,24 @@ describe('Loyalty version-aware projection (real PostgreSQL)', () => {
         createdAt: at,
       },
     );
-    await expect(consumer.consume(points)).rejects.toBeInstanceOf(
-      ConflictException,
-    );
+    await expect(
+      consumer.consume(points, {
+        consumerGroup: 'loyalty-v1',
+        topic: 'blujet.events.v1',
+        partition: 1,
+        nextOffset: '4',
+        highWatermark: '6',
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
     const failedReceipt = await projection.query<Array<{ count: string }>>(
       'SELECT COUNT(*)::text AS count FROM loyalty.loyalty_projection_event_receipts WHERE "eventId"=$1',
       [points.eventId],
     );
     expect(failedReceipt[0]?.count).toBe('0');
+    const failedCheckpoint = await projection.query<Array<{ count: string }>>(
+      'SELECT COUNT(*)::text AS count FROM loyalty.kafka_consumer_checkpoints',
+    );
+    expect(failedCheckpoint[0]?.count).toBe('0');
 
     await consumer.consume(memberEvent(missingMemberId));
     await expect(consumer.consume(points)).resolves.toBe('applied');
@@ -335,6 +373,7 @@ describe('Loyalty version-aware projection (real PostgreSQL)', () => {
       pause: jest.fn(),
       message: {
         offset: '10',
+        highWatermark: '13',
         key: Buffer.from(
           `${projected.producer}:${projected.aggregateType}:${projected.aggregateId}`,
         ),
@@ -351,7 +390,11 @@ describe('Loyalty version-aware projection (real PostgreSQL)', () => {
     } as unknown as EachMessagePayload;
     const config = handler.runConfig(
       { commitOffsets },
-      { topic: delivery.topic, requireSchemaId: true },
+      {
+        topic: delivery.topic,
+        consumerGroup: 'loyalty-v1',
+        requireSchemaId: true,
+      },
     );
 
     await expect(config.eachMessage!(delivery)).rejects.toThrow(
@@ -360,15 +403,73 @@ describe('Loyalty version-aware projection (real PostgreSQL)', () => {
     await expect(config.eachMessage!(delivery)).resolves.toBeUndefined();
 
     const counts = await projection.query<
-      Array<{ members: string; receipts: string; slots: string }>
+      Array<{
+        members: string;
+        receipts: string;
+        slots: string;
+        checkpoints: string;
+      }>
     >(`SELECT
       (SELECT COUNT(*)::text FROM loyalty.club_members) AS members,
       (SELECT COUNT(*)::text FROM loyalty.loyalty_projection_event_receipts) AS receipts,
-      (SELECT COUNT(*)::text FROM loyalty.loyalty_projection_slots) AS slots`);
-    expect(counts[0]).toEqual({ members: '1', receipts: '1', slots: '1' });
+      (SELECT COUNT(*)::text FROM loyalty.loyalty_projection_slots) AS slots,
+      (SELECT COUNT(*)::text FROM loyalty.kafka_consumer_checkpoints) AS checkpoints`);
+    expect(counts[0]).toEqual({
+      members: '1',
+      receipts: '1',
+      slots: '1',
+      checkpoints: '1',
+    });
+    const checkpoints = await projection.query<
+      Array<{ nextOffset: string; highWatermark: string }>
+    >(
+      `SELECT "nextOffset", "highWatermark"
+       FROM loyalty.kafka_consumer_checkpoints
+       WHERE "consumerGroup"=$1 AND topic=$2 AND "partition"=$3`,
+      ['loyalty-v1', delivery.topic, 0],
+    );
+    expect(checkpoints[0]).toEqual({
+      nextOffset: '11',
+      highWatermark: '13',
+    });
     expect(commitOffsets).toHaveBeenLastCalledWith([
       { topic: delivery.topic, partition: 0, offset: '11' },
     ]);
+  });
+
+  it('keeps durable checkpoint coordinates monotonic on replay', async () => {
+    const projected = memberEvent(randomUUID());
+    await expect(
+      consumer.consume(projected, {
+        consumerGroup: 'loyalty-v1',
+        topic: 'blujet.events.v1',
+        partition: 3,
+        nextOffset: '21',
+        highWatermark: '30',
+      }),
+    ).resolves.toBe('applied');
+    await expect(
+      consumer.consume(projected, {
+        consumerGroup: 'loyalty-v1',
+        topic: 'blujet.events.v1',
+        partition: 3,
+        nextOffset: '11',
+        highWatermark: '15',
+      }),
+    ).resolves.toBe('duplicate');
+
+    const rows = await projection.query<
+      Array<{ nextOffset: string; highWatermark: string }>
+    >(
+      `SELECT "nextOffset", "highWatermark"
+       FROM loyalty.kafka_consumer_checkpoints`,
+    );
+    expect(rows).toEqual([{ nextOffset: '21', highWatermark: '30' }]);
+    const state = await new LoyaltyProjectionStore(
+      projection,
+    ).getCheckpointState('loyalty-v1', 'blujet.events.v1');
+    expect(state).toMatchObject({ partitions: [3], maxLag: '9' });
+    expect(typeof state.lastCheckpointAt).toBe('string');
   });
 
   it('reconciles six business tables without reading control tables', async () => {
@@ -438,19 +539,30 @@ describe('Loyalty version-aware projection (real PostgreSQL)', () => {
     ).rejects.toThrow('limit must be');
   });
 
-  it('rolls back only control tables and can restore them', async () => {
+  it('rolls back and restores only the checkpoint migration', async () => {
     await projection.undoLastMigration({ transaction: 'all' });
     const controls = await projection.query<
-      Array<{ receipts: boolean; slots: boolean; members: boolean }>
+      Array<{
+        checkpoints: boolean;
+        receipts: boolean;
+        slots: boolean;
+        members: boolean;
+      }>
     >(`SELECT
+      to_regclass('loyalty.kafka_consumer_checkpoints') IS NOT NULL AS checkpoints,
       to_regclass('loyalty.loyalty_projection_event_receipts') IS NOT NULL AS receipts,
       to_regclass('loyalty.loyalty_projection_slots') IS NOT NULL AS slots,
       to_regclass('loyalty.club_members') IS NOT NULL AS members`);
     expect(controls[0]).toEqual({
-      receipts: false,
-      slots: false,
+      checkpoints: false,
+      receipts: true,
+      slots: true,
       members: true,
     });
     await projection.runMigrations({ transaction: 'all' });
+    const restored = await projection.query<Array<{ checkpoints: boolean }>>(
+      `SELECT to_regclass('loyalty.kafka_consumer_checkpoints') IS NOT NULL AS checkpoints`,
+    );
+    expect(restored[0]).toEqual({ checkpoints: true });
   });
 });

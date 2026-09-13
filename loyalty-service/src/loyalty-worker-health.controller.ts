@@ -52,6 +52,9 @@ export class LoyaltyWorkerHealthController {
         await manager.query(
           'SELECT "aggregateType", "aggregateId" FROM loyalty.loyalty_projection_slots LIMIT 0',
         );
+        await manager.query(
+          'SELECT "consumerGroup", topic, "partition", "nextOffset", "highWatermark", "updatedAt" FROM loyalty.kafka_consumer_checkpoints LIMIT 0',
+        );
       });
     } catch {
       throw new ServiceUnavailableException({
@@ -75,6 +78,7 @@ export class LoyaltyWorkerHealthController {
       });
     }
 
+    const status = this.runtime.getStatus();
     return {
       status: 'ok',
       service: SERVICE,
@@ -82,7 +86,12 @@ export class LoyaltyWorkerHealthController {
         database: { status: 'up' },
         consumer: {
           status: 'up',
-          state: this.runtime.getStatus().state,
+          state: status.state,
+          checkpoint: {
+            partitions: status.checkpointPartitions,
+            maxObservedLag: status.maxObservedLag,
+            lastCheckpointAt: status.lastCheckpointAt,
+          },
         },
       },
     };

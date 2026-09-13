@@ -223,6 +223,7 @@ jobs:
               'club_points_entries',
               'club_tier_rules',
               'customer_referrals',
+              'kafka_consumer_checkpoints',
               'loyalty_projection_event_receipts',
               'loyalty_projection_slots',
               'price_locks',

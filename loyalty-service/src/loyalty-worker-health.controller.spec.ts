@@ -6,7 +6,12 @@ import type { LoyaltyKafkaRuntime } from './projection/loyalty-kafka.runtime';
 describe('LoyaltyWorkerHealthController', () => {
   const runtime = {
     isReady: jest.fn().mockReturnValue(true),
-    getStatus: jest.fn().mockReturnValue({ state: 'running' }),
+    getStatus: jest.fn().mockReturnValue({
+      state: 'running',
+      checkpointPartitions: 2,
+      maxObservedLag: '4',
+      lastCheckpointAt: '2026-09-13T05:30:00.000Z',
+    }),
   };
 
   function dataSource(query: jest.Mock): DataSource {
@@ -47,10 +52,18 @@ describe('LoyaltyWorkerHealthController', () => {
       service: 'blujet-loyalty-projection-worker',
       info: {
         database: { status: 'up' },
-        consumer: { status: 'up', state: 'running' },
+        consumer: {
+          status: 'up',
+          state: 'running',
+          checkpoint: {
+            partitions: 2,
+            maxObservedLag: '4',
+            lastCheckpointAt: '2026-09-13T05:30:00.000Z',
+          },
+        },
       },
     });
-    expect(query).toHaveBeenCalledTimes(8);
+    expect(query).toHaveBeenCalledTimes(9);
   });
 
   it('returns safe 503 semantics when PostgreSQL is unavailable', async () => {

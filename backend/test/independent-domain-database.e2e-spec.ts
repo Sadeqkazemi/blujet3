@@ -66,6 +66,9 @@ async function prepareSourceSchema(
   domain: 'notify' | 'experience' | 'identity' | 'loyalty',
 ): Promise<void> {
   if (domain !== 'loyalty') return;
+  await client.query(
+    'DROP TABLE IF EXISTS "loyalty"."kafka_consumer_checkpoints"',
+  );
   await client.query('DROP TABLE "loyalty"."loyalty_projection_slots"');
   await client.query(
     'DROP TABLE "loyalty"."loyalty_projection_event_receipts"',

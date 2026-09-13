@@ -2,6 +2,7 @@ import type { ConsumerConfig, KafkaConfig } from 'kafkajs';
 
 const DEFAULT_MAX_BYTES = 256 * 1024;
 const IDENTIFIER = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,248}$/;
+const CONSUMER_GROUP = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/;
 const BROKER = /^[a-zA-Z0-9.-]+:[0-9]{1,5}$/;
 
 export type LoyaltyKafkaConsumerConfig =
@@ -46,6 +47,17 @@ function identifier(
   return value;
 }
 
+function consumerGroup(
+  env: Record<string, unknown>,
+  key: string,
+  fallback: string,
+): string {
+  const value = env[key] ?? fallback;
+  if (typeof value !== 'string' || !CONSUMER_GROUP.test(value))
+    throw new Error(`${key} is invalid`);
+  return value;
+}
+
 export function loyaltyKafkaConsumerConfig(
   env: Record<string, unknown> = process.env,
 ): LoyaltyKafkaConsumerConfig {
@@ -68,7 +80,7 @@ export function loyaltyKafkaConsumerConfig(
 
   const topic = identifier(env, 'LOYALTY_KAFKA_TOPIC', 'blujet.events.v1');
   const clientId = identifier(env, 'LOYALTY_KAFKA_CLIENT_ID', 'blujet-loyalty');
-  const groupId = identifier(
+  const groupId = consumerGroup(
     env,
     'LOYALTY_KAFKA_GROUP_ID',
     'blujet-loyalty-projection-v1',

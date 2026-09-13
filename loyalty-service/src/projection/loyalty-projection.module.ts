@@ -9,6 +9,6 @@ import { LoyaltyProjectionStore } from './loyalty-projection.store';
     LoyaltyProjectionConsumer,
     LoyaltyKafkaHandler,
   ],
-  exports: [LoyaltyKafkaHandler],
+  exports: [LoyaltyKafkaHandler, LoyaltyProjectionStore],
 })
 export class LoyaltyProjectionModule {}
