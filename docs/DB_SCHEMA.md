@@ -313,6 +313,20 @@ code-only and does not create a schema registry, consumer checkpoint, receipt
 or outbox row. Core remains the only writer until later source-version,
 transactional-outbox, ordered-consumer and reconciliation slices are approved.
 
+## Agency projection outbox foundation (microservices phase 6)
+
+An expand-only Core migration adds positive integer `version` columns, default
+1, to `agency.agency_profiles`, `agency.agency_invoices` and
+`agency.agency_credit_requests`. Mutable entities use the columns as TypeORM
+optimistic revisions. New `agency.agency_projection_audits` is append-only and
+contains `id`, `aggregateType`, `aggregateId`, `recordVersion`, `mutation` and
+`createdAt`, with a unique aggregate/type/version index and a database trigger
+rejecting update/delete. It deliberately contains no profile, invoice or credit
+payload. Approved snapshots are encrypted before insertion into the existing
+`orders.commerce_outbox_events`; no new plaintext payload column is introduced.
+No business writer calls this foundation and no projection database changes in
+this slice.
+
 ## Loyalty physical database bootstrap (microservices phase 6)
 
 `loyalty-service` owns six tables in schema `loyalty`: members, point entries,

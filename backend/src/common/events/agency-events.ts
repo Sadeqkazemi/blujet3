@@ -159,8 +159,12 @@ function text(value: unknown): value is string {
   return typeof value === 'string' && value.length > 0 && value.length <= 4096;
 }
 
+function boundedText(value: unknown): value is string {
+  return typeof value === 'string' && value.length <= 4096;
+}
+
 function nullableText(value: unknown): value is string | null {
-  return value === null || text(value);
+  return value === null || boundedText(value);
 }
 
 function utc(value: unknown): value is string {
@@ -247,9 +251,9 @@ export function parseAgencyProjectionEvent(
         !text(payload.licenseNo) ||
         !text(payload.managerName) ||
         !text(payload.phone) ||
-        !text(payload.email) ||
-        !text(payload.city) ||
-        !text(payload.address) ||
+        !boundedText(payload.email) ||
+        !boundedText(payload.city) ||
+        !boundedText(payload.address) ||
         !enumValue(AgencyTier, payload.tier) ||
         !nullableUtc(payload.suspendedAt) ||
         !nullableText(payload.suspendReason) ||

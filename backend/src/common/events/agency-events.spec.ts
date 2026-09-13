@@ -99,6 +99,35 @@ describe('Agency projection events', () => {
     expect(creditRequest().payload.requestedLimitIrr).toBe('20000000000');
   });
 
+  it('accepts empty source-compatible optional text fields', () => {
+    const profileEvent = profile();
+    expect(
+      parseAgencyProjectionEvent({
+        ...profileEvent,
+        payload: {
+          ...profileEvent.payload,
+          email: '',
+          city: '',
+          address: '',
+        },
+      }).payload,
+    ).toMatchObject({ email: '', city: '', address: '' });
+    expect(
+      createAgencyInvoiceProjected(
+        {
+          ...invoice().payload,
+          id: 'invoice-2',
+          amountIrr: 1n,
+          issuedAt: createdAt,
+          dueAt: createdAt,
+          paidAt: null,
+          descriptionFa: '',
+        },
+        context(),
+      ).payload.descriptionFa,
+    ).toBe('');
+  });
+
   it.each(all())('parses and detaches valid $eventType snapshots', (event) => {
     const parsed = parseAgencyProjectionEvent(event);
     expect(parsed).toEqual(event);

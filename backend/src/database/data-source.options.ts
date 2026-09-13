@@ -11,6 +11,7 @@ import { AgencyInvoice } from './entities/agency-invoice.entity';
 import { AgencyMembershipRequest } from './entities/agency-membership-request.entity';
 import { AgencyMessage } from './entities/agency-message.entity';
 import { AgencyProfile } from './entities/agency-profile.entity';
+import { AgencyProjectionAudit } from './entities/agency-projection-audit.entity';
 import { AgencyRequestOtp } from './entities/agency-request-otp.entity';
 import { AgencyWebserviceRequest } from './entities/agency-webservice-request.entity';
 import { AiUsageLog } from './entities/ai-usage-log.entity';
@@ -146,6 +147,7 @@ export const dataSourceOptions: DataSourceOptions = {
     AgencyMembershipRequest,
     AgencyMessage,
     AgencyProfile,
+    AgencyProjectionAudit,
     AgencyRequestOtp,
     AgencyWebserviceRequest,
     AiUsageLog,

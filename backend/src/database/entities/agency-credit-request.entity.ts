@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
   BeforeInsert,
+  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -8,6 +9,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryColumn,
+  VersionColumn,
 } from 'typeorm';
 import { AgencyCreditRequestStatus } from '../enums';
 import { bigintTransformer } from '../transformers/bigint.transformer';
@@ -15,13 +17,26 @@ import { AgencyProfile } from './agency-profile.entity';
 import { User } from './user.entity';
 
 @Index('agency_credit_requests_agencyId_status_idx', ['agencyId', 'status'])
+@Check('agency_credit_requests_version_check', '"version" > 0')
 @Entity('agency_credit_requests', { schema: 'agency' })
 export class AgencyCreditRequest {
+  #recordVersion = 1;
+
   @PrimaryColumn({
     type: 'text',
     primaryKeyConstraintName: 'agency_credit_requests_pkey',
   })
   id!: string;
+
+  /** Stored as a TypeORM revision while remaining absent from JSON responses. */
+  @VersionColumn({ type: 'int', default: 1 })
+  get version(): number {
+    return this.#recordVersion;
+  }
+
+  set version(value: number) {
+    this.#recordVersion = value;
+  }
 
   @BeforeInsert()
   generateId() {

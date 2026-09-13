@@ -170,6 +170,16 @@ quarantine. This slice does not publish or consume an event and changes no
 public/internal HTTP behavior
 (`docs/features/microservices-phase-6-agency-projection-events.md`).
 
+## Agency projection outbox foundation
+
+No HTTP route or response changes. Core now has the additive persistence and
+typed transaction-only recorder needed to enqueue the three approved Agency
+projection contracts into the existing encrypted commerce outbox. This slice
+does not invoke that recorder from a business mutation, publish Kafka messages,
+copy data or switch Agency reads. Internal source `version` values and audit
+records are not serialized by any existing API
+(`docs/features/microservices-phase-6-agency-projection-outbox-foundation.md`).
+
 ## Loyalty physical database bootstrap
 
 Loyalty HTTP contracts and feature flags are unchanged. The service now owns
