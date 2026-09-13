@@ -1,5 +1,15 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Agency Kafka projection worker
+
+The standalone worker exposes only `GET /health` and `GET /ready`. Liveness
+returns service version and commit without checking dependencies. Readiness
+returns a content-free 503 unless the complete Agency projection schema is
+queryable and the configured Kafka lifecycle is running. Topic, group, broker,
+offset, payload and credentials are never returned. Existing public and
+internal Agency routes are unchanged; the HTTP service stays read-only
+(`docs/features/microservices-phase-6-agency-kafka-runtime.md`).
+
 ## Agency Kafka acknowledgement adapter
 
 No public or internal HTTP route changes. A construction-only KafkaJS adapter

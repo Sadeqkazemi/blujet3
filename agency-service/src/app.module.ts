@@ -17,7 +17,6 @@ import {
 import { HealthController } from './health.controller';
 import { AgencyController } from './agency/agency.controller';
 import { AgencyService } from './agency/agency.service';
-import { AgencyProjectionModule } from './projection/agency-projection.module';
 
 @Module({
   imports: [
@@ -47,7 +46,6 @@ import { AgencyProjectionModule } from './projection/agency-projection.module';
         retryAttempts: 0,
       }),
     }),
-    AgencyProjectionModule,
   ],
   controllers: [AgencyController, HealthController],
   providers: [
