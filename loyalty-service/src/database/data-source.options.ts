@@ -4,12 +4,14 @@ import { CreateLoyaltyDatabase1793088060000 } from './migrations/1793088060000-C
 import { LoyaltyProjectionVersions1793347200000 } from './migrations/1793347200000-LoyaltyProjectionVersions';
 import { LoyaltyProjectionInbox1793516400000 } from './migrations/1793516400000-LoyaltyProjectionInbox';
 import { LoyaltyKafkaConsumerCheckpoints1793602800000 } from './migrations/1793602800000-LoyaltyKafkaConsumerCheckpoints';
+import { LoyaltyKafkaFailureQuarantine1793689200000 } from './migrations/1793689200000-LoyaltyKafkaFailureQuarantine';
 
 export const loyaltyMigrations = [
   CreateLoyaltyDatabase1793088060000,
   LoyaltyProjectionVersions1793347200000,
   LoyaltyProjectionInbox1793516400000,
   LoyaltyKafkaConsumerCheckpoints1793602800000,
+  LoyaltyKafkaFailureQuarantine1793689200000,
 ];
 
 export function loyaltyMigrationDataSourceOptions(

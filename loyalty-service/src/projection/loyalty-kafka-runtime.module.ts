@@ -22,6 +22,6 @@ import {
     },
     LoyaltyKafkaRuntime,
   ],
-  exports: [LoyaltyKafkaRuntime],
+  exports: [LoyaltyKafkaRuntime, LoyaltyProjectionModule],
 })
 export class LoyaltyKafkaRuntimeModule {}

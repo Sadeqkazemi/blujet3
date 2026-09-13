@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerModule } from 'nestjs-pino';
+import { APP_FILTER } from '@nestjs/core';
+import { ErrorFilter } from './common/error.filter';
 import {
   loyaltyWorkerDataSourceOptions,
   validateLoyaltyWorkerEnv,
@@ -39,5 +41,6 @@ import { LoyaltyKafkaRuntimeModule } from './projection/loyalty-kafka-runtime.mo
     LoyaltyKafkaRuntimeModule,
   ],
   controllers: [LoyaltyWorkerHealthController],
+  providers: [{ provide: APP_FILTER, useClass: ErrorFilter }],
 })
 export class LoyaltyWorkerModule {}

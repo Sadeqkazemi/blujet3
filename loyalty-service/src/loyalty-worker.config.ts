@@ -1,6 +1,7 @@
 import type { DataSourceOptions } from 'typeorm';
 import { loyaltyEntities } from './database/loyalty-entities';
 import { loyaltyKafkaConsumerConfig } from './loyalty-kafka.config';
+import { loyaltyDlqConfig } from './loyalty-dlq.config';
 
 const PORT_PATTERN = /^\d{1,5}$/;
 
@@ -41,6 +42,7 @@ export function validateLoyaltyWorkerEnv(
   if (!kafka.enabled) {
     throw new Error('LOYALTY_KAFKA_CONSUMER_ENABLED must be true');
   }
+  loyaltyDlqConfig(env);
   return env;
 }
 

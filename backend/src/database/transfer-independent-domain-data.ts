@@ -98,6 +98,7 @@ const TRANSFER_CONTRACTS: Record<IndependentDomain, TransferDomainContract> = {
     sourceControlTables: ['loyalty_projection_audits'],
     targetControlTables: [
       'kafka_consumer_checkpoints',
+      'kafka_processing_failures',
       'loyalty_projection_event_receipts',
       'loyalty_projection_slots',
     ],

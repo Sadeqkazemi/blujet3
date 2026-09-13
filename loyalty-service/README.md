@@ -17,10 +17,13 @@ service must not receive the writer URL, while the worker does not need
 Use `.env.worker.example` as the worker-only template in a separate process or
 container environment. Do not combine it with the HTTP `.env.example`.
 
-The worker exposes only `/health` and `/ready`; it runs the strict sequential
-manual-ACK adapter and acknowledges after the existing transactional projection
-commit. It is not included in Compose or deployment manifests and remains
-disabled until baseline/delta, checkpoint, DLQ, broker UAT and cutover gates are
+The worker exposes `/health`, `/ready` and disabled-by-default internal DLQ
+operator routes. It runs the strict sequential manual-ACK adapter and
+acknowledges after the existing transactional projection commit. When
+`LOYALTY_DLQ_ENABLED=true`, a separate 32+ character operator token protects
+bounded retry/skip decisions; the API never returns delivery coordinates or
+message content. It is not included in Compose or deployment manifests and
+remains disabled until baseline/delta, broker UAT and cutover gates are
 separately approved.
 
 ## Local validation
@@ -39,6 +42,7 @@ npm run lint:check
 npm run typecheck
 npm run build
 npm test
+npm run test:projection
 # LOYALTY_DATABASE_URL must refer to the migrated/seeded _test database.
 npm run test:e2e
 ```
