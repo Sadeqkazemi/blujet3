@@ -1,15 +1,34 @@
 # BluJet Agency — read boundary and optional invoice compatibility
 
+## Standalone projection worker (not activated)
+
+`npm run start:worker:prod` starts the dedicated Kafka projection process after
+build. It requires `AGENCY_KAFKA_CONSUMER_ENABLED=true`, an independent
+`AGENCY_PROJECTION_DATABASE_URL` writer credential and valid Kafka settings.
+Production also requires Agency-specific TLS/SCRAM credentials. The HTTP
+service must not receive the writer URL, while the worker does not need
+`AGENCY_DATABASE_URL` or `AGENCY_INTERNAL_TOKEN`.
+
+Use `.env.worker.example` as the worker-only template in a separate process or
+container environment. Do not combine it with the HTTP `.env.example`.
+
+The worker exposes only `/health` and `/ready`; it runs the strict sequential
+manual-ACK adapter and acknowledges after the existing transactional projection
+commit. It is not included in Compose or deployment manifests and remains
+disabled until baseline/delta, checkpoint, DLQ, broker UAT and cutover gates are
+separately approved.
+
 ## Version-aware projection foundation
 
 The package contains an internal `AgencyProjectionConsumer` for the approved
 `AgencyProfileProjected`, `AgencyInvoiceProjected` and
 `AgencyCreditRequestProjected` v1 full snapshots. It is deliberately not
-registered in `AppModule` and has no HTTP or Kafka entry point. Applying an
-event writes the business projection, immutable receipt and aggregate-version
-slot in one transaction. Exact replay is idempotent; stale versions do not
-overwrite current state; reused event IDs, divergent same-version snapshots
-and missing local profile dependencies fail closed.
+registered in the read-only HTTP `AppModule`; only the separately started
+worker can reach it. Applying an event writes the business projection,
+immutable receipt and aggregate-version slot in one transaction. Exact replay
+is idempotent; stale versions do not overwrite current state; reused event IDs,
+divergent same-version snapshots and missing local profile dependencies fail
+closed.
 
 After building, `npm run reconcile:projection:prod -- 10000` compares distinct
 source and target databases supplied through
@@ -19,8 +38,8 @@ restricted read-only logins. Output contains only table names, counts, two
 order-independent hashes and MATCH/MISMATCH/INCONCLUSIVE status. It never
 prints Agency fields, identifiers, amounts, URLs or credentials.
 
-Kafka runtime, baseline transfer, checkpoint/DLQ policy, read cutover, writer
-freeze and deployment remain disabled and require separately reviewed phases.
+Baseline transfer, checkpoint/DLQ policy, read cutover, writer freeze and
+deployment remain disabled and require separately reviewed phases.
 
 ## Optional credit-request history (A6.19)
 

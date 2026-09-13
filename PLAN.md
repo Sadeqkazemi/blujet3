@@ -1,5 +1,19 @@
 # PLAN.md — blujet roadmap & progress
 
+## Agency Kafka projection worker (2026-09-13)
+
+- [x] Freeze the standalone writer process, default-off and no-cutover boundary.
+- [x] Add strict Agency-specific Kafka and writable projection-database config.
+- [x] Add lifecycle, health/readiness and shutdown behavior around the existing
+  sequential manual-ACK adapter.
+- [x] Prove disabled, failure and happy paths; pass all scoped Agency checks.
+- [x] Present the diff and obtain explicit approval before commit/push/merge.
+  Do not activate, copy data, switch reads or deploy.
+
+Local evidence: 92 unit tests, 9 real-PostgreSQL projection tests and 70 E2E
+tests pass; Agency lint, typecheck and production build pass. OpenAPI is
+unchanged and the worker is absent from Compose/deployment manifests.
+
 ## Agency Kafka acknowledgement adapter (2026-09-13)
 
 - [x] Freeze the construction-only, manual-ACK and no-activation boundary.

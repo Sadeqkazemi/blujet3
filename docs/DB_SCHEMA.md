@@ -287,6 +287,16 @@ ownership, introduce a dual-write, switch a URL or deploy anything. Credential
 writer cutover remains gated by backup, transfer/checksum reconciliation,
 writer freeze and UAT rollback evidence.
 
+## Agency Kafka projection worker (microservices phase 6)
+
+No migration or ownership change. The standalone worker connects through the
+dedicated writable `AGENCY_PROJECTION_DATABASE_URL` and registers only the five
+Agency-owned projection, receipt and aggregate-slot entities. Automatic schema
+synchronization and migration execution remain disabled. The HTTP process keeps
+its separate read-only `AGENCY_DATABASE_URL` and does not construct the writer
+boundary. Durable checkpoints and failure quarantine remain later expand-only
+schema slices.
+
 ## Agency Kafka acknowledgement adapter (microservices phase 6)
 
 No database schema or migration changes. The adapter writes only through the
