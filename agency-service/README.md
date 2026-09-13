@@ -14,9 +14,11 @@ container environment. Do not combine it with the HTTP `.env.example`.
 
 The worker exposes only `/health` and `/ready`; it runs the strict sequential
 manual-ACK adapter and acknowledges after the existing transactional projection
-commit. It is not included in Compose or deployment manifests and remains
-disabled until baseline/delta, checkpoint, DLQ, broker UAT and cutover gates are
-separately approved.
+commit. Per-group/topic/partition progress is recorded in the Agency database in
+that same transaction and readiness exposes only aggregate checkpoint evidence:
+partition count, maximum observed lag and last checkpoint time. It is not
+included in Compose or deployment manifests and remains disabled until
+baseline/delta, DLQ, broker UAT and cutover gates are separately approved.
 
 ## Version-aware projection foundation
 
@@ -38,8 +40,8 @@ restricted read-only logins. Output contains only table names, counts, two
 order-independent hashes and MATCH/MISMATCH/INCONCLUSIVE status. It never
 prints Agency fields, identifiers, amounts, URLs or credentials.
 
-Baseline transfer, checkpoint/DLQ policy, read cutover, writer freeze and
-deployment remain disabled and require separately reviewed phases.
+Baseline transfer, DLQ policy, read cutover, writer freeze and deployment remain
+disabled and require separately reviewed phases.
 
 ## Optional credit-request history (A6.19)
 

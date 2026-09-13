@@ -1,5 +1,21 @@
 # PLAN.md — blujet roadmap & progress
 
+## Agency durable Kafka checkpoints (2026-09-13)
+
+- [x] Freeze atomic checkpoint, monotonic progress, safe lag and no-activation
+  boundaries before implementation.
+- [x] Add the expand-only checkpoint migration and exact TypeORM metadata.
+- [x] Persist delivery coordinates inside the projection transaction for every
+  successful replay outcome.
+- [x] Restore and expose bounded aggregate evidence through runtime readiness.
+- [x] Prove rollback/monotonicity and pass Agency checks.
+- [x] Present the completed diff for approval before commit/push/merge. Do not
+  activate or deploy.
+
+Local evidence: 97 unit tests, 10 real-PostgreSQL projection tests and 70 E2E
+tests pass; Agency lint, typecheck and production build pass. OpenAPI is
+byte-identical and the worker remains absent from Compose/deployment manifests.
+
 ## Agency Kafka projection worker (2026-09-13)
 
 - [x] Freeze the standalone writer process, default-off and no-cutover boundary.

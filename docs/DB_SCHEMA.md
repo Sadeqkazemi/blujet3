@@ -1,5 +1,20 @@
 # DB_SCHEMA.md — blujet data model
 
+## Agency durable Kafka checkpoints
+
+Migration `1793952000000-AgencyKafkaConsumerCheckpoints` adds
+`agency.kafka_consumer_checkpoints`: `consumerGroup varchar(128)`,
+`topic varchar(249)`, non-negative `partition int`, non-negative
+`nextOffset bigint`, nullable non-negative `highWatermark bigint` and
+`updatedAt timestamptz(3)`. The composite primary key is
+`(consumerGroup, topic, partition)`.
+
+The row is mutable operational evidence, not a business source of truth. Its
+offset and high watermark advance with `GREATEST` inside the same transaction as
+the projection receipt/slot/business snapshot; replay cannot move either value
+backwards. A failed projection writes no checkpoint and receives no Kafka ACK.
+No existing table or column is changed or removed.
+
 ## Loyalty durable Kafka checkpoints
 
 Migration `1793602800000-LoyaltyKafkaConsumerCheckpoints` adds

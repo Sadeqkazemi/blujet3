@@ -43,6 +43,9 @@ export class AgencyWorkerHealthController {
         await manager.query(
           'SELECT "aggregateType", "aggregateId" FROM agency.agency_projection_slots LIMIT 0',
         );
+        await manager.query(
+          'SELECT "consumerGroup", topic, "partition", "nextOffset", "highWatermark", "updatedAt" FROM agency.kafka_consumer_checkpoints LIMIT 0',
+        );
       });
     } catch {
       throw new ServiceUnavailableException({
@@ -66,6 +69,7 @@ export class AgencyWorkerHealthController {
       });
     }
 
+    const status = this.runtime.getStatus();
     return {
       status: 'ok',
       service: SERVICE,
@@ -73,7 +77,12 @@ export class AgencyWorkerHealthController {
         database: { status: 'up' },
         consumer: {
           status: 'up',
-          state: this.runtime.getStatus().state,
+          state: status.state,
+          checkpoint: {
+            partitions: status.checkpointPartitions,
+            maxObservedLag: status.maxObservedLag,
+            lastCheckpointAt: status.lastCheckpointAt,
+          },
         },
       },
     };

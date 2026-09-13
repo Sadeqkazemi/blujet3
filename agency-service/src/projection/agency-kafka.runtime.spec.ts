@@ -7,6 +7,7 @@ import {
   createAgencyKafkaClient,
   type AgencyKafkaRuntimeClient,
 } from './agency-kafka.runtime';
+import type { AgencyProjectionStore } from './agency-projection.store';
 
 describe('AgencyKafkaRuntime', () => {
   const disabled = { enabled: false } as const;
@@ -26,6 +27,13 @@ describe('AgencyKafkaRuntime', () => {
   };
   const runConfig = { autoCommit: false } as ConsumerRunConfig;
   const handler = { runConfig: jest.fn().mockReturnValue(runConfig) };
+  const projectionStore = {
+    getCheckpointState: jest.fn().mockResolvedValue({
+      partitions: [],
+      maxLag: null,
+      lastCheckpointAt: null,
+    }),
+  };
   const logger = { log: jest.fn(), error: jest.fn() };
 
   function client(): jest.Mocked<AgencyKafkaRuntimeClient> {
@@ -47,11 +55,19 @@ describe('AgencyKafkaRuntime', () => {
       config,
       kafkaClient,
       handler as unknown as AgencyKafkaHandler,
+      projectionStore as unknown as AgencyProjectionStore,
       logger as unknown as Logger,
     );
   }
 
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    projectionStore.getCheckpointState.mockResolvedValue({
+      partitions: [],
+      maxLag: null,
+      lastCheckpointAt: null,
+    });
+  });
 
   it('creates no client and makes no broker call while disabled', async () => {
     expect(createAgencyKafkaClient(disabled)).toBeNull();
@@ -96,6 +112,7 @@ describe('AgencyKafkaRuntime', () => {
     expect(handler.runConfig).toHaveBeenCalledWith(kafkaClient, {
       topic: 'blujet.events.v1',
       maxBytes: 4096,
+      consumerGroup: 'agency-v1',
       requireSchemaId: false,
     });
     expect(kafkaClient.run).toHaveBeenCalledWith(runConfig);
@@ -182,13 +199,40 @@ describe('AgencyKafkaRuntime', () => {
     await worker.onApplicationBootstrap();
     const active = kafkaClient.run.mock.calls[0][0]!;
 
-    await active.eachMessage!({} as EachMessagePayload);
+    await active.eachMessage!({
+      partition: 7,
+      message: { offset: '10', highWatermark: '15' },
+    } as unknown as EachMessagePayload);
 
     expect(logger.error).not.toHaveBeenCalled();
     expect(worker.getStatus()).toMatchObject({
       state: 'running',
       processingFailures: 0,
+      checkpointPartitions: 1,
+      maxObservedLag: '4',
     });
     expect(typeof worker.getStatus().lastProcessedAt).toBe('string');
+    expect(typeof worker.getStatus().lastCheckpointAt).toBe('string');
+  });
+
+  it('restores durable checkpoint evidence before broker connection', async () => {
+    projectionStore.getCheckpointState.mockResolvedValueOnce({
+      partitions: [2, 7],
+      maxLag: '12',
+      lastCheckpointAt: '2026-09-13T18:30:00.000Z',
+    });
+    const kafkaClient = client();
+    const worker = runtime(enabled, kafkaClient);
+
+    await worker.onApplicationBootstrap();
+
+    expect(
+      projectionStore.getCheckpointState.mock.invocationCallOrder[0],
+    ).toBeLessThan(kafkaClient.connect.mock.invocationCallOrder[0]);
+    expect(worker.getStatus()).toMatchObject({
+      checkpointPartitions: 2,
+      maxObservedLag: '12',
+      lastCheckpointAt: '2026-09-13T18:30:00.000Z',
+    });
   });
 });

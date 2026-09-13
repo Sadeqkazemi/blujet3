@@ -15,12 +15,14 @@ import { AgencyProjectionConsumer } from './agency-projection.consumer';
 export interface AgencyKafkaSubscription {
   topic: string;
   maxBytes?: number;
+  consumerGroup?: string;
   requireSchemaId?: boolean;
 }
 
 interface ValidatedSubscription {
   readonly topic: string;
   readonly maxBytes: number;
+  readonly consumerGroup?: string;
   readonly requireSchemaId: boolean;
 }
 
@@ -31,6 +33,7 @@ interface ParsedDelivery {
     readonly partition: number;
     readonly offset: string;
   };
+  readonly highWatermark?: string;
 }
 
 const MAX_EVENT_BYTES = 256 * 1024;
@@ -67,12 +70,15 @@ function validateSubscription(
     !Number.isSafeInteger(maxBytes) ||
     maxBytes < 1 ||
     maxBytes > MAX_EVENT_BYTES ||
-    typeof requireSchemaId !== 'boolean'
+    typeof requireSchemaId !== 'boolean' ||
+    (subscription.consumerGroup !== undefined &&
+      !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(subscription.consumerGroup))
   )
     invalidSubscription();
   return Object.freeze({
     topic: subscription.topic,
     maxBytes,
+    consumerGroup: subscription.consumerGroup,
     requireSchemaId,
   });
 }
@@ -82,6 +88,14 @@ function parseDelivery(
   payload: EachMessagePayload,
 ): ParsedDelivery {
   const { message } = payload;
+  const highWatermarkCandidate =
+    'highWatermark' in message ? message.highWatermark : undefined;
+  if (
+    highWatermarkCandidate !== undefined &&
+    typeof highWatermarkCandidate !== 'string'
+  )
+    invalidDelivery();
+  const highWatermark = highWatermarkCandidate;
   if (
     payload.topic !== subscription.topic ||
     !Number.isSafeInteger(payload.partition) ||
@@ -89,7 +103,11 @@ function parseDelivery(
     !message.value ||
     message.value.length > subscription.maxBytes ||
     !/^(0|[1-9][0-9]{0,18})$/.test(message.offset) ||
-    BigInt(message.offset) >= MAX_KAFKA_OFFSET
+    BigInt(message.offset) >= MAX_KAFKA_OFFSET ||
+    (highWatermark !== undefined &&
+      (!/^(0|[1-9][0-9]{0,18})$/.test(highWatermark) ||
+        BigInt(highWatermark) > MAX_KAFKA_OFFSET ||
+        BigInt(highWatermark) < BigInt(message.offset) + 1n))
   )
     invalidDelivery();
 
@@ -130,6 +148,7 @@ function parseDelivery(
       partition: payload.partition,
       offset: (BigInt(message.offset) + 1n).toString(),
     },
+    ...(highWatermark === undefined ? {} : { highWatermark }),
   };
 }
 
@@ -149,7 +168,17 @@ export class AgencyKafkaHandler {
         try {
           const delivery = parseDelivery(trusted, payload);
           await payload.heartbeat();
-          await this.agency.consume(delivery.event);
+          if (trusted.consumerGroup === undefined) {
+            await this.agency.consume(delivery.event);
+          } else {
+            await this.agency.consume(delivery.event, {
+              consumerGroup: trusted.consumerGroup,
+              topic: delivery.offset.topic,
+              partition: delivery.offset.partition,
+              nextOffset: delivery.offset.offset,
+              highWatermark: delivery.highWatermark,
+            });
+          }
           await payload.heartbeat();
           await client.commitOffsets([delivery.offset]);
         } catch {
