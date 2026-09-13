@@ -42,6 +42,7 @@ describe('independent domain transfer contract', () => {
     expect(loyalty.sourceControlTables).toEqual(['loyalty_projection_audits']);
     expect(loyalty.targetControlTables).toEqual([
       'kafka_consumer_checkpoints',
+      'kafka_processing_failures',
       'loyalty_projection_event_receipts',
       'loyalty_projection_slots',
     ]);
@@ -94,6 +95,7 @@ describe('independent domain transfer contract', () => {
       validateDomainTableContract(contract, 'target', [
         ...transferTables,
         'kafka_consumer_checkpoints',
+        'kafka_processing_failures',
         'loyalty_projection_event_receipts',
         'loyalty_projection_slots',
       ]),
