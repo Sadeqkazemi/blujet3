@@ -1,4 +1,5 @@
 import type { CanonicalEvent } from './canonical-events';
+import { agencyEventSchema } from './agency-event-schema';
 import { coreItineraryEventSchema } from './core-itinerary-event-schema';
 import { loyaltyEventSchema } from './loyalty-event-schema';
 import { opsAdminEventSchema } from './ops-admin-event-schema';
@@ -13,6 +14,7 @@ export function knownEventSchema(
   return (
     coreItineraryEventSchema(event) ??
     opsAdminEventSchema(event) ??
-    loyaltyEventSchema(event)
+    loyaltyEventSchema(event) ??
+    agencyEventSchema(event)
   );
 }

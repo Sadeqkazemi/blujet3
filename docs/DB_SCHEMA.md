@@ -301,6 +301,18 @@ tables and every writer stay in Core until their command, Event, idempotency,
 Saga and reconciliation gates are separately proven. No copy, dual-write,
 cutover or deployment is included.
 
+## Agency projection event contract (microservices phase 6)
+
+No database migration or row mutation is introduced. The three existing
+Agency projection tables are represented by strict v1 full-snapshot contracts
+with the source primary key in the canonical aggregate ID and a positive
+`recordVersion` in each payload. Invoice and credit amounts remain exact IRR
+decimal strings, timestamps remain canonical UTC strings and external Identity
+operator/Core booking references remain scalar IDs. Schema catalog metadata is
+code-only and does not create a schema registry, consumer checkpoint, receipt
+or outbox row. Core remains the only writer until later source-version,
+transactional-outbox, ordered-consumer and reconciliation slices are approved.
+
 ## Loyalty physical database bootstrap (microservices phase 6)
 
 `loyalty-service` owns six tables in schema `loyalty`: members, point entries,
