@@ -154,6 +154,22 @@ remains the sole writer; no event consumer, data copy, dual-write, URL switch
 or deployment is included
 (`docs/features/microservices-phase-6-agency-projection-db.md`).
 
+## Agency projection event contract
+
+No HTTP route changes. Three internal canonical full-snapshot event contracts
+are reserved for the existing Agency projection database:
+`AgencyProfileProjected`, `AgencyInvoiceProjected` and
+`AgencyCreditRequestProjected`. All use producer `core-agency`, immutable v1
+schema identity, a positive record-version field, canonical UTC timestamps and
+decimal-string IRR amounts. Source-side monotonic revision persistence is
+reserved for the next slice; this contract validates only a positive version.
+The profile snapshot includes only the contact
+fields already required by the protected Agency portal projection; those
+values may not appear in logs, metrics, reconciliation output or failure
+quarantine. This slice does not publish or consume an event and changes no
+public/internal HTTP behavior
+(`docs/features/microservices-phase-6-agency-projection-events.md`).
+
 ## Loyalty physical database bootstrap
 
 Loyalty HTTP contracts and feature flags are unchanged. The service now owns

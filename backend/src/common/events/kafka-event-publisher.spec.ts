@@ -1,4 +1,6 @@
 import { Kafka } from 'kafkajs';
+import { AgencyEventSchemaCatalog } from './agency-event-schema';
+import { createAgencyInvoiceProjected } from './agency-events';
 import { KafkaEventPublisher } from './kafka-event-publisher';
 import { CanonicalEventType, createCanonicalEvent } from './canonical-events';
 import { CoreItineraryEventSchemaCatalog } from './core-itinerary-event-schema';
@@ -173,6 +175,34 @@ describe('KafkaEventPublisher', () => {
     await publisher.publish(loyalty);
     expect(publishedHeaders(send.mock.calls[0]?.[0])['event-schema-id']).toBe(
       LoyaltyEventSchemaCatalog.LoyaltyTierRuleProjected.schemaId,
+    );
+
+    send.mockClear();
+    const agency = createAgencyInvoiceProjected(
+      {
+        id: 'invoice-1',
+        agencyId: 'agency-1',
+        invoiceNo: 'INV-1',
+        issuedById: 'staff-1',
+        issuedAt: new Date('2026-09-13T08:00:00.000Z'),
+        dueAt: new Date('2026-09-20T08:00:00.000Z'),
+        amountIrr: 9_007_199_254_740_993n,
+        status: 'UNPAID',
+        paidAt: null,
+        descriptionFa: null,
+        bookingId: 'booking-1',
+      },
+      {
+        auditId: 'audit-1',
+        correlationId: 'request-1',
+        idempotencyKey: 'invoice-1-v1',
+        occurredAt: new Date('2026-09-13T08:00:00.000Z'),
+        recordVersion: 1,
+      },
+    );
+    await publisher.publish(agency);
+    expect(publishedHeaders(send.mock.calls[0]?.[0])['event-schema-id']).toBe(
+      AgencyEventSchemaCatalog.AgencyInvoiceProjected.schemaId,
     );
 
     send.mockClear();

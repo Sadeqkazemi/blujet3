@@ -1,4 +1,6 @@
 import type { EachMessagePayload } from 'kafkajs';
+import { AgencyEventSchemaCatalog } from './agency-event-schema';
+import { createAgencyCreditRequestProjected } from './agency-events';
 import {
   parseKafkaEventDelivery,
   validateKafkaEventSubscription,
@@ -128,5 +130,55 @@ describe('Kafka event schema admission', () => {
     expect(
       parseKafkaEventDelivery(loyaltySubscription, delivery).event,
     ).toEqual(loyalty);
+  });
+
+  it('accepts the exact Agency schema identity and aggregate key', () => {
+    const agency = createAgencyCreditRequestProjected(
+      {
+        id: 'credit-1',
+        agencyId: 'agency-1',
+        requestedLimitIrr: 20_000_000_000n,
+        note: null,
+        status: 'PENDING',
+        decidedById: null,
+        decidedAt: null,
+        createdAt: new Date('2026-09-13T08:00:00.000Z'),
+      },
+      {
+        auditId: 'audit-1',
+        correlationId: 'request-1',
+        idempotencyKey: 'credit-1-v1',
+        occurredAt: new Date('2026-09-13T08:00:00.000Z'),
+        recordVersion: 1,
+      },
+    );
+    const agencySubscription = validateKafkaEventSubscription({
+      topic: 'blujet.events.v1',
+      expectedProducer: 'core-agency',
+      requireSchemaId: true,
+    });
+    const delivery = {
+      topic: agencySubscription.topic,
+      partition: 2,
+      heartbeat: jest.fn().mockResolvedValue(undefined),
+      pause: jest.fn(),
+      message: {
+        offset: '12',
+        key: Buffer.from('core-agency:AgencyCreditRequest:credit-1'),
+        value: Buffer.from(JSON.stringify(agency)),
+        headers: {
+          'event-id': Buffer.from(agency.eventId),
+          'correlation-id': Buffer.from(agency.correlationId),
+          'event-version': Buffer.from('1'),
+          'event-schema-id': Buffer.from(
+            AgencyEventSchemaCatalog.AgencyCreditRequestProjected.schemaId,
+          ),
+        },
+      },
+    } as unknown as EachMessagePayload;
+
+    expect(parseKafkaEventDelivery(agencySubscription, delivery).event).toEqual(
+      agency,
+    );
   });
 });

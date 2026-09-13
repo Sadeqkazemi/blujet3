@@ -1,5 +1,16 @@
 # PLAN.md — blujet roadmap & progress
 
+## Agency projection event contract (2026-09-13)
+
+- [x] Freeze exact v1 schema/routing and full-snapshot fields before code.
+- [x] Add strict builders/parsers for profile, invoice and credit-request
+  projections with exact IRR and UTC validation.
+- [x] Register Agency schemas in the shared Kafka schema-header resolver.
+- [x] Prove invalid routing, unknown fields, decision invariants and detached
+  parsing with focused tests.
+- [x] Pass Backend lint, typecheck and build; present the diff for approval
+  before commit/push/merge. No activation, cutover or deployment.
+
 ## Loyalty poison-message quarantine (2026-09-13)
 
 - [x] Freeze bounded retry, sanitized failure metadata, manual decision and

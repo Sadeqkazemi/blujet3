@@ -13,6 +13,9 @@ export const CanonicalEventType = {
   LOYALTY_TIER_RULE_PROJECTED: 'LoyaltyTierRuleProjected',
   LOYALTY_PRICE_LOCK_PROJECTED: 'LoyaltyPriceLockProjected',
   LOYALTY_REFERRAL_PROJECTED: 'LoyaltyReferralProjected',
+  AGENCY_PROFILE_PROJECTED: 'AgencyProfileProjected',
+  AGENCY_INVOICE_PROJECTED: 'AgencyInvoiceProjected',
+  AGENCY_CREDIT_REQUEST_PROJECTED: 'AgencyCreditRequestProjected',
 } as const;
 
 export type CanonicalEventType =
