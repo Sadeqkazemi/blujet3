@@ -32,6 +32,7 @@ import { isSellableDefinitionStatus } from '../flights/definition-sellability';
 import { ErrorCode } from '../../common/errors';
 import { AgencyInvoiceClient } from './agency-invoice.client';
 import { AgencyProfileClient } from './agency-profile.client';
+import { AgencyProjectionEventService } from '../agency-projection-outbox/agency-projection-event.service';
 import { AgencySeatRequest } from '../../database/entities/agency-seat-request.entity';
 import { AgencySeatRequestFlight } from '../../database/entities/agency-seat-request-flight.entity';
 import { FareRule } from '../../database/entities/fare-rule.entity';
@@ -175,6 +176,7 @@ export class AgencyPortalService {
     private readonly invoiceClient: AgencyInvoiceClient,
     private readonly profileClient: AgencyProfileClient,
     private readonly creditRequestsClient: AgencyCreditRequestsClient,
+    private readonly agencyProjection: AgencyProjectionEventService,
   ) {}
 
   private async getOwnProfileOrThrow(actor: AuthenticatedUser) {
@@ -473,32 +475,47 @@ export class AgencyPortalService {
       });
     }
 
-    const request = await this.creditRequestRepo.save(
-      this.creditRequestRepo.create({
-        agencyId: actor.id,
-        requestedLimitIrr: dto.requestedLimitIrr,
-        note: dto.note ?? null,
-      }),
-    );
+    return this.creditRequestRepo.manager.transaction(async (tx) => {
+      const repository = tx.getRepository(AgencyCreditRequest);
+      const request = await repository.save(
+        repository.create({
+          agencyId: actor.id,
+          requestedLimitIrr: dto.requestedLimitIrr,
+          note: dto.note ?? null,
+        }),
+      );
 
-    await this.cartable.createTasksForRoles([...CREDIT_REVIEW_ROLES], {
-      category: 'AGENCY',
-      title: `درخواست افزایش اعتبار: ${actor.fullName}`,
-      description: `آژانس «${actor.fullName}» درخواست افزایش سقف اعتبار به ${dto.requestedLimitIrr} ریال داده است.${dto.note ? ` یادداشت: ${dto.note}` : ''}`,
-      senderId: actor.id,
+      await this.cartable.createTasksForRoles(
+        [...CREDIT_REVIEW_ROLES],
+        {
+          category: 'AGENCY',
+          title: `درخواست افزایش اعتبار: ${actor.fullName}`,
+          description: `آژانس «${actor.fullName}» درخواست افزایش سقف اعتبار به ${dto.requestedLimitIrr} ریال داده است.${dto.note ? ` یادداشت: ${dto.note}` : ''}`,
+          senderId: actor.id,
+        },
+        undefined,
+        tx,
+      );
+
+      await this.audit.record(
+        {
+          actorId: actor.id,
+          actorRole: actor.role,
+          category: 'AGENCY',
+          action: 'درخواست افزایش اعتبار آژانس',
+          detail: `آژانس «${actor.fullName}» درخواست افزایش سقف اعتبار به ${dto.requestedLimitIrr} ریال ثبت کرد.`,
+          entityType: 'AgencyCreditRequest',
+          entityId: request.id,
+        },
+        tx,
+      );
+      await this.agencyProjection.recordCreditRequestById(
+        tx,
+        request.id,
+        'CREATED',
+      );
+      return request;
     });
-
-    await this.audit.record({
-      actorId: actor.id,
-      actorRole: actor.role,
-      category: 'AGENCY',
-      action: 'درخواست افزایش اعتبار آژانس',
-      detail: `آژانس «${actor.fullName}» درخواست افزایش سقف اعتبار به ${dto.requestedLimitIrr} ریال ثبت کرد.`,
-      entityType: 'AgencyCreditRequest',
-      entityId: request.id,
-    });
-
-    return request;
   }
 
   async myCreditRequests(actor: AuthenticatedUser, requestId?: string) {

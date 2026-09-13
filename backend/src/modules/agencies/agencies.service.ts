@@ -72,6 +72,7 @@ import type {
   AggregateInvoiceStatus,
 } from '../../database/enums';
 import { toWireAggregateInvoiceStatus } from './agency-invoice-aggregate';
+import { AgencyProjectionEventService } from '../agency-projection-outbox/agency-projection-event.service';
 
 function generateApiKeySecret(): string {
   return `bjk_${crypto.randomBytes(32).toString('base64url')}`;
@@ -159,6 +160,7 @@ export class AgenciesService {
     private readonly notifications: NotificationsService,
     private readonly stepUp: StepUpService,
     private readonly sms: SmsService,
+    private readonly agencyProjection: AgencyProjectionEventService,
     @Inject(TWO_FACTOR_PROVIDER)
     private readonly twoFactorProvider: TwoFactorProvider,
   ) {}
@@ -330,8 +332,10 @@ export class AgenciesService {
     return { score, badge };
   }
 
-  private async getProfileOrThrow(id: string) {
-    const profile = await this.profileRepo
+  private async getProfileOrThrow(id: string, manager?: EntityManager) {
+    const profile = await (
+      manager?.getRepository(AgencyProfile) ?? this.profileRepo
+    )
       .createQueryBuilder('a')
       .leftJoinAndSelect('a.user', 'user')
       .where('a.userId = :id', { id })
@@ -742,60 +746,73 @@ export class AgenciesService {
   // ── Suspension ───────────────────────────────────────────────────────
 
   async suspend(actor: AuthenticatedUser, id: string, reason: string) {
-    const profile = await this.getProfileOrThrow(id);
-    profile.suspendedAt = new Date();
-    profile.suspendReason = reason;
-    const updated = await this.profileRepo.save(profile);
+    return this.profileRepo.manager.transaction(async (tx) => {
+      const profile = await this.getProfileOrThrow(id, tx);
+      profile.suspendedAt = new Date();
+      profile.suspendReason = reason;
+      const updated = await tx.save(profile);
 
-    // Revoke this agency's outstanding sessions immediately — otherwise an
-    // already-issued refresh token keeps working until it happens to be
-    // used again and rechecked.
-    await this.refreshTokenRepo.update(
-      { userId: id, revokedAt: IsNull() },
-      { revokedAt: new Date() },
-    );
+      // Revoke this agency's outstanding sessions immediately — otherwise an
+      // already-issued refresh token keeps working until it happens to be
+      // used again and rechecked.
+      await tx.update(
+        RefreshToken,
+        { userId: id, revokedAt: IsNull() },
+        { revokedAt: new Date() },
+      );
 
-    await this.audit.record({
-      actorId: actor.id,
-      actorRole: actor.role,
-      category: 'AGENCY',
-      action: 'تعلیق آژانس',
-      detail: `آژانس «${profile.managerName}» توسط ${actor.fullName} تعلیق شد. دلیل: ${reason}`,
-      entityType: 'AgencyProfile',
-      entityId: id,
+      await this.audit.record(
+        {
+          actorId: actor.id,
+          actorRole: actor.role,
+          category: 'AGENCY',
+          action: 'تعلیق آژانس',
+          detail: `آژانس «${profile.managerName}» توسط ${actor.fullName} تعلیق شد. دلیل: ${reason}`,
+          entityType: 'AgencyProfile',
+          entityId: id,
+        },
+        tx,
+      );
+      await this.notifications.notify(
+        {
+          recipientId: id,
+          category: 'SYSTEM',
+          action: 'ACCESS_REVOKED',
+          title: 'دسترسی پنل آژانس شما تعلیق شد',
+          body: `آژانس شما توسط ${actor.fullName} تعلیق شد. دلیل: ${reason}`,
+          entityType: 'AgencyProfile',
+          entityId: id,
+          dedupeKey: `AgencyProfile:${id}:ACCESS_REVOKED:${updated.suspendedAt!.toISOString()}`,
+        },
+        tx,
+      );
+      await this.agencyProjection.recordProfileById(tx, id, 'SUSPENDED');
+      return updated;
     });
-
-    await this.notifications.notify({
-      recipientId: id,
-      category: 'SYSTEM',
-      action: 'ACCESS_REVOKED',
-      title: 'دسترسی پنل آژانس شما تعلیق شد',
-      body: `آژانس شما توسط ${actor.fullName} تعلیق شد. دلیل: ${reason}`,
-      entityType: 'AgencyProfile',
-      entityId: id,
-      dedupeKey: `AgencyProfile:${id}:ACCESS_REVOKED:${updated.suspendedAt!.toISOString()}`,
-    });
-
-    return updated;
   }
 
   async reactivate(actor: AuthenticatedUser, id: string) {
-    const profile = await this.getProfileOrThrow(id);
-    profile.suspendedAt = null;
-    profile.suspendReason = null;
-    const updated = await this.profileRepo.save(profile);
+    return this.profileRepo.manager.transaction(async (tx) => {
+      const profile = await this.getProfileOrThrow(id, tx);
+      profile.suspendedAt = null;
+      profile.suspendReason = null;
+      const updated = await tx.save(profile);
 
-    await this.audit.record({
-      actorId: actor.id,
-      actorRole: actor.role,
-      category: 'AGENCY',
-      action: 'رفع تعلیق آژانس',
-      detail: `تعلیق آژانس «${profile.managerName}» توسط ${actor.fullName} رفع شد.`,
-      entityType: 'AgencyProfile',
-      entityId: id,
+      await this.audit.record(
+        {
+          actorId: actor.id,
+          actorRole: actor.role,
+          category: 'AGENCY',
+          action: 'رفع تعلیق آژانس',
+          detail: `تعلیق آژانس «${profile.managerName}» توسط ${actor.fullName} رفع شد.`,
+          entityType: 'AgencyProfile',
+          entityId: id,
+        },
+        tx,
+      );
+      await this.agencyProjection.recordProfileById(tx, id, 'REACTIVATED');
+      return updated;
     });
-
-    return updated;
   }
 
   // ── Credit & settlement ─────────────────────────────────────────────
@@ -812,35 +829,31 @@ export class AgenciesService {
   }
 
   async updateCredit(actor: AuthenticatedUser, id: string, limitIrr: Irr) {
-    await this.getProfileOrThrow(id);
-    const existing = await this.creditLineRepo.findOneBy({ agencyId: id });
-    let updated: AgencyCreditLine;
-    if (existing) {
-      existing.limitIrr = limitIrr;
-      existing.updatedById = actor.id;
-      existing.updatedAt = new Date();
-      updated = await this.creditLineRepo.save(existing);
-    } else {
-      updated = await this.creditLineRepo.save(
-        this.creditLineRepo.create({
-          agencyId: id,
+    const updated = await this.creditLineRepo.manager.transaction(
+      async (tx) => {
+        await this.getProfileOrThrow(id, tx);
+        const creditLine = await this.saveCreditLimit(
+          tx,
+          actor.id,
+          id,
           limitIrr,
-          updatedById: actor.id,
-          updatedAt: new Date(),
-        }),
-      );
-    }
-
-    await this.audit.record({
-      actorId: actor.id,
-      actorRole: actor.role,
-      category: 'AGENCY',
-      action: 'تغییر سقف اعتبار آژانس',
-      detail: `سقف اعتبار توسط ${actor.fullName} به ${limitIrr} ریال تغییر یافت.`,
-      entityType: 'AgencyProfile',
-      entityId: id,
-      metadata: { limitIrr },
-    });
+        );
+        await this.audit.record(
+          {
+            actorId: actor.id,
+            actorRole: actor.role,
+            category: 'AGENCY',
+            action: 'تغییر سقف اعتبار آژانس',
+            detail: `سقف اعتبار توسط ${actor.fullName} به ${limitIrr} ریال تغییر یافت.`,
+            entityType: 'AgencyProfile',
+            entityId: id,
+            metadata: { limitIrr },
+          },
+          tx,
+        );
+        return creditLine;
+      },
+    );
 
     const usedByAgency = await this.computeUsedIrr([id]);
     const usedIrr = maxIrr(usedByAgency.get(id) ?? ZERO_IRR, ZERO_IRR);
@@ -849,6 +862,33 @@ export class AgenciesService {
       usedIrr,
       remainingIrr: subIrr(updated.limitIrr, usedIrr),
     };
+  }
+
+  private async saveCreditLimit(
+    manager: EntityManager,
+    actorId: string,
+    agencyId: string,
+    limitIrr: Irr,
+  ): Promise<AgencyCreditLine> {
+    const repository = manager.getRepository(AgencyCreditLine);
+    const existing = await repository.findOneBy({ agencyId });
+    let updated: AgencyCreditLine;
+    if (existing) {
+      existing.limitIrr = limitIrr;
+      existing.updatedById = actorId;
+      existing.updatedAt = new Date();
+      updated = await repository.save(existing);
+    } else {
+      updated = await repository.save(
+        repository.create({
+          agencyId,
+          limitIrr,
+          updatedById: actorId,
+          updatedAt: new Date(),
+        }),
+      );
+    }
+    return updated;
   }
 
   async settle(actor: AuthenticatedUser, id: string) {
@@ -1060,6 +1100,7 @@ export class AgenciesService {
             tier: 'NORMAL',
           }),
         );
+        await this.agencyProjection.recordProfileById(tx, user.id, 'CREATED');
         await tx.save(
           tx.create(AgencyCreditLine, {
             agencyId: user.id,
@@ -1884,21 +1925,26 @@ export class AgenciesService {
     dto: { amountIrr: Irr; dueAt: string; descriptionFa?: string },
     manager?: EntityManager,
   ) {
-    await this.getProfileOrThrow(id);
-    const invoiceRepo = manager
-      ? manager.getRepository(AgencyInvoice)
-      : this.invoiceRepo;
-    const created = await invoiceRepo.save(
-      invoiceRepo.create({
-        agencyId: id,
-        invoiceNo: generateInvoiceNo(),
-        issuedById: actor.id,
-        dueAt: new Date(dto.dueAt),
-        amountIrr: dto.amountIrr,
-        descriptionFa: dto.descriptionFa ?? null,
-        status: 'UNPAID',
-      }),
-    );
+    const create = async (tx: EntityManager) => {
+      await this.getProfileOrThrow(id, tx);
+      const invoiceRepo = tx.getRepository(AgencyInvoice);
+      const created = await invoiceRepo.save(
+        invoiceRepo.create({
+          agencyId: id,
+          invoiceNo: generateInvoiceNo(),
+          issuedById: actor.id,
+          dueAt: new Date(dto.dueAt),
+          amountIrr: dto.amountIrr,
+          descriptionFa: dto.descriptionFa ?? null,
+          status: 'UNPAID',
+        }),
+      );
+      await this.agencyProjection.recordInvoiceById(tx, created.id, 'CREATED');
+      return created;
+    };
+    const created = manager
+      ? await create(manager)
+      : await this.invoiceRepo.manager.transaction(create);
 
     if (!manager) {
       await this.audit.record({
@@ -2003,6 +2049,11 @@ export class AgenciesService {
           signedAmountIrr: negateIrr(lockedInvoice.amountIrr),
           createdById: actor.id,
         }),
+      );
+      await this.agencyProjection.recordInvoiceById(
+        tx,
+        lockedInvoice.id,
+        'PAID',
       );
       return lockedInvoice;
     });
@@ -2146,58 +2197,70 @@ export class AgenciesService {
     requestId: string,
     approve: boolean,
   ) {
-    const request = await this.creditRequestRepo.findOneBy({ id: requestId });
-    if (!request || request.agencyId !== id) {
-      throw new NotFoundException({
-        code: ErrorCode.NOT_FOUND,
-        message: 'درخواست افزایش اعتبار یافت نشد.',
-      });
-    }
-    if (request.status !== 'PENDING') {
-      throw new ConflictException({
-        code: ErrorCode.CONFLICT,
-        message: 'این درخواست قبلاً بررسی شده است.',
-      });
-    }
-
     const decision: AgencyCreditRequestStatus = approve
       ? 'APPROVED'
       : 'REJECTED';
+    return this.creditRequestRepo.manager.transaction(async (tx) => {
+      const request = await tx
+        .createQueryBuilder(AgencyCreditRequest, 'request')
+        .setLock('pessimistic_write')
+        .where('request.id = :requestId', { requestId })
+        .getOne();
+      if (!request || request.agencyId !== id) {
+        throw new NotFoundException({
+          code: ErrorCode.NOT_FOUND,
+          message: 'درخواست افزایش اعتبار یافت نشد.',
+        });
+      }
+      if (request.status !== 'PENDING') {
+        throw new ConflictException({
+          code: ErrorCode.CONFLICT,
+          message: 'این درخواست قبلاً بررسی شده است.',
+        });
+      }
 
-    // Conditional update guards a concurrent double-decision race.
-    const updated = await this.creditRequestRepo.update(
-      { id: requestId, status: 'PENDING' },
-      { status: decision, decidedById: actor.id, decidedAt: new Date() },
-    );
-    if ((updated.affected ?? 0) === 0) {
-      throw new ConflictException({
-        code: ErrorCode.CONFLICT,
-        message: 'این درخواست قبلاً بررسی شده است.',
-      });
-    }
+      request.status = decision;
+      request.decidedById = actor.id;
+      request.decidedAt = new Date();
+      await tx.save(request);
 
-    // The ONLY code path that actually changes AgencyCreditLine.limitIrr —
-    // reuses the already-audited updateCredit rather than writing a second one.
-    if (approve) {
-      await this.updateCredit(actor, id, request.requestedLimitIrr);
-    }
+      if (approve) {
+        await this.saveCreditLimit(tx, actor.id, id, request.requestedLimitIrr);
+        await this.audit.record(
+          {
+            actorId: actor.id,
+            actorRole: actor.role,
+            category: 'AGENCY',
+            action: 'تغییر سقف اعتبار آژانس',
+            detail: `سقف اعتبار توسط ${actor.fullName} به ${request.requestedLimitIrr} ریال تغییر یافت.`,
+            entityType: 'AgencyProfile',
+            entityId: id,
+            metadata: { limitIrr: request.requestedLimitIrr },
+          },
+          tx,
+        );
+      }
 
-    await this.audit.record({
-      actorId: actor.id,
-      actorRole: actor.role,
-      category: 'AGENCY',
-      action: approve
-        ? 'تأیید درخواست افزایش اعتبار آژانس'
-        : 'رد درخواست افزایش اعتبار آژانس',
-      detail: `درخواست افزایش اعتبار به ${request.requestedLimitIrr} ریال توسط ${actor.fullName} ${approve ? 'تأیید' : 'رد'} شد.`,
-      entityType: 'AgencyCreditRequest',
-      entityId: requestId,
+      await this.audit.record(
+        {
+          actorId: actor.id,
+          actorRole: actor.role,
+          category: 'AGENCY',
+          action: approve
+            ? 'تأیید درخواست افزایش اعتبار آژانس'
+            : 'رد درخواست افزایش اعتبار آژانس',
+          detail: `درخواست افزایش اعتبار به ${request.requestedLimitIrr} ریال توسط ${actor.fullName} ${approve ? 'تأیید' : 'رد'} شد.`,
+          entityType: 'AgencyCreditRequest',
+          entityId: requestId,
+        },
+        tx,
+      );
+      return this.agencyProjection.recordCreditRequestById(
+        tx,
+        requestId,
+        'DECIDED',
+      );
     });
-
-    return this.creditRequestRepo
-      .createQueryBuilder('r')
-      .where('r.id = :id', { id: requestId })
-      .getOneOrFail();
   }
 
   // ── Agency Portal: webservice purchase requests (staff-side review) ────

@@ -8,9 +8,9 @@ import {
   createAgencyProfileProjected,
   type AgencyProjectionEvent,
 } from '../../common/events/agency-events';
-import type { AgencyCreditRequest } from '../../database/entities/agency-credit-request.entity';
-import type { AgencyInvoice } from '../../database/entities/agency-invoice.entity';
-import type { AgencyProfile } from '../../database/entities/agency-profile.entity';
+import { AgencyCreditRequest } from '../../database/entities/agency-credit-request.entity';
+import { AgencyInvoice } from '../../database/entities/agency-invoice.entity';
+import { AgencyProfile } from '../../database/entities/agency-profile.entity';
 import { AgencyProjectionAudit } from '../../database/entities/agency-projection-audit.entity';
 import { CommerceOutboxService } from '../commerce-outbox/commerce-outbox.service';
 
@@ -42,6 +42,51 @@ interface ProjectionRecord {
 @Injectable()
 export class AgencyProjectionEventService {
   constructor(private readonly outbox: CommerceOutboxService) {}
+
+  async recordProfileById(
+    manager: EntityManager,
+    id: string,
+    mutation: AgencyProjectionMutation,
+  ): Promise<AgencyProfile> {
+    this.requireTransaction(manager);
+    const row = await manager
+      .createQueryBuilder(AgencyProfile, 'profile')
+      .addSelect('profile.version')
+      .where('profile.userId = :id', { id })
+      .getOneOrFail();
+    await this.recordProfile(manager, row, mutation);
+    return row;
+  }
+
+  async recordInvoiceById(
+    manager: EntityManager,
+    id: string,
+    mutation: AgencyProjectionMutation,
+  ): Promise<AgencyInvoice> {
+    this.requireTransaction(manager);
+    const row = await manager
+      .createQueryBuilder(AgencyInvoice, 'invoice')
+      .addSelect('invoice.version')
+      .where('invoice.id = :id', { id })
+      .getOneOrFail();
+    await this.recordInvoice(manager, row, mutation);
+    return row;
+  }
+
+  async recordCreditRequestById(
+    manager: EntityManager,
+    id: string,
+    mutation: AgencyProjectionMutation,
+  ): Promise<AgencyCreditRequest> {
+    this.requireTransaction(manager);
+    const row = await manager
+      .createQueryBuilder(AgencyCreditRequest, 'creditRequest')
+      .addSelect('creditRequest.version')
+      .where('creditRequest.id = :id', { id })
+      .getOneOrFail();
+    await this.recordCreditRequest(manager, row, mutation);
+    return row;
+  }
 
   recordProfile(
     manager: EntityManager,
@@ -119,9 +164,7 @@ export class AgencyProjectionEventService {
     manager: EntityManager,
     record: ProjectionRecord,
   ): Promise<{ eventId: string; auditId: string }> {
-    if (!manager.queryRunner?.isTransactionActive) {
-      throw new Error('Agency projection requires an active Core transaction');
-    }
+    this.requireTransaction(manager);
 
     await manager.query(
       'SELECT pg_advisory_xact_lock(hashtextextended($1, 0))',
@@ -161,6 +204,12 @@ export class AgencyProjectionEventService {
       record.build(auditId, new Date()),
     );
     return { ...outbox, auditId };
+  }
+
+  private requireTransaction(manager: EntityManager): void {
+    if (!manager.queryRunner?.isTransactionActive) {
+      throw new Error('Agency projection requires an active Core transaction');
+    }
   }
 
   private context(

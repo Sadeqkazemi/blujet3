@@ -32,6 +32,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { CartableModule } from '../cartable/cartable.module';
 import { AuthModule } from '../auth/auth.module';
 import { SmsModule } from '../sms/sms.module';
+import { AgencyProjectionOutboxModule } from '../agency-projection-outbox/agency-projection-outbox.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { SmsModule } from '../sms/sms.module';
     CartableModule,
     AuthModule,
     SmsModule,
+    AgencyProjectionOutboxModule,
   ],
   controllers: [AgenciesController, AgencyRequestsPublicController],
   providers: [AgenciesService],

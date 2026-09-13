@@ -8,6 +8,7 @@ import { AgencyCreditLine } from '../src/database/entities/agency-credit-line.en
 import { AgencyAllotment } from '../src/database/entities/agency-allotment.entity';
 import { AgencyInvoice } from '../src/database/entities/agency-invoice.entity';
 import { AgencyProfile } from '../src/database/entities/agency-profile.entity';
+import { AgencyProjectionAudit } from '../src/database/entities/agency-projection-audit.entity';
 import { AgencySeatRequest } from '../src/database/entities/agency-seat-request.entity';
 import { AgencySeatRequestFlight } from '../src/database/entities/agency-seat-request-flight.entity';
 import { AncillaryService } from '../src/database/entities/ancillary-service.entity';
@@ -16,6 +17,7 @@ import { CartableTask } from '../src/database/entities/cartable-task.entity';
 import { FlightInstance } from '../src/database/entities/flight-instance.entity';
 import { FareRule } from '../src/database/entities/fare-rule.entity';
 import { User } from '../src/database/entities/user.entity';
+import { CommerceOutboxEvent } from '../src/database/entities/commerce-outbox-event.entity';
 import { CabinClass, FlightDefinitionStatus } from '../src/database/enums';
 import { loginAs } from './helpers/login.helper';
 import { createTestApp } from './helpers/app.helper';
@@ -396,6 +398,9 @@ describe('Commercial manager overhaul (e2e)', () => {
       expect(row).toBeDefined();
       expect(typeof row?.unitPriceIrr).toBe('string');
       expect(row?.months).toBe(1);
+      const invoiceDueAt = new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000,
+      ).toISOString();
 
       const finance = await loginAs(app, 'finance');
       await request(app.getHttpServer())
@@ -406,7 +411,7 @@ describe('Commercial manager overhaul (e2e)', () => {
       await request(app.getHttpServer())
         .patch(`/agencies/seat-requests/${requestId}/decide`)
         .set('Authorization', auth(finance.accessToken))
-        .send({ approve: true, dueAt: '2026-09-01T00:00:00.000Z' })
+        .send({ approve: true, dueAt: invoiceDueAt })
         .expect(403);
 
       await request(app.getHttpServer())
@@ -418,7 +423,7 @@ describe('Commercial manager overhaul (e2e)', () => {
       const approved = await request(app.getHttpServer())
         .patch(`/agencies/seat-requests/${requestId}/decide`)
         .set('Authorization', auth(commercial.accessToken))
-        .send({ approve: true, dueAt: '2026-09-01T00:00:00.000Z' })
+        .send({ approve: true, dueAt: invoiceDueAt })
         .expect(200);
       expect(approved.body.data.status).toBe('PENDING_FINANCE');
 
@@ -434,11 +439,24 @@ describe('Commercial manager overhaul (e2e)', () => {
       expect(invoices[0]?.amountIrr.toString()).toBe(
         (persisted.unitPriceIrr * 4n * BigInt(occurrenceCount)).toString(),
       );
+      const projection = await dataSource
+        .getRepository(AgencyProjectionAudit)
+        .findOneByOrFail({
+          aggregateType: 'AgencyInvoice',
+          aggregateId: invoices[0].id,
+          mutation: 'CREATED',
+        });
+      expect(
+        await dataSource.getRepository(CommerceOutboxEvent).countBy({
+          producer: 'core-agency',
+          idempotencyKey: `agency-projected:AgencyInvoice:${invoices[0].id}:v${projection.recordVersion}`,
+        }),
+      ).toBe(1);
 
       await request(app.getHttpServer())
         .patch(`/agencies/seat-requests/${requestId}/decide`)
         .set('Authorization', auth(commercial.accessToken))
-        .send({ approve: true, dueAt: '2026-09-01T00:00:00.000Z' })
+        .send({ approve: true, dueAt: invoiceDueAt })
         .expect(409);
       expect(
         await dataSource
