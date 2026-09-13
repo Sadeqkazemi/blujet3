@@ -278,10 +278,7 @@ export function parseAgencyProjectionEvent(
         !enumValue(AgencyInvoiceStatus, payload.status) ||
         !nullableUtc(payload.paidAt) ||
         !nullableText(payload.descriptionFa) ||
-        !(payload.bookingId === null || identifier(payload.bookingId)) ||
-        Date.parse(payload.dueAt) < Date.parse(payload.issuedAt) ||
-        (payload.paidAt !== null &&
-          Date.parse(payload.paidAt) < Date.parse(payload.issuedAt))
+        !(payload.bookingId === null || identifier(payload.bookingId))
       )
         invalid();
       break;

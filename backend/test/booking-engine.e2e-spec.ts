@@ -9,6 +9,7 @@ import { dataSourceOptions } from '../src/database/data-source.options';
 import { AircraftSeatMap } from '../src/database/entities/aircraft-seat-map.entity';
 import { AgencyProfile } from '../src/database/entities/agency-profile.entity';
 import { AgencyInvoice } from '../src/database/entities/agency-invoice.entity';
+import { AgencyProjectionAudit } from '../src/database/entities/agency-projection-audit.entity';
 import { Booking } from '../src/database/entities/booking.entity';
 import { BookingLifecycleEvent } from '../src/database/entities/booking-lifecycle-event.entity';
 import { Flight } from '../src/database/entities/flight.entity';
@@ -36,6 +37,7 @@ import { createTestApp } from './helpers/app.helper';
 import { BookingHoldExpiryWorker } from '../src/modules/booking-engine/booking-hold-expiry.worker';
 import { BookingHoldExpiryService } from '../src/modules/booking-engine/booking-hold-expiry.service';
 import { TicketDocumentStock } from '../src/database/entities/ticket-document-stock.entity';
+import { CommerceOutboxEvent } from '../src/database/entities/commerce-outbox-event.entity';
 
 async function upsertSeatMap(
   ds: DataSource,
@@ -530,6 +532,19 @@ describe('Booking engine (e2e)', () => {
       amountIrr: paidFare,
       invoiceNo: `SALE-${storedBooking.pnr}`,
     });
+    const agencyProjection = await dataSource
+      .getRepository(AgencyProjectionAudit)
+      .findOneByOrFail({
+        aggregateType: 'AgencyInvoice',
+        aggregateId: paidInvoices[0].id,
+        mutation: 'CREATED',
+      });
+    expect(
+      await dataSource.getRepository(CommerceOutboxEvent).countBy({
+        producer: 'core-agency',
+        idempotencyKey: `agency-projected:AgencyInvoice:${paidInvoices[0].id}:v${agencyProjection.recordVersion}`,
+      }),
+    ).toBe(1);
 
     const storedPassengers = await dataSource
       .getRepository(Passenger)

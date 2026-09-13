@@ -746,8 +746,10 @@ export class CartableService {
     roles: Role[],
     input: Omit<Parameters<CartableService['createTask']>[0], 'assigneeId'>,
     excludeUserId?: string,
+    manager?: EntityManager,
   ) {
-    const recipients = await this.userRepo.find({
+    const userRepo = manager?.getRepository(User) ?? this.userRepo;
+    const recipients = await userRepo.find({
       where: {
         role: In(roles),
         isActive: true,
@@ -756,13 +758,16 @@ export class CartableService {
       select: { id: true },
     });
     for (const r of recipients) {
-      await this.createTask({
-        ...input,
-        assigneeId: r.id,
-        conversationId:
-          input.conversationId ??
-          (input.sourceType === 'MANAGER_MESSAGE' ? randomUUID() : undefined),
-      });
+      await this.createTask(
+        {
+          ...input,
+          assigneeId: r.id,
+          conversationId:
+            input.conversationId ??
+            (input.sourceType === 'MANAGER_MESSAGE' ? randomUUID() : undefined),
+        },
+        manager,
+      );
     }
     return recipients.length;
   }

@@ -128,6 +128,19 @@ describe('Agency projection events', () => {
     ).toBe('');
   });
 
+  it('preserves source-compatible invoice dates without adding a new business rule', () => {
+    const event = invoice();
+    expect(
+      parseAgencyProjectionEvent({
+        ...event,
+        payload: {
+          ...event.payload,
+          dueAt: '2026-09-13T07:59:59.999Z',
+        },
+      }).payload.dueAt,
+    ).toBe('2026-09-13T07:59:59.999Z');
+  });
+
   it.each(all())('parses and detaches valid $eventType snapshots', (event) => {
     const parsed = parseAgencyProjectionEvent(event);
     expect(parsed).toEqual(event);
@@ -171,11 +184,6 @@ describe('Agency projection events', () => {
     ['invoice negative amount', invoice, { amountIrr: '-1' }],
     ['invoice scientific amount', invoice, { amountIrr: '1e3' }],
     ['invoice overflow', invoice, { amountIrr: '9223372036854775808' }],
-    [
-      'invoice due before issue',
-      invoice,
-      { dueAt: '2026-09-12T08:00:00.000Z' },
-    ],
     ['invoice status', invoice, { status: 'CLOSED' }],
     ['credit status', creditRequest, { status: 'DONE' }],
     [

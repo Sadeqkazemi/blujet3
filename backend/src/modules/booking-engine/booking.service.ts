@@ -104,6 +104,7 @@ import {
 import { BookingHoldExpiryService } from './booking-hold-expiry.service';
 import { TicketingService } from './ticketing.service';
 import { LoyaltyProjectionEventService } from '../loyalty-projection-outbox/loyalty-projection-event.service';
+import { AgencyProjectionEventService } from '../agency-projection-outbox/agency-projection-event.service';
 
 export type PaymentMethod = 'GATEWAY' | 'WALLET' | 'POINTS';
 
@@ -209,6 +210,7 @@ export class BookingService {
     private readonly search: SearchService,
     private readonly priceLocks: PriceLockService,
     private readonly loyaltyProjection: LoyaltyProjectionEventService,
+    private readonly agencyProjection: AgencyProjectionEventService,
     private readonly wallet: WalletService,
     private readonly clubPoints: ClubPointsService,
     private readonly customerReferrals: CustomerReferralsService,
@@ -1991,7 +1993,7 @@ export class BookingService {
         // every projection either sees the complete purchase or none of it.
         if (lockedBooking.agencyId) {
           const paidAt = new Date();
-          await tx.save(
+          const invoice = await tx.save(
             tx.create(AgencyInvoice, {
               agencyId: lockedBooking.agencyId,
               bookingId: id,
@@ -2003,6 +2005,11 @@ export class BookingService {
               status: 'PAID',
               paidAt,
             }),
+          );
+          await this.agencyProjection.recordInvoiceById(
+            tx,
+            invoice.id,
+            'CREATED',
           );
         }
 

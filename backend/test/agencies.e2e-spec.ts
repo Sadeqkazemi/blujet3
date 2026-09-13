@@ -13,6 +13,9 @@ import { FlightInstance } from '../src/database/entities/flight-instance.entity'
 import { Booking } from '../src/database/entities/booking.entity';
 import { LedgerEntry } from '../src/database/entities/ledger-entry.entity';
 import { AuditLog } from '../src/database/entities/audit-log.entity';
+import { AgencyProjectionAudit } from '../src/database/entities/agency-projection-audit.entity';
+import { CommerceOutboxEvent } from '../src/database/entities/commerce-outbox-event.entity';
+import { AgencyProjectionEventService } from '../src/modules/agency-projection-outbox/agency-projection-event.service';
 import { loginAs, stepUpFor } from './helpers/login.helper';
 import { createTestApp } from './helpers/app.helper';
 
@@ -96,6 +99,27 @@ describe('Agencies (e2e)', () => {
         signedAmountIrr: BigInt(amountIrr),
       }),
     );
+  }
+
+  async function expectProjection(input: {
+    aggregateType: 'AgencyProfile' | 'AgencyInvoice';
+    aggregateId: string;
+    mutation: string;
+  }) {
+    const evidence = await dataSource
+      .getRepository(AgencyProjectionAudit)
+      .findOne({
+        where: input,
+        order: { recordVersion: 'DESC' },
+      });
+    expect(evidence).not.toBeNull();
+    const event = await dataSource
+      .getRepository(CommerceOutboxEvent)
+      .findOneBy({
+        producer: 'core-agency',
+        idempotencyKey: `agency-projected:${input.aggregateType}:${input.aggregateId}:v${evidence!.recordVersion}`,
+      });
+    expect(event).not.toBeNull();
   }
 
   async function createFreshMembershipRequest(
@@ -419,6 +443,59 @@ describe('Agencies (e2e)', () => {
     expect(res.status).toBe(200);
     expect(res.body.data.suspendedAt).toBeNull();
     expect(res.body.data.suspendReason).toBeNull();
+    expect(res.body.data.version).toBeUndefined();
+    await expectProjection({
+      aggregateType: 'AgencyProfile',
+      aggregateId: agencyId,
+      mutation: 'SUSPENDED',
+    });
+    await expectProjection({
+      aggregateType: 'AgencyProfile',
+      aggregateId: agencyId,
+      mutation: 'REACTIVATED',
+    });
+  });
+
+  it('rolls profile suspension back when projection publication fails', async () => {
+    const agencyId = await createFreshAgency();
+    const { accessToken } = await loginAs(app, 'senior');
+    const projection = app.get(AgencyProjectionEventService);
+    const auditCount = await dataSource.getRepository(AuditLog).countBy({
+      category: 'AGENCY',
+      entityType: 'AgencyProfile',
+      entityId: agencyId,
+    });
+    const failure = jest
+      .spyOn(projection, 'recordProfileById')
+      .mockRejectedValueOnce(new Error('forced profile projection failure'));
+    try {
+      await request(app.getHttpServer())
+        .patch(`/agencies/${agencyId}/suspend`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ reason: 'نباید ثبت شود' })
+        .expect(500);
+
+      const profile = await dataSource
+        .getRepository(AgencyProfile)
+        .findOneByOrFail({ userId: agencyId });
+      expect(profile.suspendedAt).toBeNull();
+      expect(profile.suspendReason).toBeNull();
+      expect(
+        await dataSource.getRepository(AgencyProjectionAudit).countBy({
+          aggregateType: 'AgencyProfile',
+          aggregateId: agencyId,
+        }),
+      ).toBe(0);
+      expect(
+        await dataSource.getRepository(AuditLog).countBy({
+          category: 'AGENCY',
+          entityType: 'AgencyProfile',
+          entityId: agencyId,
+        }),
+      ).toBe(auditCount);
+    } finally {
+      failure.mockRestore();
+    }
   });
 
   // ── Membership requests ───────────────────────────────────────────────
@@ -452,6 +529,11 @@ describe('Agencies (e2e)', () => {
       .findOneBy({ userId: newAgencyId });
     expect(user?.role).toBe('AGENCY');
     expect(profile).not.toBeNull();
+    await expectProjection({
+      aggregateType: 'AgencyProfile',
+      aggregateId: newAgencyId,
+      mutation: 'CREATED',
+    });
   });
 
   it('rejecting a request sets status without creating any User/AgencyProfile', async () => {
@@ -650,6 +732,12 @@ describe('Agencies (e2e)', () => {
       .set('Authorization', `Bearer ${commercial.accessToken}`)
       .send(body);
     expect(commercialRes.status).toBe(201);
+    expect(commercialRes.body.data.version).toBeUndefined();
+    await expectProjection({
+      aggregateType: 'AgencyInvoice',
+      aggregateId: commercialRes.body.data.id as string,
+      mutation: 'CREATED',
+    });
   });
 
   it('GET .../invoices is 200 (read) for all 3 roles', async () => {
@@ -694,6 +782,51 @@ describe('Agencies (e2e)', () => {
         signedAmountIrr: -150_000_000n,
       });
     expect(settlementEntries).toBe(1);
+    await expectProjection({
+      aggregateType: 'AgencyInvoice',
+      aggregateId: invoiceId,
+      mutation: 'PAID',
+    });
+  });
+
+  it('rolls invoice payment and settlement back when projection publication fails', async () => {
+    const agencyId = await createFreshAgency();
+    const commercial = await loginAs(app, 'comm');
+    const issued = await request(app.getHttpServer())
+      .post(`/agencies/${agencyId}/invoices`)
+      .set('Authorization', `Bearer ${commercial.accessToken}`)
+      .send({
+        amountIrr: 150_000_000,
+        dueAt: new Date(Date.now() + 86_400_000).toISOString(),
+      })
+      .expect(201);
+    const invoiceId = issued.body.data.id as string;
+    const finance = await loginAs(app, 'finance');
+    const projection = app.get(AgencyProjectionEventService);
+    const failure = jest
+      .spyOn(projection, 'recordInvoiceById')
+      .mockRejectedValueOnce(new Error('forced invoice projection failure'));
+    try {
+      await request(app.getHttpServer())
+        .patch(`/agencies/${agencyId}/invoices/${invoiceId}/pay`)
+        .set('Authorization', `Bearer ${finance.accessToken}`)
+        .expect(500);
+
+      const invoice = await dataSource
+        .getRepository(AgencyInvoice)
+        .findOneByOrFail({ id: invoiceId });
+      expect(invoice.status).toBe('UNPAID');
+      expect(invoice.paidAt).toBeNull();
+      expect(
+        await dataSource.getRepository(LedgerEntry).countBy({
+          agencyId,
+          type: 'SETTLEMENT',
+          signedAmountIrr: -150_000_000n,
+        }),
+      ).toBe(0);
+    } finally {
+      failure.mockRestore();
+    }
   });
 
   it('GET/POST .../messages is 403 for SENIOR_MANAGER and FINANCE_MANAGER', async () => {

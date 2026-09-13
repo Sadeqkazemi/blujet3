@@ -21,6 +21,11 @@ import { Passenger } from '../src/database/entities/passenger.entity';
 import { StoredFile } from '../src/database/entities/stored-file.entity';
 import { User } from '../src/database/entities/user.entity';
 import { AgencyAllotment } from '../src/database/entities/agency-allotment.entity';
+import { AgencyCreditRequest } from '../src/database/entities/agency-credit-request.entity';
+import { AgencyProjectionAudit } from '../src/database/entities/agency-projection-audit.entity';
+import { AuditLog } from '../src/database/entities/audit-log.entity';
+import { CommerceOutboxEvent } from '../src/database/entities/commerce-outbox-event.entity';
+import { AgencyProjectionEventService } from '../src/modules/agency-projection-outbox/agency-projection-event.service';
 import { loginAs, stepUpFor } from './helpers/login.helper';
 import { createTestApp } from './helpers/app.helper';
 
@@ -100,6 +105,29 @@ describe('Agency Portal (e2e)', () => {
       res,
       accessToken: res.body?.data?.accessToken as string | undefined,
     };
+  }
+
+  async function expectCreditProjection(
+    aggregateId: string,
+    mutation: 'CREATED' | 'DECIDED',
+  ) {
+    const evidence = await dataSource
+      .getRepository(AgencyProjectionAudit)
+      .findOne({
+        where: {
+          aggregateType: 'AgencyCreditRequest',
+          aggregateId,
+          mutation,
+        },
+        order: { recordVersion: 'DESC' },
+      });
+    expect(evidence).not.toBeNull();
+    expect(
+      await dataSource.getRepository(CommerceOutboxEvent).findOneBy({
+        producer: 'core-agency',
+        idempotencyKey: `agency-projected:AgencyCreditRequest:${aggregateId}:v${evidence!.recordVersion}`,
+      }),
+    ).not.toBeNull();
   }
 
   async function findSellableInstanceWithFreeSeats(minimum: number) {
@@ -835,7 +863,9 @@ describe('Agency Portal (e2e)', () => {
       .set('Authorization', auth(accessToken))
       .send({ requestedLimitIrr: 900_000_000, note: 'رشد فروش' });
     expect(createRes.status).toBe(201);
-    const requestId = createRes.body.data.id;
+    expect(createRes.body.data.version).toBeUndefined();
+    const requestId = createRes.body.data.id as string;
+    await expectCreditProjection(requestId, 'CREATED');
 
     const finance = await loginAs(app, 'finance');
     const approveRes = await request(app.getHttpServer())
@@ -844,6 +874,8 @@ describe('Agency Portal (e2e)', () => {
       .send({ approve: true });
     expect(approveRes.status).toBe(200);
     expect(approveRes.body.data.status).toBe('APPROVED');
+    expect(approveRes.body.data.version).toBeUndefined();
+    await expectCreditProjection(requestId, 'DECIDED');
 
     const creditRes = await request(app.getHttpServer())
       .get(`/agencies/${agency.id}/credit`)
@@ -855,6 +887,61 @@ describe('Agency Portal (e2e)', () => {
       .set('Authorization', auth(finance.accessToken))
       .send({ approve: false });
     expect(redecideRes.status).toBe(409);
+  });
+
+  it('rolls a credit decision and limit change back when projection publication fails', async () => {
+    const agency = await createFreshAgency({ limitIrr: 500_000_000 });
+    const { accessToken } = await loginAsAgency(agency.phone);
+    const createRes = await request(app.getHttpServer())
+      .post('/agency-portal/credit-requests')
+      .set('Authorization', auth(accessToken))
+      .send({ requestedLimitIrr: 900_000_000 })
+      .expect(201);
+    const requestId = createRes.body.data.id as string;
+    const finance = await loginAs(app, 'finance');
+    const auditCount = await dataSource.getRepository(AuditLog).countBy({
+      entityType: 'AgencyCreditRequest',
+      entityId: requestId,
+    });
+    const outboxCount = await dataSource
+      .getRepository(CommerceOutboxEvent)
+      .countBy({ producer: 'core-agency' });
+    const projection = app.get(AgencyProjectionEventService);
+    const failure = jest
+      .spyOn(projection, 'recordCreditRequestById')
+      .mockRejectedValueOnce(new Error('forced credit projection failure'));
+    try {
+      await request(app.getHttpServer())
+        .patch(`/agencies/${agency.id}/credit-requests/${requestId}/decide`)
+        .set('Authorization', auth(finance.accessToken))
+        .send({ approve: true })
+        .expect(500);
+
+      const requestRow = await dataSource
+        .getRepository(AgencyCreditRequest)
+        .findOneByOrFail({ id: requestId });
+      expect(requestRow.status).toBe('PENDING');
+      expect(
+        (
+          await dataSource
+            .getRepository(AgencyCreditLine)
+            .findOneByOrFail({ agencyId: agency.id })
+        ).limitIrr,
+      ).toBe(500_000_000n);
+      expect(
+        await dataSource.getRepository(AuditLog).countBy({
+          entityType: 'AgencyCreditRequest',
+          entityId: requestId,
+        }),
+      ).toBe(auditCount);
+      expect(
+        await dataSource
+          .getRepository(CommerceOutboxEvent)
+          .countBy({ producer: 'core-agency' }),
+      ).toBe(outboxCount);
+    } finally {
+      failure.mockRestore();
+    }
   });
 
   it('rejecting a credit request leaves the limit unchanged', async () => {

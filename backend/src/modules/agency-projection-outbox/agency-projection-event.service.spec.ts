@@ -80,6 +80,58 @@ function setup(existing: AgencyProjectionAudit | null = null) {
 }
 
 describe('AgencyProjectionEventService', () => {
+  it('reloads every source snapshot with its hidden database version', async () => {
+    const { service, manager, enqueueAgency } = setup();
+    const profileBuilder = {
+      addSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOneOrFail: jest.fn().mockResolvedValue(profile),
+    };
+    const invoiceBuilder = {
+      addSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOneOrFail: jest.fn().mockResolvedValue(invoice),
+    };
+    const creditBuilder = {
+      addSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOneOrFail: jest.fn().mockResolvedValue(creditRequest),
+    };
+    const createQueryBuilder = jest
+      .fn()
+      .mockReturnValueOnce(profileBuilder)
+      .mockReturnValueOnce(invoiceBuilder)
+      .mockReturnValueOnce(creditBuilder);
+    Object.assign(manager, { createQueryBuilder });
+
+    await service.recordProfileById(manager, profile.userId, 'SUSPENDED');
+    await service.recordInvoiceById(manager, invoice.id, 'PAID');
+    await service.recordCreditRequestById(manager, creditRequest.id, 'CREATED');
+
+    expect(profileBuilder.addSelect).toHaveBeenCalledWith('profile.version');
+    expect(profileBuilder.where).toHaveBeenCalledWith('profile.userId = :id', {
+      id: profile.userId,
+    });
+    expect(invoiceBuilder.addSelect).toHaveBeenCalledWith('invoice.version');
+    expect(creditBuilder.addSelect).toHaveBeenCalledWith(
+      'creditRequest.version',
+    );
+    expect(enqueueAgency.mock.calls.map((call) => call[1])).toEqual([
+      expect.objectContaining({
+        aggregateType: 'AgencyProfile',
+        idempotencyKey: 'agency-projected:AgencyProfile:agency-1:v2',
+      }),
+      expect.objectContaining({
+        aggregateType: 'AgencyInvoice',
+        idempotencyKey: 'agency-projected:AgencyInvoice:invoice-1:v3',
+      }),
+      expect.objectContaining({
+        aggregateType: 'AgencyCreditRequest',
+        idempotencyKey: 'agency-projected:AgencyCreditRequest:credit-1:v4',
+      }),
+    ]);
+  });
+
   it('records exact versioned snapshots for every Agency aggregate', async () => {
     const { service, manager, insert, enqueueAgency } = setup();
 

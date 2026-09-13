@@ -1,5 +1,22 @@
 # PLAN.md — blujet roadmap & progress
 
+## Agency projection publisher activation (2026-09-13)
+
+- [x] Activate full-snapshot publication at profile creation, suspension and
+  reactivation boundaries without enabling an Agency consumer or read cutover.
+- [x] Publish invoice creation from direct, booking and seat-allotment flows;
+  publish payment in the same transaction as its settlement ledger entry.
+- [x] Publish credit-request creation and decision in the same transaction as
+  cartable, audit and approved credit-limit changes.
+- [x] Reload hidden database-generated source revisions after each write and
+  preserve existing HTTP response privacy.
+- [x] Prove publisher-failure rollback for profile, invoice/ledger and credit
+  mutations with real PostgreSQL E2E tests.
+- [x] Pass 1,258 Backend unit tests, 114 related E2E tests, lint, typecheck and
+  build.
+- [ ] Obtain explicit owner approval before commit/push/merge. Do not activate
+  a consumer, cut over reads or deploy.
+
 ## Agency projection outbox foundation (2026-09-13)
 
 - [x] Add expand-only positive source revisions and immutable content-free

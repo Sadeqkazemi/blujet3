@@ -26,6 +26,7 @@ import { AgenciesModule } from '../agencies/agencies.module';
 import { FilesModule } from '../files/files.module';
 import { WebservicePricingModule } from '../webservice-pricing/webservice-pricing.module';
 import { BookingEngineModule } from '../booking-engine/booking-engine.module';
+import { AgencyProjectionOutboxModule } from '../agency-projection-outbox/agency-projection-outbox.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { BookingEngineModule } from '../booking-engine/booking-engine.module';
     FilesModule,
     WebservicePricingModule,
     BookingEngineModule,
+    AgencyProjectionOutboxModule,
   ],
   controllers: [AgencyPortalController],
   providers: [
