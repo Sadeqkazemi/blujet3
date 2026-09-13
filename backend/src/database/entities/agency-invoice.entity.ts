@@ -9,7 +9,6 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryColumn,
-  VersionColumn,
 } from 'typeorm';
 import { AgencyInvoiceStatus } from '../enums';
 import { bigintTransformer } from '../transformers/bigint.transformer';
@@ -23,7 +22,7 @@ import { User } from './user.entity';
 @Check('agency_invoices_version_check', '"version" > 0')
 @Entity('agency_invoices', { schema: 'agency' })
 export class AgencyInvoice {
-  #recordVersion = 1;
+  #recordVersion!: number;
 
   @PrimaryColumn({
     type: 'text',
@@ -31,8 +30,8 @@ export class AgencyInvoice {
   })
   id!: string;
 
-  /** Stored as a TypeORM revision while remaining absent from JSON responses. */
-  @VersionColumn({ type: 'int', default: 1 })
+  /** Internal source revision; excluded from default reads and JSON responses. */
+  @Column({ type: 'int', default: 1, select: false, update: false })
   get version(): number {
     return this.#recordVersion;
   }

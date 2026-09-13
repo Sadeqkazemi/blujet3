@@ -16,8 +16,11 @@ an HTTP route or deploy. Core remains the sole writer.
 ## Atomicity and privacy boundary
 
 - `agency_profiles`, `agency_invoices` and `agency_credit_requests` receive an
-  additive `version integer NOT NULL DEFAULT 1` with a positive check. Mutable
-  rows use TypeORM optimistic revisions; new rows start at version 1.
+  additive `version integer NOT NULL DEFAULT 1` with a positive check. A
+  database trigger advances every changed row revision atomically, including
+  writes made through raw SQL; new rows start at version 1. Revision metadata
+  is excluded from default selects and JSON responses. A mutation caller must
+  explicitly select the post-write revision before recording its event.
 - `agency_projection_audits` stores only aggregate type/id, revision, mutation
   and creation time. A database trigger rejects update and delete operations.
 - Audit insertion and encrypted commerce-outbox insertion require the caller's

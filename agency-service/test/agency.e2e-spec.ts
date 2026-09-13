@@ -107,11 +107,17 @@ describe('Agency read boundary (real restricted PostgreSQL login)', () => {
   async function snapshot() {
     return {
       profiles: await writer.query<unknown[]>(
-        'SELECT * FROM agency.agency_profiles WHERE "userId" IN ($1,$2,$3) ORDER BY "userId"',
+        `SELECT "userId", "licenseNo", "managerName", phone, email, city,
+          address, tier, "joinedAt", "suspendedAt", "suspendReason"
+         FROM agency.agency_profiles
+         WHERE "userId" IN ($1,$2,$3) ORDER BY "userId"`,
         [owner, other, empty],
       ),
       invoices: await writer.query<unknown[]>(
-        'SELECT * FROM agency.agency_invoices WHERE "agencyId" IN ($1,$2,$3) ORDER BY id',
+        `SELECT id, "agencyId", "bookingId", "invoiceNo", "issuedById",
+          "descriptionFa", "amountIrr", status, "issuedAt", "dueAt", "paidAt"
+         FROM agency.agency_invoices
+         WHERE "agencyId" IN ($1,$2,$3) ORDER BY id`,
         [owner, other, empty],
       ),
     };

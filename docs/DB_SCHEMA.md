@@ -317,8 +317,11 @@ transactional-outbox, ordered-consumer and reconciliation slices are approved.
 
 An expand-only Core migration adds positive integer `version` columns, default
 1, to `agency.agency_profiles`, `agency.agency_invoices` and
-`agency.agency_credit_requests`. Mutable entities use the columns as TypeORM
-optimistic revisions. New `agency.agency_projection_audits` is append-only and
+`agency.agency_credit_requests`. A PostgreSQL trigger advances each source
+revision on every update, including raw-SQL writes. The revision is excluded
+from default TypeORM reads; event writers explicitly select it after mutation.
+New
+`agency.agency_projection_audits` is append-only and
 contains `id`, `aggregateType`, `aggregateId`, `recordVersion`, `mutation` and
 `createdAt`, with a unique aggregate/type/version index and a database trigger
 rejecting update/delete. It deliberately contains no profile, invoice or credit

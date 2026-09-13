@@ -6,7 +6,6 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryColumn,
-  VersionColumn,
 } from 'typeorm';
 import { AgencyTier } from '../enums';
 import { User } from './user.entity';
@@ -14,7 +13,7 @@ import { User } from './user.entity';
 @Check('agency_profiles_version_check', '"version" > 0')
 @Entity('agency_profiles', { schema: 'agency' })
 export class AgencyProfile {
-  #recordVersion = 1;
+  #recordVersion!: number;
 
   @PrimaryColumn({
     type: 'text',
@@ -22,8 +21,8 @@ export class AgencyProfile {
   })
   userId!: string;
 
-  /** Stored as a TypeORM revision while remaining absent from JSON responses. */
-  @VersionColumn({ type: 'int', default: 1 })
+  /** Internal source revision; excluded from default reads and JSON responses. */
+  @Column({ type: 'int', default: 1, select: false, update: false })
   get version(): number {
     return this.#recordVersion;
   }
