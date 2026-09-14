@@ -89,6 +89,8 @@ Column mapping from Core `ops.cartable_tasks`:
       checksum-mismatch rollback; missing/stale/wrong backup rejection;
       reader exact-column access and denial of write/DDL/control tables/Core
       CONNECT; standalone migration down/up and schema parity.
-- [ ] CI `ops-admin` job includes the baseline E2E and remains in `ci-gate`.
-- [ ] Present the completed diff for explicit approval. Do not merge, deploy,
-      cut over reads or enable worker flags.
+- [x] CI `ops-admin` job includes the baseline E2E and remains in `ci-gate`;
+      Ops/Admin and all 34 required checks passed in CI run `34884615774`.
+- [x] Present the completed diff for explicit approval; approval to merge and
+      deploy was received on 2026-09-14. Reader cutover and worker flags remain
+      disabled and require a separate operational decision.

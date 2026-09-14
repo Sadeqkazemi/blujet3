@@ -30,8 +30,10 @@
       compose, worker flags and reader URLs unchanged.
 - [x] Prove unit and real-PostgreSQL cases including backup rejection and
       reader isolation.
-- [ ] Obtain CI evidence and present the diff for explicit approval. Do not
-      merge, deploy, activate the consumer or cut over reads.
+- [x] Obtain CI evidence and explicit approval: all 34 checks, including the
+      real-PostgreSQL Ops/Admin job, passed in run `34884615774`. Approval to
+      merge and deploy was received on 2026-09-14; consumer activation and
+      reader cutover remain disabled.
 
 ## Ops/Admin projection runtime role (2026-09-14)
 
