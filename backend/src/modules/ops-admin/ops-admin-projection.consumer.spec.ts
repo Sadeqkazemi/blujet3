@@ -39,6 +39,22 @@ describe('OpsAdminProjectionConsumer', () => {
     expect(project).toHaveBeenCalledWith(input);
   });
 
+  it('forwards validated delivery coordinates to the atomic store', async () => {
+    const project = jest.fn().mockResolvedValue('applied');
+    const store = { project } as unknown as OpsAdminProjectionStore;
+    const consumer = new OpsAdminProjectionConsumer(store);
+    const delivery = {
+      consumerGroup: 'ops-projection-v1',
+      topic: 'blujet.events.v1',
+      partition: 2,
+      nextOffset: '12',
+      highWatermark: '16',
+    };
+
+    await expect(consumer.consume(event(), delivery)).resolves.toBe('applied');
+    expect(project).toHaveBeenCalledWith(expect.any(Object), delivery);
+  });
+
   it('rejects an invalid payload without touching the store', async () => {
     const project = jest.fn().mockResolvedValue('applied');
     const store = { project } as unknown as OpsAdminProjectionStore;

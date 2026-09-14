@@ -2,12 +2,20 @@
 
 ## Ops/Admin Kafka projection worker
 
-No migration, table or ownership change. The standalone Kafka worker uses only
-the existing `OPS_ADMIN_PROJECTION_DATABASE_URL` DataSource and its existing
-`ops.cartable_tasks` and `ops.cartable_projection_event_receipts` tables. It
-does not receive a Core database URL and introduces no cross-domain join,
-dual-write, baseline copy or read cutover. Consumer-group checkpoint and DLQ
-tables remain deferred to separately reviewed expand-only migrations.
+Migration `1794038400000-OpsAdminKafkaConsumerCheckpoints` adds
+`ops.kafka_consumer_checkpoints`: `consumerGroup varchar(128)`,
+`topic varchar(249)`, non-negative `partition int`, non-negative
+`nextOffset bigint`, nullable non-negative `highWatermark bigint` and
+`updatedAt timestamptz(3)`. Its primary key is
+`(consumerGroup, topic, partition)`.
+
+This mutable row is operational evidence, not business state. Applied,
+duplicate and stale `CartableTaskProjected` deliveries update it monotonically
+in the same dedicated-database transaction as receipt/projection handling.
+Kafka acknowledgement occurs only after that transaction commits. The table
+contains no payload, event identity, PII, task content or broker credential.
+The worker still receives no Core database URL and introduces no cross-domain
+join, dual-write, baseline copy, read cutover, DLQ or deployment.
 
 ## Loyalty shared-topic checkpoint routing
 

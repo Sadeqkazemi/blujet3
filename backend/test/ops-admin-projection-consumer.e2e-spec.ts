@@ -5,7 +5,9 @@ import { DataSource } from 'typeorm';
 import { createCartableTaskProjectedEvent } from '../src/common/events/ops-admin-events';
 import { OpsAdminCartableEventReceipt } from '../src/database/ops-admin-projection-entities/ops-admin-cartable-event-receipt.entity';
 import { OpsAdminCartableTaskProjection } from '../src/database/ops-admin-projection-entities/ops-admin-cartable-task.entity';
+import { OpsAdminKafkaConsumerCheckpoint } from '../src/database/ops-admin-projection-entities/ops-admin-kafka-consumer-checkpoint.entity';
 import { opsAdminProjectionDataSourceOptions } from '../src/database/ops-admin-projection-data-source.options';
+import { OpsAdminKafkaConsumerCheckpoints1794038400000 } from '../src/database/ops-admin-migrations/1794038400000-OpsAdminKafkaConsumerCheckpoints';
 import {
   CartableCategory,
   CartableSourceType,
@@ -19,6 +21,8 @@ describe('Ops/Admin ordered projection consumer (PostgreSQL)', () => {
   let db: DataSource;
   let consumer: OpsAdminProjectionConsumer;
   const taskId = `task-${randomUUID()}`;
+  const consumerGroup = `ops-e2e-${randomUUID()}`;
+  const topic = 'blujet.events.v1';
   const event = (version: number, assigneeId = 'operator-1') =>
     createCartableTaskProjectedEvent(
       {
@@ -42,12 +46,13 @@ describe('Ops/Admin ordered projection consumer (PostgreSQL)', () => {
 
   function kafkaPayload(input: ReturnType<typeof event>): EachMessagePayload {
     return {
-      topic: 'blujet.events.v1',
+      topic,
       partition: 2,
       heartbeat: jest.fn<Promise<void>, []>().mockResolvedValue(),
       pause: jest.fn(),
       message: {
         offset: '11',
+        highWatermark: '20',
         key: Buffer.from(
           `${input.producer}:${input.aggregateType}:${input.aggregateId}`,
         ),
@@ -76,6 +81,9 @@ describe('Ops/Admin ordered projection consumer (PostgreSQL)', () => {
   afterEach(async () => {
     if (!db?.isInitialized) return;
     await db.getRepository(OpsAdminCartableEventReceipt).delete({ taskId });
+    await db
+      .getRepository(OpsAdminKafkaConsumerCheckpoint)
+      .delete({ consumerGroup, topic });
     await db
       .getRepository(OpsAdminCartableTaskProjection)
       .delete({ id: taskId });
@@ -146,6 +154,65 @@ describe('Ops/Admin ordered projection consumer (PostgreSQL)', () => {
     ).resolves.toMatchObject({ taskVersion: 4, auditId: 'audit-4' });
   });
 
+  it('advances durable checkpoint evidence monotonically for replay outcomes', async () => {
+    const delivery = (nextOffset: string, highWatermark: string) => ({
+      consumerGroup,
+      topic,
+      partition: 2,
+      nextOffset,
+      highWatermark,
+    });
+    const first = event(1);
+
+    await expect(consumer.consume(first, delivery('12', '20'))).resolves.toBe(
+      'applied',
+    );
+    await expect(consumer.consume(first, delivery('10', '18'))).resolves.toBe(
+      'duplicate',
+    );
+    await expect(
+      consumer.consume(event(1), delivery('11', '19')),
+    ).resolves.toBe('duplicate');
+    await expect(
+      consumer.consume(event(3), delivery('13', '21')),
+    ).resolves.toBe('applied');
+    await expect(
+      consumer.consume(event(2), delivery('14', '22')),
+    ).resolves.toBe('stale');
+
+    await expect(
+      db.getRepository(OpsAdminKafkaConsumerCheckpoint).findOneByOrFail({
+        consumerGroup,
+        topic,
+        partition: 2,
+      }),
+    ).resolves.toMatchObject({ nextOffset: '14', highWatermark: '22' });
+    await expect(
+      new OpsAdminProjectionStore(db).getCheckpointState(consumerGroup, topic),
+    ).resolves.toMatchObject({ partitions: [2], maxLag: '8' });
+  });
+
+  it('rolls back projection state when checkpoint persistence fails', async () => {
+    await expect(
+      consumer.consume(event(1), {
+        consumerGroup: 'x'.repeat(129),
+        topic,
+        partition: 2,
+        nextOffset: '12',
+        highWatermark: '20',
+      }),
+    ).rejects.toThrow();
+
+    await expect(
+      db
+        .getRepository(OpsAdminCartableTaskProjection)
+        .findOneBy({ id: taskId }),
+    ).resolves.toBeNull();
+    expect(
+      await db.getRepository(OpsAdminCartableEventReceipt).countBy({ taskId }),
+    ).toBe(0);
+  });
+
   it('replays an acknowledgement gap without duplicate projection rows', async () => {
     const input = event(1);
     const handler = new OpsAdminKafkaHandler(consumer);
@@ -155,15 +222,13 @@ describe('Ops/Admin ordered projection consumer (PostgreSQL)', () => {
     const secondAck = jest.fn<Promise<void>, [unknown]>().mockResolvedValue();
 
     await expect(
-      handler.runConfig(
-        { commitOffsets: firstAck },
-        { topic: 'blujet.events.v1' },
-      ).eachMessage!(kafkaPayload(input)),
+      handler.runConfig({ commitOffsets: firstAck }, { topic, consumerGroup })
+        .eachMessage!(kafkaPayload(input)),
     ).rejects.toThrow('Ops/Admin Kafka processing failed');
 
     await handler.runConfig(
       { commitOffsets: secondAck },
-      { topic: 'blujet.events.v1' },
+      { topic, consumerGroup },
     ).eachMessage!(kafkaPayload(input));
 
     expect(firstAck).toHaveBeenCalledTimes(1);
@@ -178,5 +243,30 @@ describe('Ops/Admin ordered projection consumer (PostgreSQL)', () => {
     expect(
       await db.getRepository(OpsAdminCartableEventReceipt).countBy({ taskId }),
     ).toBe(1);
+    await expect(
+      db.getRepository(OpsAdminKafkaConsumerCheckpoint).findOneByOrFail({
+        consumerGroup,
+        topic,
+        partition: 2,
+      }),
+    ).resolves.toMatchObject({ nextOffset: '12', highWatermark: '20' });
+  });
+
+  it('reverts and reapplies the additive checkpoint migration', async () => {
+    const migration = new OpsAdminKafkaConsumerCheckpoints1794038400000();
+    const runner = db.createQueryRunner();
+    await runner.connect();
+    try {
+      await migration.down(runner);
+      await expect(
+        runner.hasTable('ops.kafka_consumer_checkpoints'),
+      ).resolves.toBe(false);
+      await migration.up(runner);
+      await expect(
+        runner.hasTable('ops.kafka_consumer_checkpoints'),
+      ).resolves.toBe(true);
+    } finally {
+      await runner.release();
+    }
   });
 });
