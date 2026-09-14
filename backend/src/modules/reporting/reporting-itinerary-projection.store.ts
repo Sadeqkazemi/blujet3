@@ -146,6 +146,15 @@ export class ReportingItineraryProjectionStore implements ReportingReadModelSink
     };
   }
 
+  checkpointIgnoredDelivery(delivery: ReportingEventDelivery): Promise<void> {
+    return this.checkpoints.manager.transaction('READ COMMITTED', async (tx) =>
+      this.saveCheckpoint(
+        tx.getRepository(ReportingKafkaConsumerCheckpoint),
+        delivery,
+      ),
+    );
+  }
+
   private saveReceipt(
     repository: Repository<ReportingItineraryEventReceipt>,
     event: CoreItineraryEvent,

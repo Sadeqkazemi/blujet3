@@ -1,5 +1,17 @@
 # PLAN.md — blujet roadmap & progress
 
+## Reporting shared-topic routing (2026-09-14)
+
+- [x] Freeze the approved foreign-producer, checkpoint-before-ACK and
+  fail-closed boundary before implementation.
+- [x] Route valid non-Commerce v1 deliveries to checkpoint-only handling.
+- [x] Reject malformed, metadata-mismatched and cross-domain deliveries without
+  checkpoint, projection or ACK.
+- [x] Prove the behavior with unit and real PostgreSQL Reporting tests.
+- [x] Pass Backend lint, typecheck, build and OpenAPI stability checks.
+- [x] Present the completed diff for explicit approval before merge. Do not
+  activate, cut over or deploy.
+
 ## Agency shared-topic routing (2026-09-14)
 
 - [x] Freeze the foreign-domain routing, checkpoint-before-ACK and fail-closed

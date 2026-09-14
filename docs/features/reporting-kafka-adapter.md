@@ -5,11 +5,15 @@ Reporting projection store through a manual-ack KafkaJS handler. It does not
 start a consumer, add a public/internal HTTP route, change an environment flag,
 or deploy a process.
 
-The adapter accepts only canonical events from `core-commerce` on the configured
-exact topic. It validates the UTF-8 JSON envelope, bounded size, producer-derived
-message key, event/correlation/version headers, partition and signed-bigint-safe
-offset before calling Reporting. `ReportingEventConsumer` then performs the
-strict typed itinerary validation before the existing projection transaction.
+The adapter projects only canonical events from `core-commerce` on the
+configured exact topic. Routing-valid v1 events from the approved
+`core-agency`, `core-loyalty` and `core-ops` producers advance only the durable
+consumer checkpoint before acknowledgement; they do not call the itinerary
+projection or create receipt/DLQ state. The adapter validates the UTF-8 JSON
+envelope, bounded size, producer-derived message key,
+event/correlation/version/schema headers, partition and signed-bigint-safe
+offset before either path. `ReportingEventConsumer` still performs the strict
+typed itinerary validation before the existing projection transaction.
 
 `autoCommit` is disabled and partitions are processed sequentially. The handler
 heartbeats before and after projection and commits offset + 1 only after the

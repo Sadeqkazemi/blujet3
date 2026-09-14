@@ -155,6 +155,7 @@ describe('Reporting projection with real Kafka acknowledgement', () => {
       new ReportingEventConsumer(store),
       {} as never,
       { enabled: false },
+      store,
     );
     broker = await LocalKafka.create();
     await broker.start();
