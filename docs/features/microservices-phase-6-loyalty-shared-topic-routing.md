@@ -29,5 +29,5 @@ remains the sole Loyalty business writer.
       cross-labeled deliveries remain unacknowledged and fail closed.
 - [x] `projection.integration-spec.ts` proves ignored delivery checkpointing is
       durable and creates no projection receipt, aggregate slot or failure row.
-- [ ] Present the completed diff for explicit approval before merge. Do not
+- [x] Present the completed diff for explicit approval before merge. Do not
       activate the worker, cut over reads or deploy.
