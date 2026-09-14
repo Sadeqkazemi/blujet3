@@ -6,6 +6,7 @@ import {
 import { CreateAgencyProjectionDatabase1793088120000 } from './migrations/1793088120000-CreateAgencyProjectionDatabase';
 import { AgencyVersionedProjection1793865600000 } from './migrations/1793865600000-AgencyVersionedProjection';
 import { AgencyKafkaConsumerCheckpoints1793952000000 } from './migrations/1793952000000-AgencyKafkaConsumerCheckpoints';
+import { AgencyKafkaFailureQuarantine1794038400000 } from './migrations/1794038400000-AgencyKafkaFailureQuarantine';
 
 describe('agencyMigrationDataSourceOptions', () => {
   it('registers only Agency projection metadata and migrations', () => {
@@ -20,11 +21,12 @@ describe('agencyMigrationDataSourceOptions', () => {
       synchronize: false,
       logging: false,
     });
-    expect(agencyProjectionEntities).toHaveLength(6);
+    expect(agencyProjectionEntities).toHaveLength(7);
     expect(agencyProjectionMigrations).toEqual([
       CreateAgencyProjectionDatabase1793088120000,
       AgencyVersionedProjection1793865600000,
       AgencyKafkaConsumerCheckpoints1793952000000,
+      AgencyKafkaFailureQuarantine1794038400000,
     ]);
   });
 

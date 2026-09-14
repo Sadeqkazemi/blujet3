@@ -1,11 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type {
   Consumer,
   ConsumerRunConfig,
   EachMessagePayload,
   KafkaMessage,
 } from 'kafkajs';
+import { createHash } from 'node:crypto';
 import { TextDecoder } from 'node:util';
+import { AGENCY_DLQ_CONFIG, type AgencyDlqConfig } from '../agency-dlq.config';
+import {
+  AgencyKafkaFailureStage,
+  type AgencyKafkaFailureStage as AgencyFailureStage,
+} from '../database/entities/agency-kafka-processing-failure.entity';
+import { type AgencyFailedDelivery, AgencyDlqStore } from './agency-dlq.store';
 import {
   parseAgencyProjectionEvent,
   type AgencyProjectionEvent,
@@ -154,20 +161,60 @@ function parseDelivery(
 
 @Injectable()
 export class AgencyKafkaHandler {
-  constructor(private readonly agency: AgencyProjectionConsumer) {}
+  constructor(
+    private readonly agency: AgencyProjectionConsumer,
+    private readonly dlq: AgencyDlqStore,
+    @Inject(AGENCY_DLQ_CONFIG)
+    private readonly dlqConfig: AgencyDlqConfig,
+  ) {}
 
   runConfig(
     client: Pick<Consumer, 'commitOffsets'>,
     subscription: AgencyKafkaSubscription,
   ): ConsumerRunConfig {
     const trusted = validateSubscription(subscription);
+    if (this.dlqConfig.enabled && trusted.consumerGroup === undefined) {
+      throw new Error('Agency DLQ requires a consumer group');
+    }
     return {
       autoCommit: false,
       partitionsConsumedConcurrently: 1,
       eachMessage: async (payload) => {
+        let failedDelivery: AgencyFailedDelivery | undefined;
+        let eventId: string | null = null;
+        let stage: AgencyFailureStage = AgencyKafkaFailureStage.TRANSPORT;
+        let projectionCompleted = false;
+        let recordFailure = false;
         try {
+          if (this.dlqConfig.enabled) {
+            failedDelivery = this.describeDelivery(
+              trusted.consumerGroup!,
+              trusted.topic,
+              payload,
+            );
+            const action = await this.dlq.actionFor(failedDelivery);
+            if (action === 'block') {
+              throw new Error('Agency delivery is quarantined');
+            }
+            if (action === 'skip') {
+              await payload.heartbeat();
+              await this.dlq.markSkipped(failedDelivery);
+              await payload.heartbeat();
+              await client.commitOffsets([
+                {
+                  topic: failedDelivery.topic,
+                  partition: failedDelivery.partition,
+                  offset: failedDelivery.nextOffset,
+                },
+              ]);
+              return;
+            }
+            recordFailure = true;
+          }
           const delivery = parseDelivery(trusted, payload);
+          eventId = delivery.event.eventId;
           await payload.heartbeat();
+          stage = AgencyKafkaFailureStage.PROJECTION;
           if (trusted.consumerGroup === undefined) {
             await this.agency.consume(delivery.event);
           } else {
@@ -179,12 +226,77 @@ export class AgencyKafkaHandler {
               highWatermark: delivery.highWatermark,
             });
           }
+          projectionCompleted = true;
+          if (failedDelivery) await this.dlq.markResolved(failedDelivery);
           await payload.heartbeat();
           await client.commitOffsets([delivery.offset]);
         } catch {
+          if (
+            this.dlqConfig.enabled &&
+            failedDelivery &&
+            recordFailure &&
+            !projectionCompleted
+          ) {
+            try {
+              await this.dlq.recordFailure(
+                failedDelivery,
+                stage,
+                eventId,
+                this.dlqConfig.maxAttempts,
+              );
+            } catch {
+              // Keep processing fail-closed if the failure registry is down.
+            }
+          }
           throw new Error('Agency Kafka processing failed');
         }
       },
+    };
+  }
+
+  private describeDelivery(
+    consumerGroup: string,
+    trustedTopic: string,
+    payload: EachMessagePayload,
+  ): AgencyFailedDelivery {
+    const { topic, partition, message } = payload;
+    if (
+      topic !== trustedTopic ||
+      !Number.isSafeInteger(partition) ||
+      partition < 0 ||
+      !/^(0|[1-9][0-9]{0,18})$/.test(message.offset) ||
+      BigInt(message.offset) >= MAX_KAFKA_OFFSET
+    ) {
+      throw new Error('Invalid Agency delivery coordinates');
+    }
+    const nextOffset = BigInt(message.offset) + 1n;
+    const highWatermarkCandidate =
+      'highWatermark' in message ? message.highWatermark : undefined;
+    if (
+      highWatermarkCandidate !== undefined &&
+      typeof highWatermarkCandidate !== 'string'
+    ) {
+      throw new Error('Invalid Agency delivery high watermark');
+    }
+    const highWatermark = highWatermarkCandidate;
+    if (
+      highWatermark !== undefined &&
+      (!/^(0|[1-9][0-9]{0,18})$/.test(highWatermark) ||
+        BigInt(highWatermark) > MAX_KAFKA_OFFSET ||
+        BigInt(highWatermark) < nextOffset)
+    ) {
+      throw new Error('Invalid Agency delivery high watermark');
+    }
+    return {
+      consumerGroup,
+      topic,
+      partition,
+      offset: message.offset,
+      nextOffset: nextOffset.toString(),
+      ...(highWatermark === undefined ? {} : { highWatermark }),
+      fingerprint: createHash('sha256')
+        .update(message.value ?? Buffer.alloc(0))
+        .digest('hex'),
     };
   }
 }

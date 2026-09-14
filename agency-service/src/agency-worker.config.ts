@@ -1,4 +1,5 @@
 import type { DataSourceOptions } from 'typeorm';
+import { agencyDlqConfig } from './agency-dlq.config';
 import { agencyKafkaConsumerConfig } from './agency-kafka.config';
 import { agencyProjectionEntities } from './database/agency-entities';
 
@@ -41,6 +42,7 @@ export function validateAgencyWorkerEnv(
   if (!kafka.enabled) {
     throw new Error('AGENCY_KAFKA_CONSUMER_ENABLED must be true');
   }
+  agencyDlqConfig(env);
   return env;
 }
 

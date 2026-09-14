@@ -22,6 +22,6 @@ import {
     },
     AgencyKafkaRuntime,
   ],
-  exports: [AgencyKafkaRuntime],
+  exports: [AgencyKafkaRuntime, AgencyProjectionModule],
 })
 export class AgencyKafkaRuntimeModule {}
