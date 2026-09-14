@@ -3,13 +3,22 @@
 ## Loyalty shared-topic checkpoint routing
 
 No migration or business-table change. For a canonical v1 event whose producer
-is not core-loyalty, the Loyalty worker writes only the existing
-loyalty.kafka_consumer_checkpoints row in a local transaction. The monotonic
-
-extOffset/highWatermark update commits before Kafka acknowledgement. It
-does not write loyalty_projection_event_receipts, loyalty_projection_slots,
-kafka_processing_failures or a Loyalty business projection. Invalid or
+is not `core-loyalty`, the Loyalty worker writes only the existing
+`loyalty.kafka_consumer_checkpoints` row in a local transaction. The monotonic
+`nextOffset`/`highWatermark` update commits before Kafka acknowledgement. It
+does not write `loyalty_projection_event_receipts`, `loyalty_projection_slots`,
+`kafka_processing_failures` or a Loyalty business projection. Invalid or
 cross-labeled deliveries write no checkpoint and receive no acknowledgement.
+
+## Reporting shared-topic checkpoint routing
+
+No migration or business-table change. For a routing-valid v1 event from the
+approved `core-agency`, `core-loyalty` or `core-ops` producer, the Reporting
+worker writes only the existing `reporting.kafka_consumer_checkpoints` row in a
+local transaction. The monotonic `nextOffset`/`highWatermark` update commits
+before Kafka acknowledgement. It does not write an itinerary projection,
+`core_itinerary_event_receipts` or `kafka_processing_failures`. Invalid or
+cross-domain deliveries write no checkpoint and receive no acknowledgement.
 
 ## Agency shared-topic checkpoint routing
 
@@ -257,6 +266,17 @@ production copy, URL switch, credential rotation, Core revoke or deployment.
 Those actions remain a manual, owner-approved UAT cutover after backup restore
 proof and exact reconciliation. Order, Inventory and Payment remain one Core
 PostgreSQL primary and one ACID transaction boundary.
+
+## Ops/Admin Kafka acknowledgement adapter (microservices phase 6)
+
+This transport-only slice adds no schema or migration. The adapter writes only
+through the existing atomic Ops/Admin projection store and its content-free
+`ops.cartable_projection_event_receipts` inbox. Kafka offset acknowledgement is
+broker state and occurs only after the projection/receipt transaction commits.
+An acknowledgement gap therefore leaves a durable receipt and is safely
+deduplicated on redelivery. Invalid transport metadata and failed projections
+do not advance the broker offset. Checkpoint persistence, DLQ metadata,
+baseline copy, URL cutover and deployment remain separate gates.
 
 ## Ops/Admin ordered projection consumer (microservices phase 6)
 

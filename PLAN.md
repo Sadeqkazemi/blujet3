@@ -17,6 +17,18 @@ pass, including durable foreign-domain checkpointing with zero receipt/slot/
 failure rows. Loyalty lint, typecheck and production build pass. This package
 has no openapi:export script; docs/openapi.json is unchanged.
 
+## Reporting shared-topic routing (2026-09-14)
+
+- [x] Freeze the approved foreign-producer, checkpoint-before-ACK and
+  fail-closed boundary before implementation.
+- [x] Route valid non-Commerce v1 deliveries to checkpoint-only handling.
+- [x] Reject malformed, metadata-mismatched and cross-domain deliveries without
+  checkpoint, projection or ACK.
+- [x] Prove the behavior with unit and real PostgreSQL Reporting tests.
+- [x] Pass Backend lint, typecheck, build and OpenAPI stability checks.
+- [x] Present the completed diff for explicit approval before merge. Do not
+  activate, cut over or deploy.
+
 ## Agency shared-topic routing (2026-09-14)
 
 - [x] Freeze the foreign-domain routing, checkpoint-before-ACK and fail-closed
@@ -5512,6 +5524,19 @@ contracts and retires the production mock adapters.
   Ops/Admin HTTP compatibility in tests.
 - [x] Owner explicitly approved commit/push/merge on 2026-09-10. No deployment
   is authorized in this slice.
+
+## Microservices architecture v1.1 — phase 6 Ops/Admin Kafka acknowledgement adapter (2026-09-14)
+
+- [x] Freeze the transport-only boundary, canonical key/header admission and
+  projection-before-ACK ordering before implementation.
+- [x] Add the construction-only KafkaJS adapter with manual acknowledgement,
+  sequential partition handling and sanitized retryable failures.
+- [x] Prove malformed-delivery rejection and durable idempotent replay across
+  an acknowledgement gap with focused and real-PostgreSQL tests.
+- [x] Verify unchanged HTTP/OpenAPI and database schemas, lint, typecheck and
+  production build without enabling a broker runtime, cutover or deployment.
+- [x] Owner explicitly approved commit, push and merge on 2026-09-14. No
+  deployment is authorized in this slice.
 
 ## Microservices architecture v1.1 — phase 6 Ops/Admin event contract (2026-09-10)
 

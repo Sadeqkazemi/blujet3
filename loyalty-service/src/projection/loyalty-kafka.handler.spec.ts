@@ -212,6 +212,17 @@ describe('LoyaltyKafkaHandler', () => {
     expect(commitOffsets).not.toHaveBeenCalled();
   });
 
+  it('rejects a foreign delivery when no durable consumer group is configured', async () => {
+    await expect(
+      handler.runConfig({ commitOffsets }, { topic: subscription.topic })
+        .eachMessage!(foreignPayload()),
+    ).rejects.toThrow('Loyalty Kafka processing failed');
+
+    expect(projectionStore.checkpointIgnoredDelivery).not.toHaveBeenCalled();
+    expect(loyalty.consume).not.toHaveBeenCalled();
+    expect(commitOffsets).not.toHaveBeenCalled();
+  });
+
   it('does not create poison-message state for an approved foreign delivery', async () => {
     await dlqHandler().runConfig({ commitOffsets }, subscription).eachMessage!(
       foreignPayload(),

@@ -11,7 +11,18 @@ Loyalty projection or creating receipt/slot/DLQ state. Malformed envelopes,
 mismatched key/headers/schema identity and every invalid core-loyalty event
 remain fail-closed and unacknowledged. The worker and all Loyalty read flags stay
 disabled; no baseline replay, read cutover or deployment occurs in this slice
-(docs/features/microservices-phase-6-loyalty-shared-topic-routing.md).
+(`docs/features/microservices-phase-6-loyalty-shared-topic-routing.md`).
+
+## Reporting shared-topic routing
+
+No HTTP route or response changes. The optional Reporting Kafka worker owns
+only `core-commerce` itinerary projections while consuming the shared canonical
+topic. Routing-valid v1 events from `core-agency`, `core-loyalty` and `core-ops`
+advance only the durable Reporting consumer checkpoint before acknowledgement;
+they create no Reporting projection, receipt or DLQ failure. Invalid routing,
+metadata and schema identity remain fail-closed. No worker, read cutover or
+deployment is activated in this slice
+(`docs/features/microservices-phase-6-reporting-shared-topic-routing.md`).
 
 ## Agency shared-topic routing
 
@@ -153,6 +164,20 @@ public Club/Loyalty routes, internal Loyalty endpoints and default-off flags are
 unchanged. Core remains the only Loyalty writer; ordered event catch-up,
 balance reconciliation and a separately approved read cutover are still
 required.
+
+## Ops/Admin Kafka acknowledgement adapter
+
+No public or internal HTTP route changes. A construction-only KafkaJS adapter
+validates the configured topic, partition, offset, bounded UTF-8 payload,
+strict `CartableTaskProjected` v1 contract, canonical record key and transport
+headers before invoking the existing transactional Ops/Admin projection
+consumer. Kafka auto commit is disabled and the next offset is acknowledged
+only after the projection transaction completes. Invalid deliveries,
+projection failures, heartbeat failures and acknowledgement failures remain
+unacknowledged and expose only a sanitized boundary error. Kafka client
+lifecycle, credentials, subscription, checkpoint persistence, DLQ, baseline
+replay, reader cutover and deployment remain disabled
+(`docs/features/microservices-phase-6-ops-admin-kafka-ack-adapter.md`).
 
 ## Ops/Admin ordered projection consumer and reconciliation
 

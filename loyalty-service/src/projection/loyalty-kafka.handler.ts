@@ -337,15 +337,14 @@ export class LoyaltyKafkaHandler {
               });
             }
           } else {
-            if (trusted.consumerGroup !== undefined) {
-              await this.projectionStore.checkpointIgnoredDelivery({
-                consumerGroup: trusted.consumerGroup,
-                topic: delivery.offset.topic,
-                partition: delivery.offset.partition,
-                nextOffset: delivery.offset.offset,
-                highWatermark: delivery.highWatermark,
-              });
-            }
+            if (trusted.consumerGroup === undefined) invalidDelivery();
+            await this.projectionStore.checkpointIgnoredDelivery({
+              consumerGroup: trusted.consumerGroup,
+              topic: delivery.offset.topic,
+              partition: delivery.offset.partition,
+              nextOffset: delivery.offset.offset,
+              highWatermark: delivery.highWatermark,
+            });
           }
           deliveryPersisted = true;
           if (failedDelivery) await this.dlq.markResolved(failedDelivery);
