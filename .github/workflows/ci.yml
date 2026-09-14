@@ -1429,6 +1429,28 @@ jobs:
             const tables = await client.query(
               "SELECT table_name FROM information_schema.tables WHERE table_schema = 'ops' ORDER BY table_name",
             );
+            if (JSON.stringify(tables.rows) !== JSON.stringify([
+              { table_name: 'cartable_projection_event_receipts' },
+              { table_name: 'cartable_tasks' },
+            ])) process.exit(1);
+            const orderingColumns = await client.query(
+              `SELECT count(*)::int AS count FROM information_schema.columns
+               WHERE table_schema = 'ops' AND table_name = 'cartable_tasks'
+                 AND column_name IN ('taskVersion', 'auditId', 'fingerprint')`,
+            );
+            if (orderingColumns.rows[0]?.count !== 3) process.exit(1);
+            await client.end();
+          })().catch(() => process.exit(1));
+          NODE
+          npm run migration:revert:ops-admin:prod
+          node - <<'NODE'
+          const { Client } = require('pg');
+          (async () => {
+            const client = new Client({ connectionString: process.env.OPS_ADMIN_PROJECTION_DATABASE_URL });
+            await client.connect();
+            const tables = await client.query(
+              "SELECT table_name FROM information_schema.tables WHERE table_schema = 'ops' ORDER BY table_name",
+            );
             if (JSON.stringify(tables.rows) !== JSON.stringify([{ table_name: 'cartable_tasks' }])) process.exit(1);
             const orderingColumns = await client.query(
               `SELECT count(*)::int AS count FROM information_schema.columns
