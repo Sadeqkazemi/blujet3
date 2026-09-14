@@ -1,0 +1,216 @@
+import type { ConsumerRunConfig, EachMessagePayload } from 'kafkajs';
+import type { Logger } from 'nestjs-pino';
+import type { OpsAdminKafkaConsumerConfig } from '../../config/ops-admin-kafka-consumer.config';
+import { OpsAdminKafkaHandler } from './ops-admin-kafka.handler';
+import {
+  createOpsAdminKafkaClient,
+  OpsAdminKafkaRuntime,
+  type OpsAdminKafkaRuntimeClient,
+} from './ops-admin-kafka.runtime';
+
+describe('OpsAdminKafkaRuntime', () => {
+  const disabled = { enabled: false } as const;
+  const enabled: OpsAdminKafkaConsumerConfig = {
+    enabled: true,
+    requireSchemaId: false,
+    topic: 'blujet.events.v1',
+    fromBeginning: true,
+    maxBytes: 4096,
+    client: { clientId: 'ops-projection', brokers: ['localhost:9092'] },
+    consumer: {
+      groupId: 'ops-projection-v1',
+      allowAutoTopicCreation: false,
+      maxBytesPerPartition: 4096,
+      retry: { retries: 5 },
+    },
+  };
+  const runConfig = { autoCommit: false } as ConsumerRunConfig;
+  const handler = {
+    runConfig: jest.fn().mockReturnValue(runConfig),
+  };
+  const logger = {
+    log: jest.fn(),
+    error: jest.fn(),
+  };
+
+  function client(): jest.Mocked<OpsAdminKafkaRuntimeClient> {
+    return {
+      connect: jest.fn().mockResolvedValue(undefined),
+      subscribe: jest.fn().mockResolvedValue(undefined),
+      run: jest.fn().mockResolvedValue(undefined),
+      stop: jest.fn().mockResolvedValue(undefined),
+      disconnect: jest.fn().mockResolvedValue(undefined),
+      commitOffsets: jest.fn().mockResolvedValue(undefined),
+    };
+  }
+
+  function runtime(
+    config: OpsAdminKafkaConsumerConfig,
+    kafkaClient: OpsAdminKafkaRuntimeClient | null,
+  ): OpsAdminKafkaRuntime {
+    return new OpsAdminKafkaRuntime(
+      config,
+      kafkaClient,
+      handler as unknown as OpsAdminKafkaHandler,
+      logger as unknown as Logger,
+    );
+  }
+
+  beforeEach(() => jest.clearAllMocks());
+
+  it('creates no client and makes no broker call while disabled', async () => {
+    expect(createOpsAdminKafkaClient(disabled)).toBeNull();
+    const worker = runtime(disabled, null);
+
+    await expect(worker.onApplicationBootstrap()).resolves.toBeUndefined();
+    await expect(worker.onApplicationShutdown()).resolves.toBeUndefined();
+
+    expect(handler.runConfig).not.toHaveBeenCalled();
+    expect(worker.getStatus()).toEqual({
+      enabled: false,
+      state: 'disabled',
+      processingFailures: 0,
+      lastProcessingFailureAt: null,
+      lastMessageAt: null,
+      lastProcessedAt: null,
+    });
+  });
+
+  it('connects, subscribes and then runs the manual-ack handler', async () => {
+    const order: string[] = [];
+    const kafkaClient = client();
+    kafkaClient.connect.mockImplementation(() => {
+      order.push('connect');
+      return Promise.resolve();
+    });
+    kafkaClient.subscribe.mockImplementation(() => {
+      order.push('subscribe');
+      return Promise.resolve();
+    });
+    kafkaClient.run.mockImplementation(() => {
+      order.push('run');
+      return Promise.resolve();
+    });
+    const worker = runtime(enabled, kafkaClient);
+
+    await worker.onApplicationBootstrap();
+
+    expect(order).toEqual(['connect', 'subscribe', 'run']);
+    expect(kafkaClient.subscribe).toHaveBeenCalledWith({
+      topic: 'blujet.events.v1',
+      fromBeginning: true,
+    });
+    expect(handler.runConfig).toHaveBeenCalledWith(kafkaClient, {
+      topic: 'blujet.events.v1',
+      maxBytes: 4096,
+      requireSchemaId: false,
+    });
+    expect(kafkaClient.run).toHaveBeenCalledWith(runConfig);
+    expect(worker.isReady()).toBe(true);
+    await worker.onApplicationBootstrap();
+    expect(kafkaClient.connect).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['connect', 'subscribe', 'run'] as const)(
+    'sanitizes %s failure and disconnects partial startup',
+    async (stage) => {
+      const kafkaClient = client();
+      kafkaClient[stage].mockRejectedValue(new Error('secret broker detail'));
+      const worker = runtime(enabled, kafkaClient);
+
+      const error: unknown = await worker
+        .onApplicationBootstrap()
+        .catch((failure: unknown) => failure);
+
+      expect(error).toEqual(
+        new Error('Ops/Admin Kafka consumer startup failed'),
+      );
+      expect(error).not.toHaveProperty('cause');
+      expect(worker.getStatus().state).toBe('failed');
+      expect(kafkaClient.disconnect).toHaveBeenCalledTimes(1);
+      expect(logger.error).toHaveBeenCalledWith(
+        'Ops/Admin Kafka consumer startup failed',
+      );
+
+      await worker.onApplicationShutdown();
+      expect(kafkaClient.disconnect).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('records and sanitizes processing failures without logging payloads', async () => {
+    const eachMessage = jest
+      .fn<Promise<void>, [EachMessagePayload]>()
+      .mockRejectedValue(new Error('secret payload'));
+    handler.runConfig.mockReturnValueOnce({ autoCommit: false, eachMessage });
+    const kafkaClient = client();
+    const worker = runtime(enabled, kafkaClient);
+    await worker.onApplicationBootstrap();
+    const active = kafkaClient.run.mock.calls[0][0]!;
+    const delivery = { topic: 'secret-topic' } as EachMessagePayload;
+
+    await expect(active.eachMessage!(delivery)).rejects.toThrow(
+      'Ops/Admin Kafka processing failed',
+    );
+
+    expect(eachMessage).toHaveBeenCalledWith(delivery);
+    expect(kafkaClient.commitOffsets).not.toHaveBeenCalled();
+    expect(logger.error).toHaveBeenCalledWith(
+      'Ops/Admin Kafka processing failed',
+    );
+    expect(worker.getStatus()).toMatchObject({
+      state: 'failed',
+      processingFailures: 1,
+      lastProcessedAt: null,
+    });
+    expect(worker.isReady()).toBe(false);
+    expect(typeof worker.getStatus().lastMessageAt).toBe('string');
+    expect(typeof worker.getStatus().lastProcessingFailureAt).toBe('string');
+  });
+
+  it('records successful processing without logging an error', async () => {
+    const eachMessage = jest
+      .fn<Promise<void>, [EachMessagePayload]>()
+      .mockResolvedValue(undefined);
+    handler.runConfig.mockReturnValueOnce({ autoCommit: false, eachMessage });
+    const kafkaClient = client();
+    const worker = runtime(enabled, kafkaClient);
+    await worker.onApplicationBootstrap();
+    const active = kafkaClient.run.mock.calls[0][0]!;
+
+    await active.eachMessage!({} as EachMessagePayload);
+
+    expect(logger.error).not.toHaveBeenCalled();
+    expect(worker.getStatus().processingFailures).toBe(0);
+    expect(typeof worker.getStatus().lastProcessedAt).toBe('string');
+  });
+
+  it('stops and disconnects once after successful startup', async () => {
+    const kafkaClient = client();
+    const worker = runtime(enabled, kafkaClient);
+    await worker.onApplicationBootstrap();
+
+    await worker.onApplicationShutdown();
+    await worker.onApplicationShutdown();
+
+    expect(kafkaClient.stop).toHaveBeenCalledTimes(1);
+    expect(kafkaClient.disconnect).toHaveBeenCalledTimes(1);
+    expect(worker.isReady()).toBe(false);
+    expect(worker.getStatus().state).toBe('stopped');
+  });
+
+  it('sanitizes shutdown failure and still disconnects', async () => {
+    const kafkaClient = client();
+    const worker = runtime(enabled, kafkaClient);
+    await worker.onApplicationBootstrap();
+    kafkaClient.stop.mockRejectedValue(new Error('secret broker detail'));
+
+    await expect(worker.onApplicationShutdown()).rejects.toThrow(
+      'Ops/Admin Kafka consumer shutdown failed',
+    );
+
+    expect(kafkaClient.disconnect).toHaveBeenCalledTimes(1);
+    expect(logger.error).toHaveBeenCalledWith(
+      'Ops/Admin Kafka consumer shutdown failed',
+    );
+  });
+});

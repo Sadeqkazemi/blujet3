@@ -1,5 +1,16 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Ops/Admin Kafka projection worker
+
+No public `/api/v1` route changes. A new standalone, internal-only Ops/Admin
+projection worker exposes `GET /health` for process/build identity and
+`GET /ready` for bounded database/consumer readiness. The probes never return
+broker addresses, topics, groups, offsets, event payloads, credentials or raw
+errors. The worker remains absent from deployment manifests and cannot start a
+consumer unless its explicit Kafka flag and dedicated projection database
+configuration pass startup validation
+(`docs/features/microservices-phase-6-ops-admin-kafka-runtime.md`).
+
 ## Loyalty shared-topic routing
 
 No HTTP route or response changes. The standalone Loyalty projection worker may
