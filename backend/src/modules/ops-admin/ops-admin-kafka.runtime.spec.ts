@@ -212,6 +212,36 @@ describe('OpsAdminKafkaRuntime', () => {
     expect(typeof worker.getStatus().lastProcessingFailureAt).toBe('string');
   });
 
+  it('returns to running after an approved replay succeeds', async () => {
+    const eachMessage = jest
+      .fn<Promise<void>, [EachMessagePayload]>()
+      .mockRejectedValueOnce(new Error('secret payload'))
+      .mockResolvedValueOnce(undefined);
+    handler.runConfig.mockReturnValueOnce({ autoCommit: false, eachMessage });
+    const kafkaClient = client();
+    const worker = runtime(enabled, kafkaClient);
+    await worker.onApplicationBootstrap();
+    const active = kafkaClient.run.mock.calls[0][0]!;
+    const delivery = {
+      partition: 3,
+      message: { offset: '7', highWatermark: '12' },
+    } as EachMessagePayload;
+
+    await expect(active.eachMessage!(delivery)).rejects.toThrow(
+      'Ops/Admin Kafka processing failed',
+    );
+    expect(worker.isReady()).toBe(false);
+
+    await active.eachMessage!(delivery);
+
+    expect(worker.isReady()).toBe(true);
+    expect(worker.getStatus()).toMatchObject({
+      state: 'running',
+      processingFailures: 1,
+      checkpointPartitions: 1,
+    });
+  });
+
   it('records successful processing without logging an error', async () => {
     const eachMessage = jest
       .fn<Promise<void>, [EachMessagePayload]>()

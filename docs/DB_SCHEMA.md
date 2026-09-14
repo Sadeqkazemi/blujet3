@@ -1,5 +1,25 @@
 # DB_SCHEMA.md — blujet data model
 
+## Ops/Admin Kafka failure quarantine
+
+Migration `1794124800000-OpsAdminKafkaFailureQuarantine` adds
+`ops.kafka_processing_failures`. A generated UUID identifies each row and a
+unique `(consumerGroup, topic, partition, offset)` index identifies the source
+delivery. The row stores only a SHA-256 message fingerprint, optional validated
+event UUID, safe `TRANSPORT|PROJECTION` stage, bounded attempt counters,
+lifecycle status, UTC timestamps and operator approval audit metadata. The
+approval reason is a fixed allowlisted code (maximum 64 ASCII characters), not
+free text.
+
+Kafka payloads, keys, headers, raw errors, credentials, task identifiers,
+cartable content and PII are never persisted. Operator decisions use a row
+lock. An approved skip changes the terminal status and advances
+`ops.kafka_consumer_checkpoints` in the same database transaction; Kafka ACK
+occurs only after commit. The table has no foreign key and the expand-only
+migration changes no existing table. The restricted projection runtime role
+receives only `SELECT, INSERT, UPDATE` on this registry, with no DELETE,
+TRUNCATE, DDL or sequence access.
+
 ## Ops/Admin Kafka projection worker
 
 Migration `1794038400000-OpsAdminKafkaConsumerCheckpoints` adds

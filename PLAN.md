@@ -1,5 +1,23 @@
 # PLAN.md — blujet roadmap & progress
 
+## Ops/Admin poison-message quarantine (2026-09-14)
+
+- [x] Freeze bounded retry, metadata-only quarantine, manual retry/skip and
+  projection/checkpoint-before-ACK ordering before implementation.
+- [x] Add the expand-only Ops/Admin failure registry migration and exact
+  standalone TypeORM metadata.
+- [x] Integrate retry/quarantine/resolve/skip with the existing projection and
+  durable checkpoint transaction boundaries.
+- [x] Add a token-protected, bounded operator API and sanitized readiness
+  evidence.
+- [ ] Obtain CI PostgreSQL evidence for rollback, idempotency, ACK-gap handling,
+  retry/skip recovery and exact runtime-role permissions. The focused real-DB
+  tests and four-stage compiled rollback job are included in this slice.
+- [x] Pass all 230 Backend unit suites (1,371 tests), full read-only lint,
+  typecheck, build, OpenAPI stability and diff hygiene checks locally.
+- [ ] Present the completed diff for explicit approval before commit/push/merge.
+  Do not activate the worker, cut over reads or deploy.
+
 ## Ops/Admin projection runtime role (2026-09-14)
 
 - [x] Freeze the exact `blujet_ops_admin_projection_runtime` contract before code.
@@ -9,7 +27,7 @@
 - [x] Revoke PUBLIC CONNECT on other databases, restore explicit owner grants,
   and fail closed unless has_database_privilege shows no foreign CONNECT.
 - [x] Prove allow/deny against real PostgreSQL without activating the consumer.
-- [ ] Obtain CI evidence and present the diff for explicit approval. Do not
+- [x] Obtain CI evidence and present the diff for explicit approval. Do not
   deploy, enable the worker or cut over reads.
 
 ## Ops/Admin durable Kafka checkpoints (2026-09-14)
@@ -24,7 +42,7 @@
 - [x] Prove rollback, ACK ordering and monotonic concurrent updates with unit
   and real-PostgreSQL tests.
 - [x] Pass scoped tests, lint, typecheck, build and OpenAPI stability checks.
-- [ ] Present the completed diff for explicit approval before commit/push/merge.
+- [x] Present the completed diff for explicit approval before commit/push/merge.
   Do not activate, cut over or deploy.
 
 Local evidence: all 225 Backend unit suites (1,335 tests), 50 focused unit

@@ -21,6 +21,11 @@ export const OPS_ADMIN_PROJECTION_RUNTIME_GRANTS = [
     privileges: 'SELECT, INSERT, UPDATE',
     forbidUpdate: false,
   },
+  {
+    table: 'kafka_processing_failures',
+    privileges: 'SELECT, INSERT, UPDATE',
+    forbidUpdate: false,
+  },
 ] as const;
 export const OPS_ADMIN_PROJECTION_RUNTIME_TABLES =
   OPS_ADMIN_PROJECTION_RUNTIME_GRANTS.map((grant) => grant.table);

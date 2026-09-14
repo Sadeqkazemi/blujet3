@@ -114,6 +114,7 @@ export class OpsAdminKafkaRuntime
           this.lastMessageAt = new Date().toISOString();
           try {
             await eachMessage(payload);
+            this.state = 'running';
             this.lastProcessedAt = new Date().toISOString();
             this.observeCheckpoint(payload);
           } catch {
