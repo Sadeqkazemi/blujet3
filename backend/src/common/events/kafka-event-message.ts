@@ -8,6 +8,7 @@ import { knownEventSchema } from './event-schema';
 export interface KafkaEventSubscription {
   topic: string;
   expectedProducer: string;
+  additionalProducerSchemaDomains?: Readonly<Record<string, string>>;
   maxBytes?: number;
   requireSchemaId?: boolean;
 }
@@ -15,6 +16,7 @@ export interface KafkaEventSubscription {
 export interface ValidatedKafkaEventSubscription {
   readonly topic: string;
   readonly expectedProducer: string;
+  readonly additionalProducerSchemaDomains: Readonly<Record<string, string>>;
   readonly maxBytes: number;
   readonly requireSchemaId: boolean;
 }
@@ -44,6 +46,9 @@ export function validateKafkaEventSubscription(
 ): ValidatedKafkaEventSubscription {
   const maxBytes = subscription.maxBytes ?? 256 * 1024;
   const requireSchemaId = subscription.requireSchemaId ?? false;
+  const additionalProducerEntries = Object.entries(
+    subscription.additionalProducerSchemaDomains ?? {},
+  );
   if (
     !/^[a-zA-Z0-9._-]{1,249}$/.test(subscription.topic) ||
     ['.', '..'].includes(subscription.topic) ||
@@ -51,12 +56,25 @@ export function validateKafkaEventSubscription(
     !Number.isSafeInteger(maxBytes) ||
     maxBytes < 1 ||
     maxBytes > 256 * 1024 ||
-    typeof requireSchemaId !== 'boolean'
+    typeof requireSchemaId !== 'boolean' ||
+    additionalProducerEntries.length > 16 ||
+    additionalProducerEntries.some(
+      ([producer, schemaDomain]) =>
+        producer === subscription.expectedProducer ||
+        !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/.test(producer) ||
+        !/^[a-z][a-z0-9-]{0,63}$/.test(schemaDomain),
+    )
   )
     throw invalid();
+  const additionalProducerSchemaDomains: Record<string, string> = {};
+  for (const [producer, schemaDomain] of additionalProducerEntries)
+    additionalProducerSchemaDomains[producer] = schemaDomain;
   return Object.freeze({
     topic: subscription.topic,
     expectedProducer: subscription.expectedProducer,
+    additionalProducerSchemaDomains: Object.freeze(
+      additionalProducerSchemaDomains,
+    ),
     maxBytes,
     requireSchemaId,
   });
@@ -103,25 +121,30 @@ export function parseKafkaEventDelivery(
       throw invalid();
     }
   })();
-  if (
-    !isCanonicalEvent(parsed) ||
-    parsed.producer !== subscription.expectedProducer
+  if (!isCanonicalEvent(parsed)) throw invalid();
+  const expectedProducer = parsed.producer === subscription.expectedProducer;
+  const additionalSchemaDomain = Object.prototype.hasOwnProperty.call(
+    subscription.additionalProducerSchemaDomains,
+    parsed.producer,
   )
+    ? subscription.additionalProducerSchemaDomains[parsed.producer]
+    : undefined;
+  if (!expectedProducer && additionalSchemaDomain === undefined)
     throw invalid();
   const rawSchemaId = message.headers?.['event-schema-id'];
   const schemaId = header(message, 'event-schema-id');
-  const expectedSchema = knownEventSchema(parsed);
-  if (
-    expectedSchema !== undefined &&
+  const expectedSchemaId = expectedProducer
+    ? knownEventSchema(parsed)?.schemaId
+    : `blujet.${additionalSchemaDomain}.${parsed.eventType}.v1`;
+  const schemaHeaderRequired =
     subscription.requireSchemaId &&
-    schemaId === undefined
-  )
-    throw invalid();
+    (!expectedProducer || expectedSchemaId !== undefined);
+  if (schemaHeaderRequired && schemaId === undefined) throw invalid();
   if (
     rawSchemaId !== undefined &&
     (schemaId === undefined ||
-      expectedSchema === undefined ||
-      schemaId !== expectedSchema.schemaId)
+      expectedSchemaId === undefined ||
+      schemaId !== expectedSchemaId)
   )
     throw invalid();
   const expectedKey = `${parsed.producer}:${parsed.aggregateType}:${parsed.aggregateId}`;

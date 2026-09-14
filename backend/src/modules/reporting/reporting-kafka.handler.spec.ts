@@ -1,12 +1,37 @@
 import { createHash, randomUUID } from 'node:crypto';
 import type { EachMessagePayload } from 'kafkajs';
+import {
+  CanonicalEventType,
+  type CanonicalEvent,
+} from '../../common/events/canonical-events';
 import { CoreItineraryEventSchemaCatalog } from '../../common/events/core-itinerary-event-schema';
 import { createItineraryOrderCreated } from '../../common/events/core-itinerary-events';
 import { ReportingEventConsumer } from './reporting-event-consumer';
 import { ReportingKafkaHandler } from './reporting-kafka.handler';
 import type { ReportingDlqStore } from './reporting-dlq.store';
+import type { ReportingItineraryProjectionStore } from './reporting-itinerary-projection.store';
 
 describe('ReportingKafkaHandler', () => {
+  const foreignRoutes = [
+    {
+      producer: 'core-agency',
+      schemaDomain: 'agency',
+      eventType: CanonicalEventType.AGENCY_PROFILE_PROJECTED,
+      aggregateType: 'AgencyProfile',
+    },
+    {
+      producer: 'core-loyalty',
+      schemaDomain: 'loyalty',
+      eventType: CanonicalEventType.LOYALTY_MEMBER_PROJECTED,
+      aggregateType: 'LoyaltyMember',
+    },
+    {
+      producer: 'core-ops',
+      schemaDomain: 'ops-admin',
+      eventType: CanonicalEventType.CARTABLE_TASK_PROJECTED,
+      aggregateType: 'CartableTask',
+    },
+  ] as const;
   const event = createItineraryOrderCreated(
     {
       id: 'order-1',
@@ -43,10 +68,14 @@ describe('ReportingKafkaHandler', () => {
     markResolved: jest.fn().mockResolvedValue(undefined),
     markSkipped: jest.fn().mockResolvedValue(undefined),
   };
+  const projectionStore = {
+    checkpointIgnoredDelivery: jest.fn().mockResolvedValue(undefined),
+  };
   const handler = new ReportingKafkaHandler(
     reporting as unknown as ReportingEventConsumer,
     dlq as unknown as ReportingDlqStore,
     { enabled: false },
+    projectionStore as unknown as ReportingItineraryProjectionStore,
   );
 
   function payload(
@@ -76,6 +105,41 @@ describe('ReportingKafkaHandler', () => {
     } as unknown as EachMessagePayload;
   }
 
+  function routedPayload(
+    input: CanonicalEvent,
+    schemaId?: string,
+  ): EachMessagePayload {
+    return payload({
+      message: {
+        ...payload().message,
+        key: Buffer.from(
+          `${input.producer}:${input.aggregateType}:${input.aggregateId}`,
+        ),
+        value: Buffer.from(JSON.stringify(input)),
+        headers: {
+          'event-id': Buffer.from(input.eventId),
+          'correlation-id': Buffer.from(input.correlationId),
+          'event-version': Buffer.from('1'),
+          ...(schemaId === undefined
+            ? {}
+            : { 'event-schema-id': Buffer.from(schemaId) }),
+        },
+      },
+    });
+  }
+
+  function foreignEvent(route: (typeof foreignRoutes)[number]): CanonicalEvent {
+    return {
+      ...event,
+      eventId: randomUUID(),
+      eventType: route.eventType,
+      producer: route.producer,
+      aggregateType: route.aggregateType,
+      aggregateId: `${route.aggregateType.toLowerCase()}-1`,
+      payload: {},
+    };
+  }
+
   beforeEach(() => {
     jest.resetAllMocks();
     reporting.consume.mockResolvedValue('applied');
@@ -84,6 +148,112 @@ describe('ReportingKafkaHandler', () => {
     dlq.recordFailure.mockResolvedValue('retry');
     dlq.markResolved.mockResolvedValue(undefined);
     dlq.markSkipped.mockResolvedValue(undefined);
+    projectionStore.checkpointIgnoredDelivery.mockResolvedValue(undefined);
+  });
+
+  it.each(foreignRoutes)(
+    'checkpoints an approved $producer delivery before acknowledgement',
+    async (route) => {
+      const order: string[] = [];
+      projectionStore.checkpointIgnoredDelivery.mockImplementation(() => {
+        order.push('checkpoint');
+        return Promise.resolve();
+      });
+      const client = {
+        commitOffsets: jest.fn(() => {
+          order.push('ack');
+          return Promise.resolve();
+        }),
+      };
+      const foreign = foreignEvent(route);
+
+      await handler.runConfig(client, {
+        ...subscription,
+        consumerGroup: 'blujet-reporting-v1',
+        requireSchemaId: true,
+      }).eachMessage!(
+        routedPayload(
+          foreign,
+          `blujet.${route.schemaDomain}.${route.eventType}.v1`,
+        ),
+      );
+
+      expect(order).toEqual(['checkpoint', 'ack']);
+      expect(projectionStore.checkpointIgnoredDelivery).toHaveBeenCalledWith({
+        consumerGroup: 'blujet-reporting-v1',
+        topic: subscription.topic,
+        partition: 0,
+        nextOffset: '5',
+        highWatermark: undefined,
+      });
+      expect(reporting.consume).not.toHaveBeenCalled();
+      expect(dlq.recordFailure).not.toHaveBeenCalled();
+    },
+  );
+
+  it('keeps an approved foreign delivery unacknowledged when checkpointing fails', async () => {
+    const route = foreignRoutes[0];
+    const foreign = foreignEvent(route);
+    projectionStore.checkpointIgnoredDelivery.mockRejectedValue(
+      new Error('database unavailable'),
+    );
+
+    await expect(
+      handler.runConfig(
+        { commitOffsets },
+        { ...subscription, consumerGroup: 'blujet-reporting-v1' },
+      ).eachMessage!(routedPayload(foreign)),
+    ).rejects.toThrow('Reporting Kafka processing failed');
+
+    expect(reporting.consume).not.toHaveBeenCalled();
+    expect(commitOffsets).not.toHaveBeenCalled();
+  });
+
+  it('accepts a legacy foreign delivery without schema only while the requirement is disabled', async () => {
+    const route = foreignRoutes[1];
+    const foreign = foreignEvent(route);
+    const delivery = routedPayload(foreign);
+
+    await handler.runConfig(
+      { commitOffsets },
+      { ...subscription, consumerGroup: 'blujet-reporting-v1' },
+    ).eachMessage!(delivery);
+    expect(commitOffsets).toHaveBeenCalledTimes(1);
+
+    jest.clearAllMocks();
+    await expect(
+      handler.runConfig(
+        { commitOffsets },
+        {
+          ...subscription,
+          consumerGroup: 'blujet-reporting-v1',
+          requireSchemaId: true,
+        },
+      ).eachMessage!(delivery),
+    ).rejects.toThrow('Reporting Kafka processing failed');
+    expect(projectionStore.checkpointIgnoredDelivery).not.toHaveBeenCalled();
+    expect(commitOffsets).not.toHaveBeenCalled();
+  });
+
+  it('rejects a cross-domain schema label for an approved foreign producer', async () => {
+    const route = foreignRoutes[0];
+    const foreign = foreignEvent(route);
+
+    await expect(
+      handler.runConfig(
+        { commitOffsets },
+        {
+          ...subscription,
+          consumerGroup: 'blujet-reporting-v1',
+          requireSchemaId: true,
+        },
+      ).eachMessage!(
+        routedPayload(foreign, `blujet.loyalty.${route.eventType}.v1`),
+      ),
+    ).rejects.toThrow('Reporting Kafka processing failed');
+
+    expect(projectionStore.checkpointIgnoredDelivery).not.toHaveBeenCalled();
+    expect(commitOffsets).not.toHaveBeenCalled();
   });
 
   it('commits offset only after the Reporting transaction returns', async () => {
@@ -319,6 +489,7 @@ describe('ReportingKafkaHandler', () => {
         maxAttempts: 3,
         operatorToken: 'reporting-operator-token-at-least-32-characters',
       },
+      projectionStore as unknown as ReportingItineraryProjectionStore,
     );
     reporting.consume.mockRejectedValue(new Error('secret SQL value'));
 
@@ -348,6 +519,41 @@ describe('ReportingKafkaHandler', () => {
     expect(commitOffsets).not.toHaveBeenCalled();
   });
 
+  it('does not create poison state for an approved foreign delivery', async () => {
+    const enabledHandler = new ReportingKafkaHandler(
+      reporting as unknown as ReportingEventConsumer,
+      dlq as unknown as ReportingDlqStore,
+      {
+        enabled: true,
+        maxAttempts: 3,
+        operatorToken: 'reporting-operator-token-at-least-32-characters',
+      },
+      projectionStore as unknown as ReportingItineraryProjectionStore,
+    );
+    const route = foreignRoutes[2];
+    const foreign = foreignEvent(route);
+
+    await enabledHandler.runConfig(
+      { commitOffsets },
+      {
+        ...subscription,
+        consumerGroup: 'blujet-reporting-v1',
+        requireSchemaId: true,
+      },
+    ).eachMessage!(
+      routedPayload(
+        foreign,
+        `blujet.${route.schemaDomain}.${route.eventType}.v1`,
+      ),
+    );
+
+    expect(projectionStore.checkpointIgnoredDelivery).toHaveBeenCalledTimes(1);
+    expect(dlq.markResolved).toHaveBeenCalledTimes(1);
+    expect(dlq.recordFailure).not.toHaveBeenCalled();
+    expect(reporting.consume).not.toHaveBeenCalled();
+    expect(commitOffsets).toHaveBeenCalledTimes(1);
+  });
+
   it('records a required missing schema header as a transport failure', async () => {
     const enabledHandler = new ReportingKafkaHandler(
       reporting as unknown as ReportingEventConsumer,
@@ -357,6 +563,7 @@ describe('ReportingKafkaHandler', () => {
         maxAttempts: 3,
         operatorToken: 'reporting-operator-token-at-least-32-characters',
       },
+      projectionStore as unknown as ReportingItineraryProjectionStore,
     );
     const message = payload().message;
     const missingSchema = payload({
@@ -416,6 +623,7 @@ describe('ReportingKafkaHandler', () => {
         maxAttempts: 3,
         operatorToken: 'reporting-operator-token-at-least-32-characters',
       },
+      projectionStore as unknown as ReportingItineraryProjectionStore,
     );
     const client = {
       commitOffsets: jest.fn(() => {
@@ -442,6 +650,7 @@ describe('ReportingKafkaHandler', () => {
         maxAttempts: 3,
         operatorToken: 'reporting-operator-token-at-least-32-characters',
       },
+      projectionStore as unknown as ReportingItineraryProjectionStore,
     );
     commitOffsets.mockRejectedValue(new Error('broker unavailable'));
 

@@ -18,6 +18,7 @@ import {
   ReportingDlqStore,
 } from './reporting-dlq.store';
 import { ReportingEventConsumer } from './reporting-event-consumer';
+import { ReportingItineraryProjectionStore } from './reporting-itinerary-projection.store';
 
 export interface ReportingKafkaSubscription {
   topic: string;
@@ -26,6 +27,12 @@ export interface ReportingKafkaSubscription {
   requireSchemaId?: boolean;
 }
 
+const REPORTING_ADDITIONAL_PRODUCER_SCHEMA_DOMAINS = Object.freeze({
+  'core-agency': 'agency',
+  'core-loyalty': 'loyalty',
+  'core-ops': 'ops-admin',
+});
+
 @Injectable()
 export class ReportingKafkaHandler {
   constructor(
@@ -33,6 +40,7 @@ export class ReportingKafkaHandler {
     private readonly dlq: ReportingDlqStore,
     @Inject(REPORTING_DLQ_CONFIG)
     private readonly dlqConfig: ReportingDlqConfig,
+    private readonly projectionStore: ReportingItineraryProjectionStore,
   ) {}
 
   runConfig(
@@ -42,6 +50,8 @@ export class ReportingKafkaHandler {
     const trusted = validateKafkaEventSubscription({
       ...subscription,
       expectedProducer: 'core-commerce',
+      additionalProducerSchemaDomains:
+        REPORTING_ADDITIONAL_PRODUCER_SCHEMA_DOMAINS,
     });
     if (this.dlqConfig.enabled && subscription.consumerGroup === undefined) {
       throw new Error('Reporting DLQ requires a consumer group');
@@ -53,7 +63,7 @@ export class ReportingKafkaHandler {
         let delivery: ReportingFailedDelivery | undefined;
         let eventId: string | null = null;
         let stage: ReportingFailureStage = ReportingKafkaFailureStage.TRANSPORT;
-        let projectionCompleted = false;
+        let deliveryPersisted = false;
         let recordFailure = false;
         try {
           if (this.dlqConfig.enabled) {
@@ -87,20 +97,30 @@ export class ReportingKafkaHandler {
           );
           eventId = event.eventId;
           await payload.heartbeat();
-          stage = ReportingKafkaFailureStage.PROJECTION;
-          await this.reporting.consume(
-            event,
-            subscription.consumerGroup === undefined
-              ? undefined
-              : {
-                  consumerGroup: subscription.consumerGroup,
-                  topic: offset.topic,
-                  partition: offset.partition,
-                  nextOffset: offset.offset,
-                  highWatermark,
-                },
-          );
-          projectionCompleted = true;
+          if (event.producer === 'core-commerce') {
+            stage = ReportingKafkaFailureStage.PROJECTION;
+            await this.reporting.consume(
+              event,
+              subscription.consumerGroup === undefined
+                ? undefined
+                : {
+                    consumerGroup: subscription.consumerGroup,
+                    topic: offset.topic,
+                    partition: offset.partition,
+                    nextOffset: offset.offset,
+                    highWatermark,
+                  },
+            );
+          } else if (subscription.consumerGroup !== undefined) {
+            await this.projectionStore.checkpointIgnoredDelivery({
+              consumerGroup: subscription.consumerGroup,
+              topic: offset.topic,
+              partition: offset.partition,
+              nextOffset: offset.offset,
+              highWatermark,
+            });
+          }
+          deliveryPersisted = true;
           if (delivery) await this.dlq.markResolved(delivery);
           await payload.heartbeat();
           await client.commitOffsets([offset]);
@@ -109,7 +129,7 @@ export class ReportingKafkaHandler {
             this.dlqConfig.enabled &&
             delivery &&
             recordFailure &&
-            !projectionCompleted
+            !deliveryPersisted
           ) {
             try {
               await this.dlq.recordFailure(

@@ -2,7 +2,12 @@ import { randomUUID } from 'node:crypto';
 import { ConflictException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import type { EachMessagePayload } from 'kafkajs';
 import { In, DataSource } from 'typeorm';
+import {
+  CanonicalEventType,
+  type CanonicalEvent,
+} from '../src/common/events/canonical-events';
 import {
   createItineraryOrderCreated,
   createItineraryPaymentConfirmed,
@@ -24,6 +29,7 @@ import { ReportingDlqStore } from '../src/modules/reporting/reporting-dlq.store'
 import { ReportingEventConsumer } from '../src/modules/reporting/reporting-event-consumer';
 import { REPORTING_READ_MODEL_SINK } from '../src/modules/reporting/reporting-event-consumer';
 import { ReportingItineraryProjectionStore } from '../src/modules/reporting/reporting-itinerary-projection.store';
+import { ReportingKafkaHandler } from '../src/modules/reporting/reporting-kafka.handler';
 
 describe('Reporting itinerary projection (PostgreSQL)', () => {
   let module: TestingModule;
@@ -196,6 +202,84 @@ describe('Reporting itinerary projection (PostgreSQL)', () => {
       partitions: 1,
       maxLag: '7',
     });
+  });
+
+  it('checkpoints a foreign shared-topic delivery without Reporting state', async () => {
+    const aggregateId = `loyalty-member-${randomUUID()}`;
+    const consumerGroup = `reporting-test-${randomUUID()}`;
+    const topic = 'blujet.events.v1';
+    consumerGroups.add(consumerGroup);
+    const base = orderCreated(nextOrderId());
+    const foreign: CanonicalEvent = {
+      ...base,
+      eventId: randomUUID(),
+      eventType: CanonicalEventType.LOYALTY_MEMBER_PROJECTED,
+      producer: 'core-loyalty',
+      aggregateType: 'LoyaltyMember',
+      aggregateId,
+      payload: {},
+    };
+    const payload = {
+      topic,
+      partition: 2,
+      heartbeat: jest.fn().mockResolvedValue(undefined),
+      pause: jest.fn(),
+      message: {
+        offset: '7',
+        highWatermark: '12',
+        key: Buffer.from(
+          `${foreign.producer}:${foreign.aggregateType}:${foreign.aggregateId}`,
+        ),
+        value: Buffer.from(JSON.stringify(foreign)),
+        headers: {
+          'event-id': Buffer.from(foreign.eventId),
+          'correlation-id': Buffer.from(foreign.correlationId),
+          'event-version': Buffer.from('1'),
+          'event-schema-id': Buffer.from(
+            `blujet.loyalty.${foreign.eventType}.v1`,
+          ),
+        },
+      },
+    } as unknown as EachMessagePayload;
+    const commitOffsets = jest.fn().mockResolvedValue(undefined);
+    const store = module.get(ReportingItineraryProjectionStore);
+    const handler = new ReportingKafkaHandler(
+      consumer,
+      dlq,
+      { enabled: false },
+      store,
+    );
+
+    await handler.runConfig(
+      { commitOffsets },
+      { topic, consumerGroup, requireSchemaId: true },
+    ).eachMessage!(payload);
+
+    await expect(
+      db.getRepository(ReportingKafkaConsumerCheckpoint).findOneByOrFail({
+        consumerGroup,
+        topic,
+        partition: 2,
+      }),
+    ).resolves.toMatchObject({ nextOffset: '8', highWatermark: '12' });
+    expect(commitOffsets).toHaveBeenCalledWith([
+      { topic, partition: 2, offset: '8' },
+    ]);
+    expect(
+      await db.getRepository(ReportingItineraryEventProjection).countBy({
+        orderId: aggregateId,
+      }),
+    ).toBe(0);
+    expect(
+      await db.getRepository(ReportingItineraryEventReceipt).countBy({
+        orderId: aggregateId,
+      }),
+    ).toBe(0);
+    expect(
+      await db.getRepository(ReportingKafkaProcessingFailure).countBy({
+        consumerGroup,
+      }),
+    ).toBe(0);
   });
 
   it('does not regress a slot and fails closed on equal-version conflicts', async () => {

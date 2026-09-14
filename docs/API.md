@@ -1,5 +1,16 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Reporting shared-topic routing
+
+No HTTP route or response changes. The optional Reporting Kafka worker owns
+only `core-commerce` itinerary projections while consuming the shared canonical
+topic. Routing-valid v1 events from `core-agency`, `core-loyalty` and `core-ops`
+advance only the durable Reporting consumer checkpoint before acknowledgement;
+they create no Reporting projection, receipt or DLQ failure. Invalid routing,
+metadata and schema identity remain fail-closed. No worker, read cutover or
+deployment is activated in this slice
+(`docs/features/microservices-phase-6-reporting-shared-topic-routing.md`).
+
 ## Agency shared-topic routing
 
 No HTTP route or response changes. The standalone Agency projection worker may
