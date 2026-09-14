@@ -22,6 +22,9 @@ remains the sole Agency business writer.
 
 ## Acceptance evidence
 
+Review tracking: PR #142 carries implementation commit `b0eaa08`; CI evidence
+must be recorded against the final PR head before merge approval is requested.
+
 - [x] `agency-kafka.handler.spec.ts` proves an approved non-Agency delivery is
       checkpointed and acknowledged without projection or DLQ failure state.
 - [x] `agency-kafka.handler.spec.ts` proves malformed, metadata-mismatched and
