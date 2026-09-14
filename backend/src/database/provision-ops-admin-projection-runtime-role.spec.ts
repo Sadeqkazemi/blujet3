@@ -29,6 +29,7 @@ function mockClient(
     leastPrivilege: true,
     noCrossDomainAccess: true,
     noDdl: true,
+    noForeignConnect: true,
   };
   return {
     query: jest.fn((statement: string) => {
@@ -149,7 +150,10 @@ describe('Ops/Admin projection runtime role provisioner', () => {
     expect(sql).not.toContain(
       'GRANT SELECT, INSERT, UPDATE ON TABLE "ops"."cartable_projection_event_receipts"',
     );
-    expect(sql).toContain('REVOKE CONNECT ON DATABASE "blujet"');
+    expect(sql).toContain('REVOKE CONNECT ON DATABASE %I FROM PUBLIC');
+    expect(sql).toContain('REVOKE CONNECT ON DATABASE %I FROM ');
+    expect(sql).toContain('has_database_privilege');
+    expect(sql).toContain('AS "noForeignConnect"');
     expect(sql).toContain("'identity'");
     expect(sql).toContain("'orders'");
     expect(sql).toContain("'inventory'");

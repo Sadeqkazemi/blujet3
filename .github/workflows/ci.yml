@@ -1361,6 +1361,8 @@ jobs:
       - name: Prove standalone Ops/Admin projection database
         env:
           OPS_ADMIN_PROJECTION_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_ops_admin_projection_test
+          OPS_ADMIN_PROJECTION_DATABASE_OWNER_URL: postgresql://blujet:blujet@localhost:5432/blujet_ops_admin_projection_test
+          DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_test?schema=public
         run: |
           set -euo pipefail
           node - <<'NODE'
@@ -1411,6 +1413,8 @@ jobs:
             await client.end();
           })().catch(() => process.exit(1));
           NODE
+          cp .env.test .env
+          npm run migration:run
           npm run test:e2e:ops-admin-projection
       - run: cp .env.test .env
       - run: npm run migration:run
@@ -1749,6 +1753,7 @@ jobs:
       - payment-reconciliation
       - order-booking
       - inventory
+      - ops-admin
       - backend-backup-restore
       - backend-pitr-recovery
       - backend-kafka

@@ -5,13 +5,10 @@
 This slice provisions `blujet_ops_admin_projection_runtime` as the restricted
 LOGIN used by the independent Ops/Admin projection worker. Provisioning is
 env-driven, idempotent and fail-closed. It does not start the worker, subscribe
-to Kafka, cut over HTTP reads, change Compose/deploy, or add a production
-migration for `ops.kafka_consumer_checkpoints`.
-
-The checkpoint table contract is owned by Codex migration
-`1794038400000-OpsAdminKafkaConsumerCheckpoints`. This provisioner grants DML
-only after that relation exists (or a test fixture creates the same table for
-allow/deny proof). The table name and columns stay:
+to Kafka, cut over HTTP reads, or change Compose/deploy. DML is granted only
+after `ops.kafka_consumer_checkpoints` exists (Codex migration
+`1794038400000-OpsAdminKafkaConsumerCheckpoints`). The table name and columns
+stay:
 
 `consumerGroup`, `topic`, `partition`, `nextOffset`, `highWatermark`, `updatedAt`.
 
@@ -43,6 +40,10 @@ allow/deny proof). The table name and columns stay:
 - Errors are redacted: no password, no full connection URL
 - Missing required relations fail closed; no default-privilege GRANT for
   future tables
+- Other databases must not rely on PUBLIC CONNECT. The provisioner revokes
+  PUBLIC CONNECT, restores explicit CONNECT for the database owner and any
+  pre-existing non-PUBLIC grantees, then fail-closes unless
+  `has_database_privilege(role, other_db, 'CONNECT')` is false.
 
 ## Acceptance checklist
 

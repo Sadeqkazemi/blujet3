@@ -3,7 +3,7 @@
   "rootDir": "..",
   "testEnvironment": "node",
   "testRegex": "test/ops-admin-projection-(consumer|runtime-role)\\.e2e-spec\\.ts$",
-  "testTimeout": 30000,
+  "testTimeout": 60000,
   "moduleNameMapper": {
     "^(\\.{1,2}/.*)\\.js$": "$1"
   },

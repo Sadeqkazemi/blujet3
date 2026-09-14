@@ -197,21 +197,47 @@ export async function provisionOpsAdminProjectionRuntimeRole(
       `GRANT CONNECT ON DATABASE ${databaseIdentifier} TO ${role}`,
     );
 
-    const otherDatabases = await client.query(
-      `SELECT datname AS name
-      FROM pg_database
-      WHERE datallowconn AND NOT datistemplate
-        AND datname <> current_database()`,
-    );
-    for (const row of otherDatabases.rows) {
-      const name = row.name;
-      if (typeof name !== 'string') {
-        throw new Error('PostgreSQL database identity is unavailable');
-      }
-      await client.query(
-        `REVOKE CONNECT ON DATABASE ${identifier(name)} FROM ${role}`,
-      );
-    }
+    await client.query(`DO $$ DECLARE
+      target record;
+      preserved text[];
+      grantee text;
+    BEGIN
+      FOR target IN
+        SELECT d.datname, pg_get_userbyid(d.datdba) AS owner_name, d.oid
+        FROM pg_database d
+        WHERE d.datallowconn AND NOT d.datistemplate
+          AND d.datname <> current_database()
+      LOOP
+        SELECT coalesce(array_agg(DISTINCT r.rolname), ARRAY[]::text[])
+        INTO preserved
+        FROM pg_database d
+        JOIN LATERAL aclexplode(
+          COALESCE(d.datacl, acldefault('d', d.datdba))
+        ) acl ON true
+        JOIN pg_roles r ON r.oid = acl.grantee AND acl.grantee <> 0
+        WHERE d.oid = target.oid
+          AND acl.privilege_type = 'CONNECT'
+          AND r.rolname <> '${OPS_ADMIN_PROJECTION_RUNTIME_ROLE}';
+        EXECUTE format(
+          'REVOKE CONNECT ON DATABASE %I FROM PUBLIC', target.datname
+        );
+        EXECUTE format(
+          'REVOKE CONNECT ON DATABASE %I FROM ${role}', target.datname
+        );
+        EXECUTE format(
+          'GRANT CONNECT ON DATABASE %I TO %I',
+          target.datname, target.owner_name
+        );
+        EXECUTE format(
+          'GRANT CONNECT ON DATABASE %I TO CURRENT_USER', target.datname
+        );
+        FOREACH grantee IN ARRAY preserved LOOP
+          EXECUTE format(
+            'GRANT CONNECT ON DATABASE %I TO %I', target.datname, grantee
+          );
+        END LOOP;
+      END LOOP;
+    END $$`);
 
     await client.query('REVOKE ALL ON SCHEMA public FROM PUBLIC');
     await client.query(`REVOKE ALL ON SCHEMA public FROM ${role}`);
@@ -363,7 +389,15 @@ export async function provisionOpsAdminProjectionRuntimeRole(
         AND NOT EXISTS (SELECT 1 FROM pg_namespace n
           WHERE has_schema_privilege(
             '${OPS_ADMIN_PROJECTION_RUNTIME_ROLE}', n.oid, 'CREATE'
-          )) AS "noDdl"`);
+          )) AS "noDdl",
+      NOT EXISTS (
+        SELECT 1 FROM pg_database d
+        WHERE d.datallowconn AND NOT d.datistemplate
+          AND d.datname <> current_database()
+          AND has_database_privilege(
+            '${OPS_ADMIN_PROJECTION_RUNTIME_ROLE}', d.oid, 'CONNECT'
+          )
+      ) AS "noForeignConnect"`);
     const checks = verification.rows[0];
     if (
       !checks ||
@@ -375,6 +409,7 @@ export async function provisionOpsAdminProjectionRuntimeRole(
         'leastPrivilege',
         'noCrossDomainAccess',
         'noDdl',
+        'noForeignConnect',
       ].some((key) => checks[key] !== true)
     ) {
       throw new Error(

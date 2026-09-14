@@ -7,35 +7,48 @@ import {
 } from '../src/database/provision-ops-admin-projection-runtime-role';
 
 const PASSWORD = 'ops_admin_proj_runtime_ci_password_20260914';
-const CHECKPOINT_DDL = `CREATE TABLE IF NOT EXISTS "ops"."kafka_consumer_checkpoints" (
-  "consumerGroup" character varying(128) NOT NULL,
-  "topic" character varying(249) NOT NULL,
-  "partition" integer NOT NULL,
-  "nextOffset" bigint NOT NULL,
-  "highWatermark" bigint,
-  "updatedAt" timestamptz(3) NOT NULL DEFAULT now(),
-  CONSTRAINT "ops_kafka_consumer_checkpoints_pkey" PRIMARY KEY ("consumerGroup", "topic", "partition"),
-  CONSTRAINT "ops_kafka_checkpoint_partition_check" CHECK ("partition" >= 0),
-  CONSTRAINT "ops_kafka_checkpoint_offset_check" CHECK ("nextOffset" >= 0),
-  CONSTRAINT "ops_kafka_checkpoint_high_watermark_check" CHECK ("highWatermark" IS NULL OR "highWatermark" >= 0)
-)`;
 
 function ownerUrl(): string {
+  const candidates = [
+    process.env.OPS_ADMIN_PROJECTION_DATABASE_OWNER_URL,
+    process.env.DATABASE_URL,
+    process.env.OPS_ADMIN_PROJECTION_DATABASE_URL,
+  ];
+  for (const url of candidates) {
+    if (!url) continue;
+    const username = decodeURIComponent(new URL(url).username);
+    if (username !== OPS_ADMIN_PROJECTION_RUNTIME_ROLE) {
+      return url;
+    }
+  }
+  throw new Error(
+    'OPS_ADMIN_PROJECTION_DATABASE_OWNER_URL is required for the runtime-role proof',
+  );
+}
+
+function coreDatabaseUrl(): string {
   const url =
-    process.env.OPS_ADMIN_PROJECTION_DATABASE_OWNER_URL ??
-    process.env.OPS_ADMIN_PROJECTION_DATABASE_URL ??
+    process.env.OPS_ADMIN_PROJECTION_CORE_DATABASE_URL ??
     process.env.DATABASE_URL;
   if (!url) {
     throw new Error(
-      'OPS_ADMIN_PROJECTION_DATABASE_OWNER_URL is required for the runtime-role proof',
+      'DATABASE_URL is required to prove isolation from a real Core database',
     );
   }
   return url;
 }
 
+function databaseNameFromUrl(url: string): string {
+  return decodeURIComponent(new URL(url).pathname.replace(/^\//, '')).split(
+    '?',
+  )[0];
+}
+
 function rewriteDatabase(url: string, databaseName: string): string {
   const parsed = new URL(url);
   parsed.pathname = `/${databaseName}`;
+  parsed.search = '';
+  parsed.hash = '';
   return parsed.toString();
 }
 
@@ -48,6 +61,8 @@ function runtimeUrl(url: string, databaseName: string): string {
   parsed.username = OPS_ADMIN_PROJECTION_RUNTIME_ROLE;
   parsed.password = PASSWORD;
   parsed.pathname = `/${databaseName}`;
+  parsed.search = '';
+  parsed.hash = '';
   return parsed.toString();
 }
 
@@ -94,9 +109,10 @@ function quoteIdent(value: string): string {
 describe('Ops/Admin projection runtime role (PostgreSQL)', () => {
   const suffix = `${Date.now()}`;
   const databaseName = `blujet_ops_admin_runtime_${suffix}`;
-  const siblingName = `blujet_ops_admin_runtimex_${suffix}`;
+  const coreName = databaseNameFromUrl(coreDatabaseUrl());
   let admin: Client;
   let owner: Client;
+  let coreOwner: Client;
   let runtime: Client;
 
   beforeAll(async () => {
@@ -104,9 +120,7 @@ describe('Ops/Admin projection runtime role (PostgreSQL)', () => {
     admin = new Client({ connectionString: maintenanceUrl(source) });
     await admin.connect();
     await dropDatabase(admin, databaseName);
-    await dropDatabase(admin, siblingName);
     await admin.query(`CREATE DATABASE ${quoteIdent(databaseName)}`);
-    await admin.query(`CREATE DATABASE ${quoteIdent(siblingName)}`);
 
     const isolatedUrl = rewriteDatabase(source, databaseName);
     const migrations = new DataSource(
@@ -116,9 +130,15 @@ describe('Ops/Admin projection runtime role (PostgreSQL)', () => {
     await migrations.runMigrations();
     await migrations.destroy();
 
+    coreOwner = new Client({ connectionString: coreDatabaseUrl() });
+    await coreOwner.connect();
+    const coreUsers = await coreOwner.query(
+      `SELECT 1 FROM identity.users LIMIT 1`,
+    );
+    expect(Array.isArray(coreUsers.rows)).toBe(true);
+
     owner = new Client({ connectionString: isolatedUrl });
     await owner.connect();
-    await owner.query(CHECKPOINT_DDL);
     await owner.query(`CREATE SCHEMA IF NOT EXISTS identity`);
     await owner.query(
       `CREATE TABLE identity.users (id text PRIMARY KEY, secret text)`,
@@ -131,12 +151,6 @@ describe('Ops/Admin projection runtime role (PostgreSQL)', () => {
       `INSERT INTO public.secrets (token) VALUES ('gateway-secret')`,
     );
     await owner.query(`CREATE SEQUENCE ops.cartable_seq`);
-    await owner.query(
-      `REVOKE CONNECT ON DATABASE ${quoteIdent(siblingName)} FROM PUBLIC`,
-    );
-    await owner.query(
-      `GRANT CONNECT ON DATABASE ${quoteIdent(siblingName)} TO CURRENT_USER`,
-    );
 
     await provisionOpsAdminProjectionRuntimeRole(owner, PASSWORD, databaseName);
     await provisionOpsAdminProjectionRuntimeRole(owner, PASSWORD, databaseName);
@@ -163,14 +177,36 @@ describe('Ops/Admin projection runtime role (PostgreSQL)', () => {
     );
     expect(memberships.rows).toEqual([]);
 
+    const foreignConnect = await owner.query(
+      `SELECT d.datname
+       FROM pg_database d
+       WHERE d.datallowconn AND NOT d.datistemplate
+         AND d.datname <> current_database()
+         AND has_database_privilege($1, d.oid, 'CONNECT')`,
+      [OPS_ADMIN_PROJECTION_RUNTIME_ROLE],
+    );
+    expect(foreignConnect.rows).toEqual([]);
+    const coreConnect = await coreOwner.query(
+      `SELECT has_database_privilege($1, current_database(), 'CONNECT') AS allowed,
+              has_schema_privilege($1, 'identity', 'USAGE') AS identity_usage,
+              has_table_privilege($1, 'identity.users', 'SELECT') AS users_select`,
+      [OPS_ADMIN_PROJECTION_RUNTIME_ROLE],
+    );
+    expect(coreConnect.rows[0]).toEqual({
+      allowed: false,
+      identity_usage: false,
+      users_select: false,
+    });
+
     runtime = new Client({
       connectionString: runtimeUrl(source, databaseName),
     });
     await runtime.connect();
-  }, 30000);
+  }, 60000);
 
   afterAll(async () => {
     if (runtime) await runtime.end().catch(() => undefined);
+    if (coreOwner) await coreOwner.end().catch(() => undefined);
     if (owner) {
       await owner
         .query(
@@ -181,7 +217,6 @@ describe('Ops/Admin projection runtime role (PostgreSQL)', () => {
     }
     if (admin) {
       await dropDatabase(admin, databaseName).catch(() => undefined);
-      await dropDatabase(admin, siblingName).catch(() => undefined);
       await admin
         .query(
           `DROP ROLE IF EXISTS ${quoteIdent(OPS_ADMIN_PROJECTION_RUNTIME_ROLE)}`,
@@ -233,7 +268,7 @@ describe('Ops/Admin projection runtime role (PostgreSQL)', () => {
     expect(checkpoints.rows[0]?.nextOffset).toBe('2');
   });
 
-  it('denies DELETE, TRUNCATE, sequences, DDL, foreign schemas and other databases', async () => {
+  it('denies DELETE, TRUNCATE, sequences, DDL, foreign schemas and Core CONNECT', async () => {
     await deny(() =>
       runtime.query(`DELETE FROM ops.cartable_tasks WHERE false`),
     );
@@ -265,24 +300,14 @@ describe('Ops/Admin projection runtime role (PostgreSQL)', () => {
       runtime.query(`SELECT rolpassword FROM pg_authid LIMIT 1`),
     );
 
-    const sibling = new Client({
-      connectionString: runtimeUrl(ownerUrl(), siblingName),
-    });
-    await deny(() => sibling.connect());
-    await sibling.end().catch(() => undefined);
-
-    const coreName =
-      process.env.OPS_ADMIN_PROJECTION_CORE_DATABASE_NAME ?? 'blujet_test';
     const coreProbe = new Client({
-      connectionString: runtimeUrl(ownerUrl(), coreName),
+      connectionString: runtimeUrl(coreDatabaseUrl(), coreName),
     });
-    try {
-      await coreProbe.connect();
-      await deny(() => coreProbe.query(`SELECT 1 FROM identity.users LIMIT 1`));
-    } catch (error) {
-      expectDenied(error, PASSWORD);
-    } finally {
-      await coreProbe.end().catch(() => undefined);
-    }
+    await expect(coreProbe.connect()).rejects.toEqual(
+      expect.objectContaining({
+        code: expect.stringMatching(/^(42501|28000)$/),
+      }),
+    );
+    await coreProbe.end().catch(() => undefined);
   });
 });

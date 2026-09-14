@@ -2,10 +2,12 @@
 
 ## Ops/Admin projection runtime role (2026-09-14)
 
-- [x] Freeze the exact lujet_ops_admin_projection_runtime contract before code.
+- [x] Freeze the exact `blujet_ops_admin_projection_runtime` contract before code.
 - [x] Provision CONNECT + ops USAGE; SELECT/INSERT/UPDATE on tasks and checkpoints;
   SELECT/INSERT only on receipts; deny receipt UPDATE, DDL, DELETE, sequences,
   memberships and other databases.
+- [x] Revoke PUBLIC CONNECT on other databases, restore explicit owner grants,
+  and fail closed unless has_database_privilege shows no foreign CONNECT.
 - [x] Prove allow/deny against real PostgreSQL without activating the consumer.
 - [ ] Obtain CI evidence and present the diff for explicit approval. Do not
   deploy, enable the worker or cut over reads.
