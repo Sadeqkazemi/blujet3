@@ -318,6 +318,44 @@ describe('production backend artifacts', () => {
     expect(ciWorkflow).toContain('test:e2e:independent-domain-db');
   });
 
+  it('keeps Ops/Admin baseline transfer opt-in and out of production deploy', () => {
+    expect(independentDomainCompose).toContain('ops-admin-db:');
+    expect(independentDomainCompose).toContain('ops-admin-projection-db');
+    expect(independentDomainCompose).toContain('ops-admin-projection-transfer');
+    expect(independentDomainCompose).toContain(
+      '["node", "dist/database/provision-ops-admin-projection-reader-role.js"]',
+    );
+    expect(independentDomainCompose).toContain(
+      'command: ["node", "dist/database/transfer-ops-admin-projection-baseline.js"]',
+    );
+    expect(independentDomainCompose).toContain(
+      'OPS_ADMIN_BASELINE_APPLY: ${OPS_ADMIN_BASELINE_APPLY:-false}',
+    );
+    expect(independentDomainCompose).toContain(
+      'source: ${OPS_ADMIN_BASELINE_BACKUP_PATH:-./backups/ops-admin-baseline.dump}',
+    );
+    expect(independentDomainCompose).toContain(
+      'target: /run/blujet-backups/ops-admin-baseline.dump',
+    );
+    expect(independentDomainCompose).toContain('read_only: true');
+    expect(compose).not.toContain('ops-admin-db:');
+    expect(compose).not.toContain('transfer-ops-admin-projection-baseline.js');
+    expect(deployWorkflow).not.toContain(
+      'transfer-ops-admin-projection-baseline',
+    );
+    expect(packageJson.scripts).toEqual(
+      expect.objectContaining({
+        'database:provision-ops-admin-projection-reader:prod':
+          'node dist/database/provision-ops-admin-projection-reader-role.js',
+        'database:transfer-ops-admin-projection-baseline:prod':
+          'node dist/database/transfer-ops-admin-projection-baseline.js',
+      }),
+    );
+    expect(ciWorkflow).toContain(
+      'ops-admin-projection-(consumer|runtime-role|baseline)',
+    );
+  });
+
   it('keeps database-owner credentials outside the long-running Core process', () => {
     expect(migrationComposeSection).toContain(
       'DATABASE_URL: postgresql://blujet:${POSTGRES_PASSWORD}@db:5432/blujet?schema=public',

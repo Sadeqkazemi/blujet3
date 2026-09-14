@@ -226,6 +226,23 @@ lifecycle, credentials, subscription, checkpoint persistence, DLQ, baseline
 replay, reader cutover and deployment remain disabled
 (`docs/features/microservices-phase-6-ops-admin-kafka-ack-adapter.md`).
 
+## Ops/Admin projection baseline tooling
+
+No public or internal HTTP route changes. An offline, operator-invoked CLI
+copies Core `ops.cartable_tasks` routing metadata into the independent
+Ops/Admin database `ops.cartable_tasks` using the existing projection columns
+only. Apply mode requires distinct owner URLs, PostgreSQL 16, applied
+migrations, an empty target cartable table, and a verified backup file whose
+SHA-256 is supplied separately and streamed without loading the dump into
+memory. The opt-in Compose transfer profile mounts that artifact read-only at
+a fixed container path. Evidence is source/target counts, two
+independently ordered SHA-256 aggregates and PASS/FAIL. A second env-driven
+provisioner creates `blujet_ops_admin_projection_reader` with SELECT on the
+existing internal cartable columns only and no access to projection receipts,
+Kafka checkpoints or the failure quarantine. Kafka, dual-write, reader
+cutover and deployment remain disabled
+(`docs/features/microservices-phase-6-ops-admin-baseline-tooling.md`).
+
 ## Ops/Admin projection runtime role
 
 No public or internal HTTP route changes. An env-driven, idempotent provisioner

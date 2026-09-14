@@ -360,9 +360,89 @@ services:
       DOMAIN_TRANSFER_BATCH_SIZE: ${DOMAIN_TRANSFER_BATCH_SIZE:-100}
     command: ["node", "dist/database/transfer-independent-domain-data.js"]
 
+  ops-admin-db:
+    image: postgres:16-alpine
+    profiles: ["ops-admin-projection-db", "ops-admin-projection-transfer"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: blujet_ops_admin_owner
+      POSTGRES_PASSWORD: ${OPS_ADMIN_POSTGRES_PASSWORD:?Supply the Ops/Admin database owner password}
+      POSTGRES_DB: blujet_ops_admin
+    volumes:
+      - ops_admin_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U blujet_ops_admin_owner -d blujet_ops_admin",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    expose:
+      - "5432"
+
+  ops-admin-db-migrate:
+    profiles: ["ops-admin-projection-db", "ops-admin-projection-transfer"]
+    image: blujet-backend:${DEPLOY_SHA:-local}
+    build:
+      context: ./backend
+      args:
+        GIT_COMMIT_SHA: ${DEPLOY_SHA:-unknown}
+    restart: "no"
+    depends_on:
+      ops-admin-db:
+        condition: service_healthy
+    environment:
+      OPS_ADMIN_PROJECTION_DATABASE_URL: postgresql://blujet_ops_admin_owner:${OPS_ADMIN_POSTGRES_PASSWORD}@ops-admin-db:5432/blujet_ops_admin
+    command: ["npm", "run", "migration:run:ops-admin:prod"]
+
+  ops-admin-db-projection-reader:
+    profiles: ["ops-admin-projection-db"]
+    image: blujet-backend:${DEPLOY_SHA:-local}
+    build:
+      context: ./backend
+      args:
+        GIT_COMMIT_SHA: ${DEPLOY_SHA:-unknown}
+    restart: "no"
+    depends_on:
+      ops-admin-db-migrate:
+        condition: service_completed_successfully
+    environment:
+      OPS_ADMIN_PROJECTION_DATABASE_OWNER_URL: postgresql://blujet_ops_admin_owner:${OPS_ADMIN_POSTGRES_PASSWORD}@ops-admin-db:5432/blujet_ops_admin
+      OPS_ADMIN_PROJECTION_READER_PASSWORD: ${OPS_ADMIN_PROJECTION_READER_PASSWORD:?Supply the Ops/Admin projection HTTP reader password}
+    command:
+      ["node", "dist/database/provision-ops-admin-projection-reader-role.js"]
+
+  ops-admin-db-transfer:
+    profiles: ["ops-admin-projection-transfer"]
+    image: blujet-backend:${DEPLOY_SHA:-local}
+    build:
+      context: ./backend
+      args:
+        GIT_COMMIT_SHA: ${DEPLOY_SHA:-unknown}
+    restart: "no"
+    depends_on:
+      ops-admin-db-migrate:
+        condition: service_completed_successfully
+    environment:
+      OPS_ADMIN_BASELINE_SOURCE_DATABASE_URL: ${OPS_ADMIN_BASELINE_SOURCE_DATABASE_URL:?Supply the Core source owner URL}
+      OPS_ADMIN_BASELINE_TARGET_DATABASE_URL: postgresql://blujet_ops_admin_owner:${OPS_ADMIN_POSTGRES_PASSWORD}@ops-admin-db:5432/blujet_ops_admin
+      OPS_ADMIN_BASELINE_APPLY: ${OPS_ADMIN_BASELINE_APPLY:-false}
+      OPS_ADMIN_BASELINE_BACKUP_PATH: /run/blujet-backups/ops-admin-baseline.dump
+      OPS_ADMIN_BASELINE_BACKUP_SHA256: ${OPS_ADMIN_BASELINE_BACKUP_SHA256:-}
+      OPS_ADMIN_BASELINE_BATCH_SIZE: ${OPS_ADMIN_BASELINE_BATCH_SIZE:-100}
+    volumes:
+      - type: bind
+        source: ${OPS_ADMIN_BASELINE_BACKUP_PATH:-./backups/ops-admin-baseline.dump}
+        target: /run/blujet-backups/ops-admin-baseline.dump
+        read_only: true
+    command: ["node", "dist/database/transfer-ops-admin-projection-baseline.js"]
+
 volumes:
   notify_db_data:
   experience_db_data:
   identity_db_data:
   loyalty_db_data:
   agency_db_data:
+  ops_admin_db_data:

@@ -18,6 +18,23 @@
 - [x] Present the completed diff and receive explicit approval before merge.
   Do not activate the worker, cut over reads or deploy.
 
+## Ops/Admin physical projection baseline tooling (2026-09-14)
+
+- [x] Freeze the Core-source, empty-target, backup-gated cartable copy and
+      distinct HTTP reader contract before implementation.
+- [x] Add an offline owner-invoked transfer of projection columns only, with
+      transactional rollback, two SHA-256 aggregates and metadata-only output.
+- [x] Provision `blujet_ops_admin_projection_reader` as SELECT-only,
+      default-read-only, NOINHERIT on the isolated Ops/Admin database.
+- [x] Add opt-in local/CI topology and package scripts; keep production
+      compose, worker flags and reader URLs unchanged.
+- [x] Prove unit and real-PostgreSQL cases including backup rejection and
+      reader isolation.
+- [x] Obtain CI evidence and explicit approval: all 34 checks, including the
+      real-PostgreSQL Ops/Admin job, passed in run `34884615774`. Approval to
+      merge and deploy was received on 2026-09-14; consumer activation and
+      reader cutover remain disabled.
+
 ## Ops/Admin projection runtime role (2026-09-14)
 
 - [x] Freeze the exact `blujet_ops_admin_projection_runtime` contract before code.
