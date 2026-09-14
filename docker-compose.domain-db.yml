@@ -50,7 +50,8 @@ services:
     volumes:
       - identity_db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U blujet_identity_owner -d blujet_identity"]
+      test:
+        ["CMD-SHELL", "pg_isready -U blujet_identity_owner -d blujet_identity"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -68,7 +69,26 @@ services:
     volumes:
       - loyalty_db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U blujet_loyalty_owner -d blujet_loyalty"]
+      test:
+        ["CMD-SHELL", "pg_isready -U blujet_loyalty_owner -d blujet_loyalty"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    expose:
+      - "5432"
+
+  agency-db:
+    image: postgres:16-alpine
+    profiles: ["independent-domain-db"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: blujet_agency_owner
+      POSTGRES_PASSWORD: ${AGENCY_POSTGRES_PASSWORD:?Supply the Agency database owner password}
+      POSTGRES_DB: blujet_agency
+    volumes:
+      - agency_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U blujet_agency_owner -d blujet_agency"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -133,6 +153,21 @@ services:
     environment:
       NODE_ENV: production
       LOYALTY_DATABASE_URL: postgresql://blujet_loyalty_owner:${LOYALTY_POSTGRES_PASSWORD}@loyalty-db:5432/blujet_loyalty
+    command: ["npm", "run", "migration:run:prod"]
+
+  agency-db-migrate:
+    profiles: ["independent-domain-db"]
+    build:
+      context: ./agency-service
+      args:
+        GIT_COMMIT_SHA: ${DEPLOY_SHA:-unknown}
+    restart: "no"
+    depends_on:
+      agency-db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      AGENCY_DATABASE_URL: postgresql://blujet_agency_owner:${AGENCY_POSTGRES_PASSWORD}@agency-db:5432/blujet_agency
     command: ["npm", "run", "migration:run:prod"]
 
   notify-db-runtime-role:
@@ -204,6 +239,24 @@ services:
       DOMAIN_DATABASE_KIND: loyalty
       DOMAIN_DATABASE_OWNER_URL: postgresql://blujet_loyalty_owner:${LOYALTY_POSTGRES_PASSWORD}@loyalty-db:5432/blujet_loyalty
       LOYALTY_DATABASE_PASSWORD: ${LOYALTY_DATABASE_PASSWORD:?Supply the Loyalty runtime password}
+    command:
+      ["node", "dist/database/provision-independent-domain-runtime-role.js"]
+
+  agency-db-runtime-role:
+    profiles: ["independent-domain-db"]
+    image: blujet-backend:${DEPLOY_SHA:-local}
+    build:
+      context: ./backend
+      args:
+        GIT_COMMIT_SHA: ${DEPLOY_SHA:-unknown}
+    restart: "no"
+    depends_on:
+      agency-db-migrate:
+        condition: service_completed_successfully
+    environment:
+      DOMAIN_DATABASE_KIND: agency
+      DOMAIN_DATABASE_OWNER_URL: postgresql://blujet_agency_owner:${AGENCY_POSTGRES_PASSWORD}@agency-db:5432/blujet_agency
+      AGENCY_DATABASE_PASSWORD: ${AGENCY_DATABASE_PASSWORD:?Supply the Agency runtime password}
     command:
       ["node", "dist/database/provision-independent-domain-runtime-role.js"]
 
@@ -287,8 +340,29 @@ services:
       DOMAIN_TRANSFER_BATCH_SIZE: ${DOMAIN_TRANSFER_BATCH_SIZE:-100}
     command: ["node", "dist/database/transfer-independent-domain-data.js"]
 
+  agency-db-transfer:
+    profiles: ["independent-domain-transfer"]
+    image: blujet-backend:${DEPLOY_SHA:-local}
+    build:
+      context: ./backend
+      args:
+        GIT_COMMIT_SHA: ${DEPLOY_SHA:-unknown}
+    restart: "no"
+    depends_on:
+      agency-db-migrate:
+        condition: service_completed_successfully
+    environment:
+      DOMAIN_TRANSFER_KIND: agency
+      DOMAIN_TRANSFER_SOURCE_DATABASE_URL: ${DOMAIN_TRANSFER_SOURCE_DATABASE_URL:?Supply the read-only Core source URL}
+      DOMAIN_TRANSFER_TARGET_DATABASE_URL: postgresql://blujet_agency_owner:${AGENCY_POSTGRES_PASSWORD}@agency-db:5432/blujet_agency
+      DOMAIN_TRANSFER_APPLY: ${DOMAIN_TRANSFER_APPLY:-false}
+      DOMAIN_TRANSFER_BACKUP_REFERENCE: ${DOMAIN_TRANSFER_BACKUP_REFERENCE:-}
+      DOMAIN_TRANSFER_BATCH_SIZE: ${DOMAIN_TRANSFER_BATCH_SIZE:-100}
+    command: ["node", "dist/database/transfer-independent-domain-data.js"]
+
 volumes:
   notify_db_data:
   experience_db_data:
   identity_db_data:
   loyalty_db_data:
+  agency_db_data:

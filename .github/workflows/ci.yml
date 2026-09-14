@@ -574,7 +574,8 @@ jobs:
       needs.changes.outputs.notify == 'true' ||
       needs.changes.outputs.experience == 'true' ||
       needs.changes.outputs.identity == 'true' ||
-      needs.changes.outputs.loyalty == 'true'
+      needs.changes.outputs.loyalty == 'true' ||
+      needs.changes.outputs.agency == 'true'
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 25
     services:
@@ -603,6 +604,7 @@ jobs:
             experience-service/package-lock.json
             identity-service/package-lock.json
             loyalty-service/package-lock.json
+            agency-service/package-lock.json
       - name: Install database toolchains
         run: |
           npm ci --prefix backend
@@ -610,6 +612,7 @@ jobs:
           npm ci --prefix experience-service
           npm ci --prefix identity-service
           npm ci --prefix loyalty-service
+          npm ci --prefix agency-service
       - name: Create isolated source and target databases
         working-directory: backend
         env:
@@ -626,6 +629,8 @@ jobs:
             'identity_target_test',
             'loyalty_source_test',
             'loyalty_target_test',
+            'agency_source_test',
+            'agency_target_test',
           ];
           (async () => {
             const client = new Client({ connectionString: process.env.DATABASE_URL });
@@ -646,6 +651,8 @@ jobs:
           IDENTITY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/identity_target_test npm --prefix identity-service run migration:run
           LOYALTY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/loyalty_source_test npm --prefix loyalty-service run migration:run
           LOYALTY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/loyalty_target_test npm --prefix loyalty-service run migration:run
+          DATABASE_URL=postgresql://blujet:blujet@localhost:5432/agency_source_test npm --prefix backend run migration:run
+          AGENCY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/agency_target_test npm --prefix agency-service run migration:run
       - name: Prove transfer, reconciliation and privilege isolation
         working-directory: backend
         env:
@@ -657,6 +664,8 @@ jobs:
           IDENTITY_TRANSFER_TARGET_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/identity_target_test
           LOYALTY_TRANSFER_SOURCE_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/loyalty_source_test
           LOYALTY_TRANSFER_TARGET_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/loyalty_target_test
+          AGENCY_TRANSFER_SOURCE_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/agency_source_test
+          AGENCY_TRANSFER_TARGET_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/agency_target_test
         run: npm run test:e2e:independent-domain-db
       - name: Prove target rollback and clean restore
         run: |
@@ -664,10 +673,15 @@ jobs:
           EXPERIENCE_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/experience_target_test npm --prefix experience-service run migration:revert
           IDENTITY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/identity_target_test npm --prefix identity-service run migration:revert
           LOYALTY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/loyalty_target_test npm --prefix loyalty-service run migration:revert
+          AGENCY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/agency_target_test npm --prefix agency-service run migration:revert
+          AGENCY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/agency_target_test npm --prefix agency-service run migration:revert
+          AGENCY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/agency_target_test npm --prefix agency-service run migration:revert
+          AGENCY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/agency_target_test npm --prefix agency-service run migration:revert
           NOTIFY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/notify_target_test npm --prefix notify-service run migration:run
           EXPERIENCE_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/experience_target_test npm --prefix experience-service run migration:run
           IDENTITY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/identity_target_test npm --prefix identity-service run migration:run
           LOYALTY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/loyalty_target_test npm --prefix loyalty-service run migration:run
+          AGENCY_DATABASE_URL=postgresql://blujet:blujet@localhost:5432/agency_target_test npm --prefix agency-service run migration:run
 
   backend-migration-compatibility:
     name: Backend migration compatibility

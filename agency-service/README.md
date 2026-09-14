@@ -64,6 +64,29 @@ prints Agency fields, identifiers, amounts, URLs or credentials.
 Baseline transfer, read cutover, writer freeze and deployment remain disabled
 and require separately reviewed phases.
 
+## Physical projection baseline tooling (not activated)
+
+The repository's offline independent-domain tool now accepts
+`DOMAIN_TRANSFER_KIND=agency`. It copies only `agency_profiles`,
+`agency_invoices` and `agency_credit_requests`, in dependency-safe order, from
+a complete Core database snapshot into an empty database migrated by this
+package. Apply mode requires a reviewed backup reference and commits only when
+row counts and two full-row hashes match. Output contains metadata only.
+
+The opt-in `docker-compose.domain-db.yml` topology can create `agency-db`, run
+these standalone migrations, provision the column-scoped SELECT-only
+`blujet_agency_runtime` login and invoke the transfer. That HTTP credential has
+no access to projection versions, receipts, slots, Kafka checkpoints or
+failure quarantine. The separately disabled Kafka worker must use a different
+writable `AGENCY_PROJECTION_DATABASE_URL`; owner credentials must not be passed
+to either long-running process.
+
+Baseline parity does not switch reads. Keep all Agency flags and Kafka/DLQ
+runtime disabled until ordered delta catch-up, source-outbox drain and final
+reconciliation pass UAT under separate approval. See
+`docs/features/microservices-phase-6-agency-baseline-tooling.md` and
+`docs/RUNBOOK.md`.
+
 ## Optional credit-request history (A6.19)
 
 Core `AGENCY_CREDIT_REQUESTS_READ_ENABLED=false` and Agency

@@ -46,8 +46,34 @@ describe('independent domain transfer contract', () => {
       'loyalty_projection_event_receipts',
       'loyalty_projection_slots',
     ]);
+    const agency = transferDomainContract('agency');
+    expect(agency.tables).toEqual([
+      'agency_profiles',
+      'agency_invoices',
+      'agency_credit_requests',
+    ]);
+    expect(agency.sourceControlTables).toEqual(['agency_projection_audits']);
+    expect(agency.sourceCompanionTables).toEqual([
+      'agency_allotments',
+      'agency_api_keys',
+      'agency_credit_lines',
+      'agency_documents',
+      'agency_membership_requests',
+      'agency_messages',
+      'agency_request_otps',
+      'agency_seat_commitments',
+      'agency_seat_request_flights',
+      'agency_seat_requests',
+      'agency_webservice_requests',
+    ]);
+    expect(agency.targetControlTables).toEqual([
+      'agency_projection_event_receipts',
+      'agency_projection_slots',
+      'kafka_consumer_checkpoints',
+      'kafka_processing_failures',
+    ]);
     expect(() => transferDomainContract('payments')).toThrow(
-      'must be notify, experience, identity or loyalty',
+      'must be notify, experience, identity, loyalty or agency',
     );
   });
 
@@ -108,6 +134,38 @@ describe('independent domain transfer contract', () => {
     ).toThrow('table contract mismatch');
     expect(() =>
       validateDomainTableContract(contract, 'target', transferTables.slice(1)),
+    ).toThrow('table contract mismatch');
+  });
+
+  it('accepts the reviewed Core source and exact Agency target tables only', () => {
+    const contract = transferDomainContract('agency');
+    const source = [
+      ...contract.tables,
+      ...(contract.sourceControlTables ?? []),
+      ...(contract.sourceCompanionTables ?? []),
+    ];
+    const target = [
+      ...contract.tables,
+      ...(contract.targetControlTables ?? []),
+    ];
+
+    expect(() =>
+      validateDomainTableContract(contract, 'source', source),
+    ).not.toThrow();
+    expect(() =>
+      validateDomainTableContract(contract, 'target', target),
+    ).not.toThrow();
+    expect(() =>
+      validateDomainTableContract(contract, 'source', [
+        ...source,
+        'unreviewed_source_table',
+      ]),
+    ).toThrow('table contract mismatch');
+    expect(() =>
+      validateDomainTableContract(contract, 'target', [
+        ...target,
+        'agency_projection_audits',
+      ]),
     ).toThrow('table contract mismatch');
   });
 

@@ -185,6 +185,17 @@ remains the sole writer; no event consumer, data copy, dual-write, URL switch
 or deployment is included
 (`docs/features/microservices-phase-6-agency-projection-db.md`).
 
+## Agency projection physical baseline tooling
+
+No HTTP route or response changes. The offline transfer copies only the three
+approved Agency read projections from a repeatable-read Core snapshot into an
+empty dedicated database, requires reviewed backup evidence in apply mode and
+commits only after full-row count/hash parity. Its output is metadata-only.
+The separately provisioned HTTP credential is column-scoped and read-only;
+Kafka delta catch-up, feature-flag activation, URL cutover and deployment
+remain separate gates
+(`docs/features/microservices-phase-6-agency-baseline-tooling.md`).
+
 ## Agency projection event contract
 
 No HTTP route changes. Three internal canonical full-snapshot event contracts
