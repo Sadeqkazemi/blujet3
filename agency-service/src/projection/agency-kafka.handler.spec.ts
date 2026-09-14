@@ -1,5 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import type { EachMessagePayload } from 'kafkajs';
+import type { AgencyDlqConfig } from '../agency-dlq.config';
+import type { AgencyKafkaFailureStage } from '../database/entities/agency-kafka-processing-failure.entity';
+import {
+  type AgencyDlqStore,
+  type AgencyFailedDelivery,
+  type AgencyFailureAction,
+} from './agency-dlq.store';
 import type { AgencyProjectionEvent } from './agency-projection-event';
 import { AgencyKafkaHandler } from './agency-kafka.handler';
 import type { AgencyProjectionConsumer } from './agency-projection.consumer';
@@ -41,9 +48,42 @@ describe('AgencyKafkaHandler', () => {
     >(),
   };
   const commitOffsets = jest.fn<Promise<void>, [unknown]>().mockResolvedValue();
+  const dlq = {
+    actionFor: jest
+      .fn<Promise<AgencyFailureAction>, [AgencyFailedDelivery]>()
+      .mockResolvedValue('process'),
+    recordFailure: jest
+      .fn<
+        Promise<'retry' | 'quarantined'>,
+        [AgencyFailedDelivery, AgencyKafkaFailureStage, string | null, number]
+      >()
+      .mockResolvedValue('retry'),
+    markResolved: jest
+      .fn<Promise<void>, [AgencyFailedDelivery]>()
+      .mockResolvedValue(undefined),
+    markSkipped: jest
+      .fn<Promise<void>, [AgencyFailedDelivery]>()
+      .mockResolvedValue(undefined),
+  };
   const handler = new AgencyKafkaHandler(
     agency as unknown as AgencyProjectionConsumer,
+    dlq as unknown as AgencyDlqStore,
+    { enabled: false },
   );
+
+  function dlqHandler(
+    config: AgencyDlqConfig = {
+      enabled: true,
+      maxAttempts: 3,
+      operatorToken: 'agency-operator-token-at-least-32-characters',
+    },
+  ): AgencyKafkaHandler {
+    return new AgencyKafkaHandler(
+      agency as unknown as AgencyProjectionConsumer,
+      dlq as unknown as AgencyDlqStore,
+      config,
+    );
+  }
 
   function payload(
     overrides: Partial<EachMessagePayload> = {},
@@ -77,6 +117,10 @@ describe('AgencyKafkaHandler', () => {
     jest.clearAllMocks();
     agency.consume.mockResolvedValue('applied');
     commitOffsets.mockResolvedValue();
+    dlq.actionFor.mockResolvedValue('process');
+    dlq.recordFailure.mockResolvedValue('retry');
+    dlq.markResolved.mockResolvedValue(undefined);
+    dlq.markSkipped.mockResolvedValue(undefined);
   });
 
   it('commits the offset only after the projection transaction returns', async () => {
@@ -282,6 +326,117 @@ describe('AgencyKafkaHandler', () => {
       ),
     ).rejects.toThrow('Agency Kafka processing failed');
     expect(agency.consume).toHaveBeenCalledTimes(1);
+  });
+
+  it('records a bounded projection failure without acknowledging it', async () => {
+    agency.consume.mockRejectedValue(
+      new Error('private@example.invalid 02100000000 LICENSE-SECRET'),
+    );
+
+    await expect(
+      dlqHandler().runConfig({ commitOffsets }, subscription).eachMessage!(
+        payload(),
+      ),
+    ).rejects.toThrow('Agency Kafka processing failed');
+
+    const [failed, stage, eventId, maxAttempts] =
+      dlq.recordFailure.mock.calls[0];
+    expect(failed).toMatchObject({
+      consumerGroup: 'agency-v1',
+      topic: subscription.topic,
+      partition: 0,
+      offset: '4',
+      nextOffset: '5',
+      highWatermark: '8',
+    });
+    expect(failed.fingerprint).toMatch(/^[a-f0-9]{64}$/);
+    expect({ stage, eventId, maxAttempts }).toEqual({
+      stage: 'PROJECTION',
+      eventId: event.eventId,
+      maxAttempts: 3,
+    });
+    expect(commitOffsets).not.toHaveBeenCalled();
+  });
+
+  it('records malformed transport without persisting its content or acknowledging', async () => {
+    await expect(
+      dlqHandler().runConfig({ commitOffsets }, subscription).eachMessage!(
+        payload({
+          message: {
+            ...payload().message,
+            value: Buffer.from('{"licenseNo":"LICENSE-SECRET"'),
+          } as EachMessagePayload['message'],
+        }),
+      ),
+    ).rejects.toThrow('Agency Kafka processing failed');
+
+    const [failed, stage, eventId] = dlq.recordFailure.mock.calls[0];
+    expect(failed.fingerprint).toMatch(/^[a-f0-9]{64}$/);
+    expect({ stage, eventId }).toEqual({
+      stage: 'TRANSPORT',
+      eventId: null,
+    });
+    expect(JSON.stringify(failed)).not.toContain('LICENSE-SECRET');
+    expect(agency.consume).not.toHaveBeenCalled();
+    expect(commitOffsets).not.toHaveBeenCalled();
+  });
+
+  it('blocks quarantined deliveries without incrementing attempts', async () => {
+    dlq.actionFor.mockResolvedValue('block');
+
+    await expect(
+      dlqHandler().runConfig({ commitOffsets }, subscription).eachMessage!(
+        payload(),
+      ),
+    ).rejects.toThrow('Agency Kafka processing failed');
+
+    expect(agency.consume).not.toHaveBeenCalled();
+    expect(dlq.recordFailure).not.toHaveBeenCalled();
+    expect(commitOffsets).not.toHaveBeenCalled();
+  });
+
+  it('persists an approved skip before acknowledging the source offset', async () => {
+    const order: string[] = [];
+    dlq.actionFor.mockResolvedValue('skip');
+    dlq.markSkipped.mockImplementation(() => {
+      order.push('skip');
+      return Promise.resolve();
+    });
+    const client = {
+      commitOffsets: jest.fn(() => {
+        order.push('ack');
+        return Promise.resolve();
+      }),
+    };
+
+    await dlqHandler().runConfig(client, subscription).eachMessage!(payload());
+
+    expect(order).toEqual(['skip', 'ack']);
+    expect(agency.consume).not.toHaveBeenCalled();
+    expect(dlq.recordFailure).not.toHaveBeenCalled();
+    expect(client.commitOffsets).toHaveBeenCalledWith([
+      { topic: subscription.topic, partition: 0, offset: '5' },
+    ]);
+  });
+
+  it('does not classify an acknowledgement gap as poison data', async () => {
+    commitOffsets.mockRejectedValue(new Error('broker unavailable'));
+
+    await expect(
+      dlqHandler().runConfig({ commitOffsets }, subscription).eachMessage!(
+        payload(),
+      ),
+    ).rejects.toThrow('Agency Kafka processing failed');
+
+    expect(agency.consume).toHaveBeenCalledTimes(1);
+    expect(dlq.markResolved).toHaveBeenCalledTimes(1);
+    expect(dlq.recordFailure).not.toHaveBeenCalled();
+  });
+
+  it('requires a consumer group when quarantine is enabled', () => {
+    expect(() =>
+      dlqHandler().runConfig({ commitOffsets }, { topic: subscription.topic }),
+    ).toThrow('Agency DLQ requires a consumer group');
   });
 
   it('validates and snapshots the subscription byte limit', async () => {

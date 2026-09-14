@@ -1,4 +1,6 @@
 import { MODULE_METADATA } from '@nestjs/common/constants';
+import { AGENCY_DLQ_CONFIG } from '../agency-dlq.config';
+import { AgencyDlqStore } from './agency-dlq.store';
 import { AgencyKafkaHandler } from './agency-kafka.handler';
 import { AgencyProjectionConsumer } from './agency-projection.consumer';
 import { AgencyProjectionModule } from './agency-projection.module';
@@ -18,11 +20,14 @@ describe('AgencyProjectionModule', () => {
       expect.arrayContaining([
         AgencyProjectionStore,
         AgencyProjectionConsumer,
+        AgencyDlqStore,
         AgencyKafkaHandler,
       ]),
     );
     expect(exports).toContain(AgencyProjectionConsumer);
     expect(exports).toContain(AgencyKafkaHandler);
+    expect(exports).toContain(AgencyDlqStore);
+    expect(exports).toContain(AGENCY_DLQ_CONFIG);
     expect(
       providers.some(
         (provider) =>

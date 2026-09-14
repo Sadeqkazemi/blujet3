@@ -3,6 +3,15 @@ import { ConflictException } from '@nestjs/common';
 import type { EachMessagePayload } from 'kafkajs';
 import { DataSource } from 'typeorm';
 import { agencyMigrationDataSourceOptions } from '../src/database/data-source.options';
+import {
+  AgencyKafkaFailureStage,
+  AgencyKafkaFailureStatus,
+  AgencyKafkaProcessingFailure,
+} from '../src/database/entities/agency-kafka-processing-failure.entity';
+import {
+  type AgencyFailedDelivery,
+  AgencyDlqStore,
+} from '../src/projection/agency-dlq.store';
 import { AgencyKafkaHandler } from '../src/projection/agency-kafka.handler';
 import { AgencyProjectionConsumer } from '../src/projection/agency-projection.consumer';
 import { reconcileAgencyProjection } from '../src/projection/agency-projection-reconciliation';
@@ -142,6 +151,7 @@ describe('Agency version-aware projection (real PostgreSQL)', () => {
   let source: DataSource;
   let projection: DataSource;
   let consumer: AgencyProjectionConsumer;
+  let dlq: AgencyDlqStore;
   const suffix = randomUUID().replaceAll('-', '').slice(0, 8);
   const sourceName = `blujet_agency_src_${suffix}_test`;
   const projectionName = `blujet_agency_dst_${suffix}_test`;
@@ -178,12 +188,14 @@ describe('Agency version-aware projection (real PostgreSQL)', () => {
     consumer = new AgencyProjectionConsumer(
       new AgencyProjectionStore(projection),
     );
+    dlq = new AgencyDlqStore(projection);
   });
 
   beforeEach(async () => {
     for (const db of [source, projection]) {
       await db.query(`TRUNCATE
         agency.kafka_consumer_checkpoints,
+        agency.kafka_processing_failures,
         agency.agency_projection_event_receipts,
         agency.agency_projection_slots,
         agency.agency_invoices,
@@ -358,7 +370,7 @@ describe('Agency version-aware projection (real PostgreSQL)', () => {
 
   it('replays an acknowledgement gap without duplicate projection rows', async () => {
     const input = profileEvent(randomUUID());
-    const handler = new AgencyKafkaHandler(consumer);
+    const handler = new AgencyKafkaHandler(consumer, dlq, { enabled: false });
     const firstAck = jest
       .fn<Promise<void>, [unknown]>()
       .mockRejectedValue(new Error('broker unavailable'));
@@ -441,6 +453,140 @@ describe('Agency version-aware projection (real PostgreSQL)', () => {
     expect(typeof state.lastCheckpointAt).toBe('string');
   });
 
+  it('quarantines bounded failures and requires matching delivery content', async () => {
+    const delivery: AgencyFailedDelivery = {
+      consumerGroup: 'agency-v1',
+      topic: 'blujet.events.v1',
+      partition: 2,
+      offset: '14',
+      nextOffset: '15',
+      highWatermark: '20',
+      fingerprint: 'a'.repeat(64),
+    };
+
+    await expect(
+      dlq.recordFailure(delivery, AgencyKafkaFailureStage.TRANSPORT, null, 3),
+    ).resolves.toBe('retry');
+    await expect(
+      dlq.recordFailure(
+        delivery,
+        AgencyKafkaFailureStage.PROJECTION,
+        randomUUID(),
+        3,
+      ),
+    ).resolves.toBe('retry');
+    await expect(
+      dlq.recordFailure(
+        delivery,
+        AgencyKafkaFailureStage.PROJECTION,
+        randomUUID(),
+        3,
+      ),
+    ).resolves.toBe('quarantined');
+    await expect(dlq.actionFor(delivery)).resolves.toBe('block');
+    await expect(
+      dlq.actionFor({ ...delivery, fingerprint: 'b'.repeat(64) }),
+    ).rejects.toBeInstanceOf(ConflictException);
+
+    const row = await projection
+      .getRepository(AgencyKafkaProcessingFailure)
+      .findOneByOrFail({ offset: delivery.offset });
+    expect(row).toMatchObject({
+      attempts: 3,
+      totalAttempts: 3,
+      status: AgencyKafkaFailureStatus.QUARANTINED,
+      stage: AgencyKafkaFailureStage.PROJECTION,
+    });
+    const listed = await dlq.list(AgencyKafkaFailureStatus.QUARANTINED, 1);
+    expect(listed).toHaveLength(1);
+    expect(Object.keys(listed[0])).not.toEqual(
+      expect.arrayContaining(['consumerGroup', 'topic', 'partition', 'offset']),
+    );
+
+    await dlq.approve(row.id, 'retry', 'operator-1', 'dependency restored');
+    await expect(dlq.actionFor(delivery)).resolves.toBe('process');
+    await expect(
+      dlq.recordFailure(
+        delivery,
+        AgencyKafkaFailureStage.PROJECTION,
+        row.eventId,
+        3,
+      ),
+    ).resolves.toBe('retry');
+    await dlq.markResolved(delivery);
+    const resolved = await projection
+      .getRepository(AgencyKafkaProcessingFailure)
+      .findOneByOrFail({ id: row.id });
+    expect(resolved).toMatchObject({
+      attempts: 1,
+      totalAttempts: 4,
+      status: AgencyKafkaFailureStatus.RESOLVED,
+    });
+  });
+
+  it('advances checkpoint atomically for an approved skip and replays safely', async () => {
+    const delivery: AgencyFailedDelivery = {
+      consumerGroup: 'agency-v1',
+      topic: 'blujet.events.v1',
+      partition: 4,
+      offset: '40',
+      nextOffset: '41',
+      highWatermark: '50',
+      fingerprint: 'c'.repeat(64),
+    };
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await dlq.recordFailure(
+        delivery,
+        AgencyKafkaFailureStage.TRANSPORT,
+        null,
+        3,
+      );
+    }
+    const row = await projection
+      .getRepository(AgencyKafkaProcessingFailure)
+      .findOneByOrFail({ offset: delivery.offset });
+    await dlq.approve(row.id, 'skip', 'operator-2', 'invalid legacy envelope');
+    await expect(dlq.actionFor(delivery)).resolves.toBe('skip');
+
+    await expect(
+      dlq.markSkipped({ ...delivery, nextOffset: '-1' }),
+    ).rejects.toThrow();
+    expect(
+      await projection
+        .getRepository(AgencyKafkaProcessingFailure)
+        .findOneByOrFail({ id: row.id }),
+    ).toMatchObject({ status: AgencyKafkaFailureStatus.SKIP_APPROVED });
+    expect(
+      await projection.query(
+        'SELECT count(*)::int AS count FROM agency.kafka_consumer_checkpoints',
+      ),
+    ).toEqual([{ count: 0 }]);
+
+    await dlq.markSkipped(delivery);
+    await dlq.markSkipped(delivery);
+
+    const state = await projection.query<
+      Array<{ status: string; nextOffset: string; highWatermark: string }>
+    >(
+      `SELECT failure.status, checkpoint."nextOffset", checkpoint."highWatermark"
+       FROM agency.kafka_processing_failures failure
+       JOIN agency.kafka_consumer_checkpoints checkpoint
+         ON checkpoint."consumerGroup"=failure."consumerGroup"
+        AND checkpoint.topic=failure.topic
+        AND checkpoint.partition=failure.partition
+       WHERE failure.id=$1`,
+      [row.id],
+    );
+    expect(state).toEqual([
+      {
+        status: AgencyKafkaFailureStatus.SKIPPED,
+        nextOffset: '41',
+        highWatermark: '50',
+      },
+    ]);
+    await expect(dlq.actionFor(delivery)).resolves.toBe('skip');
+  });
+
   it('reconciles only business tables without emitting business values', async () => {
     const agencyId = randomUUID();
     const events = [profileEvent(agencyId), invoiceEvent(agencyId)];
@@ -489,19 +635,21 @@ describe('Agency version-aware projection (real PostgreSQL)', () => {
     expect(schema.upQueries.map((query) => query.query)).toEqual([]);
   });
 
-  it('rolls back and restores only the checkpoint migration', async () => {
+  it('rolls back and restores only the failure-registry migration', async () => {
     await projection.undoLastMigration({ transaction: 'all' });
     const state = await projection.query<
       Array<{
         profiles: boolean;
         receipts: boolean;
         checkpoints: boolean;
+        failures: boolean;
         versionColumn: boolean;
       }>
     >(`SELECT
       to_regclass('agency.agency_profiles') IS NOT NULL AS profiles,
       to_regclass('agency.agency_projection_event_receipts') IS NOT NULL AS receipts,
       to_regclass('agency.kafka_consumer_checkpoints') IS NOT NULL AS checkpoints,
+      to_regclass('agency.kafka_processing_failures') IS NOT NULL AS failures,
       EXISTS (
         SELECT 1 FROM information_schema.columns
         WHERE table_schema='agency' AND table_name='agency_profiles'
@@ -511,7 +659,8 @@ describe('Agency version-aware projection (real PostgreSQL)', () => {
       {
         profiles: true,
         receipts: true,
-        checkpoints: false,
+        checkpoints: true,
+        failures: false,
         versionColumn: true,
       },
     ]);
@@ -519,8 +668,10 @@ describe('Agency version-aware projection (real PostgreSQL)', () => {
     await projection.runMigrations({ transaction: 'all' });
     expect(
       await projection.query(
-        `SELECT to_regclass('agency.kafka_consumer_checkpoints') IS NOT NULL AS checkpoints`,
+        `SELECT
+          to_regclass('agency.kafka_consumer_checkpoints') IS NOT NULL AS checkpoints,
+          to_regclass('agency.kafka_processing_failures') IS NOT NULL AS failures`,
       ),
-    ).toEqual([{ checkpoints: true }]);
+    ).toEqual([{ checkpoints: true, failures: true }]);
   });
 });

@@ -25,6 +25,7 @@ describe('Agency worker configuration', () => {
       'PostgreSQL',
     ],
     [{ ...valid, AGENCY_KAFKA_CONSUMER_ENABLED: 'false' }, 'must be true'],
+    [{ ...valid, AGENCY_DLQ_ENABLED: 'true' }, 'AGENCY_DLQ_OPERATOR_TOKEN'],
     [{ ...valid, PORT: '0' }, 'PORT'],
     [{ ...valid, PORT: '65536' }, 'PORT'],
   ] as const)('rejects invalid worker configuration', (env, message) => {

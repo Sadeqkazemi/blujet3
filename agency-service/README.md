@@ -12,13 +12,34 @@ service must not receive the writer URL, while the worker does not need
 Use `.env.worker.example` as the worker-only template in a separate process or
 container environment. Do not combine it with the HTTP `.env.example`.
 
-The worker exposes only `/health` and `/ready`; it runs the strict sequential
-manual-ACK adapter and acknowledges after the existing transactional projection
-commit. Per-group/topic/partition progress is recorded in the Agency database in
-that same transaction and readiness exposes only aggregate checkpoint evidence:
+The worker exposes `/health`, `/ready` and the default-off internal quarantine
+control routes described below. It runs the strict sequential manual-ACK adapter
+and acknowledges after the existing transactional projection commit.
+Per-group/topic/partition progress is recorded in the Agency database in that
+same transaction and readiness exposes only aggregate checkpoint evidence:
 partition count, maximum observed lag and last checkpoint time. It is not
 included in Compose or deployment manifests and remains disabled until
-baseline/delta, DLQ, broker UAT and cutover gates are separately approved.
+baseline/delta, broker UAT and cutover gates are separately approved.
+
+## Poison-message quarantine (not activated)
+
+`AGENCY_DLQ_ENABLED=false` is the default. When enabled with a dedicated
+`AGENCY_DLQ_OPERATOR_TOKEN`, transport and projection failures remain
+unacknowledged and are quarantined after `AGENCY_DLQ_MAX_ATTEMPTS` (default 3,
+allowed 2..10). The registry stores no payload, headers, raw error or Agency
+business fields. A quarantined delivery blocks its partition until an operator
+approves retry or skip; there is no automatic skip.
+
+- `GET /internal/v1/agency/dlq?status=QUARANTINED&limit=50`
+- `POST /internal/v1/agency/dlq/:id/retry`
+- `POST /internal/v1/agency/dlq/:id/skip`
+
+Retry reprocesses the retained source delivery. Skip marks the audit row and
+advances the durable checkpoint in one Agency database transaction, then the
+handler acknowledges Kafka. The API returns only sanitized metadata and all
+routes require `X-Internal-Token`. `/ready` returns only whether quarantine is
+disabled or its current quarantined count. Historical payload republishing,
+activation and deployment remain out of scope.
 
 ## Version-aware projection foundation
 
@@ -40,8 +61,8 @@ restricted read-only logins. Output contains only table names, counts, two
 order-independent hashes and MATCH/MISMATCH/INCONCLUSIVE status. It never
 prints Agency fields, identifiers, amounts, URLs or credentials.
 
-Baseline transfer, DLQ policy, read cutover, writer freeze and deployment remain
-disabled and require separately reviewed phases.
+Baseline transfer, read cutover, writer freeze and deployment remain disabled
+and require separately reviewed phases.
 
 ## Optional credit-request history (A6.19)
 

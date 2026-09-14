@@ -1,5 +1,23 @@
 # PLAN.md — blujet roadmap & progress
 
+## Agency poison-message quarantine (2026-09-14)
+
+- [x] Freeze bounded retry, sanitized failure metadata, manual decision and
+  no-activation boundaries before implementation.
+- [x] Add the expand-only Agency failure registry migration and exact metadata.
+- [x] Integrate retry/quarantine/resolve/skip with projection and checkpoint/ACK
+  ordering.
+- [x] Add the token-protected, bounded operator API and safe readiness evidence.
+- [x] Prove migration rollback, idempotency, failure paths and recovery; pass all
+  Agency checks.
+- [x] Present the completed diff for approval before commit/push/merge. Do not
+  activate or deploy.
+
+Local evidence: 117 unit/HTTP tests, 12 real-PostgreSQL projection tests and 70
+E2E tests pass; Agency lint, typecheck, migration/entity parity, production
+build and OpenAPI stability pass. The DLQ and worker remain default-off and
+absent from deployment manifests.
+
 ## Agency durable Kafka checkpoints (2026-09-13)
 
 - [x] Freeze atomic checkpoint, monotonic progress, safe lag and no-activation

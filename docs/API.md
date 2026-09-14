@@ -357,6 +357,25 @@ All three routes require `LOYALTY_DLQ_OPERATOR_TOKEN`. There is no automatic
 skip or historical payload republishing. The routes exist only in the internal
 worker process and do not change `/api/v1/club/**` or `/api/v1/my/club/**`.
 
+### Agency poison-message quarantine
+
+The standalone Agency projection worker exposes a separate, default-off
+fail-closed quarantine boundary. When `AGENCY_DLQ_ENABLED=true`, failed source
+deliveries remain unacknowledged and become quarantined after the configured
+bounded attempts. The operator API never returns Kafka topic, partition,
+offset, payload, key, headers, raw errors or Agency business fields.
+
+| Method | Path | Contract |
+| --- | --- | --- |
+| GET | `/internal/v1/agency/dlq?status=QUARANTINED&limit=50` | Bounded, sanitized failure metadata. |
+| POST | `/internal/v1/agency/dlq/:id/retry` | Approves replay of the retained source delivery. Body: `{ operatorId, reason }`. |
+| POST | `/internal/v1/agency/dlq/:id/skip` | Approves atomic checkpoint advancement followed by ACK on the next delivery. Body: `{ operatorId, reason }`. |
+
+All three routes require the independent `AGENCY_DLQ_OPERATOR_TOKEN`. There is
+no automatic skip or historical payload republishing. These routes exist only
+in the internal worker process and do not change any public
+`/api/v1/agency-portal/**` contract.
+
 Kafka receive adapter: `CommerceInboxKafkaHandler.runConfig` validates the
 existing publisher wire metadata and returns manual-ack, sequential KafkaJS
 handling. It commits offset + 1 only after the Core inbox DB transaction commits.

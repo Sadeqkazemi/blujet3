@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerModule } from 'nestjs-pino';
+import { APP_FILTER } from '@nestjs/core';
+import { ErrorFilter } from './common/error.filter';
 import {
   agencyWorkerDataSourceOptions,
   validateAgencyWorkerEnv,
@@ -39,5 +41,6 @@ import { AgencyKafkaRuntimeModule } from './projection/agency-kafka-runtime.modu
     AgencyKafkaRuntimeModule,
   ],
   controllers: [AgencyWorkerHealthController],
+  providers: [{ provide: APP_FILTER, useClass: ErrorFilter }],
 })
 export class AgencyWorkerModule {}

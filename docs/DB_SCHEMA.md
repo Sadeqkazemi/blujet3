@@ -15,6 +15,21 @@ the projection receipt/slot/business snapshot; replay cannot move either value
 backwards. A failed projection writes no checkpoint and receives no Kafka ACK.
 No existing table or column is changed or removed.
 
+## Agency Kafka failure quarantine
+
+Migration `1794038400000-AgencyKafkaFailureQuarantine` adds
+`agency.kafka_processing_failures`. A generated UUID identifies each row and a
+unique `(consumerGroup, topic, partition, offset)` index identifies the source
+delivery. The row stores only a SHA-256 message fingerprint, optional validated
+event UUID, safe `TRANSPORT|PROJECTION` stage, bounded attempt counters,
+lifecycle status, timestamps and operator approval audit fields.
+
+Kafka payloads, keys, headers, raw errors, credentials and Agency business
+fields are never persisted. Decisions use a row lock. An approved skip changes
+the terminal status and advances `agency.kafka_consumer_checkpoints` in one
+database transaction; Kafka acknowledgement happens only afterward. The table
+has no foreign key and the expand-only migration changes no existing table.
+
 ## Loyalty durable Kafka checkpoints
 
 Migration `1793602800000-LoyaltyKafkaConsumerCheckpoints` adds

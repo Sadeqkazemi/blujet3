@@ -1,6 +1,7 @@
 import { ServiceUnavailableException } from '@nestjs/common';
 import type { DataSource, EntityManager } from 'typeorm';
 import { AgencyWorkerHealthController } from './agency-worker-health.controller';
+import type { AgencyDlqStore } from './projection/agency-dlq.store';
 import type { AgencyKafkaRuntime } from './projection/agency-kafka.runtime';
 
 describe('AgencyWorkerHealthController', () => {
@@ -13,6 +14,7 @@ describe('AgencyWorkerHealthController', () => {
       lastCheckpointAt: '2026-09-13T18:30:00.000Z',
     }),
   };
+  const dlq = { countQuarantined: jest.fn().mockResolvedValue(0) };
 
   function dataSource(query: jest.Mock): DataSource {
     return {
@@ -30,6 +32,8 @@ describe('AgencyWorkerHealthController', () => {
     const controller = new AgencyWorkerHealthController(
       dataSource(query),
       runtime as unknown as AgencyKafkaRuntime,
+      dlq as unknown as AgencyDlqStore,
+      { enabled: false },
     );
 
     expect(controller.health()).toMatchObject({
@@ -45,6 +49,8 @@ describe('AgencyWorkerHealthController', () => {
     const controller = new AgencyWorkerHealthController(
       dataSource(query),
       runtime as unknown as AgencyKafkaRuntime,
+      dlq as unknown as AgencyDlqStore,
+      { enabled: false },
     );
 
     await expect(controller.ready()).resolves.toEqual({
@@ -61,9 +67,10 @@ describe('AgencyWorkerHealthController', () => {
             lastCheckpointAt: '2026-09-13T18:30:00.000Z',
           },
         },
+        quarantine: { status: 'disabled' },
       },
     });
-    expect(query).toHaveBeenCalledTimes(6);
+    expect(query).toHaveBeenCalledTimes(7);
   });
 
   it('returns safe 503 semantics when PostgreSQL is unavailable', async () => {
@@ -73,6 +80,8 @@ describe('AgencyWorkerHealthController', () => {
     const controller = new AgencyWorkerHealthController(
       dataSource(query),
       runtime as unknown as AgencyKafkaRuntime,
+      dlq as unknown as AgencyDlqStore,
+      { enabled: false },
     );
 
     await expect(controller.ready()).rejects.toBeInstanceOf(
@@ -94,6 +103,8 @@ describe('AgencyWorkerHealthController', () => {
     const controller = new AgencyWorkerHealthController(
       dataSource(jest.fn().mockResolvedValue([])),
       runtime as unknown as AgencyKafkaRuntime,
+      dlq as unknown as AgencyDlqStore,
+      { enabled: false },
     );
 
     await expect(controller.ready()).rejects.toMatchObject({
@@ -103,6 +114,50 @@ describe('AgencyWorkerHealthController', () => {
         error: {
           database: { status: 'up' },
           consumer: { status: 'down', state: 'failed' },
+        },
+      },
+    });
+  });
+
+  it('exposes only the quarantined count when enabled', async () => {
+    dlq.countQuarantined.mockResolvedValueOnce(2);
+    const controller = new AgencyWorkerHealthController(
+      dataSource(jest.fn().mockResolvedValue([])),
+      runtime as unknown as AgencyKafkaRuntime,
+      dlq as unknown as AgencyDlqStore,
+      {
+        enabled: true,
+        maxAttempts: 3,
+        operatorToken: 'agency-operator-token-at-least-32-characters',
+      },
+    );
+
+    await expect(controller.ready()).resolves.toMatchObject({
+      info: { quarantine: { status: 'up', count: 2 } },
+    });
+  });
+
+  it('fails readiness safely when quarantine storage is unavailable', async () => {
+    dlq.countQuarantined.mockRejectedValueOnce(new Error('secret SQL'));
+    const controller = new AgencyWorkerHealthController(
+      dataSource(jest.fn().mockResolvedValue([])),
+      runtime as unknown as AgencyKafkaRuntime,
+      dlq as unknown as AgencyDlqStore,
+      {
+        enabled: true,
+        maxAttempts: 3,
+        operatorToken: 'agency-operator-token-at-least-32-characters',
+      },
+    );
+
+    await expect(controller.ready()).rejects.toMatchObject({
+      response: {
+        status: 'error',
+        service: 'blujet-agency-projection-worker',
+        error: {
+          database: { status: 'up' },
+          consumer: { status: 'up', state: 'running' },
+          quarantine: { status: 'down' },
         },
       },
     });
