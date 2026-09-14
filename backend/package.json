@@ -56,6 +56,8 @@
     "database:provision-inventory-reader:prod": "node dist/database/provision-inventory-reader-role.js",
     "database:provision-ops-admin-reader:prod": "node dist/database/provision-ops-admin-reader-role.js",
     "database:provision-ops-admin-projection-runtime:prod": "node dist/database/provision-ops-admin-projection-runtime-role.js",
+    "database:provision-ops-admin-projection-reader:prod": "node dist/database/provision-ops-admin-projection-reader-role.js",
+    "database:transfer-ops-admin-projection-baseline:prod": "node dist/database/transfer-ops-admin-projection-baseline.js",
     "database:reconcile-ops-admin-projection:prod": "node dist/database/report-ops-admin-projection-reconciliation.js",
     "data:audit:prod": "node dist/database/production-data-reset.js",
     "data:reset:prod": "node dist/database/production-data-reset.js --execute-reset",

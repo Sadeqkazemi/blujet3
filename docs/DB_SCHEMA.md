@@ -336,6 +336,21 @@ ordered projection upsert, baseline replay, reconciliation and reader cutover
 remain separate expand-only work. No data copy, dual-write or deployment is
 performed.
 
+## Ops/Admin projection baseline tooling
+
+No new business table. The offline baseline copies Core `ops.cartable_tasks`
+into the dedicated database `ops.cartable_tasks` using
+`id`, `assigneeId`, `category`, `sourceType`, `sourceId`, `status`,
+`resolvedAt`, `readAt`, `createdAt`, `taskVersion` (from Core `version`),
+and NULL `auditId`/`fingerprint`. Content columns stay on Core. Control tables
+are not copied.
+
+Role `blujet_ops_admin_projection_reader` is a non-owner LOGIN on that
+isolated database with default-read-only and column-scoped SELECT matching the
+internal cartable HTTP queries. It has no writer privileges, no control-table
+access and no Core CONNECT
+(`docs/features/microservices-phase-6-ops-admin-baseline-tooling.md`).
+
 ## Ops/Admin projection runtime role
 
 No migration or business-table change. Role `blujet_ops_admin_projection_runtime`
