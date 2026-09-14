@@ -1388,6 +1388,7 @@ jobs:
             if (JSON.stringify(tables.rows) !== JSON.stringify([
               { table_name: 'cartable_projection_event_receipts' },
               { table_name: 'cartable_tasks' },
+              { table_name: 'kafka_consumer_checkpoints' },
             ])) process.exit(1);
             const columns = await client.query(
               `SELECT column_name FROM information_schema.columns
