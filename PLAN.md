@@ -1,5 +1,17 @@
 # PLAN.md — blujet roadmap & progress
 
+## Agency shared-topic routing (2026-09-14)
+
+- [x] Freeze the foreign-domain routing, checkpoint-before-ACK and fail-closed
+  Agency boundary before implementation.
+- [x] Route approved non-Agency v1 deliveries to checkpoint-only handling.
+- [x] Reject malformed, metadata-mismatched and cross-labeled deliveries without
+  checkpoint, projection or ACK.
+- [ ] Prove the routing against unit and real PostgreSQL projection tests.
+- [x] Pass Agency lint, typecheck, build and OpenAPI stability checks.
+- [ ] Obtain real PostgreSQL CI evidence and present the diff for explicit
+  approval. Do not activate, cut over or deploy.
+
 ## Agency physical projection baseline tooling (2026-09-14)
 
 - [x] Freeze the exact three-table, Core-source and empty-target transfer

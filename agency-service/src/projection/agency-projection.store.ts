@@ -140,6 +140,12 @@ export class AgencyProjectionStore {
     });
   }
 
+  checkpointIgnoredDelivery(delivery: AgencyEventDelivery): Promise<void> {
+    return this.dataSource.transaction('READ COMMITTED', (manager) =>
+      this.saveCheckpoint(manager, delivery),
+    );
+  }
+
   async getCheckpointState(
     consumerGroup: string,
     topic: string,

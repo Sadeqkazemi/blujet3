@@ -1,5 +1,22 @@
 # BluJet Agency — read boundary and optional invoice compatibility
 
+## Shared canonical topic routing (not activated)
+
+The worker owns only `core-agency` events but may consume the shared
+`blujet.events.v1` topic. Routing-valid v1 deliveries from the currently
+approved `core-commerce`, `core-loyalty` and `core-ops` producers advance only
+the Agency consumer checkpoint and are then acknowledged; they never invoke an
+Agency projection or create Agency receipt/DLQ state. Legacy deliveries without
+the schema header are admitted only while
+`AGENCY_EVENT_SCHEMA_HEADER_REQUIRED=false`.
+
+Unknown producers, malformed envelopes, transport metadata mismatches,
+cross-labeled schemas and invalid `core-agency` payloads remain fail-closed and
+unacknowledged. The checkpoint transaction commits before Kafka ACK. This makes
+shared-topic baseline catch-up possible but does not activate the worker or
+authorize read cutover. See
+`docs/features/microservices-phase-6-agency-shared-topic-routing.md`.
+
 ## Standalone projection worker (not activated)
 
 `npm run start:worker:prod` starts the dedicated Kafka projection process after
