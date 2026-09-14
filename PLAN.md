@@ -1,5 +1,23 @@
 # PLAN.md — blujet roadmap & progress
 
+## Kafka consumer ACL tests (2026-09-14)
+
+- [x] Freeze the isolated consumer identity, exact-topic/group Read grants and
+  fail-closed denial before implementation.
+- [x] Prove an authenticated TLS/SCRAM consumer cannot read or join a group
+  without ACLs.
+- [x] Prove only literal topic Read plus literal group Read permits consumption.
+- [x] Prove the same consumer cannot read another topic or join another group.
+- [x] Keep secrets and topic payloads out of assertion failures; cleanup only
+  the disposable broker credential files.
+- [x] Obtain CI evidence and present the diff for explicit approval. Do not
+  change production ACLs, activate flags or deploy.
+
+Evidence: the CI-blocking Kafka 3.9.1 broker suite, Backend, eight E2E shards,
+CodeQL and CI gate pass. Local Kafka workflow contract tests 4/4, scoped ESLint,
+typecheck, production build, diff hygiene and OpenAPI stability also pass. No
+production ACL, consumer flag or deployment was changed.
+
 ## Ops/Admin Kafka projection worker (2026-09-14)
 
 - [x] Freeze the standalone, projection-database-only, default-off boundary

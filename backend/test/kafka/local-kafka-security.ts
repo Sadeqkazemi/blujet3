@@ -12,6 +12,8 @@ export class LocalKafkaSecurity {
   readonly password = randomBytes(32).toString('hex');
   readonly publisherUsername = `publisher-${randomBytes(8).toString('hex')}`;
   readonly publisherPassword = randomBytes(32).toString('hex');
+  readonly consumerUsername = `consumer-${randomBytes(8).toString('hex')}`;
+  readonly consumerPassword = randomBytes(32).toString('hex');
   private readonly storePassword = randomBytes(32).toString('hex');
   ca = '';
 
@@ -98,6 +100,7 @@ export class LocalKafkaSecurity {
     return [
       { username: this.username, password: this.password },
       { username: this.publisherUsername, password: this.publisherPassword },
+      { username: this.consumerUsername, password: this.consumerPassword },
     ].flatMap(({ username, password }) =>
       ['SCRAM-SHA-256', 'SCRAM-SHA-512'].flatMap((mechanism) => [
         '--add-scram',
