@@ -304,7 +304,7 @@ export async function provisionIndependentDomainRuntimeRole(
       UNION ALL
       SELECT 1 FROM pg_database d, role_state r WHERE d.datdba = r.oid
     ), domain_relations AS (
-      SELECT c.oid, c.relkind
+      SELECT c.oid, c.relkind, c.relname
       FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname = '${contract.domain}' AND c.relkind IN ('r', 'p', 'S')
     ), foreign_relations AS (

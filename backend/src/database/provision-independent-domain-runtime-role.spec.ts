@@ -128,6 +128,8 @@ describe('independent domain runtime role provisioner', () => {
         expect(sql).toContain(
           'GRANT SELECT ("userId", "licenseNo", "managerName"',
         );
+        expect(sql).toContain('SELECT c.oid, c.relkind, c.relname');
+        expect(sql).toContain('allowed.table_name = relation.relname');
         expect(sql).toContain(
           'ON "agency"."agency_credit_requests" TO "blujet_agency_runtime"',
         );
