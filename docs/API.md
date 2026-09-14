@@ -194,6 +194,17 @@ lifecycle, credentials, subscription, checkpoint persistence, DLQ, baseline
 replay, reader cutover and deployment remain disabled
 (`docs/features/microservices-phase-6-ops-admin-kafka-ack-adapter.md`).
 
+## Ops/Admin projection runtime role
+
+No public or internal HTTP route changes. An env-driven, idempotent provisioner
+creates lujet_ops_admin_projection_runtime on the independent Ops/Admin
+database only. The role may CONNECT, use schema ops, SELECT/INSERT/UPDATE
+ops.cartable_tasks and ops.kafka_consumer_checkpoints, and SELECT/INSERT
+ops.cartable_projection_event_receipts. It has no Core access, no DDL, no
+receipt UPDATE, no DELETE and no sequence privileges. Worker activation and
+read cutover remain separate
+(docs/features/microservices-phase-6-ops-admin-projection-runtime-role.md).
+
 ## Ops/Admin ordered projection consumer and reconciliation
 
 No public or internal HTTP route changes. The dedicated Ops/Admin database can

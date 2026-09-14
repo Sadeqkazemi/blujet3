@@ -336,6 +336,17 @@ ordered projection upsert, baseline replay, reconciliation and reader cutover
 remain separate expand-only work. No data copy, dual-write or deployment is
 performed.
 
+## Ops/Admin projection runtime role
+
+No migration or business-table change. Role lujet_ops_admin_projection_runtime
+is a non-owner LOGIN on the dedicated Ops/Admin database. After the checkpoint
+table exists, it receives only CONNECT, ops USAGE, SELECT/INSERT/UPDATE on
+ops.cartable_tasks and ops.kafka_consumer_checkpoints, and SELECT/INSERT on
+ops.cartable_projection_event_receipts. PUBLIC, Core schemas, receipt UPDATE,
+DELETE, TRUNCATE,
+sequences, CREATE and ownership remain revoked
+(docs/features/microservices-phase-6-ops-admin-projection-runtime-role.md).
+
 ## Ops/Admin projection event contract (microservices phase 6)
 
 This contract-only slice makes no schema change. Future
