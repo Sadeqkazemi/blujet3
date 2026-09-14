@@ -10,12 +10,12 @@
   durable checkpoint transaction boundaries.
 - [x] Add a token-protected, bounded operator API and sanitized readiness
   evidence.
-- [ ] Obtain CI PostgreSQL evidence for rollback, idempotency, ACK-gap handling,
+- [x] Obtain CI PostgreSQL evidence for rollback, idempotency, ACK-gap handling,
   retry/skip recovery and exact runtime-role permissions. The focused real-DB
-  tests and four-stage compiled rollback job are included in this slice.
+  tests and four-stage compiled rollback job passed in CI run `34875708167`.
 - [x] Pass all 230 Backend unit suites (1,371 tests), full read-only lint,
   typecheck, build, OpenAPI stability and diff hygiene checks locally.
-- [ ] Present the completed diff for explicit approval before commit/push/merge.
+- [x] Present the completed diff and receive explicit approval before merge.
   Do not activate the worker, cut over reads or deploy.
 
 ## Ops/Admin projection runtime role (2026-09-14)

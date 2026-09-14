@@ -58,10 +58,11 @@ Allowed reason codes are `TRANSIENT_DEPENDENCY_RECOVERED`,
   `ops-admin-kafka.runtime.spec.ts`).
 - [x] Exact restricted runtime grant SQL for the new control table
   (`provision-ops-admin-projection-runtime-role.spec.ts`).
-- [ ] Run the authored real-PostgreSQL retry/skip, fingerprint, migration
+- [x] Run the authored real-PostgreSQL retry/skip, fingerprint, migration
   rollback and allow/deny proofs in CI
   (`ops-admin-projection-consumer.e2e-spec.ts`,
-  `ops-admin-projection-runtime-role.e2e-spec.ts`).
+  `ops-admin-projection-runtime-role.e2e-spec.ts`; run `34875708167`).
 - [x] All 230 Backend unit suites (1,371 tests), full read-only lint, typecheck,
   build, unchanged public OpenAPI and diff-hygiene checks pass locally.
-- [ ] Owner review before commit/push/merge. No activation, cutover or deploy.
+- [x] Owner explicitly approved commit/push/merge. No activation, cutover or
+  deploy.
