@@ -147,6 +147,12 @@ export class LoyaltyProjectionStore {
     });
   }
 
+  checkpointIgnoredDelivery(delivery: LoyaltyEventDelivery): Promise<void> {
+    return this.dataSource.transaction('READ COMMITTED', (manager) =>
+      this.saveCheckpoint(manager, delivery),
+    );
+  }
+
   async getCheckpointState(
     consumerGroup: string,
     topic: string,

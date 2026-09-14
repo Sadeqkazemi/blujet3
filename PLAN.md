@@ -1,5 +1,22 @@
 # PLAN.md — blujet roadmap & progress
 
+## Loyalty shared-topic routing (2026-09-14)
+
+- [x] Freeze the foreign-domain routing, checkpoint-before-ACK and fail-closed
+  Loyalty boundary before implementation.
+- [x] Route approved non-Loyalty v1 deliveries to checkpoint-only handling.
+- [x] Reject malformed, metadata-mismatched and cross-labeled deliveries without
+  checkpoint, projection or ACK.
+- [x] Prove the routing against unit and real PostgreSQL projection tests.
+- [x] Pass Loyalty lint, typecheck, build and OpenAPI stability checks.
+- [ ] Obtain CI evidence and present the diff for explicit approval. Do not
+  activate, cut over or deploy.
+
+Local evidence: 145 Loyalty unit tests and 11 real-PostgreSQL projection tests
+pass, including durable foreign-domain checkpointing with zero receipt/slot/
+failure rows. Loyalty lint, typecheck and production build pass. This package
+has no openapi:export script; docs/openapi.json is unchanged.
+
 ## Agency shared-topic routing (2026-09-14)
 
 - [x] Freeze the foreign-domain routing, checkpoint-before-ACK and fail-closed

@@ -1,5 +1,16 @@
 # DB_SCHEMA.md — blujet data model
 
+## Loyalty shared-topic checkpoint routing
+
+No migration or business-table change. For a canonical v1 event whose producer
+is not core-loyalty, the Loyalty worker writes only the existing
+loyalty.kafka_consumer_checkpoints row in a local transaction. The monotonic
+
+extOffset/highWatermark update commits before Kafka acknowledgement. It
+does not write loyalty_projection_event_receipts, loyalty_projection_slots,
+kafka_processing_failures or a Loyalty business projection. Invalid or
+cross-labeled deliveries write no checkpoint and receive no acknowledgement.
+
 ## Agency shared-topic checkpoint routing
 
 No migration or business-table change. For a canonical v1 event whose producer
