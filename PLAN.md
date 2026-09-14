@@ -1,5 +1,25 @@
 # PLAN.md — blujet roadmap & progress
 
+## Kafka consumer ACL tests (2026-09-14)
+
+- [x] Freeze the isolated consumer identity, exact-topic/group Read grants and
+  fail-closed denial before implementation.
+- [x] Prove an authenticated TLS/SCRAM consumer cannot read or join a group
+  without ACLs.
+- [x] Prove only literal topic Read plus literal group Read permits consumption.
+- [x] Prove the same consumer cannot read another topic or join another group.
+- [x] Keep secrets and topic payloads out of assertion failures; cleanup only
+  the disposable broker credential files.
+- [ ] Obtain CI evidence and present the diff for explicit approval. Do not
+  change production ACLs, activate flags or deploy.
+
+Local evidence: Kafka CI workflow contract tests 4/4 pass. Backend ESLint on the
+touched Kafka fixture files, typecheck and production build pass. Real
+
+pm run test:kafka was not executed here because this host has no Java 21
+runtime and the Docker engine is not running; the suite remains opt-in via
+KAFKA_TEST_JAVA/KAFKA_TEST_HOME and CI-blocking on backend-kafka.
+
 ## Loyalty shared-topic routing (2026-09-14)
 
 - [x] Freeze the foreign-domain routing, checkpoint-before-ACK and fail-closed

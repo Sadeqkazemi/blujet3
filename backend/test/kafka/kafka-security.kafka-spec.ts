@@ -26,10 +26,13 @@ describe('real Kafka TLS/SCRAM and topic authorization boundary', () => {
   let admin: Admin;
   let consumer: Consumer;
   let restrictedAdmin: Admin;
+  let restrictedConsumerAdmin: Admin;
   const publishers: KafkaEventPublisher[] = [];
   const env = { ...process.env };
   const topic = `tls-test-${randomUUID()}`;
   const otherTopic = `other-test-${randomUUID()}`;
+  const consumerGroup = `acl-consumer-${randomUUID()}`;
+  const otherGroup = `acl-other-${randomUUID()}`;
   const received = new Map<
     string,
     { value: string; key: string; correlationId: string; version: string }
@@ -80,6 +83,86 @@ describe('real Kafka TLS/SCRAM and topic authorization boundary', () => {
       KAFKA_SASL_USERNAME: broker.security.publisherUsername,
       KAFKA_SASL_PASSWORD: broker.security.publisherPassword,
     };
+  }
+
+  function consumerCredentials(): Record<string, string> {
+    if (!broker.security) throw new Error('Missing secure fixture');
+    return {
+      KAFKA_SASL_USERNAME: broker.security.consumerUsername,
+      KAFKA_SASL_PASSWORD: broker.security.consumerPassword,
+    };
+  }
+
+  type RestrictedConsumeResult = 'denied' | 'received' | 'timeout';
+
+  async function consumeResult(
+    target: string,
+    groupId: string,
+    expectEventId?: string,
+  ): Promise<RestrictedConsumeResult> {
+    configure(consumerCredentials());
+    const config = kafkaEventsConfig();
+    if (!config.enabled) throw new Error('Expected enabled Kafka');
+    const instance = new Kafka({
+      ...config.client,
+      logLevel: logLevel.NOTHING,
+      retry: { retries: 0 },
+    }).consumer({
+      groupId,
+      allowAutoTopicCreation: false,
+    });
+    let settled: RestrictedConsumeResult | undefined;
+    const done = new Promise<RestrictedConsumeResult>((resolve) => {
+      const settle = (result: RestrictedConsumeResult) => {
+        if (settled !== undefined) return;
+        settled = result;
+        resolve(result);
+      };
+      instance.on(instance.events.CRASH, () => settle('denied'));
+      void instance
+        .connect()
+        .then(() => instance.subscribe({ topic: target, fromBeginning: true }))
+        .then(() =>
+          instance.run({
+            autoCommit: false,
+            eachMessage: ({ message }) => {
+              const eventId = message.headers?.['event-id']?.toString() ?? '';
+              if (expectEventId !== undefined && eventId === expectEventId)
+                settle('received');
+              return Promise.resolve();
+            },
+          }),
+        )
+        .catch(() => settle('denied'));
+      void delay(expectEventId === undefined ? 8000 : 20000).then(() =>
+        settle('timeout'),
+      );
+    });
+    const result = await done;
+    try {
+      await instance.disconnect();
+    } catch {
+      // Disconnect errors can include broker details; ignore after settlement.
+    }
+    return result;
+  }
+
+  async function rejectConsume(target: string, groupId: string): Promise<void> {
+    const result = await consumeResult(target, groupId);
+    const failure = new Error('Kafka consumption failed');
+    expect(result === 'denied').toBe(true);
+    expect(
+      failure instanceof Error &&
+        failure.message === 'Kafka consumption failed' &&
+        failure.cause === undefined,
+    ).toBe(true);
+    const printed = JSON.stringify(failure);
+    expect(
+      printed.includes(broker.security!.consumerPassword) ||
+        printed.includes(broker.security!.consumerUsername) ||
+        printed.includes('"amountIrr"') ||
+        printed.includes(target),
+    ).toBe(false);
   }
 
   async function rejectPublish(target: string): Promise<void> {
@@ -164,6 +247,15 @@ describe('real Kafka TLS/SCRAM and topic authorization boundary', () => {
     }).admin();
     // Valid SCRAM credentials authenticate even when no resource ACL is granted.
     await restrictedAdmin.connect();
+    configure(consumerCredentials());
+    const restrictedConsumerConfig = kafkaEventsConfig();
+    if (!restrictedConsumerConfig.enabled)
+      throw new Error('Expected enabled Kafka');
+    restrictedConsumerAdmin = new Kafka({
+      ...restrictedConsumerConfig.client,
+      logLevel: logLevel.NOTHING,
+    }).admin();
+    await restrictedConsumerAdmin.connect();
   });
 
   afterAll(async () => {
@@ -173,6 +265,7 @@ describe('real Kafka TLS/SCRAM and topic authorization boundary', () => {
         ...publishers.map((instance) => () => instance.disconnect()),
         () => consumer?.disconnect(),
         () => restrictedAdmin?.disconnect(),
+        () => restrictedConsumerAdmin?.disconnect(),
         () => admin?.disconnect(),
         () => broker?.stop(),
         () => broker?.security?.cleanup(),
@@ -299,5 +392,71 @@ describe('real Kafka TLS/SCRAM and topic authorization boundary', () => {
   it('denies the same publisher access to another existing topic', async () => {
     await rejectPublish(otherTopic);
     await deliver(publisher(restrictedCredentials()));
+  });
+
+  it('denies an authenticated consumer with no resource grants', async () => {
+    await rejectConsume(topic, consumerGroup);
+    await deliver(publisher());
+  });
+
+  it('consumes exact events after granting only literal-topic Read and group Read', async () => {
+    const principal = `User:${broker.security!.consumerUsername}`;
+    expect(
+      await admin.createAcls({
+        acl: [
+          {
+            resourceType: AclResourceTypes.TOPIC,
+            resourceName: topic,
+            operation: AclOperationTypes.READ,
+          },
+          {
+            resourceType: AclResourceTypes.GROUP,
+            resourceName: consumerGroup,
+            operation: AclOperationTypes.READ,
+          },
+        ].map((entry) => ({
+          ...entry,
+          principal,
+          host: '*',
+          permissionType: AclPermissionTypes.ALLOW,
+          resourcePatternType: ResourcePatternTypes.LITERAL,
+        })),
+      }),
+    ).toBe(true);
+    const deadline = Date.now() + 10000;
+    let visible = false;
+    while (!visible && Date.now() < deadline) {
+      visible = await restrictedConsumerAdmin
+        .fetchTopicMetadata({ topics: [topic] })
+        .then(
+          () => true,
+          () => false,
+        );
+      if (!visible) await delay(100);
+    }
+    expect(visible).toBe(true);
+    const event = makeEvent();
+    expect(await publisher().publish(event)).toBe(true);
+    expect(
+      (await consumeResult(topic, consumerGroup, event.eventId)) === 'received',
+    ).toBe(true);
+  });
+
+  it('denies the same consumer access to another existing topic', async () => {
+    await rejectConsume(otherTopic, consumerGroup);
+    const event = makeEvent();
+    expect(await publisher().publish(event)).toBe(true);
+    expect(
+      (await consumeResult(topic, consumerGroup, event.eventId)) === 'received',
+    ).toBe(true);
+  });
+
+  it('denies the same consumer joining another consumer group', async () => {
+    await rejectConsume(topic, otherGroup);
+    const event = makeEvent();
+    expect(await publisher().publish(event)).toBe(true);
+    expect(
+      (await consumeResult(topic, consumerGroup, event.eventId)) === 'received',
+    ).toBe(true);
   });
 });
