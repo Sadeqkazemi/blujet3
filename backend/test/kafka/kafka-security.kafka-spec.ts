@@ -112,10 +112,12 @@ describe('real Kafka TLS/SCRAM and topic authorization boundary', () => {
       allowAutoTopicCreation: false,
     });
     let settled: RestrictedConsumeResult | undefined;
+    let timeout: NodeJS.Timeout | undefined;
     const done = new Promise<RestrictedConsumeResult>((resolve) => {
       const settle = (result: RestrictedConsumeResult) => {
         if (settled !== undefined) return;
         settled = result;
+        if (timeout) clearTimeout(timeout);
         resolve(result);
       };
       instance.on(instance.events.CRASH, () => settle('denied'));
@@ -134,8 +136,9 @@ describe('real Kafka TLS/SCRAM and topic authorization boundary', () => {
           }),
         )
         .catch(() => settle('denied'));
-      void delay(expectEventId === undefined ? 8000 : 20000).then(() =>
-        settle('timeout'),
+      timeout = setTimeout(
+        () => settle('timeout'),
+        expectEventId === undefined ? 8000 : 20000,
       );
     });
     const result = await done;
@@ -149,14 +152,8 @@ describe('real Kafka TLS/SCRAM and topic authorization boundary', () => {
 
   async function rejectConsume(target: string, groupId: string): Promise<void> {
     const result = await consumeResult(target, groupId);
-    const failure = new Error('Kafka consumption failed');
-    expect(result === 'denied').toBe(true);
-    expect(
-      failure instanceof Error &&
-        failure.message === 'Kafka consumption failed' &&
-        failure.cause === undefined,
-    ).toBe(true);
-    const printed = JSON.stringify(failure);
+    expect(result).toBe('denied');
+    const printed = JSON.stringify({ result });
     expect(
       printed.includes(broker.security!.consumerPassword) ||
         printed.includes(broker.security!.consumerUsername) ||

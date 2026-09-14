@@ -19,6 +19,7 @@
     "start:order-booking-worker": "node dist/order-booking-worker.main.js",
     "start:inventory-worker": "node dist/inventory-worker.main.js",
     "start:ops-admin-worker": "node dist/ops-admin-worker.main.js",
+    "start:ops-admin-projection-worker": "node dist/ops-admin-projection-worker.main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "typecheck": "tsc --noEmit -p tsconfig.build.json",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",

@@ -1,5 +1,14 @@
 # DB_SCHEMA.md — blujet data model
 
+## Ops/Admin Kafka projection worker
+
+No migration, table or ownership change. The standalone Kafka worker uses only
+the existing `OPS_ADMIN_PROJECTION_DATABASE_URL` DataSource and its existing
+`ops.cartable_tasks` and `ops.cartable_projection_event_receipts` tables. It
+does not receive a Core database URL and introduces no cross-domain join,
+dual-write, baseline copy or read cutover. Consumer-group checkpoint and DLQ
+tables remain deferred to separately reviewed expand-only migrations.
+
 ## Loyalty shared-topic checkpoint routing
 
 No migration or business-table change. For a canonical v1 event whose producer
@@ -635,7 +644,8 @@ their uniquely identified fixture lease in the local `_test` DB. No migration,
 shared database shutdown or production row changes (`docs/features/kafka-ack-gap.md`).
 
 Consumer-ACL tests modify only disposable Kafka metadata; no PostgreSQL schema,
-application rows or server access grants change (docs/features/kafka-consumer-acl.md).
+application rows or server access grants change
+(`docs/features/kafka-consumer-acl.md`).
 
 Topic-ACL tests modify only disposable Kafka metadata; no PostgreSQL schema,
 application rows or server access grants change (`docs/features/kafka-topic-acl.md`).

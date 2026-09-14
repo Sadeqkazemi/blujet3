@@ -10,15 +10,32 @@
 - [x] Prove the same consumer cannot read another topic or join another group.
 - [x] Keep secrets and topic payloads out of assertion failures; cleanup only
   the disposable broker credential files.
-- [ ] Obtain CI evidence and present the diff for explicit approval. Do not
+- [x] Obtain CI evidence and present the diff for explicit approval. Do not
   change production ACLs, activate flags or deploy.
 
-Local evidence: Kafka CI workflow contract tests 4/4 pass. Backend ESLint on the
-touched Kafka fixture files, typecheck and production build pass. Real
+Evidence: the CI-blocking Kafka 3.9.1 broker suite, Backend, eight E2E shards,
+CodeQL and CI gate pass. Local Kafka workflow contract tests 4/4, scoped ESLint,
+typecheck, production build, diff hygiene and OpenAPI stability also pass. No
+production ACL, consumer flag or deployment was changed.
 
-pm run test:kafka was not executed here because this host has no Java 21
-runtime and the Docker engine is not running; the suite remains opt-in via
-KAFKA_TEST_JAVA/KAFKA_TEST_HOME and CI-blocking on backend-kafka.
+## Ops/Admin Kafka projection worker (2026-09-14)
+
+- [x] Freeze the standalone, projection-database-only, default-off boundary
+  before implementation.
+- [x] Add strict Ops/Admin consumer configuration and a sanitized KafkaJS
+  lifecycle around the existing manual-ack handler.
+- [x] Add isolated liveness/readiness probes without exposing broker, offset,
+  payload or database details.
+- [x] Prove disabled, startup, processing-failure and idempotent shutdown paths.
+- [x] Pass scoped tests, lint, typecheck, build and OpenAPI stability checks.
+- [x] Present the complete diff for explicit approval before commit/push/merge.
+  Do not activate, cut over or deploy.
+
+Evidence: all 224 Backend unit suites (1,329 tests), the six focused Ops/Admin
+suites (62 tests) and four real-PostgreSQL projection tests pass. Scoped lint,
+typecheck, production build, diff hygiene and OpenAPI stability also pass. The
+PostgreSQL proof used a fresh isolated test database, which was removed after
+the run.
 
 ## Loyalty shared-topic routing (2026-09-14)
 
