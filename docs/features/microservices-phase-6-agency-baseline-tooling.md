@@ -28,8 +28,9 @@ reconciliation and separately approved UAT evidence.
 - [x] `independent-domain-database.e2e-spec.ts` proves a real Core-to-Agency
       PostgreSQL baseline transfer, checksum parity, replay rejection, own-domain
       SELECT, denied DML/DDL and denied cross-domain access.
-- [ ] CI migrates a complete Core source and isolated Agency target, runs the
-  boundary proof, and verifies standalone Agency migration rollback/restore.
+- [x] CI run `34816467971` migrates a complete Core source and isolated Agency
+  target, runs the boundary proof, and verifies standalone Agency migration
+  rollback/restore on PR #141 head `a4045f0`.
 - [x] `docs/RUNBOOK.md` separates baseline creation, event delta catch-up,
       writer/reader credentials and the later read cutover/rollback gate.
 
