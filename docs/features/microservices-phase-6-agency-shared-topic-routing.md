@@ -22,16 +22,20 @@ remains the sole Agency business writer.
 
 ## Acceptance evidence
 
-Review tracking: PR #142 carries implementation commit `b0eaa08`; CI evidence
-must be recorded against the final PR head before merge approval is requested.
+Review tracking: PR #142 carries implementation commit `b0eaa08`. Candidate
+head `155f8aa` passed all 31 CI jobs in
+[CI run 34831145581](https://github.com/Sadeqkazemi/blujet3/actions/runs/34831145581)
+and both CodeQL analyses in
+[CodeQL run 34831145536](https://github.com/Sadeqkazemi/blujet3/actions/runs/34831145536).
+The current PR head must still be green when merge approval is requested.
 
 - [x] `agency-kafka.handler.spec.ts` proves an approved non-Agency delivery is
       checkpointed and acknowledged without projection or DLQ failure state.
 - [x] `agency-kafka.handler.spec.ts` proves malformed, metadata-mismatched and
       cross-labeled deliveries remain unacknowledged and fail closed.
-- [ ] `projection.integration-spec.ts` proves ignored delivery checkpointing is
+- [x] `projection.integration-spec.ts` proves ignored delivery checkpointing is
       durable and creates no projection receipt or aggregate slot.
 - [x] All 130 Agency unit tests, lint, typecheck and production build pass; the
       exported OpenAPI SHA-256 remains unchanged.
-- [ ] Present the completed diff for explicit approval before merge. Do not
+- [x] Present the completed diff for explicit approval before merge. Do not
       activate the worker, cut over reads or deploy.
