@@ -266,6 +266,31 @@ describe('Ops/Admin projection runtime role (PostgreSQL)', () => {
       `SELECT "nextOffset" FROM ops.kafka_consumer_checkpoints`,
     );
     expect(checkpoints.rows[0]?.nextOffset).toBe('2');
+
+    await runtime.query(`INSERT INTO ops.kafka_processing_failures
+      ("id", "consumerGroup", "topic", "partition", "offset", "fingerprint",
+       "stage", "attempts", "totalAttempts", "status", "firstFailedAt", "lastFailedAt")
+      VALUES (
+        '22222222-2222-2222-2222-222222222222',
+        'ops-admin-projection',
+        'blujet.events.v1',
+        0,
+        1,
+        'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+        'TRANSPORT',
+        1,
+        1,
+        'RETRYING',
+        now(),
+        now()
+      )`);
+    await runtime.query(`UPDATE ops.kafka_processing_failures
+      SET "status" = 'QUARANTINED', "attempts" = 3, "totalAttempts" = 3
+      WHERE "id" = '22222222-2222-2222-2222-222222222222'`);
+    const failures = await runtime.query(
+      `SELECT "status", "attempts" FROM ops.kafka_processing_failures`,
+    );
+    expect(failures.rows).toEqual([{ status: 'QUARANTINED', attempts: 3 }]);
   });
 
   it('denies DELETE, TRUNCATE, sequences, DDL, foreign schemas and Core CONNECT', async () => {
@@ -285,6 +310,10 @@ describe('Ops/Admin projection runtime role (PostgreSQL)', () => {
       runtime.query(`DELETE FROM ops.kafka_consumer_checkpoints WHERE false`),
     );
     await deny(() => runtime.query(`TRUNCATE ops.kafka_consumer_checkpoints`));
+    await deny(() =>
+      runtime.query(`DELETE FROM ops.kafka_processing_failures WHERE false`),
+    );
+    await deny(() => runtime.query(`TRUNCATE ops.kafka_processing_failures`));
     await deny(() =>
       runtime.query(`INSERT INTO public.secrets (token) VALUES ('x')`),
     );

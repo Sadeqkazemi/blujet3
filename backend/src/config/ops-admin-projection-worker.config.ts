@@ -1,4 +1,5 @@
 import type { DataSourceOptions } from 'typeorm';
+import { opsAdminDlqConfig } from './ops-admin-dlq.config';
 import { opsAdminKafkaConsumerConfig } from './ops-admin-kafka-consumer.config';
 import { opsAdminProjectionDataSourceOptions } from '../database/ops-admin-projection-data-source.options';
 
@@ -49,6 +50,7 @@ export function validateOpsAdminProjectionWorkerEnv(
   if (!kafka.enabled) {
     throw new Error('OPS_ADMIN_KAFKA_CONSUMER_ENABLED must be true');
   }
+  opsAdminDlqConfig(env);
   return env;
 }
 

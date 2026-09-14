@@ -1,5 +1,37 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Ops/Admin poison-message quarantine
+
+No public `/api/v1` route changes. When `OPS_ADMIN_DLQ_ENABLED=true`, the
+standalone projection worker exposes these internal operator routes:
+
+| Method | Path | Behavior |
+|---|---|---|
+| GET | `/internal/v1/ops-admin/dlq?status=QUARANTINED&limit=50` | Returns at most 100 sanitized failure records. |
+| POST | `/internal/v1/ops-admin/dlq/:id/retry` | Approves a quarantined delivery for another bounded processing cycle. |
+| POST | `/internal/v1/ops-admin/dlq/:id/skip` | Approves a quarantined delivery to be skipped on its next source delivery. |
+
+Every route requires the independent `OPS_ADMIN_DLQ_OPERATOR_TOKEN` in
+`X-Internal-Token`. Decision bodies contain `{ operatorId, reason }`; the
+operator identifier is format-bounded and `reason` is one fixed allowlisted
+code, so free text and PII cannot enter the registry. Both values are retained
+only as decision audit metadata. Allowed reason codes are
+`TRANSIENT_DEPENDENCY_RECOVERED`, `PROJECTION_FIX_DEPLOYED`,
+`SCHEMA_COMPATIBILITY_CONFIRMED`, `MESSAGE_REJECTED_AFTER_REVIEW` and
+`DUPLICATE_DELIVERY_CONFIRMED`.
+Responses expose the registry UUID, SHA-256 fingerprint, optional validated
+event UUID, safe failure stage, counters, lifecycle status and UTC timestamps.
+They never expose Kafka topic/group/partition/offset, key, headers, payload,
+task identifiers/content, PII, credentials or raw errors.
+
+Before the configured threshold, failures remain retryable and unacknowledged.
+At the threshold they remain blocked until an operator approves retry or skip.
+An approved skip persists its terminal state and advances the durable local
+checkpoint atomically before Kafka acknowledgement. There is no automatic
+skip. The feature remains disabled by default and does not activate a worker,
+switch a read path or deploy
+(`docs/features/microservices-phase-6-ops-admin-kafka-dlq.md`).
+
 ## Ops/Admin Kafka projection worker
 
 No public `/api/v1` route changes. A new standalone, internal-only Ops/Admin

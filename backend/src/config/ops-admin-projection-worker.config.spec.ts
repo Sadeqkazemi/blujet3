@@ -22,11 +22,27 @@ describe('Ops/Admin projection worker config', () => {
     });
   });
 
+  it('accepts an explicitly configured bounded quarantine', () => {
+    expect(() =>
+      validateOpsAdminProjectionWorkerEnv({
+        ...base,
+        OPS_ADMIN_DLQ_ENABLED: 'true',
+        OPS_ADMIN_DLQ_MAX_ATTEMPTS: '3',
+        OPS_ADMIN_DLQ_OPERATOR_TOKEN: 'x'.repeat(32),
+      }),
+    ).not.toThrow();
+  });
+
   it.each([
     { NODE_ENV: 'staging' },
     { OPS_ADMIN_PROJECTION_DATABASE_URL: '' },
     { OPS_ADMIN_PROJECTION_DATABASE_URL: 'http://localhost/database' },
     { OPS_ADMIN_KAFKA_CONSUMER_ENABLED: 'false' },
+    { OPS_ADMIN_DLQ_ENABLED: 'yes' },
+    {
+      OPS_ADMIN_DLQ_ENABLED: 'true',
+      OPS_ADMIN_DLQ_OPERATOR_TOKEN: 'short',
+    },
     { PORT: '0' },
     { PORT: '65536' },
   ])('rejects incomplete worker setting %j', (invalid) => {

@@ -132,7 +132,7 @@ describe('Ops/Admin projection runtime role provisioner', () => {
     ).resolves.toEqual({
       status: 'PASS',
       role: OPS_ADMIN_PROJECTION_RUNTIME_ROLE,
-      relationCount: 3,
+      relationCount: 4,
     });
     const sql = statements.join('\n');
     expect(sql).toContain(
