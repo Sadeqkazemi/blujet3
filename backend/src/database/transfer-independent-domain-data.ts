@@ -6,6 +6,7 @@ export interface TransferDomainContract {
   domain: IndependentDomain;
   tables: readonly string[];
   sourceControlTables?: readonly string[];
+  sourceCompanionTables?: readonly string[];
   targetControlTables?: readonly string[];
   deferredSelfReference?: {
     table: string;
@@ -103,6 +104,30 @@ const TRANSFER_CONTRACTS: Record<IndependentDomain, TransferDomainContract> = {
       'loyalty_projection_slots',
     ],
   },
+  agency: {
+    domain: 'agency',
+    tables: ['agency_profiles', 'agency_invoices', 'agency_credit_requests'],
+    sourceControlTables: ['agency_projection_audits'],
+    sourceCompanionTables: [
+      'agency_allotments',
+      'agency_api_keys',
+      'agency_credit_lines',
+      'agency_documents',
+      'agency_membership_requests',
+      'agency_messages',
+      'agency_request_otps',
+      'agency_seat_commitments',
+      'agency_seat_request_flights',
+      'agency_seat_requests',
+      'agency_webservice_requests',
+    ],
+    targetControlTables: [
+      'agency_projection_event_receipts',
+      'agency_projection_slots',
+      'kafka_consumer_checkpoints',
+      'kafka_processing_failures',
+    ],
+  },
 };
 
 function identifier(value: string): string {
@@ -116,10 +141,11 @@ export function transferDomainContract(
     value !== 'notify' &&
     value !== 'experience' &&
     value !== 'identity' &&
-    value !== 'loyalty'
+    value !== 'loyalty' &&
+    value !== 'agency'
   ) {
     throw new Error(
-      'DOMAIN_TRANSFER_KIND must be notify, experience, identity or loyalty',
+      'DOMAIN_TRANSFER_KIND must be notify, experience, identity, loyalty or agency',
     );
   }
   return TRANSFER_CONTRACTS[value];
@@ -197,6 +223,7 @@ export function validateDomainTableContract(
   const allowed = new Set([
     ...contract.tables,
     ...(side === 'source' ? (contract.sourceControlTables ?? []) : []),
+    ...(side === 'source' ? (contract.sourceCompanionTables ?? []) : []),
     ...(side === 'target' ? (contract.targetControlTables ?? []) : []),
   ]);
   if (

@@ -23,8 +23,13 @@ case "$domain" in
     database=blujet_loyalty
     owner=blujet_loyalty_owner
     ;;
+  agency)
+    service=agency-db
+    database=blujet_agency
+    owner=blujet_agency_owner
+    ;;
   *)
-    echo 'DOMAIN_DATABASE_KIND must be notify, experience, identity or loyalty' >&2
+    echo 'DOMAIN_DATABASE_KIND must be notify, experience, identity, loyalty or agency' >&2
     exit 1
     ;;
 esac

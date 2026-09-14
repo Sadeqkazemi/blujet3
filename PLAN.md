@@ -1,5 +1,26 @@
 # PLAN.md — blujet roadmap & progress
 
+## Agency physical projection baseline tooling (2026-09-14)
+
+- [x] Freeze the exact three-table, Core-source and empty-target transfer
+  contract before implementation.
+- [x] Add a backup-gated baseline copy with full-row count/two-hash parity and
+  metadata-only output.
+- [x] Provision a column-scoped, SELECT-only Agency HTTP credential with no
+  Core, control-table, write or DDL access.
+- [x] Add an opt-in Agency database/transfer topology and real-PostgreSQL CI
+  proof including standalone migration rollback/restore.
+- [x] Pass local unit, lint, typecheck and build checks.
+- [x] Obtain passing real-PostgreSQL CI evidence and present the completed diff
+  for explicit approval before merge. Do not activate, cut over or deploy.
+
+Local evidence: 1,260 Backend unit tests, 117 Agency tests and 33 focused
+transfer/artifact tests pass; Backend and Agency lint, typecheck and production
+build pass. The five real-database transfer cases are CI-only because this host
+has no Docker or PostgreSQL runtime. PR #141 head `a4045f0` passed all 34 checks;
+CI run `34816467971` includes the real PostgreSQL transfer/isolation and Agency
+standalone migration rollback/restore proofs.
+
 ## Agency poison-message quarantine (2026-09-14)
 
 - [x] Freeze bounded retry, sanitized failure metadata, manual decision and

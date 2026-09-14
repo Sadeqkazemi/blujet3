@@ -20,8 +20,18 @@ describe('independent domain runtime role provisioner', () => {
       role: 'blujet_loyalty_runtime',
       access: 'read',
     });
+    expect(independentDomainContract('agency')).toMatchObject({
+      role: 'blujet_agency_runtime',
+      passwordVariable: 'AGENCY_DATABASE_PASSWORD',
+      access: 'read',
+      readColumns: [
+        expect.objectContaining({ table: 'agency_profiles' }),
+        expect.objectContaining({ table: 'agency_invoices' }),
+        expect.objectContaining({ table: 'agency_credit_requests' }),
+      ],
+    });
     expect(() => independentDomainContract('payments')).toThrow(
-      'must be notify, experience, identity or loyalty',
+      'must be notify, experience, identity, loyalty or agency',
     );
     expect(() =>
       validateIndependentDomainPassword('TEST_PASSWORD', 'short'),
@@ -31,7 +41,7 @@ describe('independent domain runtime role provisioner', () => {
     ).not.toThrow();
   });
 
-  it.each(['notify', 'experience', 'identity', 'loyalty'] as const)(
+  it.each(['notify', 'experience', 'identity', 'loyalty', 'agency'] as const)(
     'creates a restricted %s runtime with no cross-domain or DDL access',
     async (domain) => {
       const statements: string[] = [];
@@ -67,7 +77,12 @@ describe('independent domain runtime role provisioner', () => {
             return Promise.resolve({
               rows: [
                 {
-                  count: domain === 'identity' || domain === 'loyalty' ? 6 : 2,
+                  count:
+                    domain === 'agency'
+                      ? 7
+                      : domain === 'identity' || domain === 'loyalty'
+                        ? 6
+                        : 2,
                 },
               ],
             });
@@ -87,8 +102,13 @@ describe('independent domain runtime role provisioner', () => {
         status: 'PASS',
         domain,
         role: `blujet_${domain}_runtime`,
-        access: domain === 'loyalty' ? 'read' : 'write',
-        relationCount: domain === 'identity' || domain === 'loyalty' ? 6 : 2,
+        access: domain === 'loyalty' || domain === 'agency' ? 'read' : 'write',
+        relationCount:
+          domain === 'agency'
+            ? 7
+            : domain === 'identity' || domain === 'loyalty'
+              ? 6
+              : 2,
       });
       const sql = statements.join('\n');
       expect(sql).toContain(
@@ -103,6 +123,20 @@ describe('independent domain runtime role provisioner', () => {
         expect(sql).not.toContain(
           'GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA "loyalty"',
         );
+      }
+      if (domain === 'agency') {
+        expect(sql).toContain(
+          'GRANT SELECT ("userId", "licenseNo", "managerName"',
+        );
+        expect(sql).toContain('SELECT c.oid, c.relkind, c.relname');
+        expect(sql).toContain('allowed.table_name = relation.relname');
+        expect(sql).toContain(
+          'ON "agency"."agency_credit_requests" TO "blujet_agency_runtime"',
+        );
+        expect(sql).not.toContain(
+          'GRANT SELECT ON ALL TABLES IN SCHEMA "agency"',
+        );
+        expect(sql).not.toContain('GRANT SELECT ("version"');
       }
       expect(sql).not.toContain(`${domain}_runtime_password_2026_09_10`);
       expect(statements.at(-1)).toBe('COMMIT');

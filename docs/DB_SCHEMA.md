@@ -350,6 +350,36 @@ tables and every writer stay in Core until their command, Event, idempotency,
 Saga and reconciliation gates are separately proven. No copy, dual-write,
 cutover or deployment is included.
 
+## Agency projection physical baseline contract (microservices phase 6)
+
+The offline baseline transfer copies only `agency_profiles`,
+`agency_invoices` and `agency_credit_requests`, in parent-before-child order,
+from a read-only repeatable-read Core snapshot into an empty, separately
+migrated Agency database. The source-side command/allotment tables and
+`agency_projection_audits` are validated as known Core companions but are
+never copied. Target projection receipts, slots, Kafka checkpoints and
+sanitized processing failures are likewise control tables and are not part of
+business-row parity.
+
+Apply mode requires a reviewed backup reference and refuses a populated
+target. Every transferred table must match by row count and two
+order-independent 64-bit full-row hashes before commit. Output is metadata
+only and contains no profile fields, invoice/credit values, row identifiers,
+URLs or credentials.
+
+`blujet_agency_runtime` is a non-owner SELECT-only role. It receives only the
+columns used by the three approved Agency read contracts, no source `version`,
+projection control-table access, DML, sequence, DDL, temporary-table,
+membership, replication, RLS-bypass, public-schema or cross-domain privilege.
+The owner credential is limited to migrations and the one-time transfer. The
+Kafka worker requires a separate writable projection credential; neither role
+may access Core.
+
+Baseline parity is not read cutover. Core remains the sole writer and all
+Agency flags stay disabled until ordered delta catch-up, outbox drain and a
+final exact reconciliation pass UAT under separate approval. No dual-write,
+URL switch, Kafka activation or deployment is part of this contract.
+
 ## Agency projection event contract (microservices phase 6)
 
 No database migration or row mutation is introduced. The three existing

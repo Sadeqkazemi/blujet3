@@ -290,6 +290,7 @@ describe('production backend artifacts', () => {
     expect(independentDomainCompose).toContain('experience-db:');
     expect(independentDomainCompose).toContain('identity-db:');
     expect(independentDomainCompose).toContain('loyalty-db:');
+    expect(independentDomainCompose).toContain('agency-db:');
     expect(independentDomainCompose).toContain(
       'profiles: ["independent-domain-db"]',
     );
@@ -310,6 +311,9 @@ describe('production backend artifacts', () => {
     expect(productionEnvExample).toContain('LOYALTY_POSTGRES_PASSWORD=');
     expect(productionEnvExample).toContain('LOYALTY_DATABASE_PASSWORD=');
     expect(productionEnvExample).toContain('LOYALTY_DATABASE_URL=');
+    expect(productionEnvExample).toContain('AGENCY_POSTGRES_PASSWORD=');
+    expect(productionEnvExample).toContain('AGENCY_DATABASE_PASSWORD=');
+    expect(productionEnvExample).toContain('AGENCY_DATABASE_URL=');
     expect(ciWorkflow).toContain('Independent domain database cutover');
     expect(ciWorkflow).toContain('test:e2e:independent-domain-db');
   });

@@ -3,7 +3,7 @@ import { Client } from 'pg';
 import type { RuntimeRoleSqlClient } from './provision-core-runtime-role';
 
 export type IndependentDomain =
-  'notify' | 'experience' | 'identity' | 'loyalty';
+  'notify' | 'experience' | 'identity' | 'loyalty' | 'agency';
 
 type DomainRuntimeAccess = 'read' | 'write';
 
@@ -12,6 +12,10 @@ interface DomainRuntimeContract {
   role: string;
   passwordVariable: string;
   access: DomainRuntimeAccess;
+  readColumns?: ReadonlyArray<{
+    table: string;
+    columns: readonly string[];
+  }>;
 }
 
 const CONTRACTS: Record<IndependentDomain, DomainRuntimeContract> = {
@@ -39,10 +43,67 @@ const CONTRACTS: Record<IndependentDomain, DomainRuntimeContract> = {
     passwordVariable: 'LOYALTY_DATABASE_PASSWORD',
     access: 'read',
   },
+  agency: {
+    domain: 'agency',
+    role: 'blujet_agency_runtime',
+    passwordVariable: 'AGENCY_DATABASE_PASSWORD',
+    access: 'read',
+    readColumns: [
+      {
+        table: 'agency_profiles',
+        columns: [
+          'userId',
+          'licenseNo',
+          'managerName',
+          'phone',
+          'email',
+          'city',
+          'address',
+          'tier',
+          'suspendedAt',
+          'suspendReason',
+          'joinedAt',
+        ],
+      },
+      {
+        table: 'agency_invoices',
+        columns: [
+          'id',
+          'agencyId',
+          'bookingId',
+          'invoiceNo',
+          'issuedById',
+          'issuedAt',
+          'dueAt',
+          'amountIrr',
+          'descriptionFa',
+          'status',
+          'paidAt',
+        ],
+      },
+      {
+        table: 'agency_credit_requests',
+        columns: [
+          'id',
+          'agencyId',
+          'requestedLimitIrr',
+          'note',
+          'status',
+          'decidedById',
+          'decidedAt',
+          'createdAt',
+        ],
+      },
+    ],
+  },
 };
 
 function identifier(value: string): string {
   return `"${value.replaceAll('"', '""')}"`;
+}
+
+function literal(value: string): string {
+  return `'${value.replaceAll("'", "''")}'`;
 }
 
 export function independentDomainContract(
@@ -52,10 +113,11 @@ export function independentDomainContract(
     value !== 'notify' &&
     value !== 'experience' &&
     value !== 'identity' &&
-    value !== 'loyalty'
+    value !== 'loyalty' &&
+    value !== 'agency'
   ) {
     throw new Error(
-      'DOMAIN_DATABASE_KIND must be notify, experience, identity or loyalty',
+      'DOMAIN_DATABASE_KIND must be notify, experience, identity, loyalty or agency',
     );
   }
   return CONTRACTS[value];
@@ -162,6 +224,13 @@ export async function provisionIndependentDomainRuntimeRole(
       await client.query(
         `ALTER DEFAULT PRIVILEGES IN SCHEMA ${schema} GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO ${role}`,
       );
+    } else if (contract.readColumns) {
+      for (const table of contract.readColumns) {
+        const columns = table.columns.map(identifier).join(', ');
+        await client.query(
+          `GRANT SELECT (${columns}) ON ${schema}.${identifier(table.table)} TO ${role}`,
+        );
+      }
     } else {
       await client.query(
         `GRANT SELECT ON ALL TABLES IN SCHEMA ${schema} TO ${role}`,
@@ -174,6 +243,14 @@ export async function provisionIndependentDomainRuntimeRole(
       `ALTER ROLE ${role} IN DATABASE ${databaseIdentifier} SET search_path = ${schema}, pg_catalog`,
     );
 
+    const allowedColumns = contract.readColumns
+      ?.flatMap((table) =>
+        table.columns.map(
+          (column) =>
+            `(${literal(table.table)}::text, ${literal(column)}::text)`,
+        ),
+      )
+      .join(', ');
     const requiredTablePrivileges =
       contract.access === 'write' ? 'SELECT,INSERT,UPDATE,DELETE' : 'SELECT';
     const missingSequencePrivilege =
@@ -182,8 +259,34 @@ export async function provisionIndependentDomainRuntimeRole(
           '${contract.role}', oid, 'USAGE,SELECT,UPDATE'
         )`
         : 'FALSE';
-    const excessiveOwnPrivilege =
-      contract.access === 'read'
+    const requiredOwnAccess = allowedColumns
+      ? `NOT EXISTS (
+          SELECT 1
+          FROM (VALUES ${allowedColumns}) AS allowed(table_name, column_name)
+          LEFT JOIN pg_namespace namespace
+            ON namespace.nspname = '${contract.domain}'
+          LEFT JOIN pg_class relation ON relation.relnamespace = namespace.oid
+            AND relation.relname = allowed.table_name
+          LEFT JOIN pg_attribute attribute ON attribute.attrelid = relation.oid
+            AND attribute.attname = allowed.column_name
+            AND attribute.attnum > 0 AND NOT attribute.attisdropped
+          WHERE relation.oid IS NULL OR namespace.oid IS NULL OR attribute.attnum IS NULL
+            OR NOT COALESCE(has_column_privilege(
+              '${contract.role}', relation.oid, attribute.attnum, 'SELECT'
+            ), false)
+        )`
+      : `NOT EXISTS (SELECT 1 FROM domain_relations WHERE
+          (relkind IN ('r', 'p') AND NOT has_table_privilege(
+            '${contract.role}', oid, '${requiredTablePrivileges}'
+          )) OR (relkind = 'S' AND ${missingSequencePrivilege}))`;
+    const excessiveOwnPrivilege = allowedColumns
+      ? `((relkind IN ('r', 'p') AND has_table_privilege(
+          '${contract.role}', oid,
+          'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'
+        )) OR (relkind = 'S' AND has_sequence_privilege(
+          '${contract.role}', oid, 'USAGE,SELECT,UPDATE'
+        )))`
+      : contract.access === 'read'
         ? `(relkind IN ('r', 'p') AND has_table_privilege(
           '${contract.role}', oid, 'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'
         )) OR (relkind = 'S' AND has_sequence_privilege(
@@ -201,7 +304,7 @@ export async function provisionIndependentDomainRuntimeRole(
       UNION ALL
       SELECT 1 FROM pg_database d, role_state r WHERE d.datdba = r.oid
     ), domain_relations AS (
-      SELECT c.oid, c.relkind
+      SELECT c.oid, c.relkind, c.relname
       FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname = '${contract.domain}' AND c.relkind IN ('r', 'p', 'S')
     ), foreign_relations AS (
@@ -218,12 +321,37 @@ export async function provisionIndependentDomainRuntimeRole(
       NOT EXISTS (SELECT 1 FROM pg_auth_members membership, role_state r
         WHERE membership.member = r.oid) AS "noMemberships",
       NOT EXISTS (SELECT 1 FROM owned) AS "noOwnership",
+      ${requiredOwnAccess} AS "ownAccess",
       NOT EXISTS (SELECT 1 FROM domain_relations WHERE
-        (relkind IN ('r', 'p') AND NOT has_table_privilege(
-          '${contract.role}', oid, '${requiredTablePrivileges}'
-        )) OR (relkind = 'S' AND ${missingSequencePrivilege})) AS "ownAccess",
-      NOT EXISTS (SELECT 1 FROM domain_relations WHERE
-        ${excessiveOwnPrivilege}) AS "leastPrivilege",
+        ${excessiveOwnPrivilege})
+        ${
+          allowedColumns
+            ? `AND NOT EXISTS (
+          SELECT 1
+          FROM domain_relations relation
+          JOIN pg_attribute attribute ON attribute.attrelid = relation.oid
+            AND attribute.attnum > 0 AND NOT attribute.attisdropped
+          WHERE relation.relkind IN ('r', 'p')
+            AND (
+              has_column_privilege(
+                '${contract.role}', relation.oid, attribute.attnum,
+                'INSERT,UPDATE,REFERENCES'
+              )
+              OR (
+                has_column_privilege(
+                  '${contract.role}', relation.oid, attribute.attnum, 'SELECT'
+                )
+                AND NOT EXISTS (
+                  SELECT 1 FROM (VALUES ${allowedColumns})
+                    AS allowed(table_name, column_name)
+                  WHERE allowed.table_name = relation.relname
+                    AND allowed.column_name = attribute.attname
+                )
+              )
+            )
+        )`
+            : ''
+        } AS "leastPrivilege",
       NOT EXISTS (SELECT 1 FROM foreign_relations WHERE
         (relkind IN ('r', 'p') AND (
           has_any_column_privilege('${contract.role}', oid, 'SELECT,INSERT,UPDATE') OR

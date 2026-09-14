@@ -490,14 +490,14 @@ migrations. It creates a custom-format `pg_dump`, restores it into a temporary
 database in the isolated CI PostgreSQL container, verifies both reliability
 tables and migration history, then removes the temporary database and dump.
 
-# Notify/Experience/Identity cutover and Loyalty baseline
+# Notify/Experience/Identity cutover and Loyalty/Agency baseline
 
 This runbook is manual and must first be rehearsed in UAT. Never enable both
 the Core writer and a dedicated-domain writer. Keep the current production
 service URLs unchanged until the final reconciliation reports `MATCH` and the
 owner approves the URL switch.
 
-Generate eight independent URL-safe secrets and store them only in the server
+Generate ten independent URL-safe secrets and store them only in the server
 secret file:
 
 ```bash
@@ -509,14 +509,16 @@ openssl rand -hex 24 # IDENTITY_POSTGRES_PASSWORD
 openssl rand -hex 24 # IDENTITY_DATABASE_PASSWORD
 openssl rand -hex 24 # LOYALTY_POSTGRES_PASSWORD
 openssl rand -hex 24 # LOYALTY_DATABASE_PASSWORD
+openssl rand -hex 24 # AGENCY_POSTGRES_PASSWORD
+openssl rand -hex 24 # AGENCY_DATABASE_PASSWORD
 ```
 
-Create and migrate the four opt-in PostgreSQL instances, then provision their
+Create and migrate the five opt-in PostgreSQL instances, then provision their
 non-owner runtime roles. This does not switch either application URL:
 
 ```bash
 docker compose -f docker-compose.prod.yml -f docker-compose.domain-db.yml \
-  --profile independent-domain-db up -d notify-db experience-db identity-db loyalty-db
+  --profile independent-domain-db up -d notify-db experience-db identity-db loyalty-db agency-db
 docker compose -f docker-compose.prod.yml -f docker-compose.domain-db.yml \
   --profile independent-domain-db run --rm notify-db-migrate
 docker compose -f docker-compose.prod.yml -f docker-compose.domain-db.yml \
@@ -533,6 +535,10 @@ docker compose -f docker-compose.prod.yml -f docker-compose.domain-db.yml \
   --profile independent-domain-db run --rm loyalty-db-migrate
 docker compose -f docker-compose.prod.yml -f docker-compose.domain-db.yml \
   --profile independent-domain-db run --rm loyalty-db-runtime-role
+docker compose -f docker-compose.prod.yml -f docker-compose.domain-db.yml \
+  --profile independent-domain-db run --rm agency-db-migrate
+docker compose -f docker-compose.prod.yml -f docker-compose.domain-db.yml \
+  --profile independent-domain-db run --rm agency-db-runtime-role
 ```
 
 Before each transfer: freeze that domain's Core writer, drain its outbox, run
@@ -569,6 +575,17 @@ the Core Loyalty writer for the final delta, and receive explicit cutover
 approval. The dedicated Loyalty runtime role is SELECT-only and Core remains
 the sole writer; dual-write is forbidden.
 
+For Agency, repeat with `DOMAIN_TRANSFER_KIND=agency` and
+`agency-db-transfer`. The source must be the complete migrated Core database;
+the tool validates its reviewed Agency command/control companion tables but
+copies only profiles, invoices and credit requests. The generated
+`blujet_agency_runtime` login is column-scoped and SELECT-only for the complete
+three approved read contracts; it cannot read source revisions or projection
+control tables. The Kafka worker must use a different writable
+`AGENCY_PROJECTION_DATABASE_URL` credential and remains disabled. After the
+baseline, drain/publish ordered deltas and require a final `MATCH` before any
+Agency read flag or URL change.
+
 After exact `MATCH`, run service UAT and set only these runtime URLs:
 
 ```dotenv
@@ -577,13 +594,15 @@ EXPERIENCE_DATABASE_URL=postgresql://blujet_experience_runtime:PASSWORD@experien
 IDENTITY_DATABASE_URL=postgresql://blujet_identity_runtime:PASSWORD@identity-db:5432/blujet_identity
 # Set only after Loyalty catch-up/reconciliation and separate approval:
 LOYALTY_DATABASE_URL=postgresql://blujet_loyalty_runtime:PASSWORD@loyalty-db:5432/blujet_loyalty
+# Set only after Agency delta catch-up/reconciliation and separate approval:
+AGENCY_DATABASE_URL=postgresql://blujet_agency_runtime:PASSWORD@agency-db:5432/blujet_agency
 ```
 
 Recreate one service at a time, observe health and business smoke tests, then
 revoke its old Core database credential. Rollback stops the new service,
 restores the old URL/Core writer, and preserves both database copies for
 investigation; it never enables dual-write. Back up active dedicated databases
-with `DOMAIN_DATABASE_KIND=notify|experience|identity|loyalty
+with `DOMAIN_DATABASE_KIND=notify|experience|identity|loyalty|agency
 scripts/backup-independent-domain-db.sh` and restore-test them monthly.
 
 For Identity, do not perform the URL switch merely because this transfer tool
