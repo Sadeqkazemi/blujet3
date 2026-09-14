@@ -146,6 +146,43 @@ function kafkaPayload(input: Record<string, unknown>): EachMessagePayload {
   } as unknown as EachMessagePayload;
 }
 
+function foreignKafkaPayload(): EachMessagePayload {
+  const input = {
+    eventId: randomUUID(),
+    eventType: 'OrderCreated',
+    eventVersion: 1,
+    occurredAt: at,
+    producer: 'core-commerce',
+    aggregateType: 'Order',
+    aggregateId: randomUUID(),
+    correlationId: randomUUID(),
+    idempotencyKey: randomUUID(),
+    payload: { status: 'HELD' },
+  };
+  return {
+    topic: 'blujet.events.v1',
+    partition: 5,
+    heartbeat: jest.fn<Promise<void>, []>().mockResolvedValue(),
+    pause: jest.fn(),
+    message: {
+      offset: '31',
+      highWatermark: '32',
+      timestamp: '0',
+      attributes: 0,
+      key: Buffer.from(
+        `${input.producer}:${input.aggregateType}:${input.aggregateId}`,
+      ),
+      value: Buffer.from(JSON.stringify(input)),
+      headers: {
+        'event-id': Buffer.from(input.eventId),
+        'correlation-id': Buffer.from(input.correlationId),
+        'event-version': Buffer.from('1'),
+        'event-schema-id': Buffer.from('blujet.core-itinerary.OrderCreated.v1'),
+      },
+    },
+  } as unknown as EachMessagePayload;
+}
+
 describe('Agency version-aware projection (real PostgreSQL)', () => {
   let admin: DataSource;
   let source: DataSource;
@@ -370,7 +407,12 @@ describe('Agency version-aware projection (real PostgreSQL)', () => {
 
   it('replays an acknowledgement gap without duplicate projection rows', async () => {
     const input = profileEvent(randomUUID());
-    const handler = new AgencyKafkaHandler(consumer, dlq, { enabled: false });
+    const handler = new AgencyKafkaHandler(
+      consumer,
+      dlq,
+      { enabled: false },
+      new AgencyProjectionStore(projection),
+    );
     const firstAck = jest
       .fn<Promise<void>, [unknown]>()
       .mockRejectedValue(new Error('broker unavailable'));
@@ -417,6 +459,51 @@ describe('Agency version-aware projection (real PostgreSQL)', () => {
         ['agency-v1', 'blujet.events.v1', 2],
       ),
     ).toEqual([{ nextOffset: '12', highWatermark: '13' }]);
+  });
+
+  it('durably checkpoints foreign-domain traffic without projection state', async () => {
+    const handler = new AgencyKafkaHandler(
+      consumer,
+      dlq,
+      { enabled: false },
+      new AgencyProjectionStore(projection),
+    );
+    const commitOffsets = jest
+      .fn<Promise<void>, [unknown]>()
+      .mockResolvedValue();
+
+    await handler.runConfig(
+      { commitOffsets },
+      {
+        topic: 'blujet.events.v1',
+        consumerGroup: 'agency-v1',
+        requireSchemaId: true,
+      },
+    ).eachMessage!(foreignKafkaPayload());
+
+    expect(commitOffsets).toHaveBeenCalledWith([
+      { topic: 'blujet.events.v1', partition: 5, offset: '32' },
+    ]);
+    expect(
+      await projection.query(
+        `SELECT
+          (SELECT count(*)::int FROM agency.agency_profiles) AS profiles,
+          (SELECT count(*)::int FROM agency.agency_projection_event_receipts) AS receipts,
+          (SELECT count(*)::int FROM agency.agency_projection_slots) AS slots,
+          (SELECT count(*)::int FROM agency.kafka_processing_failures) AS failures,
+          (SELECT count(*)::int FROM agency.kafka_consumer_checkpoints) AS checkpoints`,
+      ),
+    ).toEqual([
+      { profiles: 0, receipts: 0, slots: 0, failures: 0, checkpoints: 1 },
+    ]);
+    expect(
+      await projection.query(
+        `SELECT "nextOffset", "highWatermark"
+         FROM agency.kafka_consumer_checkpoints
+         WHERE "consumerGroup"=$1 AND topic=$2 AND "partition"=$3`,
+        ['agency-v1', 'blujet.events.v1', 5],
+      ),
+    ).toEqual([{ nextOffset: '32', highWatermark: '32' }]);
   });
 
   it('keeps durable checkpoint coordinates monotonic on replay', async () => {

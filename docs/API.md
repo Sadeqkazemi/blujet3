@@ -1,5 +1,18 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Agency shared-topic routing
+
+No HTTP route or response changes. The standalone Agency projection worker may
+consume the shared canonical Kafka topic while owning only `core-agency`
+events. A routing-valid v1 delivery from the approved `core-commerce`,
+`core-loyalty` or `core-ops` producer is persisted as
+Agency consumer checkpoint progress and then acknowledged without calling an
+Agency projection or creating receipt/DLQ state. Malformed envelopes,
+mismatched key/headers/schema identity and every invalid `core-agency` event
+remain fail-closed and unacknowledged. The worker and all Agency read flags stay
+disabled; no baseline replay, read cutover or deployment occurs in this slice
+(`docs/features/microservices-phase-6-agency-shared-topic-routing.md`).
+
 ## Agency durable Kafka checkpoints
 
 No public or internal business route changes. The standalone worker's existing

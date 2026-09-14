@@ -1,5 +1,15 @@
 # DB_SCHEMA.md — blujet data model
 
+## Agency shared-topic checkpoint routing
+
+No migration or business-table change. For a canonical v1 event whose producer
+is not `core-agency`, the Agency worker writes only the existing
+`agency.kafka_consumer_checkpoints` row in a local transaction. The monotonic
+`nextOffset`/`highWatermark` update commits before Kafka acknowledgement. It
+does not write `agency_projection_event_receipts`, `agency_projection_slots`,
+`kafka_processing_failures` or an Agency business projection. Invalid or
+cross-labeled deliveries write no checkpoint and receive no acknowledgement.
+
 ## Agency durable Kafka checkpoints
 
 Migration `1793952000000-AgencyKafkaConsumerCheckpoints` adds

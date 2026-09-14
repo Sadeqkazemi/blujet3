@@ -10,6 +10,7 @@ import {
 import type { AgencyProjectionEvent } from './agency-projection-event';
 import { AgencyKafkaHandler } from './agency-kafka.handler';
 import type { AgencyProjectionConsumer } from './agency-projection.consumer';
+import type { AgencyProjectionStore } from './agency-projection.store';
 
 describe('AgencyKafkaHandler', () => {
   const event: AgencyProjectionEvent = {
@@ -65,10 +66,16 @@ describe('AgencyKafkaHandler', () => {
       .fn<Promise<void>, [AgencyFailedDelivery]>()
       .mockResolvedValue(undefined),
   };
+  const projectionStore = {
+    checkpointIgnoredDelivery: jest
+      .fn<Promise<void>, [unknown]>()
+      .mockResolvedValue(undefined),
+  };
   const handler = new AgencyKafkaHandler(
     agency as unknown as AgencyProjectionConsumer,
     dlq as unknown as AgencyDlqStore,
     { enabled: false },
+    projectionStore as unknown as AgencyProjectionStore,
   );
 
   function dlqHandler(
@@ -82,6 +89,7 @@ describe('AgencyKafkaHandler', () => {
       agency as unknown as AgencyProjectionConsumer,
       dlq as unknown as AgencyDlqStore,
       config,
+      projectionStore as unknown as AgencyProjectionStore,
     );
   }
 
@@ -110,7 +118,46 @@ describe('AgencyKafkaHandler', () => {
         },
       },
       ...overrides,
-    } as EachMessagePayload;
+    } as unknown as EachMessagePayload;
+  }
+
+  function foreignPayload(
+    overrides: Partial<Record<string, unknown>> = {},
+    schemaId = 'blujet.core-itinerary.OrderCreated.v1',
+  ): EachMessagePayload {
+    const foreign = {
+      eventId: randomUUID(),
+      eventType: 'OrderCreated',
+      eventVersion: 1,
+      occurredAt: '2026-09-13T10:00:00.000Z',
+      producer: 'core-commerce',
+      aggregateType: 'Order',
+      aggregateId: 'order-1',
+      correlationId: 'request-foreign-1',
+      idempotencyKey: 'order-created-1',
+      payload: { status: 'HELD' },
+      ...overrides,
+    };
+    return {
+      topic: subscription.topic,
+      partition: 3,
+      heartbeat: jest.fn<Promise<void>, []>().mockResolvedValue(),
+      pause: jest.fn(),
+      message: {
+        offset: '20',
+        highWatermark: '21',
+        key: Buffer.from(
+          `${String(foreign.producer)}:${String(foreign.aggregateType)}:${String(foreign.aggregateId)}`,
+        ),
+        value: Buffer.from(JSON.stringify(foreign)),
+        headers: {
+          'event-id': Buffer.from(String(foreign.eventId)),
+          'correlation-id': Buffer.from(String(foreign.correlationId)),
+          'event-version': Buffer.from('1'),
+          'event-schema-id': Buffer.from(schemaId),
+        },
+      },
+    } as unknown as EachMessagePayload;
   }
 
   beforeEach(() => {
@@ -121,7 +168,163 @@ describe('AgencyKafkaHandler', () => {
     dlq.recordFailure.mockResolvedValue('retry');
     dlq.markResolved.mockResolvedValue(undefined);
     dlq.markSkipped.mockResolvedValue(undefined);
+    projectionStore.checkpointIgnoredDelivery.mockResolvedValue(undefined);
   });
+
+  it('checkpoints an approved foreign-domain delivery before acknowledging it', async () => {
+    const order: string[] = [];
+    projectionStore.checkpointIgnoredDelivery.mockImplementation(() => {
+      order.push('checkpoint');
+      return Promise.resolve();
+    });
+    const client = {
+      commitOffsets: jest.fn(() => {
+        order.push('ack');
+        return Promise.resolve();
+      }),
+    };
+
+    await handler.runConfig(client, { ...subscription, requireSchemaId: true })
+      .eachMessage!(foreignPayload());
+
+    expect(order).toEqual(['checkpoint', 'ack']);
+    expect(projectionStore.checkpointIgnoredDelivery).toHaveBeenCalledWith({
+      consumerGroup: 'agency-v1',
+      topic: subscription.topic,
+      partition: 3,
+      nextOffset: '21',
+      highWatermark: '21',
+    });
+    expect(client.commitOffsets).toHaveBeenCalledWith([
+      { topic: subscription.topic, partition: 3, offset: '21' },
+    ]);
+    expect(agency.consume).not.toHaveBeenCalled();
+    expect(dlq.recordFailure).not.toHaveBeenCalled();
+  });
+
+  it('does not acknowledge a foreign delivery when its checkpoint fails', async () => {
+    projectionStore.checkpointIgnoredDelivery.mockRejectedValue(
+      new Error('database unavailable'),
+    );
+
+    await expect(
+      handler.runConfig({ commitOffsets }, subscription).eachMessage!(
+        foreignPayload(),
+      ),
+    ).rejects.toThrow('Agency Kafka processing failed');
+
+    expect(agency.consume).not.toHaveBeenCalled();
+    expect(commitOffsets).not.toHaveBeenCalled();
+  });
+
+  it('does not create poison-message state for an approved foreign delivery', async () => {
+    await dlqHandler().runConfig({ commitOffsets }, subscription).eachMessage!(
+      foreignPayload(),
+    );
+
+    expect(dlq.actionFor).toHaveBeenCalledTimes(1);
+    expect(projectionStore.checkpointIgnoredDelivery).toHaveBeenCalledTimes(1);
+    expect(dlq.markResolved).toHaveBeenCalledTimes(1);
+    expect(dlq.recordFailure).not.toHaveBeenCalled();
+    expect(agency.consume).not.toHaveBeenCalled();
+    expect(commitOffsets).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    {
+      producer: 'core-commerce',
+      eventType: 'OrderCreated',
+      aggregateType: 'Order',
+      schemaId: 'blujet.core-itinerary.OrderCreated.v1',
+    },
+    {
+      producer: 'core-loyalty',
+      eventType: 'LoyaltyMemberProjected',
+      aggregateType: 'LoyaltyMember',
+      schemaId: 'blujet.loyalty.LoyaltyMemberProjected.v1',
+    },
+    {
+      producer: 'core-ops',
+      eventType: 'CartableTaskProjected',
+      aggregateType: 'CartableTask',
+      schemaId: 'blujet.ops-admin.CartableTaskProjected.v1',
+    },
+  ] as const)(
+    'ignores the approved $producer route without invoking Agency projection',
+    async ({ producer, eventType, aggregateType, schemaId }) => {
+      await handler.runConfig({ commitOffsets }, subscription).eachMessage!(
+        foreignPayload({ producer, eventType, aggregateType }, schemaId),
+      );
+
+      expect(projectionStore.checkpointIgnoredDelivery).toHaveBeenCalledTimes(
+        1,
+      );
+      expect(agency.consume).not.toHaveBeenCalled();
+      expect(commitOffsets).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('routes an approved legacy foreign event without a schema header while optional', async () => {
+    const foreign = foreignPayload();
+    const headers = { ...foreign.message.headers };
+    delete headers['event-schema-id'];
+
+    await handler.runConfig({ commitOffsets }, subscription).eachMessage!({
+      ...foreign,
+      message: {
+        ...foreign.message,
+        headers,
+      } as unknown as EachMessagePayload['message'],
+    });
+
+    expect(projectionStore.checkpointIgnoredDelivery).toHaveBeenCalledTimes(1);
+    expect(agency.consume).not.toHaveBeenCalled();
+    expect(commitOffsets).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects a foreign event without a schema header after admission cutover', async () => {
+    const foreign = foreignPayload();
+    const headers = { ...foreign.message.headers };
+    delete headers['event-schema-id'];
+
+    await expect(
+      handler.runConfig(
+        { commitOffsets },
+        { ...subscription, requireSchemaId: true },
+      ).eachMessage!({
+        ...foreign,
+        message: {
+          ...foreign.message,
+          headers,
+        } as unknown as EachMessagePayload['message'],
+      }),
+    ).rejects.toThrow('Agency Kafka processing failed');
+    expect(projectionStore.checkpointIgnoredDelivery).not.toHaveBeenCalled();
+    expect(commitOffsets).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [{ producer: 'unknown-service' }, 'blujet.core-itinerary.OrderCreated.v1'],
+    [
+      { occurredAt: '2026-09-13 10:00:00' },
+      'blujet.core-itinerary.OrderCreated.v1',
+    ],
+    [{ extra: true }, 'blujet.core-itinerary.OrderCreated.v1'],
+    [{}, 'blujet.agency.OrderCreated.v1'],
+    [{}, 'blujet.core-itinerary.PaymentConfirmed.v1'],
+  ] as const)(
+    'rejects invalid or cross-labeled foreign-domain delivery (%#)',
+    async (overrides, schemaId) => {
+      await expect(
+        handler.runConfig({ commitOffsets }, subscription).eachMessage!(
+          foreignPayload({ ...overrides }, schemaId),
+        ),
+      ).rejects.toThrow('Agency Kafka processing failed');
+      expect(projectionStore.checkpointIgnoredDelivery).not.toHaveBeenCalled();
+      expect(agency.consume).not.toHaveBeenCalled();
+      expect(commitOffsets).not.toHaveBeenCalled();
+    },
+  );
 
   it('commits the offset only after the projection transaction returns', async () => {
     const order: string[] = [];
