@@ -21,6 +21,7 @@ export const OPS_ADMIN_PROJECTION_READER_DENIED_COLUMNS = [
 export const OPS_ADMIN_PROJECTION_READER_CONTROL_TABLES = [
   'cartable_projection_event_receipts',
   'kafka_consumer_checkpoints',
+  'kafka_processing_failures',
 ] as const;
 
 const FOREIGN_SCHEMAS = [

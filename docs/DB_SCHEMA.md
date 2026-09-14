@@ -368,7 +368,8 @@ are not copied.
 Role `blujet_ops_admin_projection_reader` is a non-owner LOGIN on that
 isolated database with default-read-only and column-scoped SELECT matching the
 internal cartable HTTP queries. It has no writer privileges, no control-table
-access and no Core CONNECT
+access (including projection receipts, Kafka checkpoints and processing
+failures) and no Core CONNECT
 (`docs/features/microservices-phase-6-ops-admin-baseline-tooling.md`).
 
 ## Ops/Admin projection runtime role

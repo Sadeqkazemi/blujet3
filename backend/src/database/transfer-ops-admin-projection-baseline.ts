@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { lstatSync, readFileSync } from 'node:fs';
+import { createReadStream, lstatSync } from 'node:fs';
 import 'dotenv/config';
 import { Client } from 'pg';
 import {
@@ -141,12 +141,22 @@ export function validateOpsAdminBaselineBackupSha256(value: string): void {
   }
 }
 
-export function validateOpsAdminBaselineBackupArtifact(options: {
+async function fileSha256(path: string): Promise<string> {
+  const hash = createHash('sha256');
+  const stream = createReadStream(path);
+  return new Promise((resolve, reject) => {
+    stream.on('data', (chunk: Buffer) => hash.update(chunk));
+    stream.once('error', reject);
+    stream.once('end', () => resolve(hash.digest('hex')));
+  });
+}
+
+export async function validateOpsAdminBaselineBackupArtifact(options: {
   backupPath: string;
   expectedSha256: string;
   nowMs?: number;
   maxAgeMs?: number;
-}): void {
+}): Promise<void> {
   validateOpsAdminBaselineBackupSha256(options.expectedSha256);
   let stats: ReturnType<typeof lstatSync>;
   try {
@@ -165,9 +175,12 @@ export function validateOpsAdminBaselineBackupArtifact(options: {
   if (ageMs > maxAgeMs) {
     throw new Error('Ops/Admin baseline backup artifact is stale');
   }
-  const digest = createHash('sha256')
-    .update(readFileSync(options.backupPath))
-    .digest('hex');
+  let digest: string;
+  try {
+    digest = await fileSha256(options.backupPath);
+  } catch {
+    throw new Error('Ops/Admin baseline backup artifact could not be read');
+  }
   if (digest !== options.expectedSha256) {
     throw new Error('Ops/Admin baseline backup checksum does not match');
   }
@@ -194,10 +207,7 @@ export function validateOpsAdminBaselineOptions(options: {
       'Ops/Admin baseline apply mode requires a verified backup artifact',
     );
   }
-  validateOpsAdminBaselineBackupArtifact({
-    backupPath: options.backupPath,
-    expectedSha256: options.backupSha256,
-  });
+  validateOpsAdminBaselineBackupSha256(options.backupSha256);
 }
 
 export function canonicalProjectionValue(value: unknown): string {
@@ -488,13 +498,23 @@ export async function transferOpsAdminProjectionBaseline(options: {
   backupSha256?: string;
 }): Promise<OpsAdminBaselineReport> {
   validateOpsAdminBaselineOptions(options);
-  await options.source.query(
-    'BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY',
-  );
-  await options.target.query(
-    options.apply ? 'BEGIN' : 'BEGIN TRANSACTION READ ONLY',
-  );
+  if (options.apply) {
+    await validateOpsAdminBaselineBackupArtifact({
+      backupPath: options.backupPath!,
+      expectedSha256: options.backupSha256!,
+    });
+  }
+  let sourceTransactionStarted = false;
+  let targetTransactionStarted = false;
   try {
+    await options.source.query(
+      'BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY',
+    );
+    sourceTransactionStarted = true;
+    await options.target.query(
+      options.apply ? 'BEGIN' : 'BEGIN TRANSACTION READ ONLY',
+    );
+    targetTransactionStarted = true;
     await assertPostgres16(options.source);
     await assertPostgres16(options.target);
     await assertAppliedMigrations(
@@ -516,7 +536,9 @@ export async function transferOpsAdminProjectionBaseline(options: {
         targetBefore,
       );
       await options.target.query('ROLLBACK');
+      targetTransactionStarted = false;
       await options.source.query('ROLLBACK');
+      sourceTransactionStarted = false;
       return report;
     }
     if (targetBefore.count !== '0') {
@@ -532,14 +554,20 @@ export async function transferOpsAdminProjectionBaseline(options: {
     if (report.status !== 'PASS') {
       throw new Error('Ops/Admin baseline checksum mismatch');
     }
-    await options.target.query('COMMIT');
     await options.source.query('ROLLBACK');
+    sourceTransactionStarted = false;
+    await options.target.query('COMMIT');
+    targetTransactionStarted = false;
     return report;
   } catch (error) {
-    await Promise.allSettled([
-      options.target.query('ROLLBACK'),
-      options.source.query('ROLLBACK'),
-    ]);
+    const rollbacks: Array<Promise<unknown>> = [];
+    if (targetTransactionStarted) {
+      rollbacks.push(options.target.query('ROLLBACK'));
+    }
+    if (sourceTransactionStarted) {
+      rollbacks.push(options.source.query('ROLLBACK'));
+    }
+    await Promise.allSettled(rollbacks);
     throw error;
   }
 }

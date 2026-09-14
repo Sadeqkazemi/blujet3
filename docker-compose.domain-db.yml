@@ -429,9 +429,14 @@ services:
       OPS_ADMIN_BASELINE_SOURCE_DATABASE_URL: ${OPS_ADMIN_BASELINE_SOURCE_DATABASE_URL:?Supply the Core source owner URL}
       OPS_ADMIN_BASELINE_TARGET_DATABASE_URL: postgresql://blujet_ops_admin_owner:${OPS_ADMIN_POSTGRES_PASSWORD}@ops-admin-db:5432/blujet_ops_admin
       OPS_ADMIN_BASELINE_APPLY: ${OPS_ADMIN_BASELINE_APPLY:-false}
-      OPS_ADMIN_BASELINE_BACKUP_PATH: ${OPS_ADMIN_BASELINE_BACKUP_PATH:-}
+      OPS_ADMIN_BASELINE_BACKUP_PATH: /run/blujet-backups/ops-admin-baseline.dump
       OPS_ADMIN_BASELINE_BACKUP_SHA256: ${OPS_ADMIN_BASELINE_BACKUP_SHA256:-}
       OPS_ADMIN_BASELINE_BATCH_SIZE: ${OPS_ADMIN_BASELINE_BATCH_SIZE:-100}
+    volumes:
+      - type: bind
+        source: ${OPS_ADMIN_BASELINE_BACKUP_PATH:-./backups/ops-admin-baseline.dump}
+        target: /run/blujet-backups/ops-admin-baseline.dump
+        read_only: true
     command: ["node", "dist/database/transfer-ops-admin-projection-baseline.js"]
 
 volumes:

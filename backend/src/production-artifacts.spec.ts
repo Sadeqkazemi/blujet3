@@ -331,6 +331,13 @@ describe('production backend artifacts', () => {
     expect(independentDomainCompose).toContain(
       'OPS_ADMIN_BASELINE_APPLY: ${OPS_ADMIN_BASELINE_APPLY:-false}',
     );
+    expect(independentDomainCompose).toContain(
+      'source: ${OPS_ADMIN_BASELINE_BACKUP_PATH:-./backups/ops-admin-baseline.dump}',
+    );
+    expect(independentDomainCompose).toContain(
+      'target: /run/blujet-backups/ops-admin-baseline.dump',
+    );
+    expect(independentDomainCompose).toContain('read_only: true');
     expect(compose).not.toContain('ops-admin-db:');
     expect(compose).not.toContain('transfer-ops-admin-projection-baseline.js');
     expect(deployWorkflow).not.toContain(

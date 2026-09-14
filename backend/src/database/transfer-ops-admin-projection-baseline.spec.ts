@@ -15,6 +15,7 @@ import {
   fingerprintProjectionRows,
   serializeOpsAdminBaselineReport,
   sha256Hex,
+  transferOpsAdminProjectionBaseline,
   validateOpsAdminBaselineBackupArtifact,
   validateOpsAdminBaselineDatabaseUrls,
   validateOpsAdminBaselineOptions,
@@ -84,81 +85,71 @@ describe('Ops/Admin projection baseline transfer contract', () => {
     }
   });
 
-  it('rejects missing, empty, stale, symlink and checksum-mismatched backups', () => {
+  it('rejects missing, empty, stale, symlink and checksum-mismatched backups', async () => {
     expect(() =>
       validateOpsAdminBaselineOptions({ apply: true, batchSize: 100 }),
     ).toThrow('verified backup artifact');
-    expect(() =>
+    await expect(
       validateOpsAdminBaselineBackupArtifact({
         backupPath: join(tmpdir(), 'missing-ops-admin-backup.dump'),
         expectedSha256: 'a'.repeat(64),
       }),
-    ).toThrow('missing');
+    ).rejects.toThrow('missing');
     const empty = backupFile('');
-    expect(() =>
+    await expect(
       validateOpsAdminBaselineBackupArtifact({
         backupPath: empty,
         expectedSha256: sha256(''),
       }),
-    ).toThrow('empty');
+    ).rejects.toThrow('empty');
     const stale = backupFile('payload', 25 * 60 * 60 * 1000);
-    expect(() =>
+    await expect(
       validateOpsAdminBaselineBackupArtifact({
         backupPath: stale,
         expectedSha256: sha256('payload'),
       }),
-    ).toThrow('stale');
+    ).rejects.toThrow('stale');
     const dir = mkdtempSync(join(tmpdir(), 'ops-admin-baseline-dir-'));
     const target = backupFile('payload');
     const link = join(dir, 'backup.link');
+    let invalidPath = link;
     try {
       symlinkSync(target, link);
-      expect(() =>
-        validateOpsAdminBaselineBackupArtifact({
-          backupPath: link,
-          expectedSha256: sha256('payload'),
-        }),
-      ).toThrow('invalid');
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message === 'Ops/Admin baseline backup artifact is invalid'
-      ) {
-        throw error;
-      }
-      mkdirSync(join(dir, 'not-a-file'));
-      expect(() =>
-        validateOpsAdminBaselineBackupArtifact({
-          backupPath: join(dir, 'not-a-file'),
-          expectedSha256: sha256('payload'),
-        }),
-      ).toThrow('invalid');
+    } catch {
+      invalidPath = join(dir, 'not-a-file');
+      mkdirSync(invalidPath);
     }
+    await expect(
+      validateOpsAdminBaselineBackupArtifact({
+        backupPath: invalidPath,
+        expectedSha256: sha256('payload'),
+      }),
+    ).rejects.toThrow('invalid');
     const fresh = backupFile('payload');
-    expect(() =>
+    await expect(
       validateOpsAdminBaselineBackupArtifact({
         backupPath: fresh,
         expectedSha256: 'b'.repeat(64),
       }),
-    ).toThrow('does not match');
-    expect(() =>
+    ).rejects.toThrow('does not match');
+    await expect(
       validateOpsAdminBaselineBackupArtifact({
         backupPath: fresh,
         expectedSha256: 'not-a-hash',
       }),
-    ).toThrow('checksum is invalid');
-    expect(() =>
+    ).rejects.toThrow('checksum is invalid');
+    await expect(
       validateOpsAdminBaselineBackupArtifact({
         backupPath: fresh,
         expectedSha256: sha256('payload'),
       }),
-    ).not.toThrow();
+    ).resolves.toBeUndefined();
   });
 
-  it('does not leak backup paths, URLs or credentials in validation errors', () => {
+  it('does not leak backup paths, URLs or credentials in validation errors', async () => {
     const secretPath = join(tmpdir(), 'secret-backup-path-do-not-print.dump');
     try {
-      validateOpsAdminBaselineBackupArtifact({
+      await validateOpsAdminBaselineBackupArtifact({
         backupPath: secretPath,
         expectedSha256: 'a'.repeat(64),
       });
@@ -178,6 +169,37 @@ describe('Ops/Admin projection baseline transfer contract', () => {
       expect(message).not.toContain('hunter2');
       expect(message).not.toMatch(/postgresql:\/\//i);
     }
+  });
+
+  it('rolls back a source transaction when the target BEGIN fails', async () => {
+    const sourceStatements: string[] = [];
+    const source = {
+      query: jest.fn((statement: string) => {
+        sourceStatements.push(statement);
+        return Promise.resolve({ rows: [] });
+      }),
+    };
+    const target = {
+      query: jest.fn((statement: string) => {
+        if (statement.startsWith('BEGIN')) {
+          return Promise.reject(new Error('target unavailable'));
+        }
+        return Promise.resolve({ rows: [] });
+      }),
+    };
+
+    await expect(
+      transferOpsAdminProjectionBaseline({
+        source,
+        target,
+        apply: false,
+        batchSize: 100,
+      }),
+    ).rejects.toThrow('target unavailable');
+    expect(sourceStatements).toEqual([
+      'BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY',
+      'ROLLBACK',
+    ]);
   });
 
   it('emits two independently ordered SHA-256 aggregates and sanitized PASS/FAIL', () => {

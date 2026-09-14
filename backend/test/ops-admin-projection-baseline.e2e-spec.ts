@@ -397,6 +397,9 @@ describe('Ops/Admin projection baseline tooling (PostgreSQL)', () => {
       reader!.query('SELECT * FROM ops.kafka_consumer_checkpoints'),
     );
     await deny(() =>
+      reader!.query('SELECT * FROM ops.kafka_processing_failures'),
+    );
+    await deny(() =>
       reader!.query(
         `INSERT INTO ops.cartable_tasks (id, "assigneeId", category, status)
          VALUES ('x', 'y', 'ADMIN', 'OPEN')`,

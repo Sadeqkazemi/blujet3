@@ -34,9 +34,14 @@ source outbox, exact reconciliation and separately approved UAT evidence.
   not copied and do not count as a populated business target.
 - Apply mode requires a verified backup **file**: regular file (not a
   directory or symlink), non-zero size, mtime within 24 hours, and an exact
-  SHA-256 supplied separately. Errors never include the path or contents.
-- Apply is one transaction. Insert or parity failure rolls back every copied
-  row. An empty target plus identical source metadata is deterministic
+  SHA-256 supplied separately. The digest is streamed so a production-sized
+  dump is never loaded into memory. The Compose transfer profile mounts the
+  operator-supplied file read-only at a fixed container path. Errors never
+  include the path or contents.
+- Apply is one target transaction under a repeatable-read, read-only source
+  transaction. Failure while opening either side rolls back every transaction
+  that started; insert or parity failure rolls back every copied row. An empty
+  target plus identical source metadata is deterministic
   (idempotent for an empty target). A second apply against a non-empty target
   fails closed.
 - Reconcile/report mode (`OPS_ADMIN_BASELINE_APPLY` not `true`) is read-only
@@ -60,7 +65,8 @@ Column mapping from Core `ops.cartable_tasks`:
   `status`, `resolvedAt`, `readAt`, `createdAt` on `ops.cartable_tasks`
 - Denied: writes, sequences, DDL, `taskVersion`/`auditId`/`fingerprint`,
   `ops.cartable_projection_event_receipts`, `ops.kafka_consumer_checkpoints`,
-  Core CONNECT, other schemas/databases, the projection-writer role
+  `ops.kafka_processing_failures`, Core CONNECT, other schemas/databases, the
+  projection-writer role
 
 ## Non-goals
 
@@ -74,7 +80,8 @@ Column mapping from Core `ops.cartable_tasks`:
 
 - [x] `transfer-ops-admin-projection-baseline.spec.ts` proves URL/database
       identity rejection, backup artifact/SHA-256/age validation, checksum
-      helpers and sanitized PASS/FAIL output.
+      streaming, partial-BEGIN cleanup, checksum helpers and sanitized
+      PASS/FAIL output.
 - [x] `provision-ops-admin-projection-reader-role.spec.ts` proves the exact
       column-scoped reader contract and refusal to reuse the writer role.
 - [x] `ops-admin-projection-baseline.e2e-spec.ts` proves real PostgreSQL:

@@ -113,6 +113,9 @@ describe('Ops/Admin projection HTTP reader role provisioner', () => {
     for (const table of OPS_ADMIN_PROJECTION_READER_CONTROL_TABLES) {
       expect(sql).not.toMatch(new RegExp(`GRANT .*${table}`));
     }
+    expect(OPS_ADMIN_PROJECTION_READER_CONTROL_TABLES).toContain(
+      'kafka_processing_failures',
+    );
     expect(sql).not.toContain(OPS_ADMIN_PROJECTION_RUNTIME_ROLE);
     expect(statements.at(-1)).toBe('COMMIT');
   });
