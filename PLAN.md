@@ -1,5 +1,24 @@
 # PLAN.md — blujet roadmap & progress
 
+## Ops/Admin Kafka projection worker (2026-09-14)
+
+- [x] Freeze the standalone, projection-database-only, default-off boundary
+  before implementation.
+- [x] Add strict Ops/Admin consumer configuration and a sanitized KafkaJS
+  lifecycle around the existing manual-ack handler.
+- [x] Add isolated liveness/readiness probes without exposing broker, offset,
+  payload or database details.
+- [x] Prove disabled, startup, processing-failure and idempotent shutdown paths.
+- [x] Pass scoped tests, lint, typecheck, build and OpenAPI stability checks.
+- [x] Present the complete diff for explicit approval before commit/push/merge.
+  Do not activate, cut over or deploy.
+
+Evidence: all 224 Backend unit suites (1,329 tests), the six focused Ops/Admin
+suites (62 tests) and four real-PostgreSQL projection tests pass. Scoped lint,
+typecheck, production build, diff hygiene and OpenAPI stability also pass. The
+PostgreSQL proof used a fresh isolated test database, which was removed after
+the run.
+
 ## Loyalty shared-topic routing (2026-09-14)
 
 - [x] Freeze the foreign-domain routing, checkpoint-before-ACK and fail-closed
