@@ -1,5 +1,6 @@
 import { ConflictException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import type { EachMessagePayload } from 'kafkajs';
 import { DataSource } from 'typeorm';
 import { createCartableTaskProjectedEvent } from '../src/common/events/ops-admin-events';
 import { OpsAdminCartableEventReceipt } from '../src/database/ops-admin-projection-entities/ops-admin-cartable-event-receipt.entity';
@@ -10,6 +11,7 @@ import {
   CartableSourceType,
   CartableStatus,
 } from '../src/database/enums';
+import { OpsAdminKafkaHandler } from '../src/modules/ops-admin/ops-admin-kafka.handler';
 import { OpsAdminProjectionConsumer } from '../src/modules/ops-admin/ops-admin-projection.consumer';
 import { OpsAdminProjectionStore } from '../src/modules/ops-admin/ops-admin-projection.store';
 
@@ -37,6 +39,30 @@ describe('Ops/Admin ordered projection consumer (PostgreSQL)', () => {
         idempotencyKey: `cartable-projected:${taskId}:v${version}`,
       },
     );
+
+  function kafkaPayload(input: ReturnType<typeof event>): EachMessagePayload {
+    return {
+      topic: 'blujet.events.v1',
+      partition: 2,
+      heartbeat: jest.fn<Promise<void>, []>().mockResolvedValue(),
+      pause: jest.fn(),
+      message: {
+        offset: '11',
+        key: Buffer.from(
+          `${input.producer}:${input.aggregateType}:${input.aggregateId}`,
+        ),
+        value: Buffer.from(JSON.stringify(input)),
+        headers: {
+          'event-id': Buffer.from(input.eventId),
+          'correlation-id': Buffer.from(input.correlationId),
+          'event-version': Buffer.from('1'),
+          'event-schema-id': Buffer.from(
+            'blujet.ops-admin.CartableTaskProjected.v1',
+          ),
+        },
+      },
+    } as EachMessagePayload;
+  }
 
   beforeAll(async () => {
     db = await new DataSource(
@@ -118,5 +144,39 @@ describe('Ops/Admin ordered projection consumer (PostgreSQL)', () => {
         id: taskId,
       }),
     ).resolves.toMatchObject({ taskVersion: 4, auditId: 'audit-4' });
+  });
+
+  it('replays an acknowledgement gap without duplicate projection rows', async () => {
+    const input = event(1);
+    const handler = new OpsAdminKafkaHandler(consumer);
+    const firstAck = jest
+      .fn<Promise<void>, [unknown]>()
+      .mockRejectedValue(new Error('broker unavailable'));
+    const secondAck = jest.fn<Promise<void>, [unknown]>().mockResolvedValue();
+
+    await expect(
+      handler.runConfig(
+        { commitOffsets: firstAck },
+        { topic: 'blujet.events.v1' },
+      ).eachMessage!(kafkaPayload(input)),
+    ).rejects.toThrow('Ops/Admin Kafka processing failed');
+
+    await handler.runConfig(
+      { commitOffsets: secondAck },
+      { topic: 'blujet.events.v1' },
+    ).eachMessage!(kafkaPayload(input));
+
+    expect(firstAck).toHaveBeenCalledTimes(1);
+    expect(secondAck).toHaveBeenCalledWith([
+      { topic: 'blujet.events.v1', partition: 2, offset: '12' },
+    ]);
+    expect(
+      await db.getRepository(OpsAdminCartableTaskProjection).countBy({
+        id: taskId,
+      }),
+    ).toBe(1);
+    expect(
+      await db.getRepository(OpsAdminCartableEventReceipt).countBy({ taskId }),
+    ).toBe(1);
   });
 });

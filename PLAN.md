@@ -5508,6 +5508,19 @@ contracts and retires the production mock adapters.
 - [x] Owner explicitly approved commit/push/merge on 2026-09-10. No deployment
   is authorized in this slice.
 
+## Microservices architecture v1.1 — phase 6 Ops/Admin Kafka acknowledgement adapter (2026-09-14)
+
+- [x] Freeze the transport-only boundary, canonical key/header admission and
+  projection-before-ACK ordering before implementation.
+- [x] Add the construction-only KafkaJS adapter with manual acknowledgement,
+  sequential partition handling and sanitized retryable failures.
+- [x] Prove malformed-delivery rejection and durable idempotent replay across
+  an acknowledgement gap with focused and real-PostgreSQL tests.
+- [x] Verify unchanged HTTP/OpenAPI and database schemas, lint, typecheck and
+  production build without enabling a broker runtime, cutover or deployment.
+- [x] Owner explicitly approved commit, push and merge on 2026-09-14. No
+  deployment is authorized in this slice.
+
 ## Microservices architecture v1.1 — phase 6 Ops/Admin event contract (2026-09-10)
 
 - [x] Freeze a single full-snapshot `CartableTaskProjected` v1 contract with

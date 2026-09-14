@@ -152,6 +152,20 @@ unchanged. Core remains the only Loyalty writer; ordered event catch-up,
 balance reconciliation and a separately approved read cutover are still
 required.
 
+## Ops/Admin Kafka acknowledgement adapter
+
+No public or internal HTTP route changes. A construction-only KafkaJS adapter
+validates the configured topic, partition, offset, bounded UTF-8 payload,
+strict `CartableTaskProjected` v1 contract, canonical record key and transport
+headers before invoking the existing transactional Ops/Admin projection
+consumer. Kafka auto commit is disabled and the next offset is acknowledged
+only after the projection transaction completes. Invalid deliveries,
+projection failures, heartbeat failures and acknowledgement failures remain
+unacknowledged and expose only a sanitized boundary error. Kafka client
+lifecycle, credentials, subscription, checkpoint persistence, DLQ, baseline
+replay, reader cutover and deployment remain disabled
+(`docs/features/microservices-phase-6-ops-admin-kafka-ack-adapter.md`).
+
 ## Ops/Admin ordered projection consumer and reconciliation
 
 No public or internal HTTP route changes. The dedicated Ops/Admin database can
