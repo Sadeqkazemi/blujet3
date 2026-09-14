@@ -1,5 +1,26 @@
 # PLAN.md — blujet roadmap & progress
 
+## Ops/Admin durable Kafka checkpoints (2026-09-14)
+
+- [x] Freeze atomic checkpoint, monotonic progress, bounded aggregate lag and
+  no-activation boundaries before implementation.
+- [x] Add the expand-only checkpoint migration and exact TypeORM metadata.
+- [x] Persist delivery coordinates inside the projection transaction for every
+  successful applied, duplicate and stale result.
+- [x] Restore checkpoint evidence before broker startup and expose only bounded
+  aggregate evidence through the internal readiness probe.
+- [x] Prove rollback, ACK ordering and monotonic concurrent updates with unit
+  and real-PostgreSQL tests.
+- [x] Pass scoped tests, lint, typecheck, build and OpenAPI stability checks.
+- [ ] Present the completed diff for explicit approval before commit/push/merge.
+  Do not activate, cut over or deploy.
+
+Local evidence: all 225 Backend unit suites (1,335 tests), 50 focused unit
+tests and 7 isolated real-PostgreSQL projection tests pass. Ops/Admin migration
+metadata is schema-synchronized with no pending query. Scoped read-only lint,
+typecheck, production build, diff hygiene and OpenAPI stability pass. Both
+disposable test databases were removed after verification.
+
 ## Kafka consumer ACL tests (2026-09-14)
 
 - [x] Freeze the isolated consumer identity, exact-topic/group Read grants and

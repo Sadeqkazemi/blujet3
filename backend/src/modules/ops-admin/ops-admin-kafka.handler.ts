@@ -9,6 +9,7 @@ import { OpsAdminProjectionConsumer } from './ops-admin-projection.consumer';
 export interface OpsAdminKafkaSubscription {
   topic: string;
   maxBytes?: number;
+  consumerGroup?: string;
   requireSchemaId?: boolean;
 }
 
@@ -20,6 +21,12 @@ export class OpsAdminKafkaHandler {
     client: Pick<Consumer, 'commitOffsets'>,
     subscription: OpsAdminKafkaSubscription,
   ): ConsumerRunConfig {
+    const consumerGroup = subscription.consumerGroup;
+    if (
+      consumerGroup !== undefined &&
+      !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(consumerGroup)
+    )
+      throw new Error('Invalid Ops/Admin Kafka consumer group');
     const trusted = validateKafkaEventSubscription({
       ...subscription,
       expectedProducer: 'core-ops',
@@ -29,9 +36,27 @@ export class OpsAdminKafkaHandler {
       partitionsConsumedConcurrently: 1,
       eachMessage: async (payload) => {
         try {
-          const { event, offset } = parseKafkaEventDelivery(trusted, payload);
+          const { event, offset, highWatermark } = parseKafkaEventDelivery(
+            trusted,
+            payload,
+          );
+          if (
+            highWatermark !== undefined &&
+            BigInt(highWatermark) < BigInt(offset.offset)
+          )
+            throw new Error('Invalid Ops/Admin Kafka high watermark');
           await payload.heartbeat();
-          await this.opsAdmin.consume(event);
+          if (consumerGroup === undefined) {
+            await this.opsAdmin.consume(event);
+          } else {
+            await this.opsAdmin.consume(event, {
+              consumerGroup,
+              topic: offset.topic,
+              partition: offset.partition,
+              nextOffset: offset.offset,
+              highWatermark,
+            });
+          }
           await payload.heartbeat();
           await client.commitOffsets([offset]);
         } catch {

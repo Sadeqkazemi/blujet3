@@ -8,6 +8,7 @@ import { Kafka, logLevel, type Consumer } from 'kafkajs';
 import { Logger } from 'nestjs-pino';
 import type { OpsAdminKafkaConsumerConfig } from '../../config/ops-admin-kafka-consumer.config';
 import { OpsAdminKafkaHandler } from './ops-admin-kafka.handler';
+import { OpsAdminProjectionStore } from './ops-admin-projection.store';
 
 export type OpsAdminKafkaRuntimeClient = Pick<
   Consumer,
@@ -24,6 +25,9 @@ export type OpsAdminKafkaRuntimeStatus = {
   lastProcessingFailureAt: string | null;
   lastMessageAt: string | null;
   lastProcessedAt: string | null;
+  checkpointPartitions: number;
+  maxObservedLag: string | null;
+  lastCheckpointAt: string | null;
 };
 
 export function createOpsAdminKafkaClient(
@@ -47,6 +51,9 @@ export class OpsAdminKafkaRuntime
   private lastProcessingFailureAt: string | null = null;
   private lastMessageAt: string | null = null;
   private lastProcessedAt: string | null = null;
+  private checkpointPartitions = new Set<number>();
+  private maxObservedLag: bigint | null = null;
+  private lastCheckpointAt: string | null = null;
 
   constructor(
     @Inject(OPS_ADMIN_KAFKA_CONFIG)
@@ -54,6 +61,7 @@ export class OpsAdminKafkaRuntime
     @Inject(OPS_ADMIN_KAFKA_CLIENT)
     private readonly client: OpsAdminKafkaRuntimeClient | null,
     private readonly handler: OpsAdminKafkaHandler,
+    private readonly projectionStore: OpsAdminProjectionStore,
     private readonly logger: Logger,
   ) {
     this.state = config.enabled ? 'stopped' : 'disabled';
@@ -67,6 +75,9 @@ export class OpsAdminKafkaRuntime
       lastProcessingFailureAt: this.lastProcessingFailureAt,
       lastMessageAt: this.lastMessageAt,
       lastProcessedAt: this.lastProcessedAt,
+      checkpointPartitions: this.checkpointPartitions.size,
+      maxObservedLag: this.maxObservedLag?.toString() ?? null,
+      lastCheckpointAt: this.lastCheckpointAt,
     };
   }
 
@@ -78,6 +89,14 @@ export class OpsAdminKafkaRuntime
     if (!this.config.enabled || !this.client || this.started) return;
     this.state = 'starting';
     try {
+      const checkpoint = await this.projectionStore.getCheckpointState(
+        this.config.consumer.groupId,
+        this.config.topic,
+      );
+      this.checkpointPartitions = new Set(checkpoint.partitions);
+      this.maxObservedLag =
+        checkpoint.maxLag === null ? null : BigInt(checkpoint.maxLag);
+      this.lastCheckpointAt = checkpoint.lastCheckpointAt;
       await this.client.connect();
       await this.client.subscribe({
         topic: this.config.topic,
@@ -86,6 +105,7 @@ export class OpsAdminKafkaRuntime
       const runConfig = this.handler.runConfig(this.client, {
         topic: this.config.topic,
         maxBytes: this.config.maxBytes,
+        consumerGroup: this.config.consumer.groupId,
         requireSchemaId: this.config.requireSchemaId,
       });
       const eachMessage = runConfig.eachMessage;
@@ -95,6 +115,7 @@ export class OpsAdminKafkaRuntime
           try {
             await eachMessage(payload);
             this.lastProcessedAt = new Date().toISOString();
+            this.observeCheckpoint(payload);
           } catch {
             this.processingFailures += 1;
             this.lastProcessingFailureAt = new Date().toISOString();
@@ -115,6 +136,34 @@ export class OpsAdminKafkaRuntime
       this.logger.error('Ops/Admin Kafka consumer startup failed');
       throw new Error('Ops/Admin Kafka consumer startup failed');
     }
+  }
+
+  private observeCheckpoint(payload: {
+    partition?: number;
+    message?: { offset?: string; highWatermark?: string };
+  }): void {
+    const partition = payload.partition;
+    const offset = payload.message?.offset;
+    const highWatermark = payload.message?.highWatermark;
+    if (
+      typeof partition !== 'number' ||
+      !Number.isSafeInteger(partition) ||
+      partition < 0 ||
+      offset === undefined ||
+      !/^(0|[1-9][0-9]{0,18})$/.test(offset)
+    )
+      return;
+    this.checkpointPartitions.add(partition);
+    if (
+      highWatermark !== undefined &&
+      /^(0|[1-9][0-9]{0,18})$/.test(highWatermark)
+    ) {
+      const observed = BigInt(highWatermark) - (BigInt(offset) + 1n);
+      const lag = observed > 0n ? observed : 0n;
+      if (this.maxObservedLag === null || lag > this.maxObservedLag)
+        this.maxObservedLag = lag;
+    }
+    this.lastCheckpointAt = new Date().toISOString();
   }
 
   async onApplicationShutdown(): Promise<void> {

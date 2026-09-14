@@ -5,8 +5,21 @@ import { fingerprintJson } from '../../common/events/event-fingerprint';
 import { ErrorCode } from '../../common/errors';
 import { OpsAdminCartableEventReceipt } from '../../database/ops-admin-projection-entities/ops-admin-cartable-event-receipt.entity';
 import { OpsAdminCartableTaskProjection } from '../../database/ops-admin-projection-entities/ops-admin-cartable-task.entity';
+import { OpsAdminKafkaConsumerCheckpoint } from '../../database/ops-admin-projection-entities/ops-admin-kafka-consumer-checkpoint.entity';
 
 export type OpsAdminProjectionResult = 'applied' | 'duplicate' | 'stale';
+export type OpsAdminEventDelivery = {
+  consumerGroup: string;
+  topic: string;
+  partition: number;
+  nextOffset: string;
+  highWatermark?: string;
+};
+export type OpsAdminCheckpointState = {
+  partitions: readonly number[];
+  maxLag: string | null;
+  lastCheckpointAt: string | null;
+};
 
 @Injectable()
 export class OpsAdminProjectionStore {
@@ -14,6 +27,7 @@ export class OpsAdminProjectionStore {
 
   project(
     event: CartableTaskProjectedEvent,
+    delivery?: OpsAdminEventDelivery,
   ): Promise<OpsAdminProjectionResult> {
     return this.dataSource.transaction('READ COMMITTED', async (manager) => {
       for (const lock of [
@@ -34,6 +48,7 @@ export class OpsAdminProjectionStore {
       });
       if (existingReceipt) {
         if (existingReceipt.fingerprint === envelopeFingerprint) {
+          await this.saveCheckpoint(manager, delivery);
           return 'duplicate';
         }
         throw new ConflictException({
@@ -47,6 +62,7 @@ export class OpsAdminProjectionStore {
       const currentVersion = current?.taskVersion ?? 0;
       if (event.payload.taskVersion < currentVersion) {
         await this.saveReceipt(manager, event, envelopeFingerprint);
+        await this.saveCheckpoint(manager, delivery);
         return 'stale';
       }
       if (event.payload.taskVersion === currentVersion) {
@@ -57,6 +73,7 @@ export class OpsAdminProjectionStore {
           });
         }
         await this.saveReceipt(manager, event, envelopeFingerprint);
+        await this.saveCheckpoint(manager, delivery);
         return 'duplicate';
       }
 
@@ -83,8 +100,34 @@ export class OpsAdminProjectionStore {
           createdAt: new Date(event.payload.createdAt),
         }),
       );
+      await this.saveCheckpoint(manager, delivery);
       return 'applied';
     });
+  }
+
+  async getCheckpointState(
+    consumerGroup: string,
+    topic: string,
+  ): Promise<OpsAdminCheckpointState> {
+    const rows = await this.dataSource
+      .getRepository(OpsAdminKafkaConsumerCheckpoint)
+      .find({ where: { consumerGroup, topic }, order: { partition: 'ASC' } });
+    let maxLag: bigint | null = null;
+    let lastCheckpointAt: Date | null = null;
+    for (const row of rows) {
+      if (row.highWatermark !== null) {
+        const observed = BigInt(row.highWatermark) - BigInt(row.nextOffset);
+        const lag = observed > 0n ? observed : 0n;
+        if (maxLag === null || lag > maxLag) maxLag = lag;
+      }
+      if (lastCheckpointAt === null || row.updatedAt > lastCheckpointAt)
+        lastCheckpointAt = row.updatedAt;
+    }
+    return {
+      partitions: rows.map((row) => row.partition),
+      maxLag: maxLag?.toString() ?? null,
+      lastCheckpointAt: lastCheckpointAt?.toISOString() ?? null,
+    };
   }
 
   private saveReceipt(
@@ -101,6 +144,43 @@ export class OpsAdminProjectionStore {
         taskVersion: event.payload.taskVersion,
       }),
     );
+  }
+
+  private saveCheckpoint(
+    manager: EntityManager,
+    delivery?: OpsAdminEventDelivery,
+  ): Promise<void> {
+    if (delivery === undefined) return Promise.resolve();
+    return manager
+      .query(
+        `INSERT INTO "ops"."kafka_consumer_checkpoints"
+          ("consumerGroup", "topic", "partition", "nextOffset", "highWatermark")
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT ("consumerGroup", "topic", "partition") DO UPDATE SET
+           "nextOffset" = GREATEST(
+             "ops"."kafka_consumer_checkpoints"."nextOffset",
+             EXCLUDED."nextOffset"
+           ),
+           "highWatermark" = CASE
+             WHEN EXCLUDED."highWatermark" IS NULL
+               THEN "ops"."kafka_consumer_checkpoints"."highWatermark"
+             WHEN "ops"."kafka_consumer_checkpoints"."highWatermark" IS NULL
+               THEN EXCLUDED."highWatermark"
+             ELSE GREATEST(
+               "ops"."kafka_consumer_checkpoints"."highWatermark",
+               EXCLUDED."highWatermark"
+             )
+           END,
+           "updatedAt" = now()`,
+        [
+          delivery.consumerGroup,
+          delivery.topic,
+          delivery.partition,
+          delivery.nextOffset,
+          delivery.highWatermark ?? null,
+        ],
+      )
+      .then(() => undefined);
   }
 
   private semanticFingerprint(event: CartableTaskProjectedEvent): string {

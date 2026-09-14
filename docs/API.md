@@ -4,12 +4,16 @@
 
 No public `/api/v1` route changes. A new standalone, internal-only Ops/Admin
 projection worker exposes `GET /health` for process/build identity and
-`GET /ready` for bounded database/consumer readiness. The probes never return
-broker addresses, topics, groups, offsets, event payloads, credentials or raw
-errors. The worker remains absent from deployment manifests and cannot start a
-consumer unless its explicit Kafka flag and dedicated projection database
-configuration pass startup validation
-(`docs/features/microservices-phase-6-ops-admin-kafka-runtime.md`).
+`GET /ready` for bounded database/consumer readiness. Its successful internal
+readiness response includes only checkpoint partition count, maximum observed
+lag as a decimal string or `null`, and last checkpoint UTC timestamp or
+`null`. The probes never return broker addresses, topics, groups, partition
+coordinates, offsets, event payloads, credentials or raw errors. Checkpoint
+lag is evidence only and does not change readiness in this slice. The worker
+remains absent from deployment manifests and cannot start a consumer unless
+its explicit Kafka flag and dedicated projection database configuration pass
+startup validation
+(`docs/features/microservices-phase-6-ops-admin-kafka-checkpoints.md`).
 
 ## Loyalty shared-topic routing
 

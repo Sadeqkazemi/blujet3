@@ -25,7 +25,17 @@ export class OpsAdminProjectionWorkerHealthController {
   @Get('ready')
   async ready() {
     try {
-      await this.dataSource.query('SELECT 1');
+      await this.dataSource.transaction(async (manager) => {
+        await manager.query(
+          'SELECT id, "taskVersion" FROM ops.cartable_tasks LIMIT 0',
+        );
+        await manager.query(
+          'SELECT "eventId" FROM ops.cartable_projection_event_receipts LIMIT 0',
+        );
+        await manager.query(
+          'SELECT "consumerGroup", topic, "partition", "nextOffset", "highWatermark", "updatedAt" FROM ops.kafka_consumer_checkpoints LIMIT 0',
+        );
+      });
     } catch {
       throw new ServiceUnavailableException({
         status: 'error',
@@ -51,7 +61,15 @@ export class OpsAdminProjectionWorkerHealthController {
       service: 'blujet-ops-admin-projection',
       info: {
         database: { status: 'up' },
-        consumer: { status: 'up', state: consumer.state },
+        consumer: {
+          status: 'up',
+          state: consumer.state,
+          checkpoint: {
+            partitions: consumer.checkpointPartitions,
+            maxObservedLag: consumer.maxObservedLag,
+            lastCheckpointAt: consumer.lastCheckpointAt,
+          },
+        },
       },
     };
   }

@@ -2,6 +2,7 @@ import type { ConsumerRunConfig, EachMessagePayload } from 'kafkajs';
 import type { Logger } from 'nestjs-pino';
 import type { OpsAdminKafkaConsumerConfig } from '../../config/ops-admin-kafka-consumer.config';
 import { OpsAdminKafkaHandler } from './ops-admin-kafka.handler';
+import type { OpsAdminProjectionStore } from './ops-admin-projection.store';
 import {
   createOpsAdminKafkaClient,
   OpsAdminKafkaRuntime,
@@ -32,6 +33,13 @@ describe('OpsAdminKafkaRuntime', () => {
     log: jest.fn(),
     error: jest.fn(),
   };
+  const projectionStore = {
+    getCheckpointState: jest.fn().mockResolvedValue({
+      partitions: [],
+      maxLag: null,
+      lastCheckpointAt: null,
+    }),
+  };
 
   function client(): jest.Mocked<OpsAdminKafkaRuntimeClient> {
     return {
@@ -52,6 +60,7 @@ describe('OpsAdminKafkaRuntime', () => {
       config,
       kafkaClient,
       handler as unknown as OpsAdminKafkaHandler,
+      projectionStore as unknown as OpsAdminProjectionStore,
       logger as unknown as Logger,
     );
   }
@@ -73,7 +82,11 @@ describe('OpsAdminKafkaRuntime', () => {
       lastProcessingFailureAt: null,
       lastMessageAt: null,
       lastProcessedAt: null,
+      checkpointPartitions: 0,
+      maxObservedLag: null,
+      lastCheckpointAt: null,
     });
+    expect(projectionStore.getCheckpointState).not.toHaveBeenCalled();
   });
 
   it('connects, subscribes and then runs the manual-ack handler', async () => {
@@ -96,6 +109,10 @@ describe('OpsAdminKafkaRuntime', () => {
     await worker.onApplicationBootstrap();
 
     expect(order).toEqual(['connect', 'subscribe', 'run']);
+    expect(projectionStore.getCheckpointState).toHaveBeenCalledWith(
+      'ops-projection-v1',
+      'blujet.events.v1',
+    );
     expect(kafkaClient.subscribe).toHaveBeenCalledWith({
       topic: 'blujet.events.v1',
       fromBeginning: true,
@@ -103,12 +120,40 @@ describe('OpsAdminKafkaRuntime', () => {
     expect(handler.runConfig).toHaveBeenCalledWith(kafkaClient, {
       topic: 'blujet.events.v1',
       maxBytes: 4096,
+      consumerGroup: 'ops-projection-v1',
       requireSchemaId: false,
     });
     expect(kafkaClient.run).toHaveBeenCalledWith(runConfig);
     expect(worker.isReady()).toBe(true);
     await worker.onApplicationBootstrap();
     expect(kafkaClient.connect).toHaveBeenCalledTimes(1);
+  });
+
+  it('restores durable checkpoint evidence before connecting', async () => {
+    const kafkaClient = client();
+    const order: string[] = [];
+    projectionStore.getCheckpointState.mockImplementationOnce(() => {
+      order.push('checkpoint');
+      return Promise.resolve({
+        partitions: [1, 4],
+        maxLag: '12',
+        lastCheckpointAt: '2026-09-14T08:00:00.000Z',
+      });
+    });
+    kafkaClient.connect.mockImplementation(() => {
+      order.push('connect');
+      return Promise.resolve();
+    });
+    const worker = runtime(enabled, kafkaClient);
+
+    await worker.onApplicationBootstrap();
+
+    expect(order).toEqual(['checkpoint', 'connect']);
+    expect(worker.getStatus()).toMatchObject({
+      checkpointPartitions: 2,
+      maxObservedLag: '12',
+      lastCheckpointAt: '2026-09-14T08:00:00.000Z',
+    });
   });
 
   it.each(['connect', 'subscribe', 'run'] as const)(
@@ -177,11 +222,19 @@ describe('OpsAdminKafkaRuntime', () => {
     await worker.onApplicationBootstrap();
     const active = kafkaClient.run.mock.calls[0][0]!;
 
-    await active.eachMessage!({} as EachMessagePayload);
+    await active.eachMessage!({
+      partition: 3,
+      message: { offset: '7', highWatermark: '12' },
+    } as EachMessagePayload);
 
     expect(logger.error).not.toHaveBeenCalled();
     expect(worker.getStatus().processingFailures).toBe(0);
     expect(typeof worker.getStatus().lastProcessedAt).toBe('string');
+    expect(worker.getStatus()).toMatchObject({
+      checkpointPartitions: 1,
+      maxObservedLag: '4',
+    });
+    expect(typeof worker.getStatus().lastCheckpointAt).toBe('string');
   });
 
   it('stops and disconnects once after successful startup', async () => {

@@ -6,7 +6,12 @@ import { OpsAdminProjectionWorkerHealthController } from './ops-admin-projection
 describe('OpsAdminProjectionWorkerHealthController', () => {
   const runtime = {
     isReady: jest.fn().mockReturnValue(true),
-    getStatus: jest.fn().mockReturnValue({ state: 'running' }),
+    getStatus: jest.fn().mockReturnValue({
+      state: 'running',
+      checkpointPartitions: 2,
+      maxObservedLag: '4',
+      lastCheckpointAt: '2026-09-14T08:00:00.000Z',
+    }),
   };
 
   beforeEach(() => jest.clearAllMocks());
@@ -19,19 +24,25 @@ describe('OpsAdminProjectionWorkerHealthController', () => {
   }
 
   it('exposes only process and build identity from liveness', () => {
-    const query = jest.fn();
+    const transaction = jest.fn();
     expect(
-      controller({ query } as unknown as DataSource).health(),
+      controller({ transaction } as unknown as DataSource).health(),
     ).toMatchObject({
       status: 'ok',
       service: 'blujet-ops-admin-projection',
     });
-    expect(query).not.toHaveBeenCalled();
+    expect(transaction).not.toHaveBeenCalled();
   });
 
   it('is ready only when PostgreSQL and the consumer are ready', async () => {
+    const query = jest.fn<Promise<unknown>, [string]>().mockResolvedValue([]);
     const dataSource = {
-      query: jest.fn().mockResolvedValue([{ '?column?': 1 }]),
+      transaction: jest
+        .fn<
+          Promise<void>,
+          [(manager: { query: typeof query }) => Promise<void>]
+        >()
+        .mockImplementation((work) => work({ query })),
     } as unknown as DataSource;
 
     await expect(controller(dataSource).ready()).resolves.toEqual({
@@ -39,14 +50,29 @@ describe('OpsAdminProjectionWorkerHealthController', () => {
       service: 'blujet-ops-admin-projection',
       info: {
         database: { status: 'up' },
-        consumer: { status: 'up', state: 'running' },
+        consumer: {
+          status: 'up',
+          state: 'running',
+          checkpoint: {
+            partitions: 2,
+            maxObservedLag: '4',
+            lastCheckpointAt: '2026-09-14T08:00:00.000Z',
+          },
+        },
       },
     });
+    expect(query.mock.calls.map(([sql]) => sql)).toEqual([
+      'SELECT id, "taskVersion" FROM ops.cartable_tasks LIMIT 0',
+      'SELECT "eventId" FROM ops.cartable_projection_event_receipts LIMIT 0',
+      'SELECT "consumerGroup", topic, "partition", "nextOffset", "highWatermark", "updatedAt" FROM ops.kafka_consumer_checkpoints LIMIT 0',
+    ]);
   });
 
   it('returns safe 503 semantics when PostgreSQL is unavailable', async () => {
     const dataSource = {
-      query: jest.fn().mockRejectedValue(new Error('secret database detail')),
+      transaction: jest
+        .fn()
+        .mockRejectedValue(new Error('secret database detail')),
     } as unknown as DataSource;
 
     await expect(controller(dataSource).ready()).rejects.toBeInstanceOf(
@@ -59,7 +85,7 @@ describe('OpsAdminProjectionWorkerHealthController', () => {
     runtime.isReady.mockReturnValueOnce(false);
     runtime.getStatus.mockReturnValueOnce({ state: 'failed' });
     const dataSource = {
-      query: jest.fn().mockResolvedValue([{ '?column?': 1 }]),
+      transaction: jest.fn().mockResolvedValue(undefined),
     } as unknown as DataSource;
 
     await expect(controller(dataSource).ready()).rejects.toMatchObject({

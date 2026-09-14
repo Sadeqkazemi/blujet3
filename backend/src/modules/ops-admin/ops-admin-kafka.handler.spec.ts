@@ -31,7 +31,10 @@ describe('OpsAdminKafkaHandler', () => {
   );
   const subscription = { topic: 'blujet.events.v1' };
   const opsAdmin = {
-    consume: jest.fn<Promise<'applied' | 'duplicate' | 'stale'>, [unknown]>(),
+    consume: jest.fn<
+      Promise<'applied' | 'duplicate' | 'stale'>,
+      [unknown, unknown?]
+    >(),
   };
   const commitOffsets = jest.fn<Promise<void>, [unknown]>().mockResolvedValue();
   const handler = new OpsAdminKafkaHandler(
@@ -116,6 +119,40 @@ describe('OpsAdminKafkaHandler', () => {
     },
   );
 
+  it('persists validated delivery coordinates before acknowledgement', async () => {
+    const message = {
+      ...payload().message,
+      highWatermark: '9',
+    } as EachMessagePayload['message'];
+
+    await handler.runConfig(
+      { commitOffsets },
+      { ...subscription, consumerGroup: 'ops-projection-v1' },
+    ).eachMessage!(payload({ message }));
+
+    expect(opsAdmin.consume).toHaveBeenCalledWith(event, {
+      consumerGroup: 'ops-projection-v1',
+      topic: subscription.topic,
+      partition: 0,
+      nextOffset: '5',
+      highWatermark: '9',
+    });
+    expect(commitOffsets).toHaveBeenCalledTimes(1);
+    expect(opsAdmin.consume.mock.invocationCallOrder[0]).toBeLessThan(
+      commitOffsets.mock.invocationCallOrder[0],
+    );
+  });
+
+  it('rejects an invalid consumer group before processing', () => {
+    expect(() =>
+      handler.runConfig(
+        { commitOffsets },
+        { ...subscription, consumerGroup: '../shared' },
+      ),
+    ).toThrow('Invalid Ops/Admin Kafka consumer group');
+    expect(opsAdmin.consume).not.toHaveBeenCalled();
+  });
+
   it('accepts legacy v1 backlog without a schema header while optional', async () => {
     const message = payload().message;
     await handler.runConfig({ commitOffsets }, subscription).eachMessage!(
@@ -164,6 +201,7 @@ describe('OpsAdminKafkaHandler', () => {
     { partition: -1 },
     { partition: 0.5 },
     { message: { ...payload().message, offset: '4x' } },
+    { message: { ...payload().message, highWatermark: '4' } },
     { message: { ...payload().message, key: Buffer.from('wrong') } },
     { message: { ...payload().message, value: null } },
     { message: { ...payload().message, value: Buffer.from('{') } },
