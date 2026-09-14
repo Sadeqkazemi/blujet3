@@ -1,5 +1,18 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Loyalty shared-topic routing
+
+No HTTP route or response changes. The standalone Loyalty projection worker may
+consume the shared canonical Kafka topic while owning only core-loyalty
+events. A routing-valid v1 delivery from the approved core-commerce,
+core-agency or core-ops producer is persisted as
+Loyalty consumer checkpoint progress and then acknowledged without calling a
+Loyalty projection or creating receipt/slot/DLQ state. Malformed envelopes,
+mismatched key/headers/schema identity and every invalid core-loyalty event
+remain fail-closed and unacknowledged. The worker and all Loyalty read flags stay
+disabled; no baseline replay, read cutover or deployment occurs in this slice
+(`docs/features/microservices-phase-6-loyalty-shared-topic-routing.md`).
+
 ## Reporting shared-topic routing
 
 No HTTP route or response changes. The optional Reporting Kafka worker owns

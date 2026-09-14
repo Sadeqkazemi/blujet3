@@ -86,6 +86,43 @@ function kafkaDelivery(nextOffset: string): LoyaltyEventDelivery {
   };
 }
 
+function foreignKafkaPayload(): EachMessagePayload {
+  const input = {
+    eventId: randomUUID(),
+    eventType: 'OrderCreated',
+    eventVersion: 1,
+    occurredAt: at,
+    producer: 'core-commerce',
+    aggregateType: 'Order',
+    aggregateId: randomUUID(),
+    correlationId: randomUUID(),
+    idempotencyKey: randomUUID(),
+    payload: { status: 'HELD' },
+  };
+  return {
+    topic: 'blujet.events.v1',
+    partition: 5,
+    heartbeat: jest.fn<Promise<void>, []>().mockResolvedValue(),
+    pause: jest.fn(),
+    message: {
+      offset: '31',
+      highWatermark: '32',
+      timestamp: '0',
+      attributes: 0,
+      key: Buffer.from(
+        `${input.producer}:${input.aggregateType}:${input.aggregateId}`,
+      ),
+      value: Buffer.from(JSON.stringify(input)),
+      headers: {
+        'event-id': Buffer.from(input.eventId),
+        'correlation-id': Buffer.from(input.correlationId),
+        'event-version': Buffer.from('1'),
+        'event-schema-id': Buffer.from('blujet.core-itinerary.OrderCreated.v1'),
+      },
+    },
+  } as unknown as EachMessagePayload;
+}
+
 describe('Loyalty version-aware projection (real PostgreSQL)', () => {
   let admin: DataSource;
   let source: DataSource;
@@ -373,7 +410,12 @@ describe('Loyalty version-aware projection (real PostgreSQL)', () => {
 
   it('replays an acknowledgement gap without another business row', async () => {
     const projected = parseLoyaltyProjectionEvent(memberEvent(randomUUID()));
-    const handler = new LoyaltyKafkaHandler(consumer, dlq, { enabled: false });
+    const handler = new LoyaltyKafkaHandler(
+      consumer,
+      dlq,
+      { enabled: false },
+      new LoyaltyProjectionStore(projection),
+    );
     const commitOffsets = jest
       .fn<Promise<void>, [unknown]>()
       .mockRejectedValueOnce(new Error('broker unavailable'))
@@ -447,6 +489,64 @@ describe('Loyalty version-aware projection (real PostgreSQL)', () => {
     expect(commitOffsets).toHaveBeenLastCalledWith([
       { topic: delivery.topic, partition: 0, offset: '11' },
     ]);
+  });
+
+  it('durably checkpoints foreign-domain traffic without projection state', async () => {
+    const handler = new LoyaltyKafkaHandler(
+      consumer,
+      dlq,
+      { enabled: false },
+      new LoyaltyProjectionStore(projection),
+    );
+    const commitOffsets = jest
+      .fn<Promise<void>, [unknown]>()
+      .mockResolvedValue();
+
+    await handler.runConfig(
+      { commitOffsets },
+      {
+        topic: 'blujet.events.v1',
+        consumerGroup: 'loyalty-v1',
+        requireSchemaId: true,
+      },
+    ).eachMessage!(foreignKafkaPayload());
+
+    expect(commitOffsets).toHaveBeenCalledWith([
+      { topic: 'blujet.events.v1', partition: 5, offset: '32' },
+    ]);
+    const counts = await projection.query<
+      Array<{
+        members: string;
+        receipts: string;
+        slots: string;
+        failures: string;
+        checkpoints: string;
+      }>
+    >(`SELECT
+      (SELECT COUNT(*)::text FROM loyalty.club_members) AS members,
+      (SELECT COUNT(*)::text FROM loyalty.loyalty_projection_event_receipts) AS receipts,
+      (SELECT COUNT(*)::text FROM loyalty.loyalty_projection_slots) AS slots,
+      (SELECT COUNT(*)::text FROM loyalty.kafka_processing_failures) AS failures,
+      (SELECT COUNT(*)::text FROM loyalty.kafka_consumer_checkpoints) AS checkpoints`);
+    expect(counts[0]).toEqual({
+      members: '0',
+      receipts: '0',
+      slots: '0',
+      failures: '0',
+      checkpoints: '1',
+    });
+    const checkpoints = await projection.query<
+      Array<{ nextOffset: string; highWatermark: string }>
+    >(
+      `SELECT "nextOffset", "highWatermark"
+       FROM loyalty.kafka_consumer_checkpoints
+       WHERE "consumerGroup"=$1 AND topic=$2 AND "partition"=$3`,
+      ['loyalty-v1', 'blujet.events.v1', 5],
+    );
+    expect(checkpoints[0]).toEqual({
+      nextOffset: '32',
+      highWatermark: '32',
+    });
   });
 
   it('keeps durable checkpoint coordinates monotonic on replay', async () => {

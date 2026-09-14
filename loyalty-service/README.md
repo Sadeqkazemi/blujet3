@@ -5,6 +5,23 @@ migration, seed, event writer, public route or purchase integration.
 The backend remains the **only writer**; these projections never authorize
 a sale, redeem points, debit a wallet or claim a price lock.
 
+## Shared canonical topic routing (not activated)
+
+The worker owns only `core-loyalty` events but may consume the shared
+`blujet.events.v1` topic. Routing-valid v1 deliveries from the currently
+approved `core-commerce`, `core-agency` and `core-ops` producers advance only
+the Loyalty consumer checkpoint and are then acknowledged; they never invoke a
+Loyalty projection or create Loyalty receipt/slot/DLQ state. Legacy deliveries
+without the schema header are admitted only while
+`LOYALTY_EVENT_SCHEMA_HEADER_REQUIRED=false`.
+
+Unknown producers, malformed envelopes, transport metadata mismatches,
+cross-labeled schemas and invalid `core-loyalty` payloads remain fail-closed and
+unacknowledged. The checkpoint transaction commits before Kafka ACK. This makes
+shared-topic baseline catch-up possible but does not activate the worker or
+authorize read cutover. See
+`docs/features/microservices-phase-6-loyalty-shared-topic-routing.md`.
+
 ## Standalone projection worker (not activated)
 
 `npm run start:worker:prod` starts the dedicated Kafka projection process after
