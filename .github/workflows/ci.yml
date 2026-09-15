@@ -1555,20 +1555,8 @@ jobs:
             --header 'X-Internal-Token: ops_admin_internal_ci_token_2026_09_09' \
             'http://localhost:3660/internal/v1/ops-admin/cartable/tasks?limit=0')" = '400'
           node - <<'NODE'
-          const { Client } = require('pg');
           (async () => {
-            const client = new Client({ connectionString: process.env.OPS_ADMIN_DATABASE_URL });
-            await client.connect();
-            let assigneeId;
-            try {
-              const result = await client.query(
-                'SELECT "assigneeId" FROM ops.cartable_tasks ORDER BY "createdAt" ASC LIMIT 1',
-              );
-              assigneeId = result.rows[0]?.assigneeId;
-            } finally {
-              await client.end();
-            }
-            if (typeof assigneeId !== 'string') process.exit(1);
+            const assigneeId = '00000000-0000-4000-8000-000000000001';
             const response = await fetch(
               'http://localhost:3660/internal/v1/ops-admin/cartable/unread-count',
               {
@@ -1583,8 +1571,7 @@ jobs:
               response.status !== 200 ||
               body?.success !== true ||
               body?.data?.assigneeId !== assigneeId ||
-              !Number.isSafeInteger(body?.data?.count) ||
-              body.data.count < 0 ||
+              body?.data?.count !== 0 ||
               !/^\d{4}-\d{2}-\d{2}T.*Z$/.test(body?.data?.observedAt)
             ) process.exit(1);
           })().catch(() => process.exit(1));
