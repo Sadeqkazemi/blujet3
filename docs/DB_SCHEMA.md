@@ -18,6 +18,17 @@ projection only behind a default-off flag after reconciliation. Core remains
 the sole writer and the rollback path remains the existing Core query
 (`docs/features/microservices-phase-6-ops-admin-cartable-unread-read-cutover.md`).
 
+## Reporting cutover reader roles
+
+No schema change. Roles `blujet_reporting_cutover_source` and
+`blujet_reporting_cutover_target` are non-owner LOGIN accounts with
+USAGE on `reporting` and column-level SELECT matching the cutover gate.
+They have no `payload` SELECT, write, DDL, sequence, membership,
+ownership or source/target counterpart CONNECT. Provisioning never rewrites
+`PUBLIC` or unrelated-role ACLs; it fails closed when the database baseline
+would leak an effective privilege
+(`docs/features/microservices-phase-6-reporting-cutover-reader-roles.md`).
+
 ## Reporting projection runtime role
 
 No migration or table change. Role `blujet_reporting_projection_runtime` is a

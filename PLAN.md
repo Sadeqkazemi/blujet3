@@ -11,6 +11,16 @@
 - [x] Pass lint, typecheck, build and OpenAPI/diff hygiene, then present the diff
       before push/merge. Do not deploy or activate flags.
 
+## Reporting cutover reader roles (2026-09-15)
+
+- [x] Freeze the source/target read-only cutover LOGIN contract.
+- [x] Provision idempotent, fail-closed, column-scoped SELECT roles
+      without payload, writes, DDL, memberships or counterpart CONNECT, and
+      without cluster-wide PUBLIC ACL mutation.
+- [x] Prove unit and real-PostgreSQL cases; keep OpenAPI unchanged.
+- [ ] Obtain CI evidence and present the diff. Do not merge, deploy,
+      enable the consumer or cut over reads.
+
 ## Ops/Admin cartable unread read cutover (2026-09-15)
 
 - [x] Freeze the first owner-scoped, PII-free Ops/Admin public-read slice before

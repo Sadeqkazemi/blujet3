@@ -28,6 +28,19 @@ content or PII. Availability failures fall back to Core; invalid boundary data
 fails closed. All cartable writes and every other cartable read remain Core-only
 (`docs/features/microservices-phase-6-ops-admin-cartable-unread-read-cutover.md`).
 
+## Reporting cutover reader roles
+
+No public or internal HTTP route changes. Offline owner CLIs provision
+`blujet_reporting_cutover_source` on Core/shared PostgreSQL and
+`blujet_reporting_cutover_target` on the isolated Reporting database
+with column-level SELECT for the cutover gate only. Both owner URLs are required
+so a shared-server source/target CONNECT boundary is verified. The CLIs fail
+closed on unsafe effective `PUBLIC` privileges without changing `PUBLIC` or
+unrelated roles. Output is
+`{ status, role, relationCount }`. No consumer, data copy, read cutover
+or deployment is activated
+(`docs/features/microservices-phase-6-reporting-cutover-reader-roles.md`).
+
 ## Reporting projection runtime role
 
 No public or internal HTTP contract changes. An offline provisioner prepares
