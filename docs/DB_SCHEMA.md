@@ -1,5 +1,16 @@
 # DB_SCHEMA.md — blujet data model
 
+## Reporting projection runtime role
+
+No migration or table change. Role `blujet_reporting_projection_runtime` is a
+non-owner LOGIN on the isolated PostgreSQL 16 Reporting database. It receives
+only schema USAGE plus SELECT/INSERT/UPDATE on projections, checkpoints and
+failure metadata, and SELECT/INSERT on immutable event receipts. It has no
+DELETE, TRUNCATE, DDL, sequence, ownership, membership, non-Reporting-schema or
+Core/foreign-database access. Provisioning is offline and does not alter the
+worker flag, runtime URL, data or deployment
+(`docs/features/microservices-phase-6-reporting-projection-runtime-role.md`).
+
 ## Ops/Admin Kafka failure quarantine
 
 Migration `1794124800000-OpsAdminKafkaFailureQuarantine` adds

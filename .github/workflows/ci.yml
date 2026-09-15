@@ -88,7 +88,7 @@ jobs:
           emit identity '^identity-service/'
           emit agency '^(agency-service/|backend/(package(-lock)?\.json$|tsconfig[^/]*\.json$|nest-cli\.json$|src/database/|src/config/|src/modules/agency-shadow/|src/modules/agency-portal/))'
           emit notify '^(notify-service/|backend/(package(-lock)?\.json$|src/database/))'
-          emit reporting '^(backend/(Dockerfile\.reporting-worker|package(-lock)?\.json$|tsconfig[^/]*\.json$|nest-cli\.json$|src/(reporting-worker|config/reporting-worker|database/(reporting-data-source|reporting-migrations/|entities/reporting-|migrations/179(1734400000|2156800000|2329600000)-Reporting)|modules/reporting/))|docker-compose\.prod\.yml$|docs/features/(reporting-|microservices-phase-6-reporting-physical-db\.md$))'
+          emit reporting '^(backend/(Dockerfile\.reporting-worker|package(-lock)?\.json$|tsconfig[^/]*\.json$|nest-cli\.json$|test/(jest-reporting-runtime-role\.json|reporting-runtime-role\.e2e-spec\.ts)|src/(reporting-worker|config/reporting-worker|database/(reporting-data-source|reporting-migrations/|entities/reporting-|provision-reporting-|migrations/179(1734400000|2156800000|2329600000)-Reporting)|modules/reporting/))|docker-compose\.prod\.yml$|docs/features/(reporting-|microservices-phase-6-reporting-(physical-db|projection-runtime-role)\.md$))'
           emit pss '^pss-service/'
           emit frontend '^frontend/'
           emit ml '^ml-service/'
@@ -889,6 +889,11 @@ jobs:
           schema_log=$(npm run schema:log:reporting 2>&1)
           echo "$schema_log"
           echo "$schema_log" | grep -q 'Your schema is up to date'
+      - name: Prove Reporting runtime role isolation
+        env:
+          REPORTING_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_reporting_test
+          REPORTING_ROLE_E2E_ENABLED: "true"
+        run: npm run test:e2e:reporting-runtime-role
       - run: npm run typecheck
       - run: npm run build
       - name: Prove compiled rollback and restore

@@ -1,5 +1,14 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Reporting projection runtime role
+
+No public or internal HTTP contract changes. An offline provisioner prepares
+`blujet_reporting_projection_runtime` for the independently runnable Reporting
+worker. The long-running process may receive only its restricted runtime URL;
+the owner URL is provisioning-only. No consumer, read cutover, data copy or
+deployment is activated
+(`docs/features/microservices-phase-6-reporting-projection-runtime-role.md`).
+
 ## Ops/Admin poison-message quarantine
 
 No public `/api/v1` route changes. When `OPS_ADMIN_DLQ_ENABLED=true`, the
