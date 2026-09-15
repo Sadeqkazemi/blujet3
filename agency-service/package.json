@@ -21,7 +21,9 @@
     "lint:check": "npm run lint",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
     "test:e2e": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config ./test/jest-e2e.json --runInBand",
-    "test:projection": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config ./test/jest-projection.json --runInBand"
+    "test:e2e:cutover-readiness": "cross-env TZ=UTC NODE_OPTIONS=--experimental-vm-modules jest --config ./test/jest-agency-cutover-readiness.json --runInBand",
+    "test:projection": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config ./test/jest-projection.json --runInBand",
+    "database:check-agency-cutover:prod": "node dist/check-agency-projection-cutover-readiness.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -50,6 +52,7 @@
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.0",
+    "@types/pg": "^8.23.1",
     "@types/supertest": "^7.0.0",
     "cross-env": "^10.1.0",
     "eslint": "^9.18.0",

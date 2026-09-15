@@ -2,10 +2,9 @@
   "moduleFileExtensions": ["js", "json", "ts"],
   "rootDir": ".",
   "testEnvironment": "node",
-  "testRegex": ".e2e-spec.ts$",
-  "testPathIgnorePatterns": ["agency-cutover-readiness.e2e-spec.ts"],
+  "testRegex": "agency-cutover-readiness\\.e2e-spec\\.ts$",
   "maxWorkers": 1,
-  "testTimeout": 20000,
+  "testTimeout": 60000,
   "setupFiles": ["<rootDir>/jest-setup.ts"],
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"

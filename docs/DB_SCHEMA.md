@@ -531,6 +531,16 @@ tables and every writer stay in Core until their command, Event, idempotency,
 Saga and reconciliation gates are separately proven. No copy, dual-write,
 cutover or deployment is included.
 
+## Agency projection cutover readiness gate
+
+No schema change. The offline gate reads Core `agency` business tables
+and `orders.commerce_outbox_events` (`producer = core-agency`) plus the
+isolated Agency receipts, slots, checkpoints and processing failures.
+It also compares Core `agency.agency_projection_audits` with Agency
+`agency.agency_projection_event_receipts` by count and two
+order-independent fingerprints. It never writes rows
+(`docs/features/microservices-phase-6-agency-cutover-readiness.md`).
+
 ## Agency projection physical baseline contract (microservices phase 6)
 
 The offline baseline transfer copies only `agency_profiles`,

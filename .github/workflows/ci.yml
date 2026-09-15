@@ -388,6 +388,12 @@ jobs:
           git diff --exit-code -- docs/openapi.json
           npm test
           npm run test:e2e
+      - name: Prove Agency cutover readiness gate
+        working-directory: agency-service
+        env:
+          TZ: UTC
+          AGENCY_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_agency_test
+        run: npm run test:e2e:cutover-readiness
       - name: Prove compiled Agency projection rollback and restore
         working-directory: agency-service
         env:
