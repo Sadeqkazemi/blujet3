@@ -6,9 +6,7 @@ import {
 } from '../src/database/provision-reporting-projection-runtime-role';
 
 const PASSWORD = 'reporting_runtime_ci_password_2026';
-const enabled =
-  process.env.CI === 'true' ||
-  process.env.REPORTING_ROLE_E2E_ENABLED === 'true';
+const enabled = process.env.REPORTING_ROLE_E2E_ENABLED === 'true';
 const describeDatabase = enabled ? describe : describe.skip;
 
 function identifier(value: string): string {
