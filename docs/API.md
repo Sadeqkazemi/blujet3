@@ -404,6 +404,15 @@ remains the sole writer; no event consumer, data copy, dual-write, URL switch
 or deployment is included
 (`docs/features/microservices-phase-6-agency-projection-db.md`).
 
+## Agency projection cutover readiness gate
+
+No public or internal HTTP route changes. An offline CLI compares Core
+and isolated Agency projection databases for the three owned tables,
+requires a drained `core-agency` outbox, consistent receipts/slots,
+terminal DLQ rows and caught-up checkpoints. Output is metadata-only
+READY/NOT_READY/DISABLED/UNAVAILABLE
+(`docs/features/microservices-phase-6-agency-cutover-readiness.md`).
+
 ## Agency projection physical baseline tooling
 
 No HTTP route or response changes. The offline transfer copies only the three

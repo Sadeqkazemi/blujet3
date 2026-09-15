@@ -1,5 +1,16 @@
 # PLAN.md — blujet roadmap & progress
 
+## Agency projection cutover readiness gate (2026-09-15)
+
+- [x] Freeze the offline, read-only, no-Kafka Agency cutover gate.
+- [x] Reuse three-table reconciliation fingerprints, require a drained
+      core-agency outbox, audit/receipt parity, consistent receipts/slots,
+      terminal DLQ rows and checkpoint catch-up.
+- [x] Emit metadata-only READY/NOT_READY/DISABLED/UNAVAILABLE evidence.
+- [x] Prove unit and real-PostgreSQL cases without activating the worker.
+- [ ] Obtain CI evidence and present the diff. Do not merge, deploy,
+      enable the consumer or cut over reads.
+
 ## Loyalty projection cutover readiness gate (2026-09-15)
 
 - [x] Freeze the offline, default-off, read-only and no-Kafka readiness

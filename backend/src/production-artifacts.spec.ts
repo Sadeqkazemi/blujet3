@@ -370,6 +370,12 @@ describe('production backend artifacts', () => {
     );
     expect(deployWorkflow).not.toContain('OPS_ADMIN_CUTOVER_CHECK_ENABLED');
     expect(deployWorkflow).not.toContain('REPORTING_CUTOVER_CHECK_ENABLED');
+    expect(deployWorkflow).not.toContain('AGENCY_CUTOVER_CHECK_ENABLED');
+    expect(compose).not.toContain(
+      'check-reporting-projection-cutover-readiness',
+    );
+    expect(compose).not.toContain('check-agency-projection-cutover-readiness');
+    expect(ciWorkflow).toContain('test:e2e:cutover-readiness');
     expect(compose).not.toContain(
       'check-reporting-projection-cutover-readiness',
     );
@@ -400,6 +406,13 @@ describe('production backend artifacts', () => {
     expect(envExample).toContain('REPORTING_CUTOVER_TARGET_OWNER_URL=');
     expect(envExample).toContain('REPORTING_CUTOVER_SOURCE_PASSWORD=');
     expect(envExample).toContain('REPORTING_CUTOVER_TARGET_PASSWORD=');
+    expect(envExample).toContain('AGENCY_CUTOVER_CHECK_ENABLED=false');
+    expect(envExample).toContain(
+      'postgresql://blujet_agency_cutover_source:replace@core-db:5432/blujet',
+    );
+    expect(envExample).toContain(
+      'postgresql://blujet_agency_cutover_target:replace@agency-db:5432/blujet_agency',
+    );
   });
 
   it('keeps the Ops/Admin cartable unread read cutover default-off and undeployed', () => {

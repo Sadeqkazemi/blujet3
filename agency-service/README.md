@@ -78,6 +78,14 @@ restricted read-only logins. Output contains only table names, counts, two
 order-independent hashes and MATCH/MISMATCH/INCONCLUSIVE status. It never
 prints Agency fields, identifiers, amounts, URLs or credentials.
 
+After building, `npm run database:check-agency-cutover:prod` with
+`AGENCY_CUTOVER_CHECK_ENABLED=true` and `TZ=UTC` emits metadata-only
+READY/NOT_READY/DISABLED/UNAVAILABLE evidence for a later read cutover. It
+reuses the three-table reconciliation fingerprints, requires a drained
+`core-agency` outbox, consistent receipts/slots, terminal DLQ rows and
+caught-up checkpoints. Disabled mode opens no database or Kafka connection.
+See `docs/features/microservices-phase-6-agency-cutover-readiness.md`.
+
 Baseline transfer, read cutover, writer freeze and deployment remain disabled
 and require separately reviewed phases.
 
