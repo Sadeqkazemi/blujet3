@@ -367,6 +367,15 @@ ordered projection upsert, baseline replay, reconciliation and reader cutover
 remain separate expand-only work. No data copy, dual-write or deployment is
 performed.
 
+## Ops/Admin projection cutover readiness gate
+
+No schema change. The offline gate reads Core `ops.cartable_tasks` and
+`orders.commerce_outbox_events` (`producer = core-ops` only) plus the
+dedicated database `ops.cartable_tasks`, `ops.kafka_processing_failures`
+and `ops.kafka_consumer_checkpoints`. It performs no INSERT/UPDATE/DELETE,
+repair, replay or Kafka I/O
+(`docs/features/microservices-phase-6-ops-admin-cutover-readiness.md`).
+
 ## Ops/Admin projection baseline tooling
 
 No new business table. The offline baseline copies Core `ops.cartable_tasks`

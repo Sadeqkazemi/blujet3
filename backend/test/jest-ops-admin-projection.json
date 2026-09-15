@@ -2,7 +2,7 @@
   "moduleFileExtensions": ["js", "json", "ts"],
   "rootDir": "..",
   "testEnvironment": "node",
-  "testRegex": "test/ops-admin-projection-(consumer|runtime-role|baseline)\\.e2e-spec\\.ts$",
+  "testRegex": "test/ops-admin-projection-(consumer|runtime-role|baseline|cutover-readiness)\\.e2e-spec\\.ts$",
   "testTimeout": 60000,
   "moduleNameMapper": {
     "^(\\.{1,2}/.*)\\.js$": "$1"

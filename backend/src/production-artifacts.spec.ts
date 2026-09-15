@@ -349,11 +349,17 @@ describe('production backend artifacts', () => {
           'node dist/database/provision-ops-admin-projection-reader-role.js',
         'database:transfer-ops-admin-projection-baseline:prod':
           'node dist/database/transfer-ops-admin-projection-baseline.js',
+        'database:check-ops-admin-cutover:prod':
+          'node dist/database/check-ops-admin-projection-cutover-readiness.js',
       }),
     );
     expect(ciWorkflow).toContain(
-      'ops-admin-projection-(consumer|runtime-role|baseline)',
+      'ops-admin-projection-(consumer|runtime-role|baseline|cutover-readiness)',
     );
+    expect(compose).not.toContain(
+      'check-ops-admin-projection-cutover-readiness',
+    );
+    expect(deployWorkflow).not.toContain('OPS_ADMIN_CUTOVER_CHECK_ENABLED');
   });
 
   it('keeps database-owner credentials outside the long-running Core process', () => {
