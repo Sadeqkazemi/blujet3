@@ -1,5 +1,20 @@
 # PLAN.md — blujet roadmap & progress
 
+## Reporting projection runtime role (2026-09-15)
+
+- [x] Freeze the exact standalone Reporting writer contract before code.
+- [x] Provision a non-owner, no-membership runtime role with exact per-table
+      grants and no Core/foreign database access.
+- [x] Add real-PostgreSQL proof for permitted projection/checkpoint/failure
+      writes and denied receipt
+      update, delete, DDL, ownership, sequences and cross-domain access.
+- [x] Pass all 233 Backend unit suites (1,391 tests), read-only lint, typecheck,
+      build, OpenAPI stability and diff hygiene locally.
+- [x] Obtain green PostgreSQL 16 Reporting job and CI gate evidence: all 34 PR
+      checks passed in CI run `34948343892`.
+- [x] Present the completed diff and receive explicit approval before merge.
+      Do not transfer data, activate Kafka, cut over or deploy.
+
 ## Ops/Admin poison-message quarantine (2026-09-14)
 
 - [x] Freeze bounded retry, metadata-only quarantine, manual retry/skip and
