@@ -1,6 +1,6 @@
 import type { DataSource, EntityManager } from 'typeorm';
 
-const MAX_LIMIT = 1_000_000;
+export const LOYALTY_RECONCILIATION_MAX_LIMIT = 1_000_000;
 export const LOYALTY_BUSINESS_TABLES = [
   'club_members',
   'club_points_entries',
@@ -35,8 +35,14 @@ export type LoyaltyReconciliationReport = {
 };
 
 function assertLimit(limit: number): void {
-  if (!Number.isSafeInteger(limit) || limit < 1 || limit > MAX_LIMIT) {
-    throw new Error(`Loyalty reconciliation limit must be 1-${MAX_LIMIT}`);
+  if (
+    !Number.isSafeInteger(limit) ||
+    limit < 1 ||
+    limit > LOYALTY_RECONCILIATION_MAX_LIMIT
+  ) {
+    throw new Error(
+      `Loyalty reconciliation limit must be 1-${LOYALTY_RECONCILIATION_MAX_LIMIT}`,
+    );
   }
 }
 
@@ -69,23 +75,21 @@ async function fingerprint(
 }
 
 function databaseFingerprints(
-  dataSource: DataSource,
+  manager: EntityManager,
   limit: number,
 ): Promise<Fingerprint[]> {
-  return dataSource.transaction('REPEATABLE READ', async (manager) => {
-    await manager.query('SET TRANSACTION READ ONLY');
-    await manager.query("SET LOCAL TIME ZONE 'UTC'");
-    const fingerprints: Fingerprint[] = [];
+  return (async () => {
+    const rows: Fingerprint[] = [];
     for (const table of LOYALTY_BUSINESS_TABLES) {
-      fingerprints.push(await fingerprint(manager, table, limit));
+      rows.push(await fingerprint(manager, table, limit));
     }
-    return fingerprints;
-  });
+    return rows;
+  })();
 }
 
-export async function reconcileLoyaltyProjection(
-  source: DataSource,
-  projection: DataSource,
+export async function reconcileLoyaltyProjectionManagers(
+  source: EntityManager,
+  projection: EntityManager,
   limit: number,
 ): Promise<LoyaltyReconciliationReport> {
   assertLimit(limit);
@@ -130,4 +134,25 @@ export async function reconcileLoyaltyProjection(
     limit,
     tables,
   };
+}
+
+export async function reconcileLoyaltyProjection(
+  source: DataSource,
+  projection: DataSource,
+  limit: number,
+): Promise<LoyaltyReconciliationReport> {
+  assertLimit(limit);
+  return source.transaction('REPEATABLE READ', async (sourceManager) => {
+    await sourceManager.query('SET TRANSACTION READ ONLY');
+    await sourceManager.query("SET LOCAL TIME ZONE 'UTC'");
+    return projection.transaction('REPEATABLE READ', async (targetManager) => {
+      await targetManager.query('SET TRANSACTION READ ONLY');
+      await targetManager.query("SET LOCAL TIME ZONE 'UTC'");
+      return reconcileLoyaltyProjectionManagers(
+        sourceManager,
+        targetManager,
+        limit,
+      );
+    });
+  });
 }

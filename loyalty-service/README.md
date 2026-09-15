@@ -43,6 +43,23 @@ message content. It is not included in Compose or deployment manifests and
 remains disabled until baseline/delta, broker UAT and cutover gates are
 separately approved.
 
+## Offline cutover readiness gate (default off)
+
+After build, `npm run check:cutover:prod` compares the restricted Core source
+and isolated Loyalty target without connecting to Kafka or changing either
+database. It reconciles the six Loyalty-owned tables and checks the
+`core-loyalty` outbox, projection audits/receipts, aggregate slots, terminal
+failure state and exact checkpoint lag. Both connections use bounded,
+read-only repeatable-read UTC snapshots.
+
+`LOYALTY_CUTOVER_CHECK_ENABLED=false` opens no connection. Enabling the command
+also requires the two dedicated reader URLs, exact group/topic, expected
+partitions and a bounded reconciliation limit documented in `.env.example`.
+Output contains only fixed statuses/reasons and aggregate counters. A `READY`
+result is evidence for later UAT; it does not activate the worker, switch an
+HTTP read, alter a URL or deploy anything. Run the real PostgreSQL proof with
+`npm run test:cutover-readiness`.
+
 ## Local validation
 
 Use Node 22 and the lockfile. Prepare an isolated database whose name ends
@@ -60,6 +77,7 @@ npm run typecheck
 npm run build
 npm test
 npm run test:projection
+npm run test:cutover-readiness
 # LOYALTY_DATABASE_URL must refer to the migrated/seeded _test database.
 npm run test:e2e
 ```
