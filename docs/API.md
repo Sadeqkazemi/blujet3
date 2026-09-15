@@ -221,6 +221,20 @@ unchanged. Core remains the only Loyalty writer; ordered event catch-up,
 balance reconciliation and a separately approved read cutover are still
 required.
 
+## Ops/Admin projection cutover readiness gate
+
+No public or internal HTTP route changes. An offline, default-off CLI
+reports whether the independent Ops/Admin projection is ready for a later
+read cutover. It opens read-only, repeatable-read sessions against distinct
+Core `blujet_ops_admin_cutover_source` and Ops/Admin
+`blujet_ops_admin_cutover_target` LOGIN URLs (never owner credentials),
+pages cartable routing metadata,
+counts blocking `core-ops` outbox rows, non-terminal DLQ statuses and
+checkpoint lag, and never connects to Kafka. Evidence is aggregates and
+allowlisted reasons only. Consumer activation, reader URL cutover and
+deployment remain disabled
+(`docs/features/microservices-phase-6-ops-admin-cutover-readiness.md`).
+
 ## Ops/Admin Kafka acknowledgement adapter
 
 No public or internal HTTP route changes. A construction-only KafkaJS adapter

@@ -61,6 +61,7 @@
     "database:provision-reporting-projection-runtime:prod": "node dist/database/provision-reporting-projection-runtime-role.js",
     "database:transfer-ops-admin-projection-baseline:prod": "node dist/database/transfer-ops-admin-projection-baseline.js",
     "database:reconcile-ops-admin-projection:prod": "node dist/database/report-ops-admin-projection-reconciliation.js",
+    "database:check-ops-admin-cutover:prod": "node dist/database/check-ops-admin-projection-cutover-readiness.js",
     "data:audit:prod": "node dist/database/production-data-reset.js",
     "data:reset:prod": "node dist/database/production-data-reset.js --execute-reset",
     "data:purge:uat": "node dist/database/uat-demo-data-purge.js",

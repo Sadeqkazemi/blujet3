@@ -1,5 +1,16 @@
 # PLAN.md — blujet roadmap & progress
 
+## Ops/Admin projection cutover readiness gate (2026-09-15)
+
+- [x] Freeze the offline, read-only, no-Kafka cutover gate before code.
+- [x] Compare Core and projection cartable rows with bounded paging,
+      require a drained core-ops outbox, terminal DLQ rows and
+      checkpoint catch-up for the expected partitions.
+- [x] Emit metadata-only READY/NOT_READY/DISABLED/UNAVAILABLE evidence.
+- [x] Prove unit and real-PostgreSQL cases without activating the worker.
+- [ ] Obtain CI evidence and present the diff for explicit approval. Do
+      not merge, deploy, enable the consumer or cut over reads.
+
 ## Reporting projection runtime role (2026-09-15)
 
 - [x] Freeze the exact standalone Reporting writer contract before code.
