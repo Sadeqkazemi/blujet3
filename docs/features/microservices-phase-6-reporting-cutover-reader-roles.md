@@ -84,5 +84,5 @@ Compiled scripts:
       DDL / sequences / foreign schema / counterpart CONNECT, fail-closed PUBLIC
       prerequisites, unchanged unrelated-role access, rerun correction and
       sanitized errors.
-- [ ] CI Reporting job runs the E2E and remains in `ci-gate`.
-- [ ] Present the diff. Do not merge, deploy, activate the consumer or cut over.
+- [x] CI Reporting job runs the E2E and remains in `ci-gate`.
+- [x] Present the diff. Do not deploy, activate the consumer or cut over.

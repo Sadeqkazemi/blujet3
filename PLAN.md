@@ -18,7 +18,7 @@
       without payload, writes, DDL, memberships or counterpart CONNECT, and
       without cluster-wide PUBLIC ACL mutation.
 - [x] Prove unit and real-PostgreSQL cases; keep OpenAPI unchanged.
-- [ ] Obtain CI evidence and present the diff. Do not merge, deploy,
+- [x] Obtain CI evidence and present the diff. Do not deploy,
       enable the consumer or cut over reads.
 
 ## Ops/Admin cartable unread read cutover (2026-09-15)
