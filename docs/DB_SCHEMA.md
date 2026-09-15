@@ -1,5 +1,14 @@
 # DB_SCHEMA.md — blujet data model
 
+## Ops/Admin cartable counts read cutover
+
+No migration or ownership change. The isolated Ops/Admin process derives
+owner-scoped OPEN category counters and all-status counters from existing
+`ops.cartable_tasks`. The aggregate query selects no task identifiers, source
+references, content or PII. Core remains the sole writer and the Core aggregate
+queries remain both the default and rollback path
+(`docs/features/microservices-phase-6-ops-admin-cartable-counts-read-cutover.md`).
+
 ## Ops/Admin cartable unread read cutover
 
 No migration or ownership change. The isolated Ops/Admin process derives one

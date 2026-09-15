@@ -23,6 +23,7 @@ import { OpsAdminKafkaHandler } from '../src/modules/ops-admin/ops-admin-kafka.h
 import { OpsAdminDlqStore } from '../src/modules/ops-admin/ops-admin-dlq.store';
 import { OpsAdminProjectionConsumer } from '../src/modules/ops-admin/ops-admin-projection.consumer';
 import { OpsAdminProjectionStore } from '../src/modules/ops-admin/ops-admin-projection.store';
+import { OpsAdminReadService } from '../src/modules/ops-admin/ops-admin-read.service';
 
 describe('Ops/Admin ordered projection consumer (PostgreSQL)', () => {
   let db: DataSource;
@@ -130,6 +131,36 @@ describe('Ops/Admin ordered projection consumer (PostgreSQL)', () => {
     expect(
       await db.getRepository(OpsAdminCartableEventReceipt).countBy({ taskId }),
     ).toBe(4);
+  });
+
+  it('serves exact owner-scoped cartable counters from the projection', async () => {
+    await consumer.consume(event(1));
+    const read = new OpsAdminReadService(db);
+
+    await expect(read.cartableCounts('operator-1')).resolves.toEqual({
+      assigneeId: 'operator-1',
+      counts: { ADMIN: 1, AGENCY: 0, MANAGER: 0 },
+      statusCounts: {
+        OPEN: 1,
+        APPROVED: 0,
+        REJECTED: 0,
+        TRANSFERRED: 0,
+      },
+      totalOpen: 1,
+      observedAt: expect.stringMatching(/Z$/) as string,
+    });
+    await expect(read.cartableCounts('operator-2')).resolves.toEqual({
+      assigneeId: 'operator-2',
+      counts: { ADMIN: 0, AGENCY: 0, MANAGER: 0 },
+      statusCounts: {
+        OPEN: 0,
+        APPROVED: 0,
+        REJECTED: 0,
+        TRANSFERRED: 0,
+      },
+      totalOpen: 0,
+      observedAt: expect.stringMatching(/Z$/) as string,
+    });
   });
 
   it('fails closed for reused event IDs and equal-version conflicts', async () => {

@@ -36,6 +36,7 @@ import type {
 } from '../../database/enums';
 import { CartableProjectionEventService } from './cartable-projection-event.service';
 import { OpsAdminCartableUnreadClient } from './ops-admin-cartable-unread.client';
+import { OpsAdminCartableCountsClient } from './ops-admin-cartable-counts.client';
 
 @Injectable()
 export class CartableService {
@@ -60,6 +61,7 @@ export class CartableService {
     private readonly notifications: NotificationsService,
     private readonly projectionEvents: CartableProjectionEventService,
     private readonly projectionUnread: OpsAdminCartableUnreadClient,
+    private readonly projectionCounts: OpsAdminCartableCountsClient,
   ) {}
 
   private responseTask(
@@ -183,6 +185,7 @@ export class CartableService {
       date?: string;
       status?: CartableStatus;
     },
+    requestId?: string,
   ) {
     await this.closeInactiveInternalConversations();
     const status = query.status ?? 'OPEN';
@@ -203,13 +206,24 @@ export class CartableService {
       );
     }
 
-    const [tasks, countRows, statusRows] = await Promise.all([
+    const [tasks, projectionCounts] = await Promise.all([
       this.taskRepo.find({
         where,
         relations: { sender: true },
         select: { sender: { fullName: true, role: true } },
         order: { createdAt: 'DESC' },
       }),
+      this.projectionCounts.get(actor.id, requestId),
+    ]);
+
+    if (projectionCounts) {
+      return {
+        tasks: tasks.map((task) => this.responseTask(task)),
+        ...projectionCounts,
+      };
+    }
+
+    const [countRows, statusRows] = await Promise.all([
       // KPI cards always show OPEN counts per category, unfiltered by the
       // table's own category/date selection (matches the design).
       this.taskRepo

@@ -29,6 +29,20 @@ const token = 'ops-admin-http-token-2026-09-09';
               observedAt: '2026-09-15T10:30:00.000Z',
             }),
           ),
+        cartableCounts: jest.fn().mockImplementation((assigneeId: string) =>
+          Promise.resolve({
+            assigneeId,
+            counts: { ADMIN: 2, AGENCY: 1, MANAGER: 0 },
+            statusCounts: {
+              OPEN: 3,
+              APPROVED: 4,
+              REJECTED: 1,
+              TRANSFERRED: 0,
+            },
+            totalOpen: 3,
+            observedAt: '2026-09-15T10:30:00.000Z',
+          }),
+        ),
         cartableSummary: jest.fn().mockResolvedValue({ groups: [] }),
         listCartableTasks: jest.fn().mockResolvedValue([]),
       },
@@ -74,6 +88,11 @@ describe('OpsAdminController HTTP boundary', () => {
       .set('X-Internal-Token', token)
       .set('X-Ops-Admin-Assignee-Id', 'not-a-uuid')
       .expect(400);
+    await request(app.getHttpServer())
+      .get('/internal/v1/ops-admin/cartable/counts')
+      .set('X-Internal-Token', token)
+      .set('X-Ops-Admin-Assignee-Id', 'not-a-uuid')
+      .expect(400);
   });
 
   it('serves only the read boundary', async () => {
@@ -100,6 +119,30 @@ describe('OpsAdminController HTTP boundary', () => {
       .set('X-Internal-Token', token)
       .expect(200)
       .expect({ success: true, data: { groups: [] } });
+    await request(app.getHttpServer())
+      .get('/internal/v1/ops-admin/cartable/counts')
+      .set('X-Ops-Admin-Assignee-Id', assigneeId)
+      .expect(401);
+    await request(app.getHttpServer())
+      .get('/internal/v1/ops-admin/cartable/counts')
+      .set('X-Internal-Token', token)
+      .set('X-Ops-Admin-Assignee-Id', assigneeId)
+      .expect(200)
+      .expect({
+        success: true,
+        data: {
+          assigneeId,
+          counts: { ADMIN: 2, AGENCY: 1, MANAGER: 0 },
+          statusCounts: {
+            OPEN: 3,
+            APPROVED: 4,
+            REJECTED: 1,
+            TRANSFERRED: 0,
+          },
+          totalOpen: 3,
+          observedAt: '2026-09-15T10:30:00.000Z',
+        },
+      });
     await request(app.getHttpServer())
       .get('/internal/v1/ops-admin/cartable/tasks')
       .set('X-Internal-Token', token)

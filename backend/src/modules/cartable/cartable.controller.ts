@@ -46,8 +46,9 @@ export class CartableController {
   async list(
     @CurrentUser() actor: AuthenticatedUser,
     @Query() query: ListCartableQueryDto,
+    @Headers('x-request-id') requestId?: string,
   ) {
-    const data = await this.cartable.list(actor, query);
+    const data = await this.cartable.list(actor, query, requestId);
     return { success: true, data };
   }
 

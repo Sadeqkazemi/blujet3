@@ -1,5 +1,16 @@
 # PLAN.md — blujet roadmap & progress
 
+## Ops/Admin cartable counts read cutover (2026-09-15)
+
+- [x] Freeze the owner-scoped aggregate contract while keeping task rows and
+      every writer in Core.
+- [x] Add the internal counts route and strict default-off Core client.
+- [x] Preserve Core fallback for availability failures and fail closed on
+      malformed or cross-owner data.
+- [x] Prove public compatibility, ownership, rollback and unchanged writes.
+- [x] Pass lint, typecheck, build and OpenAPI/diff hygiene, then present the diff
+      before push/merge. Do not deploy or activate flags.
+
 ## Ops/Admin cartable unread read cutover (2026-09-15)
 
 - [x] Freeze the first owner-scoped, PII-free Ops/Admin public-read slice before
