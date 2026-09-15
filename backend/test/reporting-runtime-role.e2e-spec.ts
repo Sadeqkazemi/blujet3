@@ -154,7 +154,7 @@ describeDatabase('Reporting projection runtime role (PostgreSQL)', () => {
     );
     await runtime.query(
       `INSERT INTO reporting.kafka_processing_failures
-        ("consumerGroup", topic, partition, offset, fingerprint, "eventId",
+        ("consumerGroup", topic, partition, "offset", fingerprint, "eventId",
          stage, attempts, "totalAttempts", status, "firstFailedAt", "lastFailedAt")
        VALUES ('reporting-role-e2e', 'blujet.events.v1', 0, 2, $1, $2,
          'PROJECTION', 1, 1, 'RETRYING', now(), now())`,
