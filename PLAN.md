@@ -1,5 +1,23 @@
 # PLAN.md — blujet roadmap & progress
 
+## Loyalty projection cutover readiness gate (2026-09-15)
+
+- [x] Freeze the offline, default-off, read-only and no-Kafka readiness
+      contract before implementation.
+- [x] Reconcile exactly the six Loyalty-owned business projections and require
+      a drained `core-loyalty` outbox, audit/receipt parity and current slots.
+- [x] Require terminal failure rows and exact zero-lag checkpoints for every
+      configured topic partition.
+- [x] Emit only aggregate `READY`, `NOT_READY`, `DISABLED` or `UNAVAILABLE`
+      evidence with fixed reason codes.
+- [x] Prove disabled/no-connect, all blocking classes, read-only snapshots and
+      no-write behavior with unit and real-PostgreSQL tests.
+- [x] Obtain complete local evidence and wire the PostgreSQL proof into the
+      Loyalty CI job without changing OpenAPI or production Compose.
+- [x] Present the diff and receive explicit approval before commit, push or
+      merge. Do
+      not activate a consumer/read flag, change a runtime URL or deploy.
+
 ## Ops/Admin cartable counts read cutover (2026-09-15)
 
 - [x] Freeze the owner-scoped aggregate contract while keeping task rows and

@@ -259,6 +259,7 @@ jobs:
           npm test
           npm run test:e2e
           npm run test:projection
+          npm run test:cutover-readiness
       - name: Prove compiled Loyalty rollback and restore
         working-directory: loyalty-service
         env:

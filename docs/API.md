@@ -1,5 +1,19 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Loyalty projection cutover readiness gate
+
+No public or internal HTTP route changes. The offline, default-off
+`loyalty-service` command `npm run check:cutover:prod` evaluates whether the
+isolated Loyalty projection is ready for a separately approved read cutover.
+It uses distinct restricted Core and Loyalty PostgreSQL reader URLs, opens
+read-only repeatable-read snapshots, reconciles all six Loyalty-owned tables,
+and verifies outbox drain, audit/receipt and slot parity, terminal DLQ state
+and zero lag for the exact configured Kafka checkpoints. It does not connect
+to Kafka. Output is limited to status, fixed reason codes and aggregate counts;
+no row, identifier, fingerprint, URL, credential or event content is emitted.
+Consumer/read activation, URL changes and deployment remain disabled
+(`docs/features/microservices-phase-6-loyalty-cutover-readiness.md`).
+
 ## Ops/Admin cartable counts read cutover
 
 Public `GET /api/v1/cartable` keeps its URL, guards and response shape. Task

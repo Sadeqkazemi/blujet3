@@ -1,5 +1,17 @@
 # DB_SCHEMA.md — blujet data model
 
+## Loyalty projection cutover readiness gate
+
+No migration or ownership change. A default-off offline CLI reads the six
+Loyalty business tables plus Core `loyalty.loyalty_projection_outbox` and
+`loyalty.loyalty_projection_audits`, and the isolated database's existing
+`loyalty_projection_event_receipts`, `loyalty_projection_slots`,
+`kafka_consumer_checkpoints` and `kafka_processing_failures`. Both database
+sessions are bounded, UTC, `REPEATABLE READ` and `READ ONLY`. The gate performs
+no write, DDL, repair, replay or Kafka I/O and emits only aggregate readiness
+metadata
+(`docs/features/microservices-phase-6-loyalty-cutover-readiness.md`).
+
 ## Ops/Admin cartable counts read cutover
 
 No migration or ownership change. The isolated Ops/Admin process derives
