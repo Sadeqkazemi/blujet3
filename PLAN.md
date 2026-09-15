@@ -13,6 +13,17 @@
 - [x] Pass lint, typecheck, build and OpenAPI/diff hygiene checks, then present
       the diff for approval. Do not push, merge, deploy or activate flags.
 
+## Reporting projection cutover readiness gate (2026-09-15)
+
+- [x] Freeze the offline, read-only, no-Kafka Reporting cutover gate.
+- [x] Compare Core and dedicated projection/receipt rows with bounded
+      paging, require receipt parity, terminal DLQ rows and checkpoint
+      catch-up for the expected partitions.
+- [x] Emit metadata-only READY/NOT_READY/DISABLED/UNAVAILABLE evidence.
+- [x] Prove unit and real-PostgreSQL cases without activating the worker.
+- [ ] Obtain CI evidence and present the diff for explicit approval. Do
+      not merge, deploy, enable the consumer or cut over reads.
+
 ## Ops/Admin projection cutover readiness gate (2026-09-15)
 
 - [x] Freeze the offline, read-only, no-Kafka cutover gate before code.

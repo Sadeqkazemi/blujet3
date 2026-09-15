@@ -351,15 +351,22 @@ describe('production backend artifacts', () => {
           'node dist/database/transfer-ops-admin-projection-baseline.js',
         'database:check-ops-admin-cutover:prod':
           'node dist/database/check-ops-admin-projection-cutover-readiness.js',
+        'database:check-reporting-cutover:prod':
+          'node dist/database/check-reporting-projection-cutover-readiness.js',
       }),
     );
     expect(ciWorkflow).toContain(
       'ops-admin-projection-(consumer|runtime-role|baseline|cutover-readiness)',
     );
+    expect(ciWorkflow).toContain('reporting-(runtime-role|cutover-readiness)');
     expect(compose).not.toContain(
       'check-ops-admin-projection-cutover-readiness',
     );
     expect(deployWorkflow).not.toContain('OPS_ADMIN_CUTOVER_CHECK_ENABLED');
+    expect(deployWorkflow).not.toContain('REPORTING_CUTOVER_CHECK_ENABLED');
+    expect(compose).not.toContain(
+      'check-reporting-projection-cutover-readiness',
+    );
     const envExample = readFileSync(join(backendRoot, '.env.example'), 'utf8');
     expect(envExample).toContain(
       'postgresql://blujet_ops_admin_cutover_source:replace@core-db:5432/blujet',
@@ -372,6 +379,15 @@ describe('production backend artifacts', () => {
     );
     expect(envExample).not.toMatch(
       /OPS_ADMIN_CUTOVER_TARGET_DATABASE_URL=.*ops_admin_owner/,
+    );
+    expect(envExample).toContain(
+      'postgresql://blujet_reporting_cutover_source:replace@core-db:5432/blujet',
+    );
+    expect(envExample).toContain(
+      'postgresql://blujet_reporting_cutover_target:replace@reporting-db:5432/blujet_reporting',
+    );
+    expect(envExample).not.toMatch(
+      /REPORTING_CUTOVER_SOURCE_DATABASE_URL=.*reporting_owner/,
     );
   });
 
