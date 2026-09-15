@@ -38,14 +38,16 @@ runtime URL; the owner URL must never be passed to it.
 - [x] Unit tests prove password, owner URL, database identity, exact grant
       validation and transactional rollback; a compiled missing-config smoke
       proves the CLI emits only its fixed sanitized failure.
-- [ ] Real PostgreSQL tests prove the worker's allowed inserts/updates/selects
+- [x] Real PostgreSQL tests prove the worker's allowed inserts/updates/selects
       and deny receipt update, every delete, DDL, sequences, memberships,
       ownership, foreign-schema reads and Core/foreign database CONNECT.
-- [ ] Re-running the provisioner is idempotent and preserves explicit access
+- [x] Re-running the provisioner is idempotent and preserves explicit access
       held by other principals while still removing PUBLIC foreign CONNECT.
 - [x] `.env.example`, package scripts, API/database documentation and the
       Reporting CI job describe and verify the same role.
 - [x] Backend unit tests, read-only lint, typecheck, build and OpenAPI stability
       pass.
-- [ ] Present the completed diff for explicit approval before commit, push or
-      merge. Do not copy data, enable Kafka, cut over reads or deploy.
+- [x] PostgreSQL 16, all eight Backend E2E shards, CodeQL and the CI gate passed
+      as part of all 34 PR checks in CI run `34948343892`.
+- [x] Present the completed diff and receive explicit approval before merge.
+      Do not copy data, enable Kafka, cut over reads or deploy.

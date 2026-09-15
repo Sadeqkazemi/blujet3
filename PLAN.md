@@ -10,8 +10,9 @@
       update, delete, DDL, ownership, sequences and cross-domain access.
 - [x] Pass all 233 Backend unit suites (1,391 tests), read-only lint, typecheck,
       build, OpenAPI stability and diff hygiene locally.
-- [ ] Obtain green PostgreSQL 16 Reporting job and CI gate evidence.
-- [ ] Present the completed diff for explicit approval before commit/push/merge.
+- [x] Obtain green PostgreSQL 16 Reporting job and CI gate evidence: all 34 PR
+      checks passed in CI run `34948343892`.
+- [x] Present the completed diff and receive explicit approval before merge.
       Do not transfer data, activate Kafka, cut over or deploy.
 
 ## Ops/Admin poison-message quarantine (2026-09-14)
