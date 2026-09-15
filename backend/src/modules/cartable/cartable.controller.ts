@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   Param,
   Patch,
   Post,
@@ -54,8 +55,11 @@ export class CartableController {
   @Roles(...STAFF_ROLES)
   @RequiresPermission('ct_list')
   @ApiOperation({ summary: 'شمارندهٔ موارد دیده‌نشدهٔ کارتابل من' })
-  async unreadCount(@CurrentUser() actor: AuthenticatedUser) {
-    const data = await this.cartable.unreadCount(actor);
+  async unreadCount(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Headers('x-request-id') requestId?: string,
+  ) {
+    const data = await this.cartable.unreadCount(actor, requestId);
     return { success: true, data };
   }
 

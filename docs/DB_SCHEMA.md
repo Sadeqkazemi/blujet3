@@ -1,5 +1,14 @@
 # DB_SCHEMA.md — blujet data model
 
+## Ops/Admin cartable unread read cutover
+
+No migration or ownership change. The isolated Ops/Admin process derives one
+owner-scoped unread count from existing `ops.cartable_tasks.assigneeId` and
+`readAt`; it selects no content-bearing columns. The public route may read this
+projection only behind a default-off flag after reconciliation. Core remains
+the sole writer and the rollback path remains the existing Core query
+(`docs/features/microservices-phase-6-ops-admin-cartable-unread-read-cutover.md`).
+
 ## Reporting projection runtime role
 
 No migration or table change. Role `blujet_reporting_projection_runtime` is a

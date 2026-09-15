@@ -1,5 +1,18 @@
 # PLAN.md — blujet roadmap & progress
 
+## Ops/Admin cartable unread read cutover (2026-09-15)
+
+- [x] Freeze the first owner-scoped, PII-free Ops/Admin public-read slice before
+      code while preserving the current URL and Core writer.
+- [x] Add strict default-off config and a bounded service client with safe Core
+      availability fallback and fail-closed boundary validation.
+- [x] Add the authenticated internal unread-count projection route and prove
+      owner scoping against the existing projection table.
+- [x] Prove disabled rollback, success, auth/validation, bounded failures and
+      unchanged writer behavior with focused tests.
+- [x] Pass lint, typecheck, build and OpenAPI/diff hygiene checks, then present
+      the diff for approval. Do not push, merge, deploy or activate flags.
+
 ## Ops/Admin projection cutover readiness gate (2026-09-15)
 
 - [x] Freeze the offline, read-only, no-Kafka cutover gate before code.

@@ -375,6 +375,28 @@ describe('production backend artifacts', () => {
     );
   });
 
+  it('keeps the Ops/Admin cartable unread read cutover default-off and undeployed', () => {
+    const envExample = readFileSync(join(backendRoot, '.env.example'), 'utf8');
+    const workerModule = readFileSync(
+      join(backendRoot, 'src', 'ops-admin-worker.module.ts'),
+      'utf8',
+    );
+    expect(envExample).toContain(
+      'OPS_ADMIN_CARTABLE_UNREAD_READ_ENABLED=false',
+    );
+    expect(envExample).toContain(
+      'OPS_ADMIN_SERVICE_URL="http://ops-admin:3660"',
+    );
+    expect(backendComposeSection).not.toContain(
+      'OPS_ADMIN_CARTABLE_UNREAD_READ_ENABLED',
+    );
+    expect(deployWorkflow).not.toContain(
+      'OPS_ADMIN_CARTABLE_UNREAD_READ_ENABLED',
+    );
+    expect(workerModule).toContain('req.headers.x-internal-token');
+    expect(workerModule).toContain('req.headers.x-ops-admin-assignee-id');
+  });
+
   it('keeps database-owner credentials outside the long-running Core process', () => {
     expect(migrationComposeSection).toContain(
       'DATABASE_URL: postgresql://blujet:${POSTGRES_PASSWORD}@db:5432/blujet?schema=public',

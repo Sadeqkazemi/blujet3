@@ -15,6 +15,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { CommerceOutboxModule } from '../commerce-outbox/commerce-outbox.module';
 import { CartableProjectionAudit } from '../../database/entities/cartable-projection-audit.entity';
 import { CartableProjectionEventService } from './cartable-projection-event.service';
+import { OpsAdminCartableUnreadClient } from './ops-admin-cartable-unread.client';
 
 @Module({
   imports: [
@@ -34,7 +35,11 @@ import { CartableProjectionEventService } from './cartable-projection-event.serv
     CommerceOutboxModule,
   ],
   controllers: [CartableController],
-  providers: [CartableService, CartableProjectionEventService],
+  providers: [
+    CartableService,
+    CartableProjectionEventService,
+    OpsAdminCartableUnreadClient,
+  ],
   exports: [CartableService],
 })
 export class CartableModule {}

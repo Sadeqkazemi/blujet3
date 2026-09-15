@@ -20,7 +20,10 @@ import { OpsAdminWorkerHealthController } from './ops-admin-worker-health.contro
       pinoHttp: {
         level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
         customProps: () => ({ service: 'blujet-ops-admin' }),
-        redact: ['req.headers.x-internal-token'],
+        redact: [
+          'req.headers.x-internal-token',
+          'req.headers.x-ops-admin-assignee-id',
+        ],
       },
     }),
     TypeOrmModule.forRoot(opsAdminWorkerDataSourceOptions()),

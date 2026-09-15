@@ -35,6 +35,7 @@ import type {
   Role,
 } from '../../database/enums';
 import { CartableProjectionEventService } from './cartable-projection-event.service';
+import { OpsAdminCartableUnreadClient } from './ops-admin-cartable-unread.client';
 
 @Injectable()
 export class CartableService {
@@ -58,6 +59,7 @@ export class CartableService {
     private readonly audit: AuditService,
     private readonly notifications: NotificationsService,
     private readonly projectionEvents: CartableProjectionEventService,
+    private readonly projectionUnread: OpsAdminCartableUnreadClient,
   ) {}
 
   private responseTask(
@@ -377,8 +379,13 @@ export class CartableService {
 
   /** Badge count for "کارتابل من" — never-viewed tasks regardless of
    * status, so a resolved-but-unseen item still counts. */
-  async unreadCount(actor: AuthenticatedUser) {
+  async unreadCount(actor: AuthenticatedUser, requestId?: string) {
     await this.closeInactiveInternalConversations();
+    const projectionCount = await this.projectionUnread.get(
+      actor.id,
+      requestId,
+    );
+    if (projectionCount !== undefined) return { count: projectionCount };
     const count = await this.taskRepo.count({
       where: { assigneeId: actor.id, readAt: IsNull() },
     });
