@@ -125,6 +125,6 @@ Allowlisted reasons:
       source backlog, checkpoint lag, unresolved DLQ, missing partition, URL
       mix-up, read-only behavior, matching audits/receipts, a missing receipt,
       equal-count fingerprint mismatch and an extra receipt.
-- [ ] CI `agency-service` job includes the E2E and remains in `ci-gate`.
+- [x] CI `agency-service` job includes the E2E and remains in `ci-gate`.
 - [ ] Present the diff for approval. Do not merge, deploy, activate the
       consumer or cut over reads.

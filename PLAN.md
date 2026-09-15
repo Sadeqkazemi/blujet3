@@ -1724,7 +1724,7 @@ below for what's landed from that port so far.
       terminal DLQ rows and checkpoint catch-up.
 - [x] Emit metadata-only READY/NOT_READY/DISABLED/UNAVAILABLE evidence.
 - [x] Prove unit and real-PostgreSQL cases without activating the worker.
-- [ ] Obtain CI evidence and present the diff. Do not merge, deploy,
+- [x] Obtain CI evidence and present the diff. Do not merge, deploy,
       enable the consumer or cut over reads.
 
 - [x] Repo scaffold (frontend/backend/ml-service skeletons, design-reference import)
