@@ -88,7 +88,7 @@ jobs:
           emit identity '^identity-service/'
           emit agency '^(agency-service/|backend/(package(-lock)?\.json$|tsconfig[^/]*\.json$|nest-cli\.json$|src/database/|src/config/|src/modules/agency-shadow/|src/modules/agency-portal/))'
           emit notify '^(notify-service/|backend/(package(-lock)?\.json$|src/database/))'
-          emit reporting '^(backend/(Dockerfile\.reporting-worker|package(-lock)?\.json$|tsconfig[^/]*\.json$|nest-cli\.json$|test/(jest-reporting-(runtime-role|cutover-readiness)\.json|reporting-(runtime-role|cutover-readiness)\.e2e-spec\.ts)|src/(reporting-worker|config/reporting-worker|database/(reporting-data-source|reporting-migrations/|entities/reporting-|provision-reporting-|check-reporting-|migrations/179(1734400000|2156800000|2329600000)-Reporting)|modules/reporting/))|docker-compose\.prod\.yml$|docs/features/(reporting-|microservices-phase-6-reporting-(physical-db|projection-runtime-role|cutover-readiness)\.md$))'
+          emit reporting '^(backend/(Dockerfile\.reporting-worker|package(-lock)?\.json$|tsconfig[^/]*\.json$|nest-cli\.json$|test/(jest-reporting-(runtime-role|cutover-readiness|cutover-reader-roles)\.json|reporting-(runtime-role|cutover-readiness|cutover-reader-roles)\.e2e-spec\.ts)|src/(reporting-worker|config/reporting-worker|database/(reporting-data-source|reporting-migrations/|entities/reporting-|provision-reporting-|check-reporting-|migrations/179(1734400000|2156800000|2329600000)-Reporting)|modules/reporting/))|docker-compose\.prod\.yml$|docs/features/(reporting-|microservices-phase-6-reporting-(physical-db|projection-runtime-role|cutover-readiness|cutover-reader-roles)\.md$))'
           emit pss '^pss-service/'
           emit frontend '^frontend/'
           emit ml '^ml-service/'
@@ -899,6 +899,11 @@ jobs:
           REPORTING_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_reporting_test
           DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_reporting_test
         run: npm run test:e2e:reporting-cutover-readiness
+      - name: Prove Reporting cutover reader roles
+        env:
+          REPORTING_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_reporting_test
+          DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_reporting_test
+        run: npm run test:e2e:reporting-cutover-reader-roles
       - run: npm run typecheck
       - run: npm run build
       - name: Prove compiled rollback and restore
