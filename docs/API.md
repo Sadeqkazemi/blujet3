@@ -1,5 +1,20 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Ops/Admin cartable unread read cutover
+
+Public `GET /api/v1/cartable/unread-count` keeps its existing staff guards,
+permission check, response envelope and `{ count }` payload. With
+`OPS_ADMIN_CARTABLE_UNREAD_READ_ENABLED=false`, Core performs the existing
+TypeORM read and opens no service connection. When enabled after reconciliation,
+Core calls the owner-bound internal
+`GET /internal/v1/ops-admin/cartable/unread-count` route with the existing
+Ops/Admin service token and trusted authenticated staff UUID in the redacted
+`X-Ops-Admin-Assignee-Id` header. The
+internal route returns only `{ assigneeId, count, observedAt }` and never task
+content or PII. Availability failures fall back to Core; invalid boundary data
+fails closed. All cartable writes and every other cartable read remain Core-only
+(`docs/features/microservices-phase-6-ops-admin-cartable-unread-read-cutover.md`).
+
 ## Reporting projection runtime role
 
 No public or internal HTTP contract changes. An offline provisioner prepares

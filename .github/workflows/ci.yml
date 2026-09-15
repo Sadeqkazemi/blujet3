@@ -1554,6 +1554,28 @@ jobs:
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
             --header 'X-Internal-Token: ops_admin_internal_ci_token_2026_09_09' \
             'http://localhost:3660/internal/v1/ops-admin/cartable/tasks?limit=0')" = '400'
+          node - <<'NODE'
+          (async () => {
+            const assigneeId = '00000000-0000-4000-8000-000000000001';
+            const response = await fetch(
+              'http://localhost:3660/internal/v1/ops-admin/cartable/unread-count',
+              {
+                headers: {
+                  'X-Internal-Token': process.env.OPS_ADMIN_INTERNAL_TOKEN,
+                  'X-Ops-Admin-Assignee-Id': assigneeId,
+                },
+              },
+            );
+            const body = await response.json();
+            if (
+              response.status !== 200 ||
+              body?.success !== true ||
+              body?.data?.assigneeId !== assigneeId ||
+              body?.data?.count !== 0 ||
+              !/^\d{4}-\d{2}-\d{2}T.*Z$/.test(body?.data?.observedAt)
+            ) process.exit(1);
+          })().catch(() => process.exit(1));
+          NODE
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
             --request POST \
             --header 'X-Internal-Token: ops_admin_internal_ci_token_2026_09_09' \

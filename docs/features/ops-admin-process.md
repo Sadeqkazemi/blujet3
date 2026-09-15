@@ -12,8 +12,12 @@
   status، تعداد خوانده‌نشده و قدیمی‌ترین زمان هر گروه برمی‌گرداند.
 - `GET /internal/v1/ops-admin/cartable/tasks?status=OPEN&category=ADMIN&limit=50`
   یک فهرست محدود از شناسه‌ها و متادیتای مسیریابی صف برمی‌گرداند.
+- `GET /internal/v1/ops-admin/cartable/unread-count` با هدر حذف‌شونده از لاگ
+  `X-Ops-Admin-Assignee-Id` شمارندهٔ owner-scoped موارد دیده‌نشده را بدون
+  شناسه یا محتوای وظیفه برمی‌گرداند؛ این مسیر برای cutover اختیاری مسیر عمومی
+  کارتابل است.
 - همهٔ مسیرهای داخلی با `X-Internal-Token` مستقل محافظت می‌شوند. مسیرهای عمومی
-  `/api/v1/**` و Gateway تغییری نمی‌کنند.
+  `/api/v1/**` و Gateway تغییر ناسازگار ندارند.
 
 ## کمینه‌سازی داده و مرز دسترسی
 

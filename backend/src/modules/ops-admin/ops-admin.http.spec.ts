@@ -20,6 +20,15 @@ const token = 'ops-admin-http-token-2026-09-09';
     {
       provide: OpsAdminReadService,
       useValue: {
+        cartableUnreadCount: jest
+          .fn()
+          .mockImplementation((assigneeId: string) =>
+            Promise.resolve({
+              assigneeId,
+              count: 2,
+              observedAt: '2026-09-15T10:30:00.000Z',
+            }),
+          ),
         cartableSummary: jest.fn().mockResolvedValue({ groups: [] }),
         listCartableTasks: jest.fn().mockResolvedValue([]),
       },
@@ -60,9 +69,32 @@ describe('OpsAdminController HTTP boundary', () => {
       .set('X-Internal-Token', token)
       .query({ status: 'UNKNOWN' })
       .expect(400);
+    await request(app.getHttpServer())
+      .get('/internal/v1/ops-admin/cartable/unread-count')
+      .set('X-Internal-Token', token)
+      .set('X-Ops-Admin-Assignee-Id', 'not-a-uuid')
+      .expect(400);
   });
 
   it('serves only the read boundary', async () => {
+    const assigneeId = '00000000-0000-4000-8000-000000000001';
+    await request(app.getHttpServer())
+      .get('/internal/v1/ops-admin/cartable/unread-count')
+      .set('X-Ops-Admin-Assignee-Id', assigneeId)
+      .expect(401);
+    await request(app.getHttpServer())
+      .get('/internal/v1/ops-admin/cartable/unread-count')
+      .set('X-Internal-Token', token)
+      .set('X-Ops-Admin-Assignee-Id', assigneeId)
+      .expect(200)
+      .expect({
+        success: true,
+        data: {
+          assigneeId,
+          count: 2,
+          observedAt: '2026-09-15T10:30:00.000Z',
+        },
+      });
     await request(app.getHttpServer())
       .get('/internal/v1/ops-admin/cartable/summary')
       .set('X-Internal-Token', token)

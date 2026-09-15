@@ -2,6 +2,29 @@ import type { DataSource } from 'typeorm';
 import { OpsAdminReadService } from './ops-admin-read.service';
 
 describe('OpsAdminReadService', () => {
+  it('counts unread rows for exactly one assignee without content columns', async () => {
+    const query = jest.fn().mockResolvedValue([{ count: 4 }]);
+    const result = await new OpsAdminReadService({
+      query,
+    } as unknown as DataSource).cartableUnreadCount('owner-1');
+
+    expect(result).toEqual({
+      assigneeId: 'owner-1',
+      count: 4,
+      observedAt: expect.stringMatching(/Z$/) as string,
+    });
+    expect(query).toHaveBeenCalledWith(
+      expect.not.stringMatching(
+        /title|description|attachments|sourceId|senderId|resolutionNote/i,
+      ),
+      ['owner-1'],
+    );
+    expect(query).toHaveBeenCalledWith(
+      expect.stringMatching(/"assigneeId" = \$1[\s\S]*"readAt" IS NULL/),
+      ['owner-1'],
+    );
+  });
+
   it('maps aggregate queue state without task content', async () => {
     const query = jest.fn().mockResolvedValue([
       {

@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import * as crypto from 'node:crypto';
@@ -27,6 +28,7 @@ describe('Cartable + referrals + messages (e2e)', () => {
   });
 
   afterEach(async () => {
+    jest.restoreAllMocks();
     await dataSource
       .getRepository(CommerceOutboxEvent)
       .delete({ producer: 'core-ops' });
@@ -213,6 +215,55 @@ describe('Cartable + referrals + messages (e2e)', () => {
       .get('/cartable/unread-count')
       .set('Authorization', `Bearer ${accessToken}`);
     expect(afterView.body.data.count).toBe(baseline);
+  });
+
+  it('optionally reads the authenticated owner unread count from Ops/Admin without changing the public contract', async () => {
+    const ceoId = await userId('ceo');
+    const { accessToken } = await loginAs(app, 'ceo');
+    const config = app.get(ConfigService);
+    config.set('OPS_ADMIN_CARTABLE_UNREAD_READ_ENABLED', 'true');
+    config.set('OPS_ADMIN_SERVICE_URL', 'http://ops-admin:3660');
+    config.set(
+      'OPS_ADMIN_INTERNAL_TOKEN',
+      'ops-admin-e2e-token-at-least-32-characters',
+    );
+    jest
+      .spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions')
+      .mockReturnValue({
+        ...Intl.DateTimeFormat().resolvedOptions(),
+        timeZone: 'UTC',
+      });
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: true,
+          data: {
+            assigneeId: ceoId,
+            count: 7,
+            observedAt: '2026-09-15T10:30:00.000Z',
+          },
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const result = await request(app.getHttpServer())
+      .get('/cartable/unread-count')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .set('X-Request-Id', 'cartable-unread-e2e');
+
+    expect(result.status).toBe(200);
+    expect(result.body).toEqual({ success: true, data: { count: 7 } });
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'http://ops-admin:3660/internal/v1/ops-admin/cartable/unread-count',
+      expect.objectContaining({
+        redirect: 'manual',
+        headers: expect.objectContaining({
+          'X-Ops-Admin-Assignee-Id': ceoId,
+          'X-Request-Id': 'cartable-unread-e2e',
+        }) as unknown,
+      }),
+    );
   });
 
   // ── Review actions ───────────────────────────────────────────────────

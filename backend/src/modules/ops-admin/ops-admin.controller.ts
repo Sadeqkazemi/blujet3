@@ -1,4 +1,10 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  ParseUUIDPipe,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiHeader,
@@ -8,6 +14,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { OpsAdminCartableQueryDto } from './dto/ops-admin-cartable-query.dto';
+import { OpsAdminAssigneeId } from './ops-admin-assignee-id.decorator';
 import { OpsAdminInternalAuthGuard } from './ops-admin-internal-auth.guard';
 import { OpsAdminReadService } from './ops-admin-read.service';
 
@@ -21,6 +28,26 @@ import { OpsAdminReadService } from './ops-admin-read.service';
 @UseGuards(OpsAdminInternalAuthGuard)
 export class OpsAdminController {
   constructor(private readonly opsAdmin: OpsAdminReadService) {}
+
+  @Get('unread-count')
+  @ApiOperation({ summary: 'شمارندهٔ فقط‌خواندنی کارتابل یک کارمند' })
+  @ApiHeader({
+    name: 'X-Ops-Admin-Assignee-Id',
+    description: 'شناسهٔ مالک کارتابل از هویت احرازشدهٔ Core',
+    required: true,
+  })
+  @ApiOkResponse({ description: 'شمارندهٔ owner-scoped بدون متادیتای وظیفه' })
+  @ApiBadRequestResponse({ description: 'شناسهٔ مالک کارتابل معتبر نیست.' })
+  @ApiUnauthorizedResponse({ description: 'توکن سرویس داخلی نامعتبر است.' })
+  async unreadCount(
+    @OpsAdminAssigneeId(new ParseUUIDPipe({ version: '4' }))
+    assigneeId: string,
+  ) {
+    return {
+      success: true,
+      data: await this.opsAdmin.cartableUnreadCount(assigneeId),
+    };
+  }
 
   @Get('summary')
   @ApiOperation({ summary: 'خلاصهٔ فقط‌خواندنی صف کارتابل' })

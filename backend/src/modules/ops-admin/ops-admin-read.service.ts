@@ -22,9 +22,28 @@ type CartableTaskRow = {
   createdAt: Date;
 };
 
+type CartableUnreadCountRow = {
+  count: number;
+};
+
 @Injectable()
 export class OpsAdminReadService {
   constructor(private readonly dataSource: DataSource) {}
+
+  async cartableUnreadCount(assigneeId: string) {
+    const rows = await this.dataSource.query<CartableUnreadCountRow[]>(
+      `SELECT COUNT(*)::int AS count
+       FROM ops.cartable_tasks
+       WHERE "assigneeId" = $1
+         AND "readAt" IS NULL`,
+      [assigneeId],
+    );
+    return {
+      assigneeId,
+      count: Number(rows[0]?.count ?? 0),
+      observedAt: new Date().toISOString(),
+    };
+  }
 
   async cartableSummary() {
     const rows = await this.dataSource.query<CartableSummaryRow[]>(
