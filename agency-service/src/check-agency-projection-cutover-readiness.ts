@@ -32,6 +32,8 @@ export const AGENCY_CUTOVER_REASONS = [
   'OUTBOX_IN_FLIGHT',
   'OUTBOX_EXPIRED_LEASE',
   'OUTBOX_DEAD_LETTER',
+  'AUDIT_RECEIPT_COUNT_MISMATCH',
+  'AUDIT_RECEIPT_FINGERPRINT_MISMATCH',
   'RECEIPT_SLOT_MISMATCH',
   'DLQ_OPEN',
   'CHECKPOINT_MISSING',
@@ -54,6 +56,7 @@ export interface AgencyCutoverReadinessReport {
   targetCount: string;
   mismatchCount: string;
   checksumEqual: boolean;
+  auditReceiptParity: boolean;
   blockingOutboxCount: string;
   openFailureCount: string;
   receiptSlotMismatchCount: string;
@@ -174,6 +177,7 @@ export function emptyAgencyCutoverReport(
     targetCount: '0',
     mismatchCount: '0',
     checksumEqual: false,
+    auditReceiptParity: false,
     blockingOutboxCount: '0',
     openFailureCount: '0',
     receiptSlotMismatchCount: '0',
@@ -195,6 +199,7 @@ export function serializeAgencyCutoverReport(
     targetCount: report.targetCount,
     mismatchCount: report.mismatchCount,
     checksumEqual: report.checksumEqual,
+    auditReceiptParity: report.auditReceiptParity,
     blockingOutboxCount: report.blockingOutboxCount,
     openFailureCount: report.openFailureCount,
     receiptSlotMismatchCount: report.receiptSlotMismatchCount,
@@ -240,10 +245,11 @@ export function classifyAgencyCutoverDatabaseUrls(
 export function loadAgencyCutoverCheckConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): AgencyCutoverCheckConfig {
-  if (env.AGENCY_CUTOVER_CHECK_ENABLED !== 'true') {
+  const flag = env.AGENCY_CUTOVER_CHECK_ENABLED ?? 'false';
+  if (flag === 'false') {
     return { enabled: false };
   }
-  if (env.TZ !== 'UTC') {
+  if (flag !== 'true' || env.TZ !== 'UTC') {
     throw new AgencyCutoverConfigError();
   }
   const sourceUrl = env.AGENCY_CUTOVER_SOURCE_DATABASE_URL;
@@ -378,6 +384,53 @@ async function readOutboxCounts(source: AgencyCutoverSqlClient): Promise<{
     inFlight: Number(asCount(row.inFlight)),
     expiredLease: Number(asCount(row.expiredLease)),
     deadLetter: Number(asCount(row.deadLetter)),
+  };
+}
+
+async function fingerprintAuditOrReceipt(
+  client: AgencyCutoverSqlClient,
+  source: boolean,
+): Promise<{ count: string; hashA: string; hashB: string }> {
+  const table = source
+    ? 'agency.agency_projection_audits'
+    : 'agency.agency_projection_event_receipts';
+  const id = source ? 'id' : '"auditId"';
+  const sql = `SELECT
+      count(*)::text AS count,
+      COALESCE(bit_xor(hashtextextended(
+        concat_ws(E'\\x1f', ${id}::text, "aggregateType"::text,
+          "aggregateId"::text, "recordVersion"::text), 0
+      )), 0)::text AS "hashA",
+      COALESCE(bit_xor(hashtextextended(
+        concat_ws(E'\\x1f', ${id}::text, "aggregateType"::text,
+          "aggregateId"::text, "recordVersion"::text), 1
+      )), 0)::text AS "hashB"
+    FROM ${table}`;
+  const rows = await queryRows(client, sql);
+  const row = rows[0] ?? {};
+  const hashA = row.hashA;
+  const hashB = row.hashB;
+  if (typeof hashA !== 'string' || typeof hashB !== 'string') {
+    throw new Error('Agency cutover audit/receipt fingerprint is invalid');
+  }
+  return { count: asCount(row.count), hashA, hashB };
+}
+
+async function readAuditReceiptParity(
+  source: AgencyCutoverSqlClient,
+  target: AgencyCutoverSqlClient,
+): Promise<{
+  countMatches: boolean;
+  fingerprintMatches: boolean;
+}> {
+  const [audits, receipts] = await Promise.all([
+    fingerprintAuditOrReceipt(source, true),
+    fingerprintAuditOrReceipt(target, false),
+  ]);
+  return {
+    countMatches: audits.count === receipts.count,
+    fingerprintMatches:
+      audits.hashA === receipts.hashA && audits.hashB === receipts.hashB,
   };
 }
 
@@ -535,6 +588,10 @@ export async function evaluateAgencyCutoverReadiness(options: {
       options.batchSize,
     );
     const outbox = await readOutboxCounts(options.source);
+    const auditReceipts = await readAuditReceiptParity(
+      options.source,
+      options.target,
+    );
     const receiptSlotMismatch = await readReceiptSlotMismatchCount(
       options.target,
     );
@@ -550,6 +607,12 @@ export async function evaluateAgencyCutoverReadiness(options: {
     if (outbox.inFlight > 0) reasons.push('OUTBOX_IN_FLIGHT');
     if (outbox.expiredLease > 0) reasons.push('OUTBOX_EXPIRED_LEASE');
     if (outbox.deadLetter > 0) reasons.push('OUTBOX_DEAD_LETTER');
+    if (!auditReceipts.countMatches) {
+      reasons.push('AUDIT_RECEIPT_COUNT_MISMATCH');
+    }
+    if (!auditReceipts.fingerprintMatches) {
+      reasons.push('AUDIT_RECEIPT_FINGERPRINT_MISMATCH');
+    }
     if (receiptSlotMismatch > 0) reasons.push('RECEIPT_SLOT_MISMATCH');
     if (openFailures > 0) reasons.push('DLQ_OPEN');
     if (checkpoints.missing > 0) reasons.push('CHECKPOINT_MISSING');
@@ -570,6 +633,8 @@ export async function evaluateAgencyCutoverReadiness(options: {
       targetCount: projections.targetCount,
       mismatchCount: String(projections.mismatchCount),
       checksumEqual: projections.checksumEqual,
+      auditReceiptParity:
+        auditReceipts.countMatches && auditReceipts.fingerprintMatches,
       blockingOutboxCount: String(outbox.pending + outbox.deadLetter),
       openFailureCount: String(openFailures),
       receiptSlotMismatchCount: String(receiptSlotMismatch),

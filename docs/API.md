@@ -408,7 +408,8 @@ or deployment is included
 
 No public or internal HTTP route changes. An offline CLI compares Core
 and isolated Agency projection databases for the three owned tables,
-requires a drained `core-agency` outbox, consistent receipts/slots,
+requires a drained `core-agency` outbox, Core audit vs Agency receipt
+parity, consistent receipts/slots,
 terminal DLQ rows and caught-up checkpoints. Output is metadata-only
 READY/NOT_READY/DISABLED/UNAVAILABLE
 (`docs/features/microservices-phase-6-agency-cutover-readiness.md`).

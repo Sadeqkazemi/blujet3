@@ -376,9 +376,6 @@ describe('production backend artifacts', () => {
     );
     expect(compose).not.toContain('check-agency-projection-cutover-readiness');
     expect(ciWorkflow).toContain('test:e2e:cutover-readiness');
-    expect(compose).not.toContain(
-      'check-reporting-projection-cutover-readiness',
-    );
     expect(compose).not.toContain('provision-reporting-cutover-reader-roles');
     const envExample = readFileSync(join(backendRoot, '.env.example'), 'utf8');
     expect(envExample).toContain(
@@ -406,12 +403,19 @@ describe('production backend artifacts', () => {
     expect(envExample).toContain('REPORTING_CUTOVER_TARGET_OWNER_URL=');
     expect(envExample).toContain('REPORTING_CUTOVER_SOURCE_PASSWORD=');
     expect(envExample).toContain('REPORTING_CUTOVER_TARGET_PASSWORD=');
-    expect(envExample).toContain('AGENCY_CUTOVER_CHECK_ENABLED=false');
-    expect(envExample).toContain(
-      'postgresql://blujet_agency_cutover_source:replace@core-db:5432/blujet',
+    expect(envExample).not.toContain('AGENCY_CUTOVER_CHECK_ENABLED');
+    expect(envExample).not.toContain('AGENCY_CUTOVER_SOURCE_DATABASE_URL');
+    expect(envExample).not.toContain('AGENCY_CUTOVER_TARGET_DATABASE_URL');
+    const agencyEnvExample = readFileSync(
+      join(backendRoot, '..', 'agency-service', '.env.example'),
+      'utf8',
     );
-    expect(envExample).toContain(
-      'postgresql://blujet_agency_cutover_target:replace@agency-db:5432/blujet_agency',
+    expect(agencyEnvExample).toContain('AGENCY_CUTOVER_CHECK_ENABLED=false');
+    expect(agencyEnvExample).toContain(
+      'postgresql://blujet_agency_cutover_source:replace-me@localhost:5432/blujet',
+    );
+    expect(agencyEnvExample).toContain(
+      'postgresql://blujet_agency_cutover_target:replace-me@localhost:5432/blujet_agency',
     );
   });
 

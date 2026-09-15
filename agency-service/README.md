@@ -82,7 +82,8 @@ After building, `npm run database:check-agency-cutover:prod` with
 `AGENCY_CUTOVER_CHECK_ENABLED=true` and `TZ=UTC` emits metadata-only
 READY/NOT_READY/DISABLED/UNAVAILABLE evidence for a later read cutover. It
 reuses the three-table reconciliation fingerprints, requires a drained
-`core-agency` outbox, consistent receipts/slots, terminal DLQ rows and
+`core-agency` outbox, Core audit vs Agency receipt parity, consistent
+receipts/slots, terminal DLQ rows and
 caught-up checkpoints. Disabled mode opens no database or Kafka connection.
 See `docs/features/microservices-phase-6-agency-cutover-readiness.md`.
 

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { Client } from 'pg';
 import {
   AGENCY_BUSINESS_TABLES,
@@ -56,6 +58,8 @@ function mockPair(options: {
     deadLetter?: string;
   };
   receiptSlotMismatch?: string;
+  auditReceiptSource?: { count: string; hashA: string; hashB: string };
+  auditReceiptTarget?: { count: string; hashA: string; hashB: string };
   openFailures?: string;
   checkpoints?: Array<{
     partition: number;
@@ -69,6 +73,7 @@ function mockPair(options: {
 } {
   const statements: string[] = [];
   const defaultHash = { hashA: '11', hashB: '22' };
+  const defaultAuditReceipt = { count: '3', hashA: '31', hashB: '32' };
   const defaultCounts: Record<string, string> = {
     agency_profiles: '1',
     agency_invoices: '1',
@@ -81,6 +86,11 @@ function mockPair(options: {
       statements.push(sql);
       if (sql.startsWith('BEGIN') || sql === 'COMMIT' || sql === 'ROLLBACK') {
         return Promise.resolve({ rows: [] });
+      }
+      if (sql.includes('agency_projection_audits')) {
+        return Promise.resolve({
+          rows: [options.auditReceiptSource ?? defaultAuditReceipt],
+        });
       }
       if (sql.includes('commerce_outbox_events')) {
         expect(values?.[1]).toBe(AGENCY_CUTOVER_OUTBOX_PRODUCER);
@@ -119,6 +129,14 @@ function mockPair(options: {
       statements.push(sql);
       if (sql.startsWith('BEGIN') || sql === 'COMMIT' || sql === 'ROLLBACK') {
         return Promise.resolve({ rows: [] });
+      }
+      if (
+        sql.includes('agency_projection_event_receipts') &&
+        sql.includes('hashtextextended')
+      ) {
+        return Promise.resolve({
+          rows: [options.auditReceiptTarget ?? defaultAuditReceipt],
+        });
       }
       if (sql.includes('agency_projection_slots')) {
         return Promise.resolve({
@@ -176,6 +194,23 @@ describe('Agency cutover readiness gate', () => {
     expect(result.exitCode).toBe(0);
     expect(result.report.status).toBe('DISABLED');
     expect(loadAgencyCutoverCheckConfig({})).toEqual({ enabled: false });
+  });
+
+  it('rejects empty or non-boolean enable flags without connecting', async () => {
+    const connect = jest.fn();
+    await expect(
+      runAgencyCutoverReadinessCheck({
+        env: enabledEnv({ AGENCY_CUTOVER_CHECK_ENABLED: '' }),
+        connect,
+      }),
+    ).rejects.toThrow('configuration is invalid');
+    await expect(
+      runAgencyCutoverReadinessCheck({
+        env: enabledEnv({ AGENCY_CUTOVER_CHECK_ENABLED: 'yes' }),
+        connect,
+      }),
+    ).rejects.toThrow('configuration is invalid');
+    expect(connect).not.toHaveBeenCalled();
   });
 
   it('rejects invalid configuration, missing TZ and duplicate partitions', async () => {
@@ -244,6 +279,7 @@ describe('Agency cutover readiness gate', () => {
       sourceCount: '3',
       targetCount: '3',
       checksumEqual: true,
+      auditReceiptParity: true,
       mismatchCount: '0',
       maxLag: '0',
     });
@@ -255,6 +291,14 @@ describe('Agency cutover readiness gate', () => {
     expect(statements.some((sql) => sql.includes('agency_profiles'))).toBe(
       true,
     );
+    expect(
+      statements.some((sql) => sql.includes('agency_projection_audits')),
+    ).toBe(true);
+    expect(
+      statements.some((sql) =>
+        sql.includes('agency_projection_event_receipts'),
+      ),
+    ).toBe(true);
     expect(statements.some((sql) => sql.includes('payload'))).toBe(false);
     expect(agencyTableCountSql('agency_profiles')).toContain('agency_profiles');
     expect(agencyTableFingerprintSql('agency_invoices')).toContain(
@@ -293,6 +337,42 @@ describe('Agency cutover readiness gate', () => {
     expect(serialized).not.toMatch(/postgresql:\/\//i);
     expect(serialized).not.toContain('secret');
     expect(serialized).not.toContain('managerName');
+  });
+
+  it('fails closed on Core audit vs Agency receipt count or fingerprint mismatch', async () => {
+    const countMismatch = await evaluateAgencyCutoverReadiness({
+      ...mockPair({
+        auditReceiptTarget: { count: '2', hashA: '31', hashB: '32' },
+      }),
+      kafkaGroupId: GROUP,
+      kafkaTopic: TOPIC,
+      expectedPartitions: [0, 1, 2],
+      batchSize: 2,
+    });
+    expect(countMismatch.status).toBe('NOT_READY');
+    expect(countMismatch.auditReceiptParity).toBe(false);
+    expect(countMismatch.checksumEqual).toBe(true);
+    expect(countMismatch.reasons).toEqual(
+      expect.arrayContaining(['AUDIT_RECEIPT_COUNT_MISMATCH']),
+    );
+    const fingerprintMismatch = await evaluateAgencyCutoverReadiness({
+      ...mockPair({
+        auditReceiptTarget: { count: '3', hashA: '99', hashB: '88' },
+      }),
+      kafkaGroupId: GROUP,
+      kafkaTopic: TOPIC,
+      expectedPartitions: [0, 1, 2],
+      batchSize: 2,
+    });
+    expect(fingerprintMismatch.reasons).toEqual(
+      expect.arrayContaining(['AUDIT_RECEIPT_FINGERPRINT_MISMATCH']),
+    );
+    expect(fingerprintMismatch.reasons).not.toContain(
+      'AUDIT_RECEIPT_COUNT_MISMATCH',
+    );
+    const serialized = serializeAgencyCutoverReport(fingerprintMismatch);
+    expect(serialized).not.toContain('99');
+    expect(serialized).not.toContain('hashA');
   });
 
   it('fails closed on source backlog, lag, unresolved DLQ and missing partitions', async () => {
@@ -341,5 +421,43 @@ describe('Agency cutover readiness gate', () => {
     expect(parsed.status).toBe('UNAVAILABLE');
     expect(serialized).not.toMatch(/postgresql:\/\//i);
     expect(AGENCY_CUTOVER_REASONS).toContain('RECEIPT_SLOT_MISMATCH');
+    expect(AGENCY_CUTOVER_REASONS).toContain('AUDIT_RECEIPT_COUNT_MISMATCH');
+    expect(AGENCY_CUTOVER_REASONS).toContain(
+      'AUDIT_RECEIPT_FINGERPRINT_MISMATCH',
+    );
+  });
+
+  it('keeps the cutover CLI on agency-service, default-off and undeployed', () => {
+    const packageManifest = readFileSync(
+      resolve(__dirname, '..', 'package.json'),
+      'utf8',
+    );
+    const environmentExample = readFileSync(
+      resolve(__dirname, '..', '.env.example'),
+      'utf8',
+    );
+    const backendEnv = readFileSync(
+      resolve(__dirname, '..', '..', 'backend', '.env.example'),
+      'utf8',
+    );
+    const workflow = readFileSync(
+      resolve(__dirname, '..', '..', '.github', 'workflows', 'ci.yml'),
+      'utf8',
+    );
+    const productionCompose = readFileSync(
+      resolve(__dirname, '..', '..', 'docker-compose.prod.yml'),
+      'utf8',
+    );
+    expect(packageManifest).toContain(
+      '"database:check-agency-cutover:prod": "node dist/check-agency-projection-cutover-readiness.js"',
+    );
+    expect(environmentExample).toContain('AGENCY_CUTOVER_CHECK_ENABLED=false');
+    expect(backendEnv).not.toContain('AGENCY_CUTOVER_CHECK_ENABLED');
+    expect(backendEnv).not.toContain('AGENCY_CUTOVER_SOURCE_DATABASE_URL');
+    expect(workflow).toContain('npm run test:e2e:cutover-readiness');
+    expect(productionCompose).not.toContain(
+      'check-agency-projection-cutover-readiness',
+    );
+    expect(productionCompose).not.toContain('AGENCY_CUTOVER_CHECK_ENABLED');
   });
 });

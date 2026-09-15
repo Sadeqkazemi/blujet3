@@ -84,30 +84,64 @@ async function seedBusiness(client: Client, userId: string): Promise<void> {
   );
 }
 
-async function seedSlotsAndReceipts(
-  client: Client,
-  userId: string,
-): Promise<void> {
-  const rows = [
-    ['AgencyProfile', userId],
-    ['AgencyInvoice', `inv-${userId}`],
-    ['AgencyCreditRequest', `cr-${userId}`],
-  ] as const;
-  for (const [aggregateType, aggregateId] of rows) {
+async function installCoreAudits(client: Client): Promise<void> {
+  await client.query(`CREATE TABLE IF NOT EXISTS agency.agency_projection_audits (
+    id text PRIMARY KEY,
+    "aggregateType" text NOT NULL,
+    "aggregateId" text NOT NULL,
+    "recordVersion" integer NOT NULL,
+    mutation text NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT now()
+  )`);
+}
+
+function auditRows(userId: string): readonly [string, string, string][] {
+  return [
+    [`audit-profile-${userId}`, 'AgencyProfile', userId],
+    [`audit-invoice-${userId}`, 'AgencyInvoice', `inv-${userId}`],
+    [`audit-credit-${userId}`, 'AgencyCreditRequest', `cr-${userId}`],
+  ];
+}
+
+async function seedAudits(client: Client, userId: string): Promise<void> {
+  for (const [id, aggregateType, aggregateId] of auditRows(userId)) {
     await client.query(
-      `INSERT INTO agency.agency_projection_slots
-        ("aggregateType", "aggregateId", "recordVersion", "semanticFingerprint", "auditId")
-       VALUES ($1, $2, 1, $3, $4)`,
-      [aggregateType, aggregateId, FINGERPRINT, randomUUID()],
+      `INSERT INTO agency.agency_projection_audits
+        (id, "aggregateType", "aggregateId", "recordVersion", mutation)
+       VALUES ($1, $2, $3, 1, 'UPSERT')`,
+      [id, aggregateType, aggregateId],
     );
+  }
+}
+
+async function seedReceipts(
+  client: Client,
+  rows: readonly [string, string, string][],
+): Promise<void> {
+  for (const [auditId, aggregateType, aggregateId] of rows) {
     await client.query(
       `INSERT INTO agency.agency_projection_event_receipts
         ("eventId", "envelopeFingerprint", "semanticFingerprint",
          "aggregateType", "aggregateId", "recordVersion", "auditId")
        VALUES ($1, $2, $2, $3, $4, 1, $5)`,
-      [randomUUID(), FINGERPRINT, aggregateType, aggregateId, randomUUID()],
+      [randomUUID(), FINGERPRINT, aggregateType, aggregateId, auditId],
     );
   }
+}
+
+async function seedSlotsAndReceipts(
+  client: Client,
+  userId: string,
+): Promise<void> {
+  for (const [auditId, aggregateType, aggregateId] of auditRows(userId)) {
+    await client.query(
+      `INSERT INTO agency.agency_projection_slots
+        ("aggregateType", "aggregateId", "recordVersion", "semanticFingerprint", "auditId")
+       VALUES ($1, $2, 1, $3, $4)`,
+      [aggregateType, aggregateId, FINGERPRINT, auditId],
+    );
+  }
+  await seedReceipts(client, auditRows(userId));
 }
 
 async function seedCheckpoints(
@@ -155,10 +189,12 @@ describe('Agency cutover readiness gate (PostgreSQL)', () => {
     await sourceOwner.connect();
     await targetOwner.connect();
     await installOutbox(sourceOwner);
+    await installCoreAudits(sourceOwner);
   }, 60000);
 
   beforeEach(async () => {
     await sourceOwner.query(`TRUNCATE
+      agency.agency_projection_audits,
       agency.kafka_consumer_checkpoints,
       agency.kafka_processing_failures,
       agency.agency_projection_event_receipts,
@@ -178,6 +214,7 @@ describe('Agency cutover readiness gate (PostgreSQL)', () => {
       RESTART IDENTITY CASCADE`);
     await sourceOwner.query('TRUNCATE orders.commerce_outbox_events');
     await seedBusiness(sourceOwner, userId);
+    await seedAudits(sourceOwner, userId);
     await seedBusiness(targetOwner, userId);
     await seedSlotsAndReceipts(targetOwner, userId);
     await seedCheckpoints(targetOwner, [0, 1, 2]);
@@ -217,11 +254,14 @@ describe('Agency cutover readiness gate (PostgreSQL)', () => {
     const report = await evaluate();
     expect(report.status).toBe('READY');
     expect(report.checksumEqual).toBe(true);
+    expect(report.auditReceiptParity).toBe(true);
     expect(report.reasons).toEqual([]);
     const serialized = serializeAgencyCutoverReport(report);
     expect(serialized).not.toContain(SECRET);
     expect(serialized).not.toMatch(/postgresql:\/\//i);
     expect(serialized).not.toContain(userId);
+    expect(serialized).not.toContain(`audit-profile-${userId}`);
+    expect(serialized).not.toContain(FINGERPRINT);
   });
 
   it('fails closed on row count mismatch', async () => {
@@ -287,6 +327,65 @@ describe('Agency cutover readiness gate (PostgreSQL)', () => {
     );
     const report = await evaluate();
     expect(report.reasons).toContain('CHECKPOINT_MISSING');
+  });
+
+  it('stays READY when Core audits match Agency receipts', async () => {
+    const report = await evaluate();
+    expect(report.status).toBe('READY');
+    expect(report.auditReceiptParity).toBe(true);
+    expect(report.reasons).not.toEqual(
+      expect.arrayContaining([
+        'AUDIT_RECEIPT_COUNT_MISMATCH',
+        'AUDIT_RECEIPT_FINGERPRINT_MISMATCH',
+      ]),
+    );
+  });
+
+  it('fails closed when an Agency receipt is missing', async () => {
+    await targetOwner.query('TRUNCATE agency.agency_projection_event_receipts');
+    await seedReceipts(targetOwner, auditRows(userId).slice(0, 2));
+    const report = await evaluate();
+    expect(report.status).toBe('NOT_READY');
+    expect(report.auditReceiptParity).toBe(false);
+    expect(report.reasons).toContain('AUDIT_RECEIPT_COUNT_MISMATCH');
+    expect(serializeAgencyCutoverReport(report)).not.toContain(
+      `audit-invoice-${userId}`,
+    );
+  });
+
+  it('fails closed when audit and receipt counts match but content differs', async () => {
+    await targetOwner.query('TRUNCATE agency.agency_projection_event_receipts');
+    const [profile, invoice, credit] = auditRows(userId);
+    await seedReceipts(targetOwner, [
+      ['audit-content-mismatch', profile[1], profile[2]],
+      invoice,
+      credit,
+    ]);
+    const report = await evaluate();
+    expect(report.status).toBe('NOT_READY');
+    expect(report.auditReceiptParity).toBe(false);
+    expect(report.reasons).toContain('AUDIT_RECEIPT_FINGERPRINT_MISMATCH');
+    expect(report.reasons).not.toContain('AUDIT_RECEIPT_COUNT_MISMATCH');
+    expect(serializeAgencyCutoverReport(report)).not.toContain(
+      'audit-content-mismatch',
+    );
+  });
+
+  it('fails closed when an extra Agency receipt exists', async () => {
+    await targetOwner.query(
+      `INSERT INTO agency.agency_projection_event_receipts
+        ("eventId", "envelopeFingerprint", "semanticFingerprint",
+         "aggregateType", "aggregateId", "recordVersion", "auditId")
+       VALUES ($1, $2, $2, 'AgencyInvoice', $3, 2, $4)`,
+      [randomUUID(), FINGERPRINT, `inv-${userId}`, 'audit-extra-receipt'],
+    );
+    const report = await evaluate();
+    expect(report.status).toBe('NOT_READY');
+    expect(report.auditReceiptParity).toBe(false);
+    expect(report.reasons).toContain('AUDIT_RECEIPT_COUNT_MISMATCH');
+    expect(serializeAgencyCutoverReport(report)).not.toContain(
+      'audit-extra-receipt',
+    );
   });
 
   it('fails closed for source/target URL mix-up without printing credentials', async () => {
