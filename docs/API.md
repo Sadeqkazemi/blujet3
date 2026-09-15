@@ -24,6 +24,20 @@ the owner URL is provisioning-only. No consumer, read cutover, data copy or
 deployment is activated
 (`docs/features/microservices-phase-6-reporting-projection-runtime-role.md`).
 
+## Reporting projection cutover readiness gate
+
+No public or internal HTTP route changes. An offline, default-off CLI
+reports whether Reporting-owned projection data on Core/shared PostgreSQL
+is ready for a later cutover onto the dedicated Reporting database. It
+opens read-only, repeatable-read sessions against distinct
+`blujet_reporting_cutover_source` and `blujet_reporting_cutover_target`
+LOGIN URLs (never owner credentials), pages projection and receipt
+metadata, checks receipt parity, non-terminal failure statuses and
+checkpoint lag, and never connects to Kafka. Evidence is aggregates and
+allowlisted reasons only. Consumer activation, URL cutover and
+deployment remain disabled
+(`docs/features/microservices-phase-6-reporting-cutover-readiness.md`).
+
 ## Ops/Admin poison-message quarantine
 
 No public `/api/v1` route changes. When `OPS_ADMIN_DLQ_ENABLED=true`, the

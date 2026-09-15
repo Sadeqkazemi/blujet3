@@ -20,6 +20,17 @@ Core/foreign-database access. Provisioning is offline and does not alter the
 worker flag, runtime URL, data or deployment
 (`docs/features/microservices-phase-6-reporting-projection-runtime-role.md`).
 
+## Reporting projection cutover readiness gate
+
+No schema change. The offline gate reads `reporting.core_itinerary_event_projections`,
+`reporting.core_itinerary_event_receipts`, `reporting.kafka_processing_failures`
+and `reporting.kafka_consumer_checkpoints` on distinct Core/shared and
+dedicated Reporting databases through read-only LOGIN roles
+`blujet_reporting_cutover_source` and `blujet_reporting_cutover_target`.
+Column-level SELECT excludes projection `payload`. It performs no
+INSERT/UPDATE/DELETE, repair, replay or Kafka I/O
+(`docs/features/microservices-phase-6-reporting-cutover-readiness.md`).
+
 ## Ops/Admin Kafka failure quarantine
 
 Migration `1794124800000-OpsAdminKafkaFailureQuarantine` adds
