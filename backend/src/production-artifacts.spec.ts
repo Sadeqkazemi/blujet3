@@ -360,6 +360,19 @@ describe('production backend artifacts', () => {
       'check-ops-admin-projection-cutover-readiness',
     );
     expect(deployWorkflow).not.toContain('OPS_ADMIN_CUTOVER_CHECK_ENABLED');
+    const envExample = readFileSync(join(backendRoot, '.env.example'), 'utf8');
+    expect(envExample).toContain(
+      'postgresql://blujet_ops_admin_cutover_source:replace@core-db:5432/blujet',
+    );
+    expect(envExample).toContain(
+      'postgresql://blujet_ops_admin_cutover_target:replace@ops-admin-db:5432/blujet_ops_admin',
+    );
+    expect(envExample).not.toMatch(
+      /OPS_ADMIN_CUTOVER_SOURCE_DATABASE_URL=.*core_owner/,
+    );
+    expect(envExample).not.toMatch(
+      /OPS_ADMIN_CUTOVER_TARGET_DATABASE_URL=.*ops_admin_owner/,
+    );
   });
 
   it('keeps database-owner credentials outside the long-running Core process', () => {

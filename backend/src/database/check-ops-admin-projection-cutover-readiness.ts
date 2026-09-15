@@ -292,13 +292,23 @@ function asVersion(value: unknown): number | null {
   return numeric;
 }
 
-function instant(value: unknown): string {
+function textField(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  if (typeof value !== 'string') {
+    throw new Error('Ops/Admin cutover readiness row is invalid');
+  }
+  return value;
+}
+
+function timestampField(value: unknown): string {
   if (value === null || value === undefined) return '';
   if (value instanceof Date) return value.toISOString();
   if (typeof value === 'string') {
     const parsed = new Date(value);
-    if (!Number.isNaN(parsed.getTime())) return parsed.toISOString();
-    return value;
+    if (Number.isNaN(parsed.getTime())) {
+      throw new Error('Ops/Admin cutover readiness row is invalid');
+    }
+    return parsed.toISOString();
   }
   throw new Error('Ops/Admin cutover readiness row is invalid');
 }
@@ -309,15 +319,15 @@ function cartableFingerprint(row: Record<string, unknown>): CartablePageRow {
     id: asId(row.id),
     taskVersion,
     fingerprint: [
-      instant(row.assigneeId),
-      instant(row.category),
-      instant(row.sourceType),
-      instant(row.sourceId),
-      instant(row.status),
-      instant(row.resolvedAt),
-      instant(row.readAt),
+      textField(row.assigneeId),
+      textField(row.category),
+      textField(row.sourceType),
+      textField(row.sourceId),
+      textField(row.status),
+      timestampField(row.resolvedAt),
+      timestampField(row.readAt),
       taskVersion === null ? '' : String(taskVersion),
-      instant(row.createdAt),
+      timestampField(row.createdAt),
     ].join('\u001f'),
   };
 }
@@ -363,7 +373,7 @@ async function compareCartablePages(
   stale: number;
   mismatch: number;
 }> {
-  const countSql = 'SELECT count(*)::text AS count FROM ops.cartable_tasks';
+  const countSql = 'SELECT count(id)::text AS count FROM ops.cartable_tasks';
   assertReadOnlyCutoverSql(countSql);
   const [sourceCountRow, targetCountRow] = await Promise.all([
     source.query(countSql),
@@ -455,22 +465,22 @@ async function readOutboxCounts(source: CutoverSqlClient): Promise<{
   deadLetter: number;
 }> {
   const sql = `SELECT
-    (count(*) FILTER (
+    (count(producer) FILTER (
       WHERE "deliveredAt" IS NULL AND "deadLetterAt" IS NULL
     ))::text AS pending,
-    (count(*) FILTER (
+    (count(producer) FILTER (
       WHERE "deliveredAt" IS NULL AND "deadLetterAt" IS NULL
         AND "claimedAt" IS NOT NULL
         AND "claimedAt" >= (transaction_timestamp() AT TIME ZONE 'UTC')
           - $1 * interval '1 millisecond'
     ))::text AS "inFlight",
-    (count(*) FILTER (
+    (count(producer) FILTER (
       WHERE "deliveredAt" IS NULL AND "deadLetterAt" IS NULL
         AND "claimedAt" IS NOT NULL
         AND "claimedAt" < (transaction_timestamp() AT TIME ZONE 'UTC')
           - $1 * interval '1 millisecond'
     ))::text AS "expiredLease",
-    (count(*) FILTER (
+    (count(producer) FILTER (
       WHERE "deadLetterAt" IS NOT NULL
     ))::text AS "deadLetter"
   FROM orders.commerce_outbox_events
@@ -490,7 +500,7 @@ async function readOutboxCounts(source: CutoverSqlClient): Promise<{
 }
 
 async function readOpenFailureCount(target: CutoverSqlClient): Promise<number> {
-  const sql = `SELECT count(*)::text AS count
+  const sql = `SELECT count(status)::text AS count
     FROM ops.kafka_processing_failures
     WHERE status NOT IN ('RESOLVED', 'SKIPPED')`;
   assertReadOnlyCutoverSql(sql);
@@ -653,6 +663,45 @@ export async function evaluateOpsAdminCutoverReadiness(options: {
   }
 }
 
+export const OPS_ADMIN_CUTOVER_CONNECT_TIMEOUT_MS = 2000;
+export const OPS_ADMIN_CUTOVER_QUERY_TIMEOUT_MS = 5000;
+export const OPS_ADMIN_CUTOVER_LOCK_TIMEOUT_MS = 2000;
+export const OPS_ADMIN_CUTOVER_CLIENT_OPTIONS = {
+  connectionTimeoutMillis: OPS_ADMIN_CUTOVER_CONNECT_TIMEOUT_MS,
+  query_timeout: OPS_ADMIN_CUTOVER_QUERY_TIMEOUT_MS,
+  statement_timeout: OPS_ADMIN_CUTOVER_QUERY_TIMEOUT_MS,
+  options:
+    '-c default_transaction_read_only=on -c timezone=UTC -c statement_timeout=5000',
+} as const;
+
+export function createOpsAdminCutoverReadClient(url: string): Client {
+  return new Client({
+    connectionString: url,
+    ...OPS_ADMIN_CUTOVER_CLIENT_OPTIONS,
+  });
+}
+
+export async function connectOpsAdminCutoverReadClient(
+  url: string,
+): Promise<Client> {
+  const client = createOpsAdminCutoverReadClient(url);
+  await client.connect();
+  try {
+    await client.query('SET default_transaction_read_only = on');
+    await client.query("SET TIME ZONE 'UTC'");
+    await client.query(
+      `SET statement_timeout = '${OPS_ADMIN_CUTOVER_QUERY_TIMEOUT_MS}ms'`,
+    );
+    await client.query(
+      `SET lock_timeout = '${OPS_ADMIN_CUTOVER_LOCK_TIMEOUT_MS}ms'`,
+    );
+    return client;
+  } catch (error) {
+    await client.end().catch(() => undefined);
+    throw error;
+  }
+}
+
 export async function runOpsAdminCutoverReadinessCheck(options: {
   env?: NodeJS.ProcessEnv;
   connect?: (url: string) => Promise<CutoverSqlClient>;
@@ -689,9 +738,11 @@ export async function runOpsAdminCutoverReadinessCheck(options: {
   if (!options.connect) {
     throw new OpsAdminCutoverConfigError();
   }
-  const source = await options.connect(sourceUrl);
-  const target = await options.connect(targetUrl);
+  let source: CutoverSqlClient | undefined;
+  let target: CutoverSqlClient | undefined;
   try {
+    source = await options.connect(sourceUrl);
+    target = await options.connect(targetUrl);
     const report = await evaluateOpsAdminCutoverReadiness({
       source,
       target,
@@ -705,22 +756,17 @@ export async function runOpsAdminCutoverReadinessCheck(options: {
       exitCode: report.status === 'READY' ? 0 : 2,
     };
   } finally {
-    await Promise.allSettled(
-      [source, target].map((client) =>
-        client.end ? client.end() : Promise.resolve(),
-      ),
-    );
+    await Promise.allSettled([
+      source?.end ? source.end() : Promise.resolve(),
+      target?.end ? target.end() : Promise.resolve(),
+    ]);
   }
 }
 
 async function main(): Promise<void> {
   try {
     const result = await runOpsAdminCutoverReadinessCheck({
-      connect: async (url) => {
-        const client = new Client({ connectionString: url });
-        await client.connect();
-        return client;
-      },
+      connect: connectOpsAdminCutoverReadClient,
     });
     process.stdout.write(`${serializeOpsAdminCutoverReport(result.report)}\n`);
     process.exitCode = result.exitCode;

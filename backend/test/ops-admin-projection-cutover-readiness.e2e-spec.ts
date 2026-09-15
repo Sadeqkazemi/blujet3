@@ -1,6 +1,7 @@
 import { Client } from 'pg';
 import { DataSource } from 'typeorm';
 import {
+  connectOpsAdminCutoverReadClient,
   evaluateOpsAdminCutoverReadiness,
   runOpsAdminCutoverReadinessCheck,
   serializeOpsAdminCutoverReport,
@@ -140,9 +141,11 @@ describe('Ops/Admin projection cutover readiness (PostgreSQL)', () => {
   let admin: Client;
   let source: Client;
   let target: Client;
+  let sourceUrl: string;
 
   beforeAll(async () => {
     const root = ownerUrl();
+    sourceUrl = rewriteDatabase(root, sourceName);
     admin = new Client({
       connectionString: rewriteDatabase(root, 'postgres'),
     });
@@ -152,7 +155,7 @@ describe('Ops/Admin projection cutover readiness (PostgreSQL)', () => {
     await admin.query(`CREATE DATABASE ${quoteIdent(sourceName)}`);
     await admin.query(`CREATE DATABASE ${quoteIdent(targetName)}`);
     source = new Client({
-      connectionString: rewriteDatabase(root, sourceName),
+      connectionString: sourceUrl,
     });
     await source.connect();
     await createCoreSource(source);
@@ -184,6 +187,30 @@ describe('Ops/Admin projection cutover readiness (PostgreSQL)', () => {
     await target.query(
       'TRUNCATE ops.cartable_tasks, ops.kafka_consumer_checkpoints, ops.kafka_processing_failures',
     );
+  });
+
+  it('enforces session read-only UTC timeouts on the cutover client', async () => {
+    const client = await connectOpsAdminCutoverReadClient(sourceUrl);
+    try {
+      const settings = await client.query<{
+        default_transaction_read_only: string;
+        TimeZone: string;
+        statement_timeout: string;
+        lock_timeout: string;
+      }>(
+        `SELECT current_setting('default_transaction_read_only') AS default_transaction_read_only,
+                current_setting('TimeZone') AS "TimeZone",
+                current_setting('statement_timeout') AS statement_timeout,
+                current_setting('lock_timeout') AS lock_timeout`,
+      );
+      const row = settings.rows[0];
+      expect(row?.default_transaction_read_only).toBe('on');
+      expect(row?.TimeZone).toBe('UTC');
+      expect(['5s', '5000ms', '5000']).toContain(row?.statement_timeout);
+      expect(['2s', '2000ms', '2000']).toContain(row?.lock_timeout);
+    } finally {
+      await client.end();
+    }
   });
 
   it('does not connect when disabled', async () => {

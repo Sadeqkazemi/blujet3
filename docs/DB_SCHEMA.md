@@ -372,7 +372,10 @@ performed.
 No schema change. The offline gate reads Core `ops.cartable_tasks` and
 `orders.commerce_outbox_events` (`producer = core-ops` only) plus the
 dedicated database `ops.cartable_tasks`, `ops.kafka_processing_failures`
-and `ops.kafka_consumer_checkpoints`. It performs no INSERT/UPDATE/DELETE,
+and `ops.kafka_consumer_checkpoints` through dedicated read-only LOGIN roles
+`blujet_ops_admin_cutover_source` and `blujet_ops_admin_cutover_target`.
+Column-level SELECT is limited to the compared routing, outbox delivery,
+DLQ status and checkpoint offset columns. It performs no INSERT/UPDATE/DELETE,
 repair, replay or Kafka I/O
 (`docs/features/microservices-phase-6-ops-admin-cutover-readiness.md`).
 

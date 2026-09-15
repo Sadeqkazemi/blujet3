@@ -4,7 +4,7 @@
 
 - [x] Freeze the offline, read-only, no-Kafka cutover gate before code.
 - [x] Compare Core and projection cartable rows with bounded paging,
-      require a drained `core-ops` outbox, terminal DLQ rows and
+      require a drained core-ops outbox, terminal DLQ rows and
       checkpoint catch-up for the expected partitions.
 - [x] Emit metadata-only READY/NOT_READY/DISABLED/UNAVAILABLE evidence.
 - [x] Prove unit and real-PostgreSQL cases without activating the worker.

@@ -226,7 +226,9 @@ required.
 No public or internal HTTP route changes. An offline, default-off CLI
 reports whether the independent Ops/Admin projection is ready for a later
 read cutover. It opens read-only, repeatable-read sessions against distinct
-Core source and Ops/Admin target URLs, pages cartable routing metadata,
+Core `blujet_ops_admin_cutover_source` and Ops/Admin
+`blujet_ops_admin_cutover_target` LOGIN URLs (never owner credentials),
+pages cartable routing metadata,
 counts blocking `core-ops` outbox rows, non-terminal DLQ statuses and
 checkpoint lag, and never connects to Kafka. Evidence is aggregates and
 allowlisted reasons only. Consumer activation, reader URL cutover and

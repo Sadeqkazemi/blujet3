@@ -32,6 +32,62 @@ Source and target must be different PostgreSQL databases. Source must be Core
 (name must not match `^blujet_ops_admin(_[A-Za-z0-9_]+)?$`). Target must be an
 isolated Ops/Admin database matching that pattern.
 
+Use dedicated read-only LOGIN roles, never owner, writer, or HTTP-reader
+credentials. Session options: `connectionTimeoutMillis=2000`,
+`query_timeout`/`statement_timeout=5000`, `lock_timeout=2000`,
+`default_transaction_read_only=on`, `timezone=UTC`.
+
+### Source role `blujet_ops_admin_cutover_source` (Core)
+
+Minimum SELECT:
+
+- `ops.cartable_tasks`: `id`, `assigneeId`, `category`, `sourceType`,
+  `sourceId`, `status`, `resolvedAt`, `readAt`, `version`, `createdAt`
+- `orders.commerce_outbox_events`: `producer`, `deliveredAt`,
+  `deadLetterAt`, `claimedAt`, `nextAttemptAt`
+
+```sql
+GRANT CONNECT ON DATABASE blujet TO blujet_ops_admin_cutover_source;
+GRANT USAGE ON SCHEMA ops, orders TO blujet_ops_admin_cutover_source;
+GRANT SELECT (
+  id, "assigneeId", category, "sourceType", "sourceId", status,
+  "resolvedAt", "readAt", version, "createdAt"
+) ON ops.cartable_tasks TO blujet_ops_admin_cutover_source;
+GRANT SELECT (
+  producer, "deliveredAt", "deadLetterAt", "claimedAt", "nextAttemptAt"
+) ON orders.commerce_outbox_events TO blujet_ops_admin_cutover_source;
+ALTER ROLE blujet_ops_admin_cutover_source SET default_transaction_read_only = on;
+```
+
+### Target role `blujet_ops_admin_cutover_target` (Ops/Admin)
+
+Minimum SELECT:
+
+- `ops.cartable_tasks`: `id`, `assigneeId`, `category`, `sourceType`,
+  `sourceId`, `status`, `resolvedAt`, `readAt`, `taskVersion`, `createdAt`
+- `ops.kafka_processing_failures`: `status`
+- `ops.kafka_consumer_checkpoints`: `consumerGroup`, `topic`, `partition`,
+  `nextOffset`, `highWatermark`
+
+```sql
+GRANT CONNECT ON DATABASE blujet_ops_admin TO blujet_ops_admin_cutover_target;
+GRANT USAGE ON SCHEMA ops TO blujet_ops_admin_cutover_target;
+GRANT SELECT (
+  id, "assigneeId", category, "sourceType", "sourceId", status,
+  "resolvedAt", "readAt", "taskVersion", "createdAt"
+) ON ops.cartable_tasks TO blujet_ops_admin_cutover_target;
+GRANT SELECT (status) ON ops.kafka_processing_failures
+  TO blujet_ops_admin_cutover_target;
+GRANT SELECT (
+  "consumerGroup", topic, "partition", "nextOffset", "highWatermark"
+) ON ops.kafka_consumer_checkpoints TO blujet_ops_admin_cutover_target;
+ALTER ROLE blujet_ops_admin_cutover_target SET default_transaction_read_only = on;
+```
+
+Compared identifier fields (`assigneeId`, `category`, `sourceType`,
+`sourceId`, `status`) are exact string/null matches. Only `resolvedAt`,
+`readAt` and `createdAt` are normalized to ISO-8601.
+
 ## READY contract
 
 Both sessions are `REPEATABLE READ` and `READ ONLY`. READY requires all of:
@@ -94,8 +150,9 @@ Allowlisted reasons:
 
 - [x] `check-ops-admin-projection-cutover-readiness.spec.ts` covers disabled
       mode, invalid config, identical/invalid databases, paged match, mismatch
-      classes, outbox, DLQ, checkpoints, lag, sanitized output and read-only
-      SQL.
+      classes, date-like identifier CARTABLE_MISMATCH, source.end after target
+      connect failure, client timeouts, outbox, DLQ, checkpoints, lag,
+      sanitized output and read-only SQL.
 - [x] `ops-admin-projection-cutover-readiness.e2e-spec.ts` proves READY and
       fail-closed cases against real PostgreSQL.
 - [ ] CI `ops-admin` job includes the E2E and remains in `ci-gate`.

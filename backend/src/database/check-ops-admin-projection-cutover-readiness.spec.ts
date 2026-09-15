@@ -1,3 +1,4 @@
+import { Client } from 'pg';
 import {
   OPS_ADMIN_CUTOVER_OUTBOX_PRODUCER,
   OPS_ADMIN_CUTOVER_REASONS,
@@ -8,6 +9,10 @@ import {
   loadOpsAdminCutoverCheckConfig,
   parseOpsAdminCutoverBatchSize,
   parseOpsAdminCutoverPartitions,
+  OPS_ADMIN_CUTOVER_CLIENT_OPTIONS,
+  OPS_ADMIN_CUTOVER_CONNECT_TIMEOUT_MS,
+  OPS_ADMIN_CUTOVER_QUERY_TIMEOUT_MS,
+  createOpsAdminCutoverReadClient,
   runOpsAdminCutoverReadinessCheck,
   serializeOpsAdminCutoverReport,
   type CutoverSqlClient,
@@ -97,7 +102,7 @@ function mockPair(options: {
       if (sql.startsWith('BEGIN') || sql === 'COMMIT' || sql === 'ROLLBACK') {
         return Promise.resolve({ rows: [] });
       }
-      if (sql.includes('count(*)::text AS count FROM ops.cartable_tasks')) {
+      if (sql.includes('count(id)::text AS count FROM ops.cartable_tasks')) {
         return Promise.resolve({
           rows: [{ count: String(options.sourceRows.length) }],
         });
@@ -129,7 +134,7 @@ function mockPair(options: {
       if (sql.startsWith('BEGIN') || sql === 'COMMIT' || sql === 'ROLLBACK') {
         return Promise.resolve({ rows: [] });
       }
-      if (sql.includes('count(*)::text AS count FROM ops.cartable_tasks')) {
+      if (sql.includes('count(id)::text AS count FROM ops.cartable_tasks')) {
         return Promise.resolve({
           rows: [{ count: String(options.targetRows.length) }],
         });
@@ -320,6 +325,69 @@ describe('Ops/Admin cutover readiness gate', () => {
       batchSize: 10,
     });
     expect(mismatch.reasons).toContain('CARTABLE_MISMATCH');
+  });
+
+  it('does not collapse distinct date-like identifier strings', async () => {
+    const sourceRow = {
+      ...row('a'),
+      assigneeId: '2020-01-01T00:00:00.000Z',
+      sourceId: '2020-01-01T00:00:00.000Z',
+    };
+    const targetRow = {
+      ...row('a'),
+      assigneeId: '2020-01-01T00:00:00.000+00:00',
+      sourceId: '2020-01-01T00:00:00.000+00:00',
+    };
+    const report = await evaluateOpsAdminCutoverReadiness({
+      ...mockPair({
+        sourceRows: [sourceRow],
+        targetRows: [targetRow],
+        checkpoints: [
+          { partition: 0, nextOffset: '1', highWatermark: '1' },
+          { partition: 1, nextOffset: '1', highWatermark: '1' },
+          { partition: 2, nextOffset: '1', highWatermark: '1' },
+        ],
+      }),
+      kafkaGroupId: GROUP,
+      kafkaTopic: TOPIC,
+      expectedPartitions: [0, 1, 2],
+      batchSize: 10,
+    });
+    expect(report.status).toBe('NOT_READY');
+    expect(report.reasons).toEqual(['CARTABLE_MISMATCH']);
+    expect(report.mismatchCount).toBe('1');
+  });
+
+  it('ends the source client when target connect rejects', async () => {
+    const sourceEnd = jest.fn().mockResolvedValue(undefined);
+    const connect = jest
+      .fn()
+      .mockResolvedValueOnce({
+        query: jest.fn(),
+        end: sourceEnd,
+      })
+      .mockRejectedValueOnce(new Error('target refused'));
+    await expect(
+      runOpsAdminCutoverReadinessCheck({
+        env: enabledEnv(),
+        connect,
+      }),
+    ).rejects.toThrow('target refused');
+    expect(connect).toHaveBeenCalledTimes(2);
+    expect(sourceEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it('bounds PostgreSQL connect and statement timeouts as read-only UTC', () => {
+    expect(OPS_ADMIN_CUTOVER_CLIENT_OPTIONS).toEqual(
+      expect.objectContaining({
+        connectionTimeoutMillis: OPS_ADMIN_CUTOVER_CONNECT_TIMEOUT_MS,
+        query_timeout: OPS_ADMIN_CUTOVER_QUERY_TIMEOUT_MS,
+        statement_timeout: OPS_ADMIN_CUTOVER_QUERY_TIMEOUT_MS,
+        options:
+          '-c default_transaction_read_only=on -c timezone=UTC -c statement_timeout=5000',
+      }),
+    );
+    expect(createOpsAdminCutoverReadClient(SOURCE)).toBeInstanceOf(Client);
   });
 
   it('fails closed for pending or dead-letter core-ops outbox rows', async () => {
