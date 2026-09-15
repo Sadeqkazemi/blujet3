@@ -29,6 +29,9 @@ describe('Cartable + referrals + messages (e2e)', () => {
 
   afterEach(async () => {
     jest.restoreAllMocks();
+    app
+      .get(ConfigService)
+      .set('OPS_ADMIN_CARTABLE_COUNTS_READ_ENABLED', 'false');
     await dataSource
       .getRepository(CommerceOutboxEvent)
       .delete({ producer: 'core-ops' });
@@ -106,6 +109,77 @@ describe('Cartable + referrals + messages (e2e)', () => {
       ),
     ).toBe(true);
     expect(res.body.data.counts.ADMIN).toBeGreaterThan(0);
+  });
+
+  it('optionally reads owner counters from Ops/Admin while task rows stay in Core', async () => {
+    const ceoId = await userId('ceo');
+    const coreTask = await createFreshTask(ceoId);
+    const { accessToken } = await loginAs(app, 'ceo');
+    const config = app.get(ConfigService);
+    config.set('OPS_ADMIN_CARTABLE_COUNTS_READ_ENABLED', 'true');
+    config.set('OPS_ADMIN_SERVICE_URL', 'http://ops-admin:3660');
+    config.set(
+      'OPS_ADMIN_INTERNAL_TOKEN',
+      'ops-admin-counts-e2e-token-at-least-32-characters',
+    );
+    jest
+      .spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions')
+      .mockReturnValue({
+        ...Intl.DateTimeFormat().resolvedOptions(),
+        timeZone: 'UTC',
+      });
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: true,
+          data: {
+            assigneeId: ceoId,
+            counts: { ADMIN: 7, AGENCY: 2, MANAGER: 1 },
+            statusCounts: {
+              OPEN: 10,
+              APPROVED: 4,
+              REJECTED: 3,
+              TRANSFERRED: 2,
+            },
+            totalOpen: 10,
+            observedAt: '2026-09-15T10:30:00.000Z',
+          },
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const result = await request(app.getHttpServer())
+      .get('/cartable?category=ADMIN')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .set('X-Request-Id', 'cartable-counts-e2e');
+
+    expect(result.status).toBe(200);
+    expect(
+      result.body.data.tasks.map((task: { id: string }) => task.id),
+    ).toContain(coreTask.id);
+    expect(result.body.data).toEqual(
+      expect.objectContaining({
+        counts: { ADMIN: 7, AGENCY: 2, MANAGER: 1 },
+        statusCounts: {
+          OPEN: 10,
+          APPROVED: 4,
+          REJECTED: 3,
+          TRANSFERRED: 2,
+        },
+        totalOpen: 10,
+      }),
+    );
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'http://ops-admin:3660/internal/v1/ops-admin/cartable/counts',
+      expect.objectContaining({
+        redirect: 'manual',
+        headers: expect.objectContaining({
+          'X-Ops-Admin-Assignee-Id': ceoId,
+          'X-Request-Id': 'cartable-counts-e2e',
+        }) as unknown,
+      }),
+    );
   });
 
   it('IT_MANAGER can access the unified cartable', async () => {

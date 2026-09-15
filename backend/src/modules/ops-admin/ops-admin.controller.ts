@@ -49,6 +49,28 @@ export class OpsAdminController {
     };
   }
 
+  @Get('counts')
+  @ApiOperation({ summary: 'شمارنده‌های فقط‌خواندنی کارتابل یک کارمند' })
+  @ApiHeader({
+    name: 'X-Ops-Admin-Assignee-Id',
+    description: 'شناسهٔ مالک کارتابل از هویت احرازشدهٔ Core',
+    required: true,
+  })
+  @ApiOkResponse({
+    description: 'شمارنده‌های owner-scoped بدون متادیتای وظیفه',
+  })
+  @ApiBadRequestResponse({ description: 'شناسهٔ مالک کارتابل معتبر نیست.' })
+  @ApiUnauthorizedResponse({ description: 'توکن سرویس داخلی نامعتبر است.' })
+  async counts(
+    @OpsAdminAssigneeId(new ParseUUIDPipe({ version: '4' }))
+    assigneeId: string,
+  ) {
+    return {
+      success: true,
+      data: await this.opsAdmin.cartableCounts(assigneeId),
+    };
+  }
+
   @Get('summary')
   @ApiOperation({ summary: 'خلاصهٔ فقط‌خواندنی صف کارتابل' })
   @ApiOkResponse({ description: 'شمارش صف بر اساس category و status' })

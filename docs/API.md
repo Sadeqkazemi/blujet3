@@ -1,5 +1,18 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Ops/Admin cartable counts read cutover
+
+Public `GET /api/v1/cartable` keeps its URL, guards and response shape. Task
+rows and filters remain Core-owned. With
+`OPS_ADMIN_CARTABLE_COUNTS_READ_ENABLED=true`, only `counts`, `statusCounts`
+and `totalOpen` are read through owner-bound internal
+`GET /internal/v1/ops-admin/cartable/counts`; the default is `false`. The
+internal response contains only fixed aggregate counters, assignee identity and
+an observation timestamp. Availability failures fall back to Core while
+malformed, inconsistent or foreign-owner responses fail closed. All cartable
+writes and all content-bearing reads remain Core-only
+(`docs/features/microservices-phase-6-ops-admin-cartable-counts-read-cutover.md`).
+
 ## Ops/Admin cartable unread read cutover
 
 Public `GET /api/v1/cartable/unread-count` keeps its existing staff guards,

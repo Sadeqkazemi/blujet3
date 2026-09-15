@@ -10,6 +10,7 @@ import { loyaltyMembersListReadConfig } from './loyalty-members-list-read.config
 import { loyaltyCardRequestsReadConfig } from './loyalty-card-requests-read.config';
 import { reportingKafkaConsumerConfig } from './reporting-kafka-consumer.config';
 import { opsAdminCartableUnreadReadConfig } from './ops-admin-cartable-unread-read.config';
+import { opsAdminCartableCountsReadConfig } from './ops-admin-cartable-counts-read.config';
 import {
   IsIn,
   IsNotEmpty,
@@ -190,6 +191,10 @@ class EnvironmentVariables {
   OPS_ADMIN_CARTABLE_UNREAD_READ_ENABLED?: string;
 
   @IsOptional()
+  @IsIn(['true', 'false'])
+  OPS_ADMIN_CARTABLE_COUNTS_READ_ENABLED?: string;
+
+  @IsOptional()
   OPS_ADMIN_SERVICE_URL?: string;
 
   @IsOptional()
@@ -319,6 +324,7 @@ export function validateEnv(config: Record<string, unknown>) {
   agencyCreditRequestsReadConfig(config);
   agencyProfileReadConfig(config);
   opsAdminCartableUnreadReadConfig(config);
+  opsAdminCartableCountsReadConfig(config);
   loyaltyPointsReadConfig(config);
   loyaltyPriceLockReadConfig(config);
   loyaltyTierRulesReadConfig(config);

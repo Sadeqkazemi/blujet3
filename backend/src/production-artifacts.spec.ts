@@ -413,6 +413,19 @@ describe('production backend artifacts', () => {
     expect(workerModule).toContain('req.headers.x-ops-admin-assignee-id');
   });
 
+  it('keeps the Ops/Admin cartable counts read cutover default-off and undeployed', () => {
+    const envExample = readFileSync(join(backendRoot, '.env.example'), 'utf8');
+    expect(envExample).toContain(
+      'OPS_ADMIN_CARTABLE_COUNTS_READ_ENABLED=false',
+    );
+    expect(backendComposeSection).not.toContain(
+      'OPS_ADMIN_CARTABLE_COUNTS_READ_ENABLED',
+    );
+    expect(deployWorkflow).not.toContain(
+      'OPS_ADMIN_CARTABLE_COUNTS_READ_ENABLED',
+    );
+  });
+
   it('keeps database-owner credentials outside the long-running Core process', () => {
     expect(migrationComposeSection).toContain(
       'DATABASE_URL: postgresql://blujet:${POSTGRES_PASSWORD}@db:5432/blujet?schema=public',

@@ -16,6 +16,7 @@ import { CommerceOutboxModule } from '../commerce-outbox/commerce-outbox.module'
 import { CartableProjectionAudit } from '../../database/entities/cartable-projection-audit.entity';
 import { CartableProjectionEventService } from './cartable-projection-event.service';
 import { OpsAdminCartableUnreadClient } from './ops-admin-cartable-unread.client';
+import { OpsAdminCartableCountsClient } from './ops-admin-cartable-counts.client';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { OpsAdminCartableUnreadClient } from './ops-admin-cartable-unread.client
     CartableService,
     CartableProjectionEventService,
     OpsAdminCartableUnreadClient,
+    OpsAdminCartableCountsClient,
   ],
   exports: [CartableService],
 })

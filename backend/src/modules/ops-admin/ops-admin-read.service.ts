@@ -26,6 +26,12 @@ type CartableUnreadCountRow = {
   count: number;
 };
 
+type CartableCountsRow = {
+  category: string;
+  status: string;
+  count: number;
+};
+
 @Injectable()
 export class OpsAdminReadService {
   constructor(private readonly dataSource: DataSource) {}
@@ -41,6 +47,39 @@ export class OpsAdminReadService {
     return {
       assigneeId,
       count: Number(rows[0]?.count ?? 0),
+      observedAt: new Date().toISOString(),
+    };
+  }
+
+  async cartableCounts(assigneeId: string) {
+    const rows = await this.dataSource.query<CartableCountsRow[]>(
+      `SELECT category::text AS category, status::text AS status,
+          COUNT(*)::int AS count
+       FROM ops.cartable_tasks
+       WHERE "assigneeId" = $1
+       GROUP BY category, status
+       ORDER BY category ASC, status ASC`,
+      [assigneeId],
+    );
+    const counts = { ADMIN: 0, AGENCY: 0, MANAGER: 0 };
+    const statusCounts = {
+      OPEN: 0,
+      APPROVED: 0,
+      REJECTED: 0,
+      TRANSFERRED: 0,
+    };
+    for (const row of rows) {
+      const count = Number(row.count);
+      if (row.status in statusCounts)
+        statusCounts[row.status as keyof typeof statusCounts] += count;
+      if (row.status === 'OPEN' && row.category in counts)
+        counts[row.category as keyof typeof counts] += count;
+    }
+    return {
+      assigneeId,
+      counts,
+      statusCounts,
+      totalOpen: counts.ADMIN + counts.AGENCY + counts.MANAGER,
       observedAt: new Date().toISOString(),
     };
   }

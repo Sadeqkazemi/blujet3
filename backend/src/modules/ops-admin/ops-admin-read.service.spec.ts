@@ -53,6 +53,43 @@ describe('OpsAdminReadService', () => {
     );
   });
 
+  it('counts owner-scoped categories and statuses without task metadata', async () => {
+    const query = jest.fn().mockResolvedValue([
+      { category: 'ADMIN', status: 'OPEN', count: 2 },
+      { category: 'AGENCY', status: 'OPEN', count: 1 },
+      { category: 'ADMIN', status: 'APPROVED', count: 4 },
+      { category: 'MANAGER', status: 'REJECTED', count: 1 },
+    ]);
+    const result = await new OpsAdminReadService({
+      query,
+    } as unknown as DataSource).cartableCounts('owner-1');
+
+    expect(result).toEqual({
+      assigneeId: 'owner-1',
+      counts: { ADMIN: 2, AGENCY: 1, MANAGER: 0 },
+      statusCounts: {
+        OPEN: 3,
+        APPROVED: 4,
+        REJECTED: 1,
+        TRANSFERRED: 0,
+      },
+      totalOpen: 3,
+      observedAt: expect.stringMatching(/Z$/) as string,
+    });
+    expect(query).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /"assigneeId" = \$1[\s\S]*GROUP BY category, status/,
+      ),
+      ['owner-1'],
+    );
+    expect(query).toHaveBeenCalledWith(
+      expect.not.stringMatching(
+        /title|description|attachments|sourceId|senderId|resolutionNote/i,
+      ),
+      ['owner-1'],
+    );
+  });
+
   it('returns only bounded routing metadata', async () => {
     const query = jest.fn().mockResolvedValue([
       {
