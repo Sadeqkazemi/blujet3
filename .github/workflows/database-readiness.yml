@@ -35,7 +35,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Validate bounded metadata observation
         env:
           PGHOST: localhost
@@ -55,7 +55,7 @@ jobs:
           ' observation.json
       - name: Upload sanitized observation evidence
         if: always() && hashFiles('observation.json') != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: database-readiness-postgres16
           path: observation.json
