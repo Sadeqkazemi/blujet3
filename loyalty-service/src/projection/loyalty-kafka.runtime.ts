@@ -6,9 +6,11 @@ import {
 } from '@nestjs/common';
 import { Kafka, logLevel, type Consumer } from 'kafkajs';
 import { Logger } from 'nestjs-pino';
+import { DataSource } from 'typeorm';
 import type { LoyaltyKafkaConsumerConfig } from '../loyalty-kafka.config';
 import { LoyaltyKafkaHandler } from './loyalty-kafka.handler';
 import { LoyaltyProjectionStore } from './loyalty-projection.store';
+import { attestLoyaltyProjectionRuntimeRole } from './loyalty-runtime-role.attestation';
 
 export type LoyaltyKafkaRuntimeClient = Pick<
   Consumer,
@@ -60,6 +62,7 @@ export class LoyaltyKafkaRuntime
     private readonly config: LoyaltyKafkaConsumerConfig,
     @Inject(LOYALTY_KAFKA_CLIENT)
     private readonly client: LoyaltyKafkaRuntimeClient | null,
+    private readonly dataSource: DataSource,
     private readonly handler: LoyaltyKafkaHandler,
     private readonly projectionStore: LoyaltyProjectionStore,
     private readonly logger: Logger,
@@ -88,7 +91,9 @@ export class LoyaltyKafkaRuntime
   async onApplicationBootstrap(): Promise<void> {
     if (!this.config.enabled || !this.client || this.started) return;
     this.state = 'starting';
+    let brokerConnectionAttempted = false;
     try {
+      await attestLoyaltyProjectionRuntimeRole(this.dataSource);
       const checkpoint = await this.projectionStore.getCheckpointState(
         this.config.consumer.groupId,
         this.config.topic,
@@ -97,6 +102,7 @@ export class LoyaltyKafkaRuntime
       this.maxObservedLag =
         checkpoint.maxLag === null ? null : BigInt(checkpoint.maxLag);
       this.lastCheckpointAt = checkpoint.lastCheckpointAt;
+      brokerConnectionAttempted = true;
       await this.client.connect();
       await this.client.subscribe({
         topic: this.config.topic,
@@ -130,7 +136,10 @@ export class LoyaltyKafkaRuntime
       this.logger.log('Loyalty Kafka consumer started');
     } catch {
       this.state = 'failed';
-      await this.client.disconnect().catch(() => undefined);
+      if (brokerConnectionAttempted) {
+        await this.client.disconnect().catch(() => undefined);
+      }
+      this.stopped = true;
       this.logger.error('Loyalty Kafka consumer startup failed');
       throw new Error('Loyalty Kafka consumer startup failed');
     }

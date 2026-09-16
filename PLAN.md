@@ -1,5 +1,15 @@
 # PLAN.md — blujet roadmap & progress
 
+## Loyalty worker startup attestation gate (2026-09-16)
+
+- [x] Run runtime-role attestation before checkpoint restoration or Kafka I/O.
+- [x] Fail closed without a broker call when the active database session is not
+      the exact restricted Loyalty projection runtime identity.
+- [x] Preserve disabled, successful startup, processing and shutdown behavior.
+- [x] Pass focused/full tests, read-only lint, typecheck, build, OpenAPI
+      stability and diff hygiene. Do not activate Kafka, change credentials,
+      migrate, copy data, cut over reads, deploy or merge.
+
 ## Loyalty worker runtime-role attestation (2026-09-16)
 
 - [x] Freeze the fail-closed worker readiness contract before code.

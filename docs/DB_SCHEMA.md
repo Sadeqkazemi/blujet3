@@ -1,5 +1,14 @@
 # DB_SCHEMA.md — blujet data model
 
+## Loyalty worker startup attestation gate
+
+No migration, table, grant or ownership change. The projection worker reuses
+the existing runtime-role attestation on its active TypeORM data source before
+reading `loyalty.kafka_consumer_checkpoints` or contacting Kafka. A failed
+attestation performs no projection, receipt, slot, checkpoint or failure write
+and does not weaken the separately provisioned least-privilege role boundary
+(`docs/features/microservices-phase-6-loyalty-worker-startup-attestation-gate.md`).
+
 ## Loyalty projection runtime role
 
 No migration or table change. Role `blujet_loyalty_projection_runtime` is a

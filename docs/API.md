@@ -1,5 +1,15 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Loyalty worker startup attestation gate
+
+No public or internal HTTP contract changes. When the standalone Loyalty
+projection worker starts, it verifies the active PostgreSQL session against the
+existing restricted runtime-role contract before checkpoint restoration and
+before any Kafka connection. A rejected attestation fails startup with a fixed,
+content-free error and performs no broker operation. `/health` remains pure
+liveness and `/ready` retains its existing fail-closed database and consumer
+evidence (`docs/features/microservices-phase-6-loyalty-worker-startup-attestation-gate.md`).
+
 ## Loyalty projection runtime role
 
 No public or internal HTTP contract changes. An offline owner-only CLI

@@ -1,5 +1,6 @@
 import type { ConsumerRunConfig, EachMessagePayload } from 'kafkajs';
 import type { Logger } from 'nestjs-pino';
+import type { DataSource } from 'typeorm';
 import type { LoyaltyKafkaConsumerConfig } from '../loyalty-kafka.config';
 import { LoyaltyKafkaHandler } from './loyalty-kafka.handler';
 import type { LoyaltyProjectionStore } from './loyalty-projection.store';
@@ -27,6 +28,27 @@ describe('LoyaltyKafkaRuntime', () => {
   };
   const runConfig = { autoCommit: false } as ConsumerRunConfig;
   const handler = { runConfig: jest.fn().mockReturnValue(runConfig) };
+  const dataSource = {
+    query: jest.fn().mockResolvedValue([
+      {
+        role: 'blujet_loyalty_projection_runtime',
+        isolatedDatabase: true,
+        utcSession: true,
+        boundedSession: true,
+        safeSearchPath: true,
+        restrictedRole: true,
+        noMemberships: true,
+        noOwnership: true,
+        databaseAccess: true,
+        schemaAccess: true,
+        noDdl: true,
+        requiredGrants: true,
+        leastPrivilege: true,
+        noCrossDomainAccess: true,
+        noForeignConnect: true,
+      },
+    ]),
+  };
   const projectionStore = {
     getCheckpointState: jest.fn().mockResolvedValue({
       partitions: [],
@@ -54,6 +76,7 @@ describe('LoyaltyKafkaRuntime', () => {
     return new LoyaltyKafkaRuntime(
       config,
       kafkaClient,
+      dataSource as unknown as DataSource,
       handler as unknown as LoyaltyKafkaHandler,
       projectionStore as unknown as LoyaltyProjectionStore,
       logger as unknown as Logger,
@@ -98,6 +121,12 @@ describe('LoyaltyKafkaRuntime', () => {
     await worker.onApplicationBootstrap();
 
     expect(order).toEqual(['connect', 'subscribe', 'run']);
+    expect(dataSource.query.mock.invocationCallOrder[0]).toBeLessThan(
+      projectionStore.getCheckpointState.mock.invocationCallOrder[0],
+    );
+    expect(
+      projectionStore.getCheckpointState.mock.invocationCallOrder[0],
+    ).toBeLessThan(kafkaClient.connect.mock.invocationCallOrder[0]);
     expect(projectionStore.getCheckpointState).toHaveBeenCalledWith(
       'loyalty-v1',
       'blujet.events.v1',
@@ -118,6 +147,29 @@ describe('LoyaltyKafkaRuntime', () => {
     expect(kafkaClient.connect).toHaveBeenCalledTimes(1);
   });
 
+  it('fails closed before checkpoint or Kafka I/O when attestation fails', async () => {
+    dataSource.query.mockRejectedValueOnce(
+      new Error('secret database connection detail'),
+    );
+    const kafkaClient = client();
+    const worker = runtime(enabled, kafkaClient);
+
+    await expect(worker.onApplicationBootstrap()).rejects.toThrow(
+      'Loyalty Kafka consumer startup failed',
+    );
+    await worker.onApplicationShutdown();
+
+    expect(worker.getStatus().state).toBe('failed');
+    expect(projectionStore.getCheckpointState).not.toHaveBeenCalled();
+    expect(kafkaClient.connect).not.toHaveBeenCalled();
+    expect(kafkaClient.subscribe).not.toHaveBeenCalled();
+    expect(kafkaClient.run).not.toHaveBeenCalled();
+    expect(kafkaClient.disconnect).not.toHaveBeenCalled();
+    expect(logger.error).toHaveBeenCalledWith(
+      'Loyalty Kafka consumer startup failed',
+    );
+  });
+
   it.each(['connect', 'subscribe', 'run'] as const)(
     'sanitizes %s failure and disconnects partial startup',
     async (stage) => {
@@ -128,6 +180,7 @@ describe('LoyaltyKafkaRuntime', () => {
       await expect(worker.onApplicationBootstrap()).rejects.toThrow(
         'Loyalty Kafka consumer startup failed',
       );
+      await worker.onApplicationShutdown();
       expect(worker.getStatus().state).toBe('failed');
       expect(kafkaClient.disconnect).toHaveBeenCalledTimes(1);
       expect(logger.error).toHaveBeenCalledWith(
