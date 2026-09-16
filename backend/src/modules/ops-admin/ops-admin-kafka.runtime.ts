@@ -6,9 +6,11 @@ import {
 } from '@nestjs/common';
 import { Kafka, logLevel, type Consumer } from 'kafkajs';
 import { Logger } from 'nestjs-pino';
+import { DataSource } from 'typeorm';
 import type { OpsAdminKafkaConsumerConfig } from '../../config/ops-admin-kafka-consumer.config';
 import { OpsAdminKafkaHandler } from './ops-admin-kafka.handler';
 import { OpsAdminProjectionStore } from './ops-admin-projection.store';
+import { attestOpsAdminProjectionRuntimeRole } from './ops-admin-runtime-role.attestation';
 
 export type OpsAdminKafkaRuntimeClient = Pick<
   Consumer,
@@ -60,6 +62,7 @@ export class OpsAdminKafkaRuntime
     private readonly config: OpsAdminKafkaConsumerConfig,
     @Inject(OPS_ADMIN_KAFKA_CLIENT)
     private readonly client: OpsAdminKafkaRuntimeClient | null,
+    private readonly dataSource: DataSource,
     private readonly handler: OpsAdminKafkaHandler,
     private readonly projectionStore: OpsAdminProjectionStore,
     private readonly logger: Logger,
@@ -88,7 +91,9 @@ export class OpsAdminKafkaRuntime
   async onApplicationBootstrap(): Promise<void> {
     if (!this.config.enabled || !this.client || this.started) return;
     this.state = 'starting';
+    let brokerConnectionAttempted = false;
     try {
+      await attestOpsAdminProjectionRuntimeRole(this.dataSource);
       const checkpoint = await this.projectionStore.getCheckpointState(
         this.config.consumer.groupId,
         this.config.topic,
@@ -97,6 +102,7 @@ export class OpsAdminKafkaRuntime
       this.maxObservedLag =
         checkpoint.maxLag === null ? null : BigInt(checkpoint.maxLag);
       this.lastCheckpointAt = checkpoint.lastCheckpointAt;
+      brokerConnectionAttempted = true;
       await this.client.connect();
       await this.client.subscribe({
         topic: this.config.topic,
@@ -132,7 +138,9 @@ export class OpsAdminKafkaRuntime
       this.logger.log('Ops/Admin Kafka consumer started');
     } catch {
       this.state = 'failed';
-      await this.client.disconnect().catch(() => undefined);
+      if (brokerConnectionAttempted) {
+        await this.client.disconnect().catch(() => undefined);
+      }
       this.stopped = true;
       this.logger.error('Ops/Admin Kafka consumer startup failed');
       throw new Error('Ops/Admin Kafka consumer startup failed');

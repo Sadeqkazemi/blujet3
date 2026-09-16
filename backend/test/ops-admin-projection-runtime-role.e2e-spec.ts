@@ -5,6 +5,7 @@ import {
   OPS_ADMIN_PROJECTION_RUNTIME_ROLE,
   provisionOpsAdminProjectionRuntimeRole,
 } from '../src/database/provision-ops-admin-projection-runtime-role';
+import { attestOpsAdminProjectionRuntimeRole } from '../src/modules/ops-admin/ops-admin-runtime-role.attestation';
 
 const PASSWORD = 'ops_admin_proj_runtime_ci_password_20260914';
 
@@ -114,6 +115,7 @@ describe('Ops/Admin projection runtime role (PostgreSQL)', () => {
   let owner: Client;
   let coreOwner: Client;
   let runtime: Client;
+  let runtimeDataSource: DataSource;
 
   beforeAll(async () => {
     const source = ownerUrl();
@@ -202,9 +204,16 @@ describe('Ops/Admin projection runtime role (PostgreSQL)', () => {
       connectionString: runtimeUrl(source, databaseName),
     });
     await runtime.connect();
+    runtimeDataSource = new DataSource(
+      opsAdminProjectionDataSourceOptions(runtimeUrl(source, databaseName)),
+    );
+    await runtimeDataSource.initialize();
   }, 60000);
 
   afterAll(async () => {
+    if (runtimeDataSource?.isInitialized) {
+      await runtimeDataSource.destroy().catch(() => undefined);
+    }
     if (runtime) await runtime.end().catch(() => undefined);
     if (coreOwner) await coreOwner.end().catch(() => undefined);
     if (owner) {
@@ -223,6 +232,27 @@ describe('Ops/Admin projection runtime role (PostgreSQL)', () => {
         )
         .catch(() => undefined);
       await admin.end().catch(() => undefined);
+    }
+  });
+
+  it('attests the live direct-login runtime contract', async () => {
+    await expect(
+      attestOpsAdminProjectionRuntimeRole(runtimeDataSource),
+    ).resolves.toBeUndefined();
+  });
+
+  it('fails attestation when an unexpected privilege is introduced', async () => {
+    await owner.query(
+      `GRANT UPDATE ON ops.cartable_projection_event_receipts TO ${quoteIdent(OPS_ADMIN_PROJECTION_RUNTIME_ROLE)}`,
+    );
+    try {
+      await expect(
+        attestOpsAdminProjectionRuntimeRole(runtimeDataSource),
+      ).rejects.toThrow('Ops/Admin projection runtime role attestation failed');
+    } finally {
+      await owner.query(
+        `REVOKE UPDATE ON ops.cartable_projection_event_receipts FROM ${quoteIdent(OPS_ADMIN_PROJECTION_RUNTIME_ROLE)}`,
+      );
     }
   });
 

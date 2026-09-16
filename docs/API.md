@@ -356,6 +356,17 @@ grants. It has no Core access, no DDL, no receipt UPDATE, no DELETE and no
 sequence privileges. Worker activation and read cutover remain separate
 (`docs/features/microservices-phase-6-ops-admin-projection-runtime-role.md`).
 
+## Ops/Admin worker runtime-role attestation
+
+No public or internal route is added. When the Ops/Admin Kafka worker is
+enabled, it now proves that its live PostgreSQL session is the direct
+`blujet_ops_admin_projection_runtime` login with the exact frozen grants and
+deny rules before reading a checkpoint or contacting Kafka. The existing
+internal `/ready` probe performs the same attestation before its zero-row table
+checks and keeps its sanitized response shape. `/health` remains process-only.
+Consumer activation, read cutover and deployment stay separate
+(`docs/features/microservices-phase-6-ops-admin-worker-runtime-role-attestation.md`).
+
 ## Ops/Admin ordered projection consumer and reconciliation
 
 No public or internal HTTP route changes. The dedicated Ops/Admin database can

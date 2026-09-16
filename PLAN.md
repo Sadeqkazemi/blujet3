@@ -188,6 +188,21 @@ remain intentionally untouched.
 - [x] Obtain CI evidence and present the diff for explicit approval. Do not
   deploy, enable the worker or cut over reads.
 
+## Ops/Admin worker runtime-role attestation (2026-09-16)
+
+- [x] Freeze the active-session identity, exact grant and deny contract before
+  code in
+  `docs/features/microservices-phase-6-ops-admin-worker-runtime-role-attestation.md`.
+- [x] Attest the live `blujet_ops_admin_projection_runtime` session before
+  checkpoint recovery or any Kafka connection attempt.
+- [x] Reuse the same fail-closed attestation before readiness relation probes,
+  while leaving liveness process-only and retaining sanitized responses.
+- [x] Prove startup ordering, zero broker calls on pre-connect failure,
+  least-privilege enforcement, disabled behavior and cleanup with unit tests.
+- [x] Pass focused tests, read-only lint, typecheck, build, diff hygiene and
+  OpenAPI stability. Do not enable, cut over, merge or deploy without separate
+  approval.
+
 ## Ops/Admin durable Kafka checkpoints (2026-09-14)
 
 - [x] Freeze atomic checkpoint, monotonic progress, bounded aggregate lag and
