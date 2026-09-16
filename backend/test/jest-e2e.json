@@ -7,6 +7,7 @@
   "testTimeout": 20000,
   "testPathIgnorePatterns": [
     "ops-admin-projection-consumer.e2e-spec.ts",
+    "loyalty-projection-runtime-role.e2e-spec.ts",
     "loyalty-cutover-reader-roles.e2e-spec.ts",
     "agency-cutover-reader-roles.e2e-spec.ts"
   ],

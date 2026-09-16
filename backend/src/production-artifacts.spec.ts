@@ -365,6 +365,8 @@ describe('production backend artifacts', () => {
           'node dist/database/provision-loyalty-cutover-reader-roles.js source',
         'database:provision-loyalty-cutover-target:prod':
           'node dist/database/provision-loyalty-cutover-reader-roles.js target',
+        'database:provision-loyalty-projection-runtime:prod':
+          'node dist/database/provision-loyalty-projection-runtime-role.js',
       }),
     );
     expect(ciWorkflow).toContain(
@@ -373,6 +375,7 @@ describe('production backend artifacts', () => {
     expect(ciWorkflow).toContain(
       'reporting-(runtime-role|cutover-readiness|cutover-reader-roles)',
     );
+    expect(ciWorkflow).toContain('test:e2e:loyalty-projection-runtime-role');
     expect(compose).not.toContain(
       'check-ops-admin-projection-cutover-readiness',
     );
@@ -388,8 +391,12 @@ describe('production backend artifacts', () => {
     expect(compose).not.toContain('provision-agency-cutover-reader-roles');
     expect(compose).not.toContain('provision-reporting-cutover-reader-roles');
     expect(compose).not.toContain('provision-loyalty-cutover-reader-roles');
+    expect(compose).not.toContain('provision-loyalty-projection-runtime-role');
     expect(deployWorkflow).not.toContain(
       'provision-loyalty-cutover-reader-roles',
+    );
+    expect(deployWorkflow).not.toContain(
+      'provision-loyalty-projection-runtime-role',
     );
     const envExample = readFileSync(join(backendRoot, '.env.example'), 'utf8');
     expect(envExample).toContain(
@@ -425,6 +432,8 @@ describe('production backend artifacts', () => {
     expect(envExample).toContain('LOYALTY_CUTOVER_TARGET_OWNER_URL=');
     expect(envExample).toContain('LOYALTY_CUTOVER_SOURCE_PASSWORD=');
     expect(envExample).toContain('LOYALTY_CUTOVER_TARGET_PASSWORD=');
+    expect(envExample).toContain('LOYALTY_PROJECTION_DATABASE_OWNER_URL=');
+    expect(envExample).toContain('LOYALTY_PROJECTION_RUNTIME_PASSWORD=');
     expect(ciWorkflow).toContain('test:e2e:loyalty-cutover-reader-roles');
     expect(envExample).not.toContain('AGENCY_CUTOVER_CHECK_ENABLED');
     expect(envExample).not.toContain('AGENCY_CUTOVER_SOURCE_DATABASE_URL');

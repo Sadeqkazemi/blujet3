@@ -1,5 +1,23 @@
 # PLAN.md — blujet roadmap & progress
 
+## Loyalty projection runtime role (2026-09-16)
+
+- [x] Freeze the exact standalone Loyalty writer contract before code.
+- [x] Provision a non-owner, no-membership runtime role with exact per-table
+      grants and no Core or foreign-database access.
+- [x] Prove allowed projection/checkpoint/failure writes and denied receipt
+      update, delete, DDL, sequence and cross-domain access.
+- [x] Pass unit, real-PostgreSQL, lint, typecheck, build, OpenAPI stability and
+      diff hygiene checks.
+- [x] Obtain CI evidence and present the diff for explicit approval. Do not
+      activate Kafka, copy data, cut over reads or deploy.
+
+Evidence: PR #163 head `0421433` passed all 34 checks in CI run
+`35073417830`, including the Loyalty real-PostgreSQL role/isolation proof,
+read-only boundary, rollback/restore, eight Backend E2E shards, real Kafka,
+CodeQL and CI gate. Kafka activation, data copy, read cutover, merge and deploy
+remain intentionally untouched.
+
 ## Agency cutover reader roles (2026-09-16)
 
 - [x] Provision independent read-only LOGIN roles for the Agency cutover gate.

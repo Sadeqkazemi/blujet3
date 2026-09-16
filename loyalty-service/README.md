@@ -31,6 +31,11 @@ Production also requires Loyalty-specific TLS/SCRAM credentials. The HTTP
 service must not receive the writer URL, while the worker does not need
 `LOYALTY_DATABASE_URL` or `LOYALTY_INTERNAL_TOKEN`.
 
+Provision `blujet_loyalty_projection_runtime` offline from `backend/` with
+`npm run database:provision-loyalty-projection-runtime:prod`. Supply the owner
+URL and runtime password only to that operator command. The role has the exact
+projection/checkpoint/failure write boundary and no Core, DDL or delete access.
+
 Use `.env.worker.example` as the worker-only template in a separate process or
 container environment. Do not combine it with the HTTP `.env.example`.
 
