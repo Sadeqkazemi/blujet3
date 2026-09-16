@@ -1,10 +1,18 @@
 import { Client } from 'pg';
 import { DataSource } from 'typeorm';
+import * as dotenv from 'dotenv';
+import * as path from 'node:path';
 import { agencyMigrationDataSourceOptions } from '../../agency-service/src/database/data-source.options';
 import {
   AGENCY_PROJECTION_RUNTIME_ROLE,
   provisionAgencyProjectionRuntimeRole,
 } from '../src/database/provision-agency-projection-runtime-role';
+
+dotenv.config({
+  path: path.join(__dirname, '..', '.env.test'),
+  override: false,
+  quiet: true,
+});
 
 const PASSWORD = 'agency_proj_runtime_ci_password_20260916';
 

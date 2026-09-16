@@ -4,7 +4,6 @@
   "testEnvironment": "node",
   "testRegex": "test/agency-projection-runtime-role\\.e2e-spec\\.ts$",
   "testTimeout": 120000,
-  "setupFiles": ["<rootDir>/test/jest-setup.ts"],
   "moduleNameMapper": {
     "^(\\.{1,2}/.*)\\.js$": "$1"
   },
