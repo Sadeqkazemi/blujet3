@@ -1,5 +1,17 @@
 # DB_SCHEMA.md — blujet data model
 
+## Loyalty projection runtime role
+
+No migration or table change. Role `blujet_loyalty_projection_runtime` is a
+non-owner LOGIN on the isolated PostgreSQL 16 Loyalty database. It receives
+schema USAGE plus SELECT/INSERT/UPDATE on the six business projections,
+projection slots, checkpoints and failure metadata, and SELECT/INSERT on
+immutable event receipts. It has no DELETE, TRUNCATE, DDL, sequence,
+ownership, membership, TEMP, non-Loyalty-schema or Core/foreign-database
+access. Provisioning is offline and does not alter the worker flag, runtime
+URL, data or deployment
+(`docs/features/microservices-phase-6-loyalty-projection-runtime-role.md`).
+
 ## Loyalty projection cutover readiness gate
 
 No migration or ownership change. A default-off offline CLI reads the six

@@ -1,5 +1,14 @@
 # API.md — blujet endpoints (human-readable summary)
 
+## Loyalty projection runtime role
+
+No public or internal HTTP contract changes. An offline owner-only CLI
+provisions `blujet_loyalty_projection_runtime` for the independently runnable
+Loyalty projection worker. The long-running worker may receive only the
+restricted runtime URL; the owner URL and role password are provisioning-only.
+No consumer, data copy, read cutover, URL switch or deployment is activated
+(`docs/features/microservices-phase-6-loyalty-projection-runtime-role.md`).
+
 ## Loyalty projection cutover readiness gate
 
 No public or internal HTTP route changes. The offline, default-off

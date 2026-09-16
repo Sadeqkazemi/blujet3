@@ -251,6 +251,12 @@ jobs:
             await client.end();
           })().catch(() => process.exit(1));
           NODE
+      - name: Prove Loyalty projection runtime role isolation
+        working-directory: backend
+        env:
+          LOYALTY_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_loyalty_bootstrap_test
+          LOYALTY_RUNTIME_ROLE_E2E_ENABLED: "true"
+        run: npm run test:e2e:loyalty-projection-runtime-role
       - name: Validate read-only Loyalty boundary
         working-directory: loyalty-service
         env:
