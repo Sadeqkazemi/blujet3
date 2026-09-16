@@ -12,6 +12,7 @@ import {
 } from './config/ops-admin-dlq.config';
 import { OpsAdminDlqStore } from './modules/ops-admin/ops-admin-dlq.store';
 import { OpsAdminKafkaRuntime } from './modules/ops-admin/ops-admin-kafka.runtime';
+import { attestOpsAdminProjectionRuntimeRole } from './modules/ops-admin/ops-admin-runtime-role.attestation';
 
 @ApiExcludeController()
 @Controller()
@@ -38,6 +39,7 @@ export class OpsAdminProjectionWorkerHealthController {
   @Get('ready')
   async ready() {
     try {
+      await attestOpsAdminProjectionRuntimeRole(this.dataSource);
       await this.dataSource.transaction(async (manager) => {
         await manager.query(
           'SELECT id, "taskVersion" FROM ops.cartable_tasks LIMIT 0',

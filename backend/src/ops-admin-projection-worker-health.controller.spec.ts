@@ -4,6 +4,7 @@ import type { OpsAdminDlqConfig } from './config/ops-admin-dlq.config';
 import type { OpsAdminDlqStore } from './modules/ops-admin/ops-admin-dlq.store';
 import type { OpsAdminKafkaRuntime } from './modules/ops-admin/ops-admin-kafka.runtime';
 import { OpsAdminProjectionWorkerHealthController } from './ops-admin-projection-worker-health.controller';
+import { OPS_ADMIN_PROJECTION_RUNTIME_ROLE } from './modules/ops-admin/ops-admin-runtime-role.attestation';
 
 describe('OpsAdminProjectionWorkerHealthController', () => {
   const runtime = {
@@ -17,6 +18,23 @@ describe('OpsAdminProjectionWorkerHealthController', () => {
   };
   const dlq = {
     countQuarantined: jest.fn().mockResolvedValue(2),
+  };
+  const validAttestation = {
+    role: OPS_ADMIN_PROJECTION_RUNTIME_ROLE,
+    sessionRole: OPS_ADMIN_PROJECTION_RUNTIME_ROLE,
+    isolatedDatabase: true,
+    safeSearchPath: true,
+    loginRole: true,
+    restrictedRole: true,
+    noMemberships: true,
+    noOwnership: true,
+    databaseAccess: true,
+    schemaAccess: true,
+    noDdl: true,
+    requiredGrants: true,
+    leastPrivilege: true,
+    noCrossDomainAccess: true,
+    noForeignConnect: true,
   };
 
   beforeEach(() => {
@@ -36,27 +54,38 @@ describe('OpsAdminProjectionWorkerHealthController', () => {
     );
   }
 
+  function readyDataSource(
+    managerQuery = jest.fn<Promise<unknown>, [string]>().mockResolvedValue([]),
+  ) {
+    return {
+      dataSource: {
+        query: jest.fn().mockResolvedValue([validAttestation]),
+        transaction: jest
+          .fn<
+            Promise<void>,
+            [(manager: { query: typeof managerQuery }) => Promise<void>]
+          >()
+          .mockImplementation((work) => work({ query: managerQuery })),
+      } as unknown as DataSource,
+      managerQuery,
+    };
+  }
+
   it('exposes only process and build identity from liveness', () => {
     const transaction = jest.fn();
+    const query = jest.fn();
     expect(
-      controller({ transaction } as unknown as DataSource).health(),
+      controller({ query, transaction } as unknown as DataSource).health(),
     ).toMatchObject({
       status: 'ok',
       service: 'blujet-ops-admin-projection',
     });
     expect(transaction).not.toHaveBeenCalled();
+    expect(query).not.toHaveBeenCalled();
   });
 
   it('is ready only when PostgreSQL and the consumer are ready', async () => {
-    const query = jest.fn<Promise<unknown>, [string]>().mockResolvedValue([]);
-    const dataSource = {
-      transaction: jest
-        .fn<
-          Promise<void>,
-          [(manager: { query: typeof query }) => Promise<void>]
-        >()
-        .mockImplementation((work) => work({ query })),
-    } as unknown as DataSource;
+    const { dataSource, managerQuery } = readyDataSource();
 
     await expect(controller(dataSource).ready()).resolves.toEqual({
       status: 'ok',
@@ -75,7 +104,7 @@ describe('OpsAdminProjectionWorkerHealthController', () => {
         quarantine: { status: 'disabled' },
       },
     });
-    expect(query.mock.calls.map(([sql]) => sql)).toEqual([
+    expect(managerQuery.mock.calls.map(([sql]) => sql)).toEqual([
       'SELECT id, "taskVersion" FROM ops.cartable_tasks LIMIT 0',
       'SELECT "eventId" FROM ops.cartable_projection_event_receipts LIMIT 0',
       'SELECT "consumerGroup", topic, "partition", "nextOffset", "highWatermark", "updatedAt" FROM ops.kafka_consumer_checkpoints LIMIT 0',
@@ -85,9 +114,7 @@ describe('OpsAdminProjectionWorkerHealthController', () => {
   });
 
   it('reports the quarantine count when DLQ processing is enabled', async () => {
-    const dataSource = {
-      transaction: jest.fn().mockResolvedValue(undefined),
-    } as unknown as DataSource;
+    const { dataSource } = readyDataSource();
 
     await expect(
       controller(dataSource, {
@@ -105,9 +132,7 @@ describe('OpsAdminProjectionWorkerHealthController', () => {
     dlq.countQuarantined.mockRejectedValueOnce(
       new Error('secret database detail'),
     );
-    const dataSource = {
-      transaction: jest.fn().mockResolvedValue(undefined),
-    } as unknown as DataSource;
+    const { dataSource } = readyDataSource();
 
     await expect(
       controller(dataSource, {
@@ -129,24 +154,43 @@ describe('OpsAdminProjectionWorkerHealthController', () => {
   });
 
   it('returns safe 503 semantics when PostgreSQL is unavailable', async () => {
+    const transaction = jest.fn();
     const dataSource = {
-      transaction: jest
-        .fn()
-        .mockRejectedValue(new Error('secret database detail')),
+      query: jest.fn().mockRejectedValue(new Error('secret database detail')),
+      transaction,
     } as unknown as DataSource;
 
     await expect(controller(dataSource).ready()).rejects.toBeInstanceOf(
       ServiceUnavailableException,
     );
     expect(runtime.getStatus).not.toHaveBeenCalled();
+    expect(transaction).not.toHaveBeenCalled();
+  });
+
+  it('fails readiness before relation or runtime checks for an invalid role', async () => {
+    const transaction = jest.fn();
+    const dataSource = {
+      query: jest
+        .fn()
+        .mockResolvedValue([{ ...validAttestation, leastPrivilege: false }]),
+      transaction,
+    } as unknown as DataSource;
+
+    await expect(controller(dataSource).ready()).rejects.toMatchObject({
+      response: {
+        status: 'error',
+        service: 'blujet-ops-admin-projection',
+        error: { database: { status: 'down' } },
+      },
+    });
+    expect(transaction).not.toHaveBeenCalled();
+    expect(runtime.getStatus).not.toHaveBeenCalled();
   });
 
   it('returns only the lifecycle state when the consumer is unavailable', async () => {
     runtime.isReady.mockReturnValueOnce(false);
     runtime.getStatus.mockReturnValueOnce({ state: 'failed' });
-    const dataSource = {
-      transaction: jest.fn().mockResolvedValue(undefined),
-    } as unknown as DataSource;
+    const { dataSource } = readyDataSource();
 
     await expect(controller(dataSource).ready()).rejects.toMatchObject({
       response: {
@@ -164,9 +208,7 @@ describe('OpsAdminProjectionWorkerHealthController', () => {
   it('keeps the sanitized quarantine count visible when the consumer is down', async () => {
     runtime.isReady.mockReturnValueOnce(false);
     runtime.getStatus.mockReturnValueOnce({ state: 'failed' });
-    const dataSource = {
-      transaction: jest.fn().mockResolvedValue(undefined),
-    } as unknown as DataSource;
+    const { dataSource } = readyDataSource();
 
     await expect(
       controller(dataSource, {

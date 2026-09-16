@@ -1,5 +1,6 @@
 import type { ConsumerRunConfig, EachMessagePayload } from 'kafkajs';
 import type { Logger } from 'nestjs-pino';
+import type { DataSource } from 'typeorm';
 import type { OpsAdminKafkaConsumerConfig } from '../../config/ops-admin-kafka-consumer.config';
 import { OpsAdminKafkaHandler } from './ops-admin-kafka.handler';
 import type { OpsAdminProjectionStore } from './ops-admin-projection.store';
@@ -8,6 +9,7 @@ import {
   OpsAdminKafkaRuntime,
   type OpsAdminKafkaRuntimeClient,
 } from './ops-admin-kafka.runtime';
+import { OPS_ADMIN_PROJECTION_RUNTIME_ROLE } from './ops-admin-runtime-role.attestation';
 
 describe('OpsAdminKafkaRuntime', () => {
   const disabled = { enabled: false } as const;
@@ -40,6 +42,26 @@ describe('OpsAdminKafkaRuntime', () => {
       lastCheckpointAt: null,
     }),
   };
+  const validAttestation = {
+    role: OPS_ADMIN_PROJECTION_RUNTIME_ROLE,
+    sessionRole: OPS_ADMIN_PROJECTION_RUNTIME_ROLE,
+    isolatedDatabase: true,
+    safeSearchPath: true,
+    loginRole: true,
+    restrictedRole: true,
+    noMemberships: true,
+    noOwnership: true,
+    databaseAccess: true,
+    schemaAccess: true,
+    noDdl: true,
+    requiredGrants: true,
+    leastPrivilege: true,
+    noCrossDomainAccess: true,
+    noForeignConnect: true,
+  };
+  const dataSource = {
+    query: jest.fn().mockResolvedValue([validAttestation]),
+  };
 
   function client(): jest.Mocked<OpsAdminKafkaRuntimeClient> {
     return {
@@ -55,10 +77,12 @@ describe('OpsAdminKafkaRuntime', () => {
   function runtime(
     config: OpsAdminKafkaConsumerConfig,
     kafkaClient: OpsAdminKafkaRuntimeClient | null,
+    database: Pick<DataSource, 'query'> = dataSource,
   ): OpsAdminKafkaRuntime {
     return new OpsAdminKafkaRuntime(
       config,
       kafkaClient,
+      database as DataSource,
       handler as unknown as OpsAdminKafkaHandler,
       projectionStore as unknown as OpsAdminProjectionStore,
       logger as unknown as Logger,
@@ -87,6 +111,88 @@ describe('OpsAdminKafkaRuntime', () => {
       lastCheckpointAt: null,
     });
     expect(projectionStore.getCheckpointState).not.toHaveBeenCalled();
+    expect(dataSource.query).not.toHaveBeenCalled();
+  });
+
+  it('attests before checkpoint recovery and every broker operation', async () => {
+    const order: string[] = [];
+    const kafkaClient = client();
+    const database = {
+      query: jest.fn().mockImplementation(() => {
+        order.push('attestation');
+        return Promise.resolve([validAttestation]);
+      }),
+    };
+    projectionStore.getCheckpointState.mockImplementationOnce(() => {
+      order.push('checkpoint');
+      return Promise.resolve({
+        partitions: [],
+        maxLag: null,
+        lastCheckpointAt: null,
+      });
+    });
+    kafkaClient.connect.mockImplementation(() => {
+      order.push('connect');
+      return Promise.resolve();
+    });
+    kafkaClient.subscribe.mockImplementation(() => {
+      order.push('subscribe');
+      return Promise.resolve();
+    });
+    kafkaClient.run.mockImplementation(() => {
+      order.push('run');
+      return Promise.resolve();
+    });
+
+    await runtime(enabled, kafkaClient, database).onApplicationBootstrap();
+
+    expect(order).toEqual([
+      'attestation',
+      'checkpoint',
+      'connect',
+      'subscribe',
+      'run',
+    ]);
+  });
+
+  it('fails before checkpoint recovery or any broker call when attestation fails', async () => {
+    const kafkaClient = client();
+    const database = {
+      query: jest.fn().mockRejectedValue(new Error('secret role detail')),
+    };
+    const worker = runtime(enabled, kafkaClient, database);
+
+    await expect(worker.onApplicationBootstrap()).rejects.toThrow(
+      'Ops/Admin Kafka consumer startup failed',
+    );
+
+    expect(projectionStore.getCheckpointState).not.toHaveBeenCalled();
+    expect(kafkaClient.connect).not.toHaveBeenCalled();
+    expect(kafkaClient.subscribe).not.toHaveBeenCalled();
+    expect(kafkaClient.run).not.toHaveBeenCalled();
+    expect(kafkaClient.stop).not.toHaveBeenCalled();
+    expect(kafkaClient.disconnect).not.toHaveBeenCalled();
+    expect(worker.getStatus().state).toBe('failed');
+    expect(logger.error).toHaveBeenCalledWith(
+      'Ops/Admin Kafka consumer startup failed',
+    );
+  });
+
+  it('makes no broker call when checkpoint recovery fails', async () => {
+    const kafkaClient = client();
+    projectionStore.getCheckpointState.mockRejectedValueOnce(
+      new Error('secret checkpoint detail'),
+    );
+
+    await expect(
+      runtime(enabled, kafkaClient).onApplicationBootstrap(),
+    ).rejects.toThrow('Ops/Admin Kafka consumer startup failed');
+
+    expect(kafkaClient.connect).not.toHaveBeenCalled();
+    expect(kafkaClient.subscribe).not.toHaveBeenCalled();
+    expect(kafkaClient.run).not.toHaveBeenCalled();
+    expect(kafkaClient.stop).not.toHaveBeenCalled();
+    expect(kafkaClient.disconnect).not.toHaveBeenCalled();
   });
 
   it('connects, subscribes and then runs the manual-ack handler', async () => {

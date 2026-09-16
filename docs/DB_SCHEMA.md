@@ -471,6 +471,16 @@ DELETE, TRUNCATE,
 sequences, CREATE and ownership remain revoked
 (`docs/features/microservices-phase-6-ops-admin-projection-runtime-role.md`).
 
+## Ops/Admin worker runtime-role attestation
+
+No schema or migration changes. Before checkpoint recovery and again during
+readiness, the worker reads PostgreSQL catalogs to verify its direct runtime
+login, isolated database name, exact `ops, pg_catalog` search path, required
+table privileges and absence of DDL, ownership, membership, sequence,
+cross-domain and foreign-database access. The check is read-only and does not
+repair or provision privileges
+(`docs/features/microservices-phase-6-ops-admin-worker-runtime-role-attestation.md`).
+
 ## Ops/Admin projection event contract (microservices phase 6)
 
 This contract-only slice makes no schema change. Future
