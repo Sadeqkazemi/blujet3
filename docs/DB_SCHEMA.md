@@ -565,6 +565,16 @@ checkpoints. Neither role receives envelope fingerprints, payloads,
 writes, DDL, sequences or counterpart CONNECT
 (`docs/features/microservices-phase-6-agency-cutover-reader-roles.md`).
 
+## Agency projection runtime role
+
+No schema change. Offline owner CLI creates
+`blujet_agency_projection_runtime` as LOGIN NOSUPERUSER NOINHERIT on an
+isolated `blujet_agency` / `blujet_agency_*` database. The role receives
+SELECT/INSERT/UPDATE on the three business projections, slots, checkpoints
+and processing failures, and SELECT/INSERT only on event receipts. It has no
+DELETE, TEMP, sequence, foreign-schema or Core CONNECT rights
+(`docs/features/microservices-phase-6-agency-projection-runtime-role.md`).
+
 ## Agency projection physical baseline contract (microservices phase 6)
 
 The offline baseline transfer copies only `agency_profiles`,
