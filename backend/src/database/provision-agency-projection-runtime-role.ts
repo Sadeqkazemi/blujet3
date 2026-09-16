@@ -104,6 +104,11 @@ export function parseAgencyProjectionOwnerUrl(ownerUrl: string): {
     throw new Error('AGENCY_PROJECTION_DATABASE_OWNER_URL must be PostgreSQL');
   }
   const username = decodeURIComponent(parsed.username);
+  if (!username) {
+    throw new Error(
+      'AGENCY_PROJECTION_DATABASE_OWNER_URL must include an owner username',
+    );
+  }
   if (username === AGENCY_PROJECTION_RUNTIME_ROLE) {
     throw new Error('Database owner must differ from the runtime role');
   }
@@ -149,7 +154,7 @@ export async function provisionAgencyProjectionRuntimeRole(
     }
     await client.query(passwordStatement);
     await client.query(`ALTER ROLE ${role}
-      NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);
+      LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);
     await client.query(`ALTER ROLE ${role} RESET ALL`);
     await client.query(`DO $$ DECLARE parent_role record; BEGIN
       FOR parent_role IN
@@ -289,7 +294,7 @@ export async function provisionAgencyProjectionRuntimeRole(
     );
 
     const verification = await client.query(`WITH role_state AS (
-      SELECT oid, rolsuper, rolinherit, rolcreaterole, rolcreatedb,
+      SELECT oid, rolcanlogin, rolsuper, rolinherit, rolcreaterole, rolcreatedb,
         rolreplication, rolbypassrls
       FROM pg_roles WHERE rolname = '${AGENCY_PROJECTION_RUNTIME_ROLE}'
     ), owned AS (
@@ -312,6 +317,7 @@ export async function provisionAgencyProjectionRuntimeRole(
         AND n.nspname NOT LIKE 'pg_toast%' AND c.relkind IN ('r', 'p', 'S')
     )
     SELECT
+      EXISTS (SELECT 1 FROM role_state WHERE rolcanlogin = true) AS "canLogin",
       EXISTS (SELECT 1 FROM role_state WHERE NOT (
         rolsuper OR rolinherit OR rolcreaterole OR rolcreatedb OR
         rolreplication OR rolbypassrls
@@ -418,6 +424,7 @@ export async function provisionAgencyProjectionRuntimeRole(
     if (
       !checks ||
       [
+        'canLogin',
         'restrictedRole',
         'noMemberships',
         'noOwnership',

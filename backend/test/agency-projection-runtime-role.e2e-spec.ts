@@ -105,78 +105,152 @@ function quoteIdent(value: string): string {
   return `"${value.replaceAll('"', '""')}"`;
 }
 
+const DATABASE_PRIVILEGES = new Set(['CONNECT', 'CREATE', 'TEMPORARY']);
+
+function agencyMigrationDataSource(url: string): DataSource {
+  const options = agencyMigrationDataSourceOptions(url);
+  if (options.type !== 'postgres') {
+    throw new Error('Agency projection runtime role E2E requires PostgreSQL');
+  }
+  return new DataSource(options);
+}
+
+async function snapshotPublicDatabasePrivileges(
+  client: Client,
+): Promise<Map<string, string[]>> {
+  const publicGrants = await client.query<{
+    databaseName: string;
+    privilege: string;
+  }>(
+    `SELECT d.datname AS "databaseName", acl.privilege_type AS privilege
+     FROM pg_database d
+     JOIN LATERAL aclexplode(
+       COALESCE(d.datacl, acldefault('d', d.datdba))
+     ) acl ON true
+     WHERE d.datallowconn AND NOT d.datistemplate
+       AND acl.grantee = 0
+       AND acl.privilege_type IN ('CONNECT', 'CREATE', 'TEMPORARY')`,
+  );
+  return publicGrants.rows.reduce((grants, row) => {
+    if (!DATABASE_PRIVILEGES.has(row.privilege)) {
+      throw new Error('Unexpected PostgreSQL database privilege');
+    }
+    const privileges = grants.get(row.databaseName) ?? [];
+    privileges.push(row.privilege);
+    grants.set(row.databaseName, privileges);
+    return grants;
+  }, new Map<string, string[]>());
+}
+
+async function restorePublicDatabasePrivileges(
+  client: Client,
+  snapshot: Map<string, string[]>,
+): Promise<void> {
+  const databases = await client.query<{ databaseName: string }>(
+    `SELECT datname AS "databaseName"
+     FROM pg_database
+     WHERE datallowconn AND NOT datistemplate`,
+  );
+  for (const database of databases.rows) {
+    await client.query(
+      `REVOKE ALL PRIVILEGES ON DATABASE ${quoteIdent(database.databaseName)} FROM PUBLIC`,
+    );
+    const privileges = snapshot.get(database.databaseName);
+    if (privileges?.length) {
+      await client.query(
+        `GRANT ${privileges.join(', ')} ON DATABASE ${quoteIdent(database.databaseName)} TO PUBLIC`,
+      );
+    }
+  }
+}
+
+function serializePublicDatabasePrivileges(
+  snapshot: Map<string, string[]>,
+): Record<string, string[]> {
+  return Object.fromEntries(
+    [...snapshot.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([databaseName, privileges]) => [
+        databaseName,
+        [...privileges].sort(),
+      ]),
+  );
+}
+
 describe('Agency projection runtime role (PostgreSQL)', () => {
   const suffix = `${Date.now()}`;
   const databaseName = `blujet_agency_runtime_${suffix}`;
   const incompleteName = `blujet_agency_incomplete_${suffix}`;
   const coreName = databaseNameFromUrl(coreDatabaseUrl());
+  let source: string;
   let admin: Client;
   let owner: Client;
   let coreOwner: Client;
   let runtime: Client;
+  let publicDatabasePrivileges: Map<string, string[]> | undefined;
 
   beforeAll(async () => {
-    const source = ownerUrl();
+    source = ownerUrl();
     admin = new Client({ connectionString: maintenanceUrl(source) });
     await admin.connect();
-    await dropDatabase(admin, databaseName);
-    await dropDatabase(admin, incompleteName);
-    await admin.query(`CREATE DATABASE ${quoteIdent(databaseName)}`);
-    await admin.query(`CREATE DATABASE ${quoteIdent(incompleteName)}`);
+    publicDatabasePrivileges = await snapshotPublicDatabasePrivileges(admin);
+    try {
+      await dropDatabase(admin, databaseName);
+      await dropDatabase(admin, incompleteName);
+      await admin.query(`CREATE DATABASE ${quoteIdent(databaseName)}`);
+      await admin.query(`CREATE DATABASE ${quoteIdent(incompleteName)}`);
 
-    const isolatedUrl = rewriteDatabase(source, databaseName);
-    const migrations = new DataSource(
-      agencyMigrationDataSourceOptions(isolatedUrl),
-    );
-    await migrations.initialize();
-    await migrations.runMigrations();
-    await migrations.destroy();
+      const isolatedUrl = rewriteDatabase(source, databaseName);
+      const migrations = agencyMigrationDataSource(isolatedUrl);
+      await migrations.initialize();
+      await migrations.runMigrations();
+      await migrations.destroy();
 
-    coreOwner = new Client({ connectionString: coreDatabaseUrl() });
-    await coreOwner.connect();
+      coreOwner = new Client({ connectionString: coreDatabaseUrl() });
+      await coreOwner.connect();
 
-    owner = new Client({ connectionString: isolatedUrl });
-    await owner.connect();
-    await owner.query(`CREATE SCHEMA IF NOT EXISTS identity`);
-    await owner.query(
-      `CREATE TABLE identity.users (id text PRIMARY KEY, secret text)`,
-    );
-    await owner.query(
-      `INSERT INTO identity.users (id, secret) VALUES ('u1', 'credential-material')`,
-    );
-    await owner.query(`CREATE TABLE public.secrets (token text)`);
-    await owner.query(
-      `INSERT INTO public.secrets (token) VALUES ('gateway-secret')`,
-    );
-    await owner.query(`CREATE SEQUENCE agency.agency_seq`);
+      owner = new Client({ connectionString: isolatedUrl });
+      await owner.connect();
+      await owner.query(`CREATE SCHEMA IF NOT EXISTS identity`);
+      await owner.query(
+        `CREATE TABLE identity.users (id text PRIMARY KEY, secret text)`,
+      );
+      await owner.query(
+        `INSERT INTO identity.users (id, secret) VALUES ('u1', 'credential-material')`,
+      );
+      await owner.query(`CREATE TABLE public.secrets (token text)`);
+      await owner.query(
+        `INSERT INTO public.secrets (token) VALUES ('gateway-secret')`,
+      );
+      await owner.query(`CREATE SEQUENCE agency.agency_seq`);
 
-    const first = await provisionAgencyProjectionRuntimeRole(
-      owner,
-      PASSWORD,
-      databaseName,
-    );
-    expect(first).toEqual({
-      status: 'PASS',
-      role: AGENCY_PROJECTION_RUNTIME_ROLE,
-      relationCount: 7,
-    });
+      const first = await provisionAgencyProjectionRuntimeRole(
+        owner,
+        PASSWORD,
+        databaseName,
+      );
+      expect(first).toEqual({
+        status: 'PASS',
+        role: AGENCY_PROJECTION_RUNTIME_ROLE,
+        relationCount: 7,
+      });
 
-    await owner.query(
-      `GRANT UPDATE ON TABLE agency.agency_projection_event_receipts TO ${quoteIdent(AGENCY_PROJECTION_RUNTIME_ROLE)}`,
-    );
-    await owner.query(
-      `GRANT SELECT ON TABLE identity.users TO ${quoteIdent(AGENCY_PROJECTION_RUNTIME_ROLE)}`,
-    );
+      await owner.query(
+        `GRANT UPDATE ON TABLE agency.agency_projection_event_receipts TO ${quoteIdent(AGENCY_PROJECTION_RUNTIME_ROLE)}`,
+      );
+      await owner.query(
+        `GRANT SELECT ON TABLE identity.users TO ${quoteIdent(AGENCY_PROJECTION_RUNTIME_ROLE)}`,
+      );
 
-    const rerun = await provisionAgencyProjectionRuntimeRole(
-      owner,
-      PASSWORD,
-      databaseName,
-    );
-    expect(rerun).toEqual(first);
+      const rerun = await provisionAgencyProjectionRuntimeRole(
+        owner,
+        PASSWORD,
+        databaseName,
+      );
+      expect(rerun).toEqual(first);
 
-    const ownership = await owner.query(
-      `SELECT c.relname
+      const ownership = await owner.query(
+        `SELECT c.relname
        FROM pg_class c
        JOIN pg_roles r ON r.oid = c.relowner
        WHERE r.rolname = $1
@@ -185,49 +259,51 @@ describe('Agency projection runtime role (PostgreSQL)', () => {
        FROM pg_namespace n
        JOIN pg_roles r ON r.oid = n.nspowner
        WHERE r.rolname = $1`,
-      [AGENCY_PROJECTION_RUNTIME_ROLE],
-    );
-    expect(ownership.rows).toEqual([]);
-    const memberships = await owner.query(
-      `SELECT 1
+        [AGENCY_PROJECTION_RUNTIME_ROLE],
+      );
+      expect(ownership.rows).toEqual([]);
+      const memberships = await owner.query(
+        `SELECT 1
        FROM pg_auth_members membership
        JOIN pg_roles member ON member.oid = membership.member
        WHERE member.rolname = $1`,
-      [AGENCY_PROJECTION_RUNTIME_ROLE],
-    );
-    expect(memberships.rows).toEqual([]);
+        [AGENCY_PROJECTION_RUNTIME_ROLE],
+      );
+      expect(memberships.rows).toEqual([]);
 
-    const tables = await owner.query(
-      `SELECT c.relname
+      const tables = await owner.query(
+        `SELECT c.relname
        FROM pg_class c
        JOIN pg_namespace n ON n.oid = c.relnamespace
        WHERE n.nspname = 'agency'
          AND c.relkind IN ('r', 'p')
          AND has_any_column_privilege($1, c.oid, 'SELECT,INSERT,UPDATE')
        ORDER BY c.relname`,
-      [AGENCY_PROJECTION_RUNTIME_ROLE],
-    );
-    expect(tables.rows.map((row: { relname: string }) => row.relname)).toEqual([
-      'agency_credit_requests',
-      'agency_invoices',
-      'agency_profiles',
-      'agency_projection_event_receipts',
-      'agency_projection_slots',
-      'kafka_consumer_checkpoints',
-      'kafka_processing_failures',
-    ]);
+        [AGENCY_PROJECTION_RUNTIME_ROLE],
+      );
+      expect(
+        tables.rows.map((row: { relname: string }) => row.relname),
+      ).toEqual([
+        'agency_credit_requests',
+        'agency_invoices',
+        'agency_profiles',
+        'agency_projection_event_receipts',
+        'agency_projection_slots',
+        'kafka_consumer_checkpoints',
+        'kafka_processing_failures',
+      ]);
 
-    const foreignConnect = await owner.query(
-      `SELECT d.datname
+      const foreignConnect = await owner.query(
+        `SELECT d.datname
        FROM pg_database d
        WHERE d.datallowconn AND NOT d.datistemplate
          AND d.datname <> current_database()
          AND has_database_privilege($1, d.oid, 'CONNECT')`,
-      [AGENCY_PROJECTION_RUNTIME_ROLE],
-    );
-    expect(foreignConnect.rows).toEqual([]);
-    const coreConnect = await coreOwner.query(
-      `SELECT has_database_privilege($1, current_database(), 'CONNECT') AS allowed,
+        [AGENCY_PROJECTION_RUNTIME_ROLE],
+      );
+      expect(foreignConnect.rows).toEqual([]);
+      const coreConnect = await coreOwner.query(
+        `SELECT has_database_privilege($1, current_database(), 'CONNECT') AS allowed,
               EXISTS (
                 SELECT 1 FROM pg_namespace n
                 WHERE n.nspname = 'identity'
@@ -239,58 +315,83 @@ describe('Agency projection runtime role (PostgreSQL)', () => {
                 WHERE n.nspname = 'identity' AND c.relname = 'users'
                   AND has_table_privilege($1, c.oid, 'SELECT')
               ) AS users_select`,
-      [AGENCY_PROJECTION_RUNTIME_ROLE],
-    );
-    expect(coreConnect.rows[0]).toEqual({
-      allowed: false,
-      identity_usage: false,
-      users_select: false,
-    });
+        [AGENCY_PROJECTION_RUNTIME_ROLE],
+      );
+      expect(coreConnect.rows[0]).toEqual({
+        allowed: false,
+        identity_usage: false,
+        users_select: false,
+      });
 
-    const incomplete = new Client({
-      connectionString: rewriteDatabase(source, incompleteName),
-    });
-    await incomplete.connect();
-    await incomplete.query('CREATE SCHEMA agency');
-    const incompleteSql: string[] = [];
-    const recording = {
-      query: async (text: string, values?: unknown[]) => {
-        incompleteSql.push(text);
-        return incomplete.query(text, values);
-      },
-    };
-    await expect(
-      provisionAgencyProjectionRuntimeRole(recording, PASSWORD, incompleteName),
-    ).rejects.toThrow('relations are missing');
-    expect(incompleteSql.at(-1)).toBe('ROLLBACK');
-    await incomplete.end();
+      const incomplete = new Client({
+        connectionString: rewriteDatabase(source, incompleteName),
+      });
+      await incomplete.connect();
+      await incomplete.query('CREATE SCHEMA agency');
+      const incompleteSql: string[] = [];
+      const recording = {
+        query: async (text: string, values?: unknown[]) => {
+          incompleteSql.push(text);
+          return incomplete.query(text, values);
+        },
+      };
+      await expect(
+        provisionAgencyProjectionRuntimeRole(
+          recording,
+          PASSWORD,
+          incompleteName,
+        ),
+      ).rejects.toThrow('relations are missing');
+      expect(incompleteSql.at(-1)).toBe('ROLLBACK');
+      await incomplete.end();
 
-    runtime = new Client({
-      connectionString: runtimeUrl(source, databaseName),
-    });
-    await runtime.connect();
+      runtime = new Client({
+        connectionString: runtimeUrl(source, databaseName),
+      });
+      await runtime.connect();
+    } catch (error) {
+      if (publicDatabasePrivileges) {
+        await restorePublicDatabasePrivileges(
+          admin,
+          publicDatabasePrivileges,
+        ).catch(() => undefined);
+      }
+      throw error;
+    }
   }, 120000);
 
   afterAll(async () => {
-    if (runtime) await runtime.end().catch(() => undefined);
-    if (coreOwner) await coreOwner.end().catch(() => undefined);
-    if (owner) {
-      await owner
-        .query(
-          `DROP OWNED BY ${quoteIdent(AGENCY_PROJECTION_RUNTIME_ROLE)} CASCADE`,
-        )
-        .catch(() => undefined);
-      await owner.end().catch(() => undefined);
-    }
-    if (admin) {
-      await dropDatabase(admin, databaseName).catch(() => undefined);
-      await dropDatabase(admin, incompleteName).catch(() => undefined);
-      await admin
-        .query(
-          `DROP ROLE IF EXISTS ${quoteIdent(AGENCY_PROJECTION_RUNTIME_ROLE)}`,
-        )
-        .catch(() => undefined);
-      await admin.end().catch(() => undefined);
+    try {
+      if (runtime) await runtime.end().catch(() => undefined);
+      if (coreOwner) await coreOwner.end().catch(() => undefined);
+      if (owner) {
+        await owner
+          .query(
+            `DROP OWNED BY ${quoteIdent(AGENCY_PROJECTION_RUNTIME_ROLE)} CASCADE`,
+          )
+          .catch(() => undefined);
+        await owner.end().catch(() => undefined);
+      }
+      if (admin) {
+        await dropDatabase(admin, databaseName).catch(() => undefined);
+        await dropDatabase(admin, incompleteName).catch(() => undefined);
+        await admin
+          .query(
+            `DROP ROLE IF EXISTS ${quoteIdent(AGENCY_PROJECTION_RUNTIME_ROLE)}`,
+          )
+          .catch(() => undefined);
+      }
+    } finally {
+      if (admin && publicDatabasePrivileges) {
+        await restorePublicDatabasePrivileges(admin, publicDatabasePrivileges);
+        const restored = await snapshotPublicDatabasePrivileges(admin);
+        expect(serializePublicDatabasePrivileges(restored)).toEqual(
+          serializePublicDatabasePrivileges(publicDatabasePrivileges),
+        );
+        await admin.end().catch(() => undefined);
+      } else if (admin) {
+        await admin.end().catch(() => undefined);
+      }
     }
   });
 
@@ -421,5 +522,37 @@ describe('Agency projection runtime role (PostgreSQL)', () => {
       }),
     );
     await coreProbe.end().catch(() => undefined);
+  });
+
+  it('re-enables LOGIN after NOLOGIN and keeps PUBLIC database ACLs restorable', async () => {
+    await runtime.end();
+    await owner.query(
+      `ALTER ROLE ${quoteIdent(AGENCY_PROJECTION_RUNTIME_ROLE)} NOLOGIN`,
+    );
+    const denied = new Client({
+      connectionString: runtimeUrl(source, databaseName),
+    });
+    await expect(denied.connect()).rejects.toEqual(
+      expect.objectContaining({
+        code: expect.stringMatching(/^(28000|28P01)$/),
+      }),
+    );
+    await denied.end().catch(() => undefined);
+
+    await expect(
+      provisionAgencyProjectionRuntimeRole(owner, PASSWORD, databaseName),
+    ).resolves.toEqual({
+      status: 'PASS',
+      role: AGENCY_PROJECTION_RUNTIME_ROLE,
+      relationCount: 7,
+    });
+
+    runtime = new Client({
+      connectionString: runtimeUrl(source, databaseName),
+    });
+    await runtime.connect();
+    await expect(runtime.query('SELECT 1 AS ok')).resolves.toMatchObject({
+      rows: [{ ok: 1 }],
+    });
   });
 });

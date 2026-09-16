@@ -21,6 +21,7 @@ function mockClient(
   },
 ): RuntimeRoleSqlClient {
   const checks = options?.checks ?? {
+    canLogin: true,
     restrictedRole: true,
     noMemberships: true,
     noOwnership: true,
@@ -101,6 +102,16 @@ describe('Agency projection runtime role provisioner', () => {
       ),
     ).toThrow('must differ from the runtime role');
     expect(() =>
+      parseAgencyProjectionOwnerUrl(
+        'postgresql://localhost:5432/blujet_agency',
+      ),
+    ).toThrow('must include an owner username');
+    expect(() =>
+      parseAgencyProjectionOwnerUrl(
+        'postgresql://:secret@localhost:5432/blujet_agency',
+      ),
+    ).toThrow('must include an owner username');
+    expect(() =>
       parseAgencyProjectionOwnerUrl('postgresql://owner@db/blujet'),
     ).toThrow('isolated Agency database');
     expect(
@@ -122,7 +133,7 @@ describe('Agency projection runtime role provisioner', () => {
     });
     const sql = statements.join('\n');
     expect(sql).toContain(
-      'NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS',
+      'LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS',
     );
     expect(sql).toContain('GRANT CONNECT ON DATABASE "blujet_agency"');
     expect(sql).toContain('GRANT USAGE ON SCHEMA "agency"');
@@ -151,6 +162,8 @@ describe('Agency projection runtime role provisioner', () => {
       'REVOKE ALL ON SCHEMA %I FROM "blujet_agency_projection_runtime"',
     );
     expect(sql).toContain('REVOKE ALL ON ALL TABLES IN SCHEMA %I FROM');
+    expect(sql).toContain('rolcanlogin');
+    expect(sql).toContain('AS "canLogin"');
     expect(sql).not.toContain('GRANT SELECT, INSERT, UPDATE, DELETE');
     expect(sql).not.toMatch(/GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES/);
     expect(sql).not.toContain(
@@ -196,5 +209,17 @@ describe('Agency projection runtime role provisioner', () => {
       ),
     ).rejects.toThrow('verification failed');
     expect(extra.at(-1)).toBe('ROLLBACK');
+
+    const nologin: string[] = [];
+    await expect(
+      provisionAgencyProjectionRuntimeRole(
+        mockClient(nologin, { checks: { canLogin: false } }),
+        PASSWORD,
+      ),
+    ).rejects.toThrow('verification failed');
+    expect(nologin.join('\n')).toContain(
+      'LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS',
+    );
+    expect(nologin.at(-1)).toBe('ROLLBACK');
   });
 });
