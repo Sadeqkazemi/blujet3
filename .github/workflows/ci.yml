@@ -394,6 +394,12 @@ jobs:
           TZ: UTC
           AGENCY_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_agency_test
         run: npm run test:e2e:cutover-readiness
+      - name: Prove Agency cutover reader roles
+        working-directory: backend
+        env:
+          TZ: UTC
+          DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_agency_test
+        run: npm run test:e2e:agency-cutover-reader-roles
       - name: Prove compiled Agency projection rollback and restore
         working-directory: agency-service
         env:

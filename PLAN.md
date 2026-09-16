@@ -1,5 +1,14 @@
 # PLAN.md — blujet roadmap & progress
 
+## Agency cutover reader roles (2026-09-16)
+
+- [x] Provision independent read-only LOGIN roles for the Agency cutover gate.
+- [x] Grant only Gate columns on Core source and isolated Agency target.
+- [x] Prove unit and real-PostgreSQL isolation, rerun and Gate execution.
+- [ ] Obtain CI evidence and present the diff. Do not merge, deploy,
+      enable the consumer or cut over reads.
+
+
 ## Loyalty projection cutover readiness gate (2026-09-15)
 
 - [x] Freeze the offline, default-off, read-only and no-Kafka readiness

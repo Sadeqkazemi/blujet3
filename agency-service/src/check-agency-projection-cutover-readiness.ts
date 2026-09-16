@@ -438,7 +438,9 @@ const RECEIPT_SLOT_SQL = `SELECT (
     (
       SELECT count(*) FROM agency.agency_profiles profile
       FULL OUTER JOIN (
-        SELECT * FROM agency.agency_projection_slots
+        SELECT "aggregateType", "aggregateId", "recordVersion",
+               "semanticFingerprint"
+        FROM agency.agency_projection_slots
         WHERE "aggregateType" = 'AgencyProfile'
       ) slot ON slot."aggregateId" = profile."userId"
       WHERE profile."userId" IS NULL
@@ -447,7 +449,9 @@ const RECEIPT_SLOT_SQL = `SELECT (
     ) + (
       SELECT count(*) FROM agency.agency_invoices invoice
       FULL OUTER JOIN (
-        SELECT * FROM agency.agency_projection_slots
+        SELECT "aggregateType", "aggregateId", "recordVersion",
+               "semanticFingerprint"
+        FROM agency.agency_projection_slots
         WHERE "aggregateType" = 'AgencyInvoice'
       ) slot ON slot."aggregateId" = invoice.id
       WHERE invoice.id IS NULL
@@ -456,7 +460,9 @@ const RECEIPT_SLOT_SQL = `SELECT (
     ) + (
       SELECT count(*) FROM agency.agency_credit_requests request
       FULL OUTER JOIN (
-        SELECT * FROM agency.agency_projection_slots
+        SELECT "aggregateType", "aggregateId", "recordVersion",
+               "semanticFingerprint"
+        FROM agency.agency_projection_slots
         WHERE "aggregateType" = 'AgencyCreditRequest'
       ) slot ON slot."aggregateId" = request.id
       WHERE request.id IS NULL

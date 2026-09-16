@@ -541,6 +541,18 @@ It also compares Core `agency.agency_projection_audits` with Agency
 order-independent fingerprints. It never writes rows
 (`docs/features/microservices-phase-6-agency-cutover-readiness.md`).
 
+## Agency cutover reader roles
+
+No schema change. Offline owner CLIs create
+`blujet_agency_cutover_source` and `blujet_agency_cutover_target` as
+LOGIN NOSUPERUSER readers with column-level SELECT for the Agency
+cutover gate only. Source may read the three business tables, audit
+identity columns and outbox delivery timestamps; target may read the
+three business tables, receipt/slot identity columns, failure status and
+checkpoints. Neither role receives envelope fingerprints, payloads,
+writes, DDL, sequences or counterpart CONNECT
+(`docs/features/microservices-phase-6-agency-cutover-reader-roles.md`).
+
 ## Agency projection physical baseline contract (microservices phase 6)
 
 The offline baseline transfer copies only `agency_profiles`,

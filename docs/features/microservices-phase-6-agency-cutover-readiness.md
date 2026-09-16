@@ -126,5 +126,5 @@ Allowlisted reasons:
       mix-up, read-only behavior, matching audits/receipts, a missing receipt,
       equal-count fingerprint mismatch and an extra receipt.
 - [x] CI `agency-service` job includes the E2E and remains in `ci-gate`.
-- [ ] Present the diff for approval. Do not merge, deploy, activate the
+- [x] Present the diff for approval. Do not merge, deploy, activate the
       consumer or cut over reads.
