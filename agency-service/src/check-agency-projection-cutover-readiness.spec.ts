@@ -300,6 +300,14 @@ describe('Agency cutover readiness gate', () => {
       ),
     ).toBe(true);
     expect(statements.some((sql) => sql.includes('payload'))).toBe(false);
+    expect(statements.some((sql) => sql.includes('SELECT *'))).toBe(false);
+    expect(
+      statements.some(
+        (sql) =>
+          sql.includes('"semanticFingerprint"') &&
+          sql.includes('agency_projection_slots'),
+      ),
+    ).toBe(true);
     expect(agencyTableCountSql('agency_profiles')).toContain('agency_profiles');
     expect(agencyTableFingerprintSql('agency_invoices')).toContain(
       'hashtextextended',

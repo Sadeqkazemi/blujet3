@@ -414,6 +414,18 @@ terminal DLQ rows and caught-up checkpoints. Output is metadata-only
 READY/NOT_READY/DISABLED/UNAVAILABLE
 (`docs/features/microservices-phase-6-agency-cutover-readiness.md`).
 
+## Agency cutover reader roles
+
+No public or internal HTTP route changes. Offline owner CLIs provision
+`blujet_agency_cutover_source` on Core/shared PostgreSQL and
+`blujet_agency_cutover_target` on the isolated Agency database with
+column-level SELECT for the cutover gate only. Both owner URLs are required
+so a shared-server source/target CONNECT boundary is verified. The CLIs fail
+closed on unsafe effective `PUBLIC` privileges without changing `PUBLIC` or
+unrelated roles. Output is `{ status, role, relationCount }`. No consumer,
+data copy, read cutover or deployment is activated
+(`docs/features/microservices-phase-6-agency-cutover-reader-roles.md`).
+
 ## Agency projection physical baseline tooling
 
 No HTTP route or response changes. The offline transfer copies only the three
