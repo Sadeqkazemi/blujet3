@@ -361,6 +361,10 @@ describe('production backend artifacts', () => {
           'node dist/database/provision-agency-cutover-reader-roles.js source',
         'database:provision-agency-cutover-target:prod':
           'node dist/database/provision-agency-cutover-reader-roles.js target',
+        'database:provision-loyalty-cutover-source:prod':
+          'node dist/database/provision-loyalty-cutover-reader-roles.js source',
+        'database:provision-loyalty-cutover-target:prod':
+          'node dist/database/provision-loyalty-cutover-reader-roles.js target',
       }),
     );
     expect(ciWorkflow).toContain(
@@ -383,6 +387,10 @@ describe('production backend artifacts', () => {
     expect(ciWorkflow).toContain('test:e2e:agency-cutover-reader-roles');
     expect(compose).not.toContain('provision-agency-cutover-reader-roles');
     expect(compose).not.toContain('provision-reporting-cutover-reader-roles');
+    expect(compose).not.toContain('provision-loyalty-cutover-reader-roles');
+    expect(deployWorkflow).not.toContain(
+      'provision-loyalty-cutover-reader-roles',
+    );
     const envExample = readFileSync(join(backendRoot, '.env.example'), 'utf8');
     expect(envExample).toContain(
       'postgresql://blujet_ops_admin_cutover_source:replace@core-db:5432/blujet',
@@ -413,6 +421,11 @@ describe('production backend artifacts', () => {
     expect(envExample).toContain('AGENCY_CUTOVER_TARGET_OWNER_URL=');
     expect(envExample).toContain('AGENCY_CUTOVER_SOURCE_PASSWORD=');
     expect(envExample).toContain('AGENCY_CUTOVER_TARGET_PASSWORD=');
+    expect(envExample).toContain('LOYALTY_CUTOVER_SOURCE_OWNER_URL=');
+    expect(envExample).toContain('LOYALTY_CUTOVER_TARGET_OWNER_URL=');
+    expect(envExample).toContain('LOYALTY_CUTOVER_SOURCE_PASSWORD=');
+    expect(envExample).toContain('LOYALTY_CUTOVER_TARGET_PASSWORD=');
+    expect(ciWorkflow).toContain('test:e2e:loyalty-cutover-reader-roles');
     expect(envExample).not.toContain('AGENCY_CUTOVER_CHECK_ENABLED');
     expect(envExample).not.toContain('AGENCY_CUTOVER_SOURCE_DATABASE_URL');
     expect(envExample).not.toContain('AGENCY_CUTOVER_TARGET_DATABASE_URL');

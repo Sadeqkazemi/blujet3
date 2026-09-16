@@ -5747,3 +5747,10 @@ responses use the existing Core read, while a Loyalty 404 maps to the existing
 non-member response. Membership joins,
 points earning/redeeming, wallet, price-lock and card-request writes remain in
 Core. The internal route is never exposed through the public gateway.
+
+### Loyalty cutover reader roles
+
+The Loyalty cutover reader-role provisioners are offline operator commands and
+add no HTTP route. They create separate source and target read-only identities
+for the existing reconciliation/readiness CLI. They do not change the public
+Loyalty API, enable a consumer, copy data or switch a read path.

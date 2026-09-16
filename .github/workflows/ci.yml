@@ -189,6 +189,11 @@ jobs:
       - name: Install Loyalty service
         working-directory: loyalty-service
         run: npm ci
+      - name: Prove Loyalty cutover reader roles
+        working-directory: backend
+        env:
+          LOYALTY_DATABASE_URL: postgresql://blujet:blujet@localhost:5432/blujet_loyalty_test
+        run: npm run test:e2e:loyalty-cutover-reader-roles
       - name: Prove standalone Loyalty database bootstrap
         working-directory: loyalty-service
         env:

@@ -4796,3 +4796,15 @@ ownership, application-role privileges, rows, or the Core transaction boundary.
 The migration is reversible for the schema `CREATE` defaults only; explicit
 service-reader grants remain operator-managed and are not fabricated by a
 TypeORM migration.
+
+### Loyalty cutover reader roles
+
+No table or migration is added. Offline provisioning creates
+`blujet_loyalty_cutover_source` on Core and
+`blujet_loyalty_cutover_target` on the isolated Loyalty database. Both are
+non-owner, non-inheriting, read-only LOGIN roles with column-level SELECT only
+for the existing cutover gate. The source can read the six Loyalty projection
+tables plus the four outbox state columns and four audit parity columns. The
+target can read the same six tables plus only the receipt, slot, failure-status
+and checkpoint columns used by reconciliation. Neither role receives writes,
+DDL, sequence, TEMP or cross-domain access.
