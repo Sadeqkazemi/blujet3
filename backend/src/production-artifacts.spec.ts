@@ -361,6 +361,8 @@ describe('production backend artifacts', () => {
           'node dist/database/provision-agency-cutover-reader-roles.js source',
         'database:provision-agency-cutover-target:prod':
           'node dist/database/provision-agency-cutover-reader-roles.js target',
+        'database:provision-agency-projection-runtime:prod':
+          'node dist/database/provision-agency-projection-runtime-role.js',
         'database:provision-loyalty-cutover-source:prod':
           'node dist/database/provision-loyalty-cutover-reader-roles.js source',
         'database:provision-loyalty-cutover-target:prod':
@@ -388,7 +390,14 @@ describe('production backend artifacts', () => {
     expect(compose).not.toContain('check-agency-projection-cutover-readiness');
     expect(ciWorkflow).toContain('test:e2e:cutover-readiness');
     expect(ciWorkflow).toContain('test:e2e:agency-cutover-reader-roles');
+    expect(ciWorkflow).toContain('test:e2e:agency-projection-runtime-role');
     expect(compose).not.toContain('provision-agency-cutover-reader-roles');
+    expect(compose).not.toContain('provision-agency-projection-runtime-role');
+    const jestE2e = readFileSync(
+      join(backendRoot, 'test', 'jest-e2e.json'),
+      'utf8',
+    );
+    expect(jestE2e).toContain('agency-projection-runtime-role.e2e-spec.ts');
     expect(compose).not.toContain('provision-reporting-cutover-reader-roles');
     expect(compose).not.toContain('provision-loyalty-cutover-reader-roles');
     expect(compose).not.toContain('provision-loyalty-projection-runtime-role');
@@ -428,6 +437,8 @@ describe('production backend artifacts', () => {
     expect(envExample).toContain('AGENCY_CUTOVER_TARGET_OWNER_URL=');
     expect(envExample).toContain('AGENCY_CUTOVER_SOURCE_PASSWORD=');
     expect(envExample).toContain('AGENCY_CUTOVER_TARGET_PASSWORD=');
+    expect(envExample).toContain('AGENCY_PROJECTION_DATABASE_OWNER_URL=');
+    expect(envExample).toContain('AGENCY_PROJECTION_RUNTIME_PASSWORD=');
     expect(envExample).toContain('LOYALTY_CUTOVER_SOURCE_OWNER_URL=');
     expect(envExample).toContain('LOYALTY_CUTOVER_TARGET_OWNER_URL=');
     expect(envExample).toContain('LOYALTY_CUTOVER_SOURCE_PASSWORD=');
