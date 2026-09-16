@@ -1,0 +1,19 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "../..",
+  "testEnvironment": "node",
+  "testRegex": "backend/test/loyalty-cutover-reader-roles\\.e2e-spec\\.ts$",
+  "testTimeout": 60000,
+  "setupFiles": ["<rootDir>/backend/test/jest-setup.ts"],
+  "moduleNameMapper": {
+    "^(\\.{1,2}/.*)\\.js$": "$1"
+  },
+  "transform": {
+    "^.+\\.(t|j)s$": [
+      "<rootDir>/backend/node_modules/ts-jest",
+      {
+        "tsconfig": "<rootDir>/backend/tsconfig.json"
+      }
+    ]
+  }
+}
