@@ -44,9 +44,15 @@ operator routes. It runs the strict sequential manual-ACK adapter and
 acknowledges after the existing transactional projection commit. When
 `LOYALTY_DLQ_ENABLED=true`, a separate 32+ character operator token protects
 bounded retry/skip decisions; the API never returns delivery coordinates or
-message content. It is not included in Compose or deployment manifests and
-remains disabled until baseline/delta, broker UAT and cutover gates are
-separately approved.
+message content. Liveness never opens a database or Kafka connection.
+Readiness first attests that the active PostgreSQL session is the exact
+restricted `blujet_loyalty_projection_runtime` role with its frozen ten-table
+grant boundary on an isolated Loyalty database, bounded UTC session, safe
+search path, no ownership, DDL,
+sequence, cross-domain or foreign-database access. An unavailable or
+over-privileged credential fails closed without exposing catalog details. The
+worker is not included in Compose or deployment manifests and remains disabled
+until baseline/delta, broker UAT and cutover gates are separately approved.
 
 ## Offline cutover readiness gate (default off)
 
