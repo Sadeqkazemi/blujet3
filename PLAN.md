@@ -1,5 +1,19 @@
 # PLAN.md — blujet roadmap & progress
 
+## Loyalty worker runtime-role attestation (2026-09-16)
+
+- [x] Freeze the fail-closed worker readiness contract before code.
+- [x] Require the exact restricted Loyalty projection identity, bounded UTC
+      session and safe search path before checking Kafka readiness.
+- [x] Attest the frozen ten-table grant boundary and deny ownership,
+      memberships, DDL, sequences, cross-domain relations and foreign database
+      connections.
+- [x] Preserve pure liveness and the existing consumer/checkpoint/quarantine
+      readiness response after database attestation succeeds.
+- [x] Pass focused and full unit tests, scoped lint, typecheck, build, OpenAPI
+      stability and diff hygiene before opening a PR. Do not activate Kafka,
+      change a URL, migrate, cut over reads, deploy or merge.
+
 ## Agency projection runtime role (2026-09-16)
 
 - [x] Freeze the exact `blujet_agency_projection_runtime` writer contract.

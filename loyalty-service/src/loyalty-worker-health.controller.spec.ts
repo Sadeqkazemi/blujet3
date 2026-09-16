@@ -5,6 +5,23 @@ import type { LoyaltyKafkaRuntime } from './projection/loyalty-kafka.runtime';
 import type { LoyaltyDlqStore } from './projection/loyalty-dlq.store';
 
 describe('LoyaltyWorkerHealthController', () => {
+  const validRoleAttestation = {
+    role: 'blujet_loyalty_projection_runtime',
+    isolatedDatabase: true,
+    utcSession: true,
+    boundedSession: true,
+    safeSearchPath: true,
+    restrictedRole: true,
+    noMemberships: true,
+    noOwnership: true,
+    databaseAccess: true,
+    schemaAccess: true,
+    noDdl: true,
+    requiredGrants: true,
+    leastPrivilege: true,
+    noCrossDomainAccess: true,
+    noForeignConnect: true,
+  };
   const runtime = {
     isReady: jest.fn().mockReturnValue(true),
     getStatus: jest.fn().mockReturnValue({
@@ -18,6 +35,7 @@ describe('LoyaltyWorkerHealthController', () => {
 
   function dataSource(query: jest.Mock): DataSource {
     return {
+      query,
       transaction: jest.fn(
         async (work: (manager: EntityManager) => Promise<void>) =>
           work({ query } as unknown as EntityManager),
@@ -58,7 +76,7 @@ describe('LoyaltyWorkerHealthController', () => {
   });
 
   it('is ready only when the complete schema and consumer are ready', async () => {
-    const query = jest.fn().mockResolvedValue([]);
+    const query = jest.fn().mockResolvedValue([validRoleAttestation]);
     const target = controller(query);
 
     await expect(target.ready()).resolves.toEqual({
@@ -78,7 +96,7 @@ describe('LoyaltyWorkerHealthController', () => {
         quarantine: { status: 'disabled' },
       },
     });
-    expect(query).toHaveBeenCalledTimes(10);
+    expect(query).toHaveBeenCalledTimes(11);
   });
 
   it('returns safe 503 semantics when PostgreSQL is unavailable', async () => {
@@ -94,16 +112,35 @@ describe('LoyaltyWorkerHealthController', () => {
       response: {
         status: 'error',
         service: 'blujet-loyalty-projection-worker',
-        error: { database: { status: 'down' } },
+        error: { database: { status: 'down-or-misconfigured' } },
       },
     });
     expect(runtime.getStatus).not.toHaveBeenCalled();
   });
 
+  it('fails closed before schema or consumer checks for the wrong role', async () => {
+    const query = jest
+      .fn()
+      .mockResolvedValue([
+        { ...validRoleAttestation, role: 'loyalty_database_owner' },
+      ]);
+    const target = controller(query);
+
+    await expect(target.ready()).rejects.toMatchObject({
+      response: {
+        error: { database: { status: 'down-or-misconfigured' } },
+      },
+    });
+    expect(query).toHaveBeenCalledTimes(1);
+    expect(runtime.isReady).not.toHaveBeenCalled();
+  });
+
   it('returns only the lifecycle state when the consumer is unavailable', async () => {
     runtime.isReady.mockReturnValueOnce(false);
     runtime.getStatus.mockReturnValueOnce({ state: 'failed' });
-    const target = controller(jest.fn().mockResolvedValue([]));
+    const target = controller(
+      jest.fn().mockResolvedValue([validRoleAttestation]),
+    );
 
     await expect(target.ready()).rejects.toMatchObject({
       response: {
@@ -119,11 +156,14 @@ describe('LoyaltyWorkerHealthController', () => {
 
   it('reports only the quarantined count when enabled', async () => {
     dlq.countQuarantined.mockResolvedValueOnce(2);
-    const target = controller(jest.fn().mockResolvedValue([]), {
-      enabled: true,
-      maxAttempts: 3,
-      operatorToken: 'loyalty-operator-token-at-least-32-chars',
-    });
+    const target = controller(
+      jest.fn().mockResolvedValue([validRoleAttestation]),
+      {
+        enabled: true,
+        maxAttempts: 3,
+        operatorToken: 'loyalty-operator-token-at-least-32-chars',
+      },
+    );
 
     await expect(target.ready()).resolves.toMatchObject({
       info: { quarantine: { status: 'up', count: 2 } },
@@ -132,11 +172,14 @@ describe('LoyaltyWorkerHealthController', () => {
 
   it('fails readiness safely when the quarantine registry is unavailable', async () => {
     dlq.countQuarantined.mockRejectedValueOnce(new Error('secret SQL'));
-    const target = controller(jest.fn().mockResolvedValue([]), {
-      enabled: true,
-      maxAttempts: 3,
-      operatorToken: 'loyalty-operator-token-at-least-32-chars',
-    });
+    const target = controller(
+      jest.fn().mockResolvedValue([validRoleAttestation]),
+      {
+        enabled: true,
+        maxAttempts: 3,
+        operatorToken: 'loyalty-operator-token-at-least-32-chars',
+      },
+    );
 
     await expect(target.ready()).rejects.toMatchObject({
       response: {

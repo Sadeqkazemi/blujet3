@@ -12,6 +12,7 @@ import {
 } from './loyalty-dlq.config';
 import { LoyaltyDlqStore } from './projection/loyalty-dlq.store';
 import { LoyaltyKafkaRuntime } from './projection/loyalty-kafka.runtime';
+import { attestLoyaltyProjectionRuntimeRole } from './projection/loyalty-runtime-role.attestation';
 
 const SERVICE = 'blujet-loyalty-projection-worker';
 
@@ -40,6 +41,7 @@ export class LoyaltyWorkerHealthController {
   @Get('ready')
   async ready() {
     try {
+      await attestLoyaltyProjectionRuntimeRole(this.dataSource);
       await this.dataSource.transaction(async (manager) => {
         await manager.query(
           'SELECT id, version FROM loyalty.club_members LIMIT 0',
@@ -76,7 +78,7 @@ export class LoyaltyWorkerHealthController {
       throw new ServiceUnavailableException({
         status: 'error',
         service: SERVICE,
-        error: { database: { status: 'down' } },
+        error: { database: { status: 'down-or-misconfigured' } },
       });
     }
 
