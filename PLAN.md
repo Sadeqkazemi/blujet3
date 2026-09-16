@@ -5468,6 +5468,14 @@ contracts and retires the production mock adapters.
 - [ ] Complete visual browser verification when localhost browser access is available.
 - [ ] Commit/push, merge, and deploy only after explicit user approval.
 
+## Loyalty cutover reader roles (2026-09-16)
+
+- [x] Freeze the source/target relation and column contract before code.
+- [x] Add transactional, idempotent, fail-closed offline role provisioning.
+- [x] Prove exact read access and denied writes/DDL/cross-domain access in unit and real PostgreSQL E2E tests.
+- [x] Wire the E2E into the Loyalty CI gate and keep OpenAPI byte-identical.
+- [x] Present the diff; do not deploy, enable a consumer or cut over.
+
 ## Database reliability foundation — truthful backup and restore proof (2026-09-06)
 
 - [x] Align the IT backup schedule with the repository's real nightly 03:00
