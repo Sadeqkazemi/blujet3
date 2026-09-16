@@ -435,6 +435,15 @@ unrelated roles. Output is `{ status, role, relationCount }`. No consumer,
 data copy, read cutover or deployment is activated
 (`docs/features/microservices-phase-6-agency-cutover-reader-roles.md`).
 
+## Agency projection runtime role
+
+No public or internal HTTP route changes. An offline owner CLI provisions
+`blujet_agency_projection_runtime` as a LOGIN least-privilege writer on the
+isolated Agency database so the projection worker can stop using the database
+owner. Output is `{ status, role, relationCount }`. Worker activation, Kafka,
+read cutover and production URL changes remain disabled
+(`docs/features/microservices-phase-6-agency-projection-runtime-role.md`).
+
 ## Agency projection physical baseline tooling
 
 No HTTP route or response changes. The offline transfer copies only the three

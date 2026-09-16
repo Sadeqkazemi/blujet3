@@ -1,5 +1,16 @@
 # PLAN.md — blujet roadmap & progress
 
+## Agency projection runtime role (2026-09-16)
+
+- [x] Freeze the exact `blujet_agency_projection_runtime` writer contract.
+- [x] Provision CONNECT + agency USAGE; SELECT/INSERT/UPDATE on profiles,
+      invoices, credit requests, slots, checkpoints and failures;
+      SELECT/INSERT only on receipts; deny receipt UPDATE, DELETE, DDL,
+      TEMP, sequences, memberships and other databases.
+- [x] Prove allow/deny against real PostgreSQL without activating Kafka.
+- [ ] Obtain CI evidence and present the diff. Do not merge, deploy,
+      enable the consumer or change `AGENCY_PROJECTION_DATABASE_URL`.
+
 ## Loyalty projection runtime role (2026-09-16)
 
 - [x] Freeze the exact standalone Loyalty writer contract before code.
