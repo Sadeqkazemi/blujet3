@@ -9,6 +9,7 @@ import {
 const PASSWORD = 'loyalty_projection_runtime_ci_2026';
 const enabled = process.env.LOYALTY_RUNTIME_ROLE_E2E_ENABLED === 'true';
 const describeDatabase = enabled ? describe : describe.skip;
+const DATABASE_PRIVILEGES = new Set(['CONNECT', 'CREATE', 'TEMPORARY']);
 
 function identifier(value: string): string {
   return `"${value.replaceAll('"', '""')}"`;
@@ -29,6 +30,7 @@ describeDatabase('Loyalty projection runtime role (PostgreSQL)', () => {
   const foreignDatabase = `blujet_core_guard_${process.pid}`;
   let owner: Client;
   let runtime: Client;
+  let publicDatabasePrivileges = new Map<string, string[]>();
 
   beforeAll(async () => {
     const parsed = new URL(ownerUrl);
@@ -37,6 +39,28 @@ describeDatabase('Loyalty projection runtime role (PostgreSQL)', () => {
     }
     owner = new Client({ connectionString: ownerUrl });
     await owner.connect();
+    const publicGrants = await owner.query<{
+      databaseName: string;
+      privilege: string;
+    }>(
+      `SELECT d.datname AS "databaseName", acl.privilege_type AS privilege
+       FROM pg_database d
+       JOIN LATERAL aclexplode(
+         COALESCE(d.datacl, acldefault('d', d.datdba))
+       ) acl ON true
+       WHERE d.datallowconn AND NOT d.datistemplate
+         AND acl.grantee = 0
+         AND acl.privilege_type IN ('CONNECT', 'CREATE', 'TEMPORARY')`,
+    );
+    publicDatabasePrivileges = publicGrants.rows.reduce((grants, row) => {
+      if (!DATABASE_PRIVILEGES.has(row.privilege)) {
+        throw new Error('Unexpected PostgreSQL database privilege');
+      }
+      const privileges = grants.get(row.databaseName) ?? [];
+      privileges.push(row.privilege);
+      grants.set(row.databaseName, privileges);
+      return grants;
+    }, new Map<string, string[]>());
     await owner.query(`DROP DATABASE IF EXISTS ${identifier(foreignDatabase)}`);
     await owner.query(`CREATE DATABASE ${identifier(foreignDatabase)}`);
     await owner.query('CREATE SCHEMA IF NOT EXISTS outside_domain');
@@ -102,6 +126,22 @@ describeDatabase('Loyalty projection runtime role (PostgreSQL)', () => {
     await owner.query(
       `DROP ROLE IF EXISTS ${identifier(LOYALTY_PROJECTION_RUNTIME_ROLE)}`,
     );
+    const databases = await owner.query<{ databaseName: string }>(
+      `SELECT datname AS "databaseName"
+       FROM pg_database
+       WHERE datallowconn AND NOT datistemplate`,
+    );
+    for (const database of databases.rows) {
+      await owner.query(
+        `REVOKE ALL PRIVILEGES ON DATABASE ${identifier(database.databaseName)} FROM PUBLIC`,
+      );
+      const privileges = publicDatabasePrivileges.get(database.databaseName);
+      if (privileges?.length) {
+        await owner.query(
+          `GRANT ${privileges.join(', ')} ON DATABASE ${identifier(database.databaseName)} TO PUBLIC`,
+        );
+      }
+    }
     await owner.end();
   });
 
